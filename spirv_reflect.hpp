@@ -62,6 +62,8 @@ class BlockVariable;
 class Block;
 class Descriptor;
 class DescriptorSet;
+class PushConstant;
+class IoVariable;
 class ShaderReflection;
 
 namespace detail {
@@ -78,39 +80,37 @@ T InvalidValue()
 //!
 //! Vulkan descriptor type mappings:
 //!   VK_DESCRIPTOR_TYPE_SAMPLER:
-//!     m_type_mask = TYPE_FLAG_EXTERNAL_SAMPLER
+//!     m_type_flags = TYPE_FLAG_EXTERNAL_SAMPLER
 //!
 //!   VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE | TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE
-//!     m_image_traits.dim = ! spv::DimBuffer
-//!     m_image_traits.image_format = spv::ImageFormatUnknown
+//!     m_type_flags = TYPE_FLAG_EXTERNAL_IMAGE | TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE
 //!
 //!   VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE
+//!     m_type_flags = TYPE_FLAG_EXTERNAL_IMAGE
 //!     m_image_traits.dim = ! spv::DimBuffer
 //!     m_image_traits.image_format = spv::ImageFormatUnknown
 //!
 //!   VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE
+//!     m_type_flags = TYPE_FLAG_EXTERNAL_IMAGE
 //!     m_image_traits.dim = ! spv::DimBuffer
 //!     m_image_traits.image_format = ! spv::ImageFormatUnknown
 //!
 //!   VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE
+//!     m_type_flags = TYPE_FLAG_EXTERNAL_IMAGE
 //!     m_image_traits.dim = spv::DimBuffer
 //!     m_image_traits.image_format = spv::ImageFormatUnknown
 //!
 //!   VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE
+//!     m_type_flags = TYPE_FLAG_EXTERNAL_IMAGE
 //!     m_image_traits.dim = spv::DimBuffer
 //!     m_image_traits.image_format = ! spv::ImageFormatUnknown
 //!
 //!   VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-//!     m_type_mask = TYPE_FLAG_EXTERNAL_BUFFER
+//!     m_type_flags = TYPE_FLAG_EXTERNAL_BUFFER
 //!     m_type_attrs = TYPE_ATTR_BLOCK
 //!
 //!   VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-//!     m_type_mask = TYPE_FLAG_EXTERNAL_BUFFER
+//!     m_type_flags = TYPE_FLAG_EXTERNAL_BUFFER
 //!     m_type_attrs = TYPE_ATTR_BUFFER_BLOCK
 //!
 class Type {
@@ -219,7 +219,7 @@ public:
 protected:
   std::vector<BlockVariable>      m_members;
 
-private:
+protected:
   BlockVariable(ShaderReflection* p_module);
   friend class detail::Parser;
 };
@@ -232,7 +232,7 @@ public:
   Block();
   ~Block();
 
-private:
+protected:
   Block(ShaderReflection* p_module);
   friend class detail::Parser;
 };
@@ -252,7 +252,7 @@ public:
   const std::string&              GetName() const { return m_name; }
   std::string                     GetInfo() const;
 
-  VkDescriptorType                GetVkDescriptorType() const { return m_vk_descriptor_type; }
+  VkDescriptorType                GetVkDescriptorType() const;
 
 private:
   ShaderReflection*               m_module = nullptr;
@@ -263,7 +263,6 @@ private:
   uint32_t                        m_set_number_word_offset = 0;
   Block                           m_block;
   std::string                     m_name;
-  VkDescriptorType                m_vk_descriptor_type = detail::InvalidValue<VkDescriptorType>();
 
 private:
   Descriptor(ShaderReflection* p_module, uint32_t binding_number_word_offset, uint32_t set_number_word_offset);

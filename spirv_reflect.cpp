@@ -8,6 +8,12 @@
 
 namespace spirv_ref {
 
+enum {
+  SPIRV_STARTING_WORD_INDEX = 5,
+  SPIRV_WORD_SIZE           = sizeof(uint32_t),
+  SPIRV_MINIMUM_FILE_SIZE   = SPIRV_STARTING_WORD_INDEX * SPIRV_WORD_SIZE
+};
+
 template <typename T>
 typename std::vector<T>::iterator Find(std::vector<T>& container, const T& value)
 {
@@ -30,10 +36,69 @@ bool operator<(const Descriptor& a, const Descriptor& b)
     return a.GetSetNumber() < b.GetSetNumber();
 }
 
+uint32_t ReadU32(uint32_t spirv_word_count, const uint32_t* p_spirv_code, uint32_t index)
+{
+  assert(p_spirv_code != nullptr);
+  assert((index + 1) < spirv_word_count);
+  uint32_t value = *(p_spirv_code + index);
+  return value;
+}
+
+uint32_t ReadU32(ShaderReflection* p_module, uint32_t index)
+{
+  assert(p_module != nullptr);
+  uint32_t value = ReadU32(p_module->GetSpirvWordCount(),
+                           p_module->GetSpirvCode(),
+                           index);
+  return value;
+}
+
+const char* ReadStr(ShaderReflection* p_module, uint32_t word_offset, uint32_t word_index, uint32_t word_count)
+{
+  assert(p_module != nullptr);
+  const uint32_t* p_spirv_code = p_module->GetSpirvCode();
+  assert(p_spirv_code != nullptr);
+  uint32_t spirv_word_count = p_module->GetSpirvWordCount();
+  assert((word_offset + word_count) < spirv_word_count);
+  const char* c_str = reinterpret_cast<const char*>(p_spirv_code + word_offset + word_index);
+  bool has_null_terminator = false;
+  uint32_t byte_count = SPIRV_WORD_SIZE * (word_count - word_index);
+  for (uint32_t i = 0; i < byte_count; ++i) {
+    has_null_terminator = (*(c_str + i) == 0);
+    if (has_null_terminator) {
+      break;
+    }
+  }
+  c_str = has_null_terminator ? c_str : nullptr;
+  assert(c_str != nullptr);
+  return c_str;
+}
+
+void WriteU32(uint32_t value, uint32_t spirv_word_count, uint32_t* p_spirv_code, uint32_t index)
+{
+  assert((index + 1) < spirv_word_count);
+  uint32_t* p_value = (p_spirv_code + index);
+  *p_value = value;
+}
+
+void WriteU32(uint32_t value, ShaderReflection* p_module, uint32_t index)
+{
+  assert(p_module != nullptr);
+  WriteU32(value,
+           p_module->GetSpirvWordCount(),
+           const_cast<uint32_t*>(p_module->GetSpirvCode()),
+           index);
+}
+
 // =================================================================================================
 // BlockVariable
 // =================================================================================================
 BlockVariable::BlockVariable()
+{
+}
+
+BlockVariable::BlockVariable(ShaderReflection* p_module)
+  : detail::Variable(p_module)
 {
 }
 
@@ -57,6 +122,11 @@ Block::Block()
 {
 }
 
+Block::Block(ShaderReflection* p_module)
+  : BlockVariable(p_module)
+{
+}
+
 Block::~Block()
 {
 }
@@ -74,14 +144,8 @@ Descriptor::Descriptor(ShaderReflection* p_module, uint32_t binding_number_word_
     m_set_number_word_offset(set_number_word_offset)
 {
   if (m_module != nullptr) {
-    const uint32_t* p_spirv_code = m_module->GetSpirvCode();
-    const uint32_t spirv_word_count = m_module->GetSpirvWordCount();
-
-    assert(m_binding_number_word_offset < spirv_word_count);
-    m_binding_number = *(p_spirv_code + m_binding_number_word_offset);
-
-    assert(m_set_number_word_offset < spirv_word_count);
-    m_set_number = *(p_spirv_code + m_set_number_word_offset);
+    m_binding_number = ReadU32(m_module, m_binding_number_word_offset);
+    m_set_number = ReadU32(m_module, m_set_number_word_offset);
   }
 }
 
@@ -98,9 +162,7 @@ void Descriptor::SetBindingNumber(uint32_t binding_number)
 {
   m_binding_number = binding_number;
   if (m_module != nullptr) {
-    uint32_t* p_spirv_code = const_cast<uint32_t*>(m_module->GetSpirvCode());
-    uint32_t* p_binding_number = (p_spirv_code + m_binding_number_word_offset);
-    *p_binding_number = binding_number;
+    WriteU32(binding_number, m_module, m_binding_number_word_offset);
   }
 }
 
@@ -113,9 +175,7 @@ void Descriptor::SetSetNumber(uint32_t set_number)
 {
   m_set_number = set_number;
   if (m_module != nullptr) {
-    uint32_t* p_spirv_code = const_cast<uint32_t*>(m_module->GetSpirvCode());
-    uint32_t* p_set_number = (p_spirv_code + m_set_number_word_offset);
-    *p_set_number = set_number;
+    WriteU32(set_number, m_module, m_binding_number_word_offset);
   }
 }
 
@@ -139,6 +199,16 @@ std::string Descriptor::GetInfo() const
     ss << ";";
   }
   return ss.str();
+}
+
+VkDescriptorType Descriptor::GetVkDescriptorType() const
+{
+  VkDescriptorType descriptor_type = detail::InvalidValue<VkDescriptorType>();
+  assert(m_type != nullptr);
+  if (m_type != nullptr) {
+    descriptor_type = m_type->GetVkDescriptorType();
+  }
+  return descriptor_type;
 }
 
 // =================================================================================================
@@ -185,6 +255,23 @@ Descriptor* const DescriptorSet::GetBinding(size_t index)
 }
 
 // =================================================================================================
+// PushConstant
+// =================================================================================================
+PushConstant::PushConstant()
+{
+}
+
+
+PushConstant::PushConstant(ShaderReflection* p_module)
+  : Block(p_module)
+{
+}
+
+PushConstant::~PushConstant()
+{
+}
+
+// =================================================================================================
 // IoVariable
 // =================================================================================================
 IoVariable::IoVariable()
@@ -196,11 +283,7 @@ IoVariable::IoVariable(ShaderReflection* p_module, uint32_t location_number_word
     m_location_number_word_offset(location_number_word_offset)
 {
   if (m_module != nullptr) {
-    const uint32_t* p_spirv_code = m_module->GetSpirvCode();
-    const uint32_t spirv_word_count = m_module->GetSpirvWordCount();
-
-    assert(m_location_number_word_offset < spirv_word_count);
-    m_location_number = *(p_spirv_code + m_location_number_word_offset);
+    m_location_number = ReadU32(m_module, m_location_number_word_offset);
   }
 }
 
@@ -370,12 +453,6 @@ Result ParseShaderReflection(size_t size, void* p_code, ShaderReflection* p_modu
 
 namespace detail {
 
-enum {
-  STARTING_WORD_INDEX = 5,
-  WORD_SIZE           = sizeof(uint32_t),
-  MINIMUM_FILE_SIZE   = STARTING_WORD_INDEX * WORD_SIZE
-};
-
 uint32_t RoundUp(uint32_t value, uint32_t multiple) 
 {
   assert(multiple && ((multiple & (multiple - 1)) == 0));
@@ -441,26 +518,19 @@ void Type::ParseTypeString()
           }
           else if(m_type_flags & TYPE_FLAG_EXTERNAL) {
             bool write_dim = false;
-            uint32_t masked = (m_type_flags & TYPE_FLAG_EXTERNAL);
-            if (masked == TYPE_FLAG_EXTERNAL_IMAGE) {
-              ss << "texture";
-              write_dim = true;
+            VkDescriptorType descriptor_type = GetVkDescriptorType();
+            switch (descriptor_type) {
+              default: break;
+              case VK_DESCRIPTOR_TYPE_SAMPLER                : ss << "sampler"; break;
+              case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : ss << "sampler"; write_dim = true; break;
+              case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : ss << "texture"; write_dim = true; break;
+              case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE          : ss << "image"; write_dim = true; break;
+              case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : ss << "samplerBuffer"; break;
+              case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : ss << "imageBuffer"; break;
+              case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : ss << ""; break;
+              case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER         : ss << "buffer"; break;
             }
-            else if (masked == TYPE_FLAG_EXTERNAL_SAMPLER) {
-              ss << "sampler";
-            }
-            else if (masked == (TYPE_FLAG_EXTERNAL_IMAGE | TYPE_FLAG_EXTERNAL_SAMPLER)) {
-              ss << "sampler";
-              write_dim = true;
-            }
-            else if (masked == (TYPE_FLAG_EXTERNAL_IMAGE | TYPE_FLAG_EXTERNAL_BUFFER)) {
-              if (m_image_traits.image_format == spv::ImageFormatUnknown) {
-                ss << "samplerBuffer";
-              }
-              else {
-                ss << "imageBuffer";
-              }
-            }
+            
             
             if (write_dim) {
               switch (m_image_traits.dim) {
@@ -525,11 +595,43 @@ void Type::ParseTypeString()
 
 void Type::ParseVkDesciptorType()
 {
+  m_vk_descriptor_type = detail::InvalidValue<VkDescriptorType>();
   if (!(m_type_flags & TYPE_FLAG_EXTERNAL)) {
     return;
   }
 
-
+  if (m_type_flags == TYPE_FLAG_EXTERNAL_SAMPLER) {
+    m_vk_descriptor_type = VK_DESCRIPTOR_TYPE_SAMPLER;
+  }
+  else if(m_type_flags == (TYPE_FLAG_EXTERNAL_IMAGE | TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE)) {
+    m_vk_descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  }
+  else if(m_type_flags == TYPE_FLAG_EXTERNAL_IMAGE) {
+    if (m_image_traits.dim == spv::DimBuffer) {
+      if (m_image_traits.image_format == spv::ImageFormatUnknown) {
+        m_vk_descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+      }
+      else {
+        m_vk_descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+      }
+    }
+    else {
+      if (m_image_traits.image_format == spv::ImageFormatUnknown) {
+        m_vk_descriptor_type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+      }
+      else {
+        m_vk_descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+      }
+    }
+  }
+  else if(m_type_flags == TYPE_FLAG_EXTERNAL_BUFFER) {
+    if (m_type_attrs & TYPE_ATTR_BLOCK) {
+      m_vk_descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    }
+    else if(m_type_attrs & TYPE_ATTR_BUFFER_BLOCK) {
+      m_vk_descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    }
+  }
 }
 
 Type::~Type()
@@ -603,7 +705,7 @@ Variable::~Variable()
 // =================================================================================================
 Parser::Parser(size_t size, const uint32_t* p_spirv_code, ShaderReflection* p_module)
 {
-  m_result = ((size % 4) == 0) && (size >= MINIMUM_FILE_SIZE) ? SUCCESS : ERROR_INVALID_SPIRV_SIZE;
+  m_result = ((size % 4) == 0) && (size >= SPIRV_MINIMUM_FILE_SIZE) ? SUCCESS : ERROR_INVALID_SPIRV_SIZE;
 
   if (m_result == SUCCESS) {
     m_spirv_code = p_spirv_code;
@@ -666,7 +768,7 @@ Parser::Node* Parser::ResolveType(Node* p_node) {
 Result Parser::ParseNodes()
 {
   Result result = SUCCESS;
-  size_t spirv_word_index = STARTING_WORD_INDEX;
+  size_t spirv_word_index = SPIRV_STARTING_WORD_INDEX;
 
   while (spirv_word_index < m_spirv_word_count) {
     uint32_t word = m_spirv_code[spirv_word_index];  
@@ -681,13 +783,13 @@ Result Parser::ParseNodes()
       default: break;
     
       case spv::OpEntryPoint: {
-        spv::ExecutionModel execution_model = static_cast<spv::ExecutionModel>(*(m_spirv_code + node.word_offset + 1));
-        uint32_t entry_point = *(m_spirv_code + node.word_offset + 2);
-        std::string name = reinterpret_cast<const char*>(m_spirv_code + node.word_offset + 3);
-        uint32_t name_word_count = detail::RoundUp(static_cast<uint32_t>(name.length()), WORD_SIZE) / WORD_SIZE; 
+        spv::ExecutionModel execution_model = static_cast<spv::ExecutionModel>(ReadU32(m_module, node.word_offset + 1));
+        uint32_t entry_point = ReadU32(m_module, node.word_offset + 2);
+        std::string name = ReadStr(m_module, node.word_offset, 3, node.word_count);
+        uint32_t name_word_count = detail::RoundUp(static_cast<uint32_t>(name.length()), SPIRV_WORD_SIZE) / SPIRV_WORD_SIZE; 
         uint32_t var_word_index = 3 + name_word_count;
         for (; var_word_index < node.word_count; ++var_word_index) {
-          uint32_t var_id = *(m_spirv_code + node.word_offset + var_word_index);
+          uint32_t var_id = ReadU32(m_module, node.word_offset + var_word_index);
           m_io_var_ids.push_back(var_id);
         }
       }
@@ -717,37 +819,38 @@ Result Parser::ParseNodes()
       break;
 
       case spv::OpTypeImage: {
-        node.result_id              = *(m_spirv_code + node.word_offset + 1);
-        node.image_traits.sampled_type_id  = *(m_spirv_code + node.word_offset + 2);
-        node.image_traits.dim              = static_cast<spv::Dim>(*(m_spirv_code + node.word_offset + 3));
-        node.image_traits.depth            = *(m_spirv_code + node.word_offset + 4);
-        node.image_traits.arrayed          = *(m_spirv_code + node.word_offset + 5);
-        node.image_traits.ms               = *(m_spirv_code + node.word_offset + 6);
-        node.image_traits.sampled          = *(m_spirv_code + node.word_offset + 7);
-        node.image_traits.image_format     = static_cast<spv::ImageFormat>(*(m_spirv_code + node.word_offset + 8));
+        node.result_id                     = ReadU32(m_module, node.word_offset + 1);
+        node.image_traits.sampled_type_id  = ReadU32(m_module, node.word_offset + 2);
+        node.image_traits.dim              = static_cast<spv::Dim>(ReadU32(m_module, node.word_offset + 3));
+        node.image_traits.depth            = ReadU32(m_module, node.word_offset + 4);
+        node.image_traits.arrayed          = ReadU32(m_module, node.word_offset + 5);
+        node.image_traits.ms               = ReadU32(m_module, node.word_offset + 6);
+        node.image_traits.sampled          = ReadU32(m_module, node.word_offset + 7);
+        node.image_traits.image_format     = static_cast<spv::ImageFormat>(ReadU32(m_module, node.word_offset + 8));
         node.is_type = true;
+
       }
       break;
 
       case spv::OpTypeSampledImage: {
-        node.result_id      = *(m_spirv_code + node.word_offset + 1);
-        node.image_type_id  = *(m_spirv_code + node.word_offset + 2);
+        node.result_id      = ReadU32(m_module, node.word_offset + 1);
+        node.image_type_id  = ReadU32(m_module, node.word_offset + 2);
         node.is_type = true;
       }
       break;
 
       case spv::OpTypeArray:  {
-        node.result_id              = *(m_spirv_code + node.word_offset + 1);
-        node.array_traits.element_type_id  = *(m_spirv_code + node.word_offset + 2);
-        node.array_traits.length_id        = *(m_spirv_code + node.word_offset + 3);
+        node.result_id                    = ReadU32(m_module, node.word_offset + 1);
+        node.array_traits.element_type_id = ReadU32(m_module, node.word_offset + 2);
+        node.array_traits.length_id       = ReadU32(m_module, node.word_offset + 3);
         node.is_type = true;
       }
       break;
 
       case spv::OpTypePointer: {
-        node.result_id     = *(m_spirv_code + node.word_offset + 1);
-        node.storage_class = static_cast<spv::StorageClass>(*(m_spirv_code + node.word_offset + 2));
-        node.type_id       = *(m_spirv_code + node.word_offset + 3);
+        node.result_id     = ReadU32(m_module, node.word_offset + 1);
+        node.storage_class = static_cast<spv::StorageClass>(ReadU32(m_module, node.word_offset + 2));
+        node.type_id       = ReadU32(m_module, node.word_offset + 3);
         node.is_type = true;
       }
       break;
@@ -758,15 +861,15 @@ Result Parser::ParseNodes()
       case spv::OpConstantComposite:
       case spv::OpConstantSampler:
       case spv::OpConstantNull: {
-        node.result_type_id = *(m_spirv_code + node.word_offset + 1);
-        node.result_id      = *(m_spirv_code + node.word_offset + 2);
+        node.result_type_id = ReadU32(m_module, node.word_offset + 1);
+        node.result_id      = ReadU32(m_module, node.word_offset + 2);
       }
       break;
 
       case spv::OpVariable:
       {
-        node.type_id   = *(m_spirv_code + node.word_offset + 1);
-        node.result_id = *(m_spirv_code + node.word_offset + 2);
+        node.type_id   = ReadU32(m_module, node.word_offset + 1);
+        node.result_id = ReadU32(m_module, node.word_offset + 2);
       }
       break;
     }
@@ -787,7 +890,7 @@ spirv_ref::Result Parser::ParseNames()
     }
 
     // Not all nodes get parsed, so FindNode returning nullptr is expected.
-    uint32_t target_id = *(m_spirv_code + node.word_offset + 1);
+    uint32_t target_id = ReadU32(m_module, node.word_offset + 1);
     auto p_target_node = FindNode(target_id);
     if (p_target_node == nullptr) {
       continue;
@@ -797,11 +900,11 @@ spirv_ref::Result Parser::ParseNames()
     uint32_t member_offset = 0;
     if (node.op == spv::OpMemberName) {
       member_offset = 1;
-      uint32_t member_index = *(m_spirv_code + node.word_offset + 2);
+      uint32_t member_index = ReadU32(m_module, node.word_offset + 2);
       p_target_name = &(p_target_node->member_names[member_index]);
     }
 
-    *p_target_name = reinterpret_cast<const char*>(m_spirv_code + node.word_offset + member_offset + 2);
+    *p_target_name = ReadStr(m_module, node.word_offset, 2, node.word_count);
   }
   return result;
 }
@@ -814,7 +917,7 @@ Result Parser::ParseDecorations()
      continue;
     }
 
-    uint32_t target_id = *(m_spirv_code + node.word_offset + 1);
+    uint32_t target_id = ReadU32(m_module, node.word_offset + 1);
     auto p_target_node = FindNode(target_id);
     if (p_target_node == nullptr) {
       result = ERROR_INVALID_ID_REFERENCE;
@@ -825,11 +928,11 @@ Result Parser::ParseDecorations()
     uint32_t member_offset = 0;
     if (node.op == spv::OpMemberDecorate) {
       member_offset = 1;
-      uint32_t member_index = *(m_spirv_code + node.word_offset + 2);
+      uint32_t member_index = ReadU32(m_module, node.word_offset + 2);
       p_target_decorations = &(p_target_node->member_decorations[member_index]);
     }
 
-    spv::Decoration decoration = static_cast<spv::Decoration>(*(m_spirv_code + node.word_offset + member_offset + 2));
+    spv::Decoration decoration = static_cast<spv::Decoration>(ReadU32(m_module, node.word_offset + member_offset + 2));
     switch (decoration) {
       default: break;
 
@@ -855,14 +958,14 @@ Result Parser::ParseDecorations()
 
       case spv::DecorationArrayStride: {
         uint32_t word_offset = node.word_offset + member_offset + 3;
-        uint32_t value = *(m_spirv_code + word_offset);
+        uint32_t value = ReadU32(m_module, word_offset);
         p_target_decorations->type.array_stride = value;
       }
       break;
 
       case spv::DecorationMatrixStride: {
         uint32_t word_offset = node.word_offset + member_offset + 3;
-        uint32_t value = *(m_spirv_code + word_offset);
+        uint32_t value = ReadU32(m_module, word_offset);
         p_target_decorations->type.matrix_stride = value;
       }
       break;
@@ -884,28 +987,28 @@ Result Parser::ParseDecorations()
 
       case spv::DecorationLocation: {
         uint32_t word_offset = node.word_offset + member_offset+ 3;
-        uint32_t value = *(m_spirv_code + word_offset);
+        uint32_t value = ReadU32(m_module, word_offset);
         p_target_decorations->location = { word_offset, value };
       }
       break;   
 
       case spv::DecorationBinding: {
         uint32_t word_offset = node.word_offset + member_offset+ 3;
-        uint32_t value = *(m_spirv_code + word_offset);
+        uint32_t value = ReadU32(m_module, word_offset);
         p_target_decorations->binding = { word_offset, value };
       }
       break;
 
       case spv::DecorationDescriptorSet: {
         uint32_t word_offset = node.word_offset + member_offset+ 3;
-        uint32_t value = *(m_spirv_code + word_offset);
+        uint32_t value = ReadU32(m_module, word_offset);
         p_target_decorations->set = { word_offset, value };
       }
       break;
 
       case spv::DecorationOffset: {
         uint32_t word_offset = node.word_offset + member_offset+ 3;
-        uint32_t value = *(m_spirv_code + word_offset);
+        uint32_t value = ReadU32(m_module, word_offset);
         p_target_decorations->offset = { word_offset, value };
       }
       break;      
@@ -937,6 +1040,7 @@ Result Parser::ParseTypes(std::vector<Type>* p_types)
     }
 
     type.ParseTypeString();
+    type.ParseVkDesciptorType();
     
     p_types->push_back(type);
   }
@@ -961,21 +1065,21 @@ Result Parser::ParseType(Node* p_node, Type* p_type)
       
     case spv::OpTypeInt: {
       p_type->m_type_flags |= TYPE_FLAG_COMPONENT_INT;
-      p_type->m_scalar_traits.width = *(m_spirv_code + p_node->word_offset + 2);
-      p_type->m_scalar_traits.signedness = *(m_spirv_code + p_node->word_offset + 3);
+      p_type->m_scalar_traits.width = ReadU32(m_module, p_node->word_offset + 2);
+      p_type->m_scalar_traits.signedness = ReadU32(m_module, p_node->word_offset + 3);
     }
     break;
 
     case spv::OpTypeFloat: {
       p_type->m_type_flags |= TYPE_FLAG_COMPONENT_FLOAT;
-      p_type->m_scalar_traits.width = *(m_spirv_code + p_node->word_offset + 2);
+      p_type->m_scalar_traits.width = ReadU32(m_module, p_node->word_offset + 2);
     }
     break;
 
     case spv::OpTypeVector: { 
       p_type->m_type_flags |= TYPE_FLAG_COMPOSITE_VECTOR;
-      uint32_t component_type_id = *(m_spirv_code + p_node->word_offset + 2);
-      p_type->m_vector_traits.component_count =*(m_spirv_code + p_node->word_offset + 3);
+      uint32_t component_type_id = ReadU32(m_module, p_node->word_offset + 2);
+      p_type->m_vector_traits.component_count = ReadU32(m_module, p_node->word_offset + 3);
       // Parse component type
       Node* p_next_node = FindNode(component_type_id);
       if (p_next_node != nullptr) {
@@ -989,7 +1093,7 @@ Result Parser::ParseType(Node* p_node, Type* p_type)
 
     case spv::OpTypeMatrix: {
       p_type->m_type_flags |= TYPE_FLAG_COMPOSITE_MATRIX;
-      uint32_t column_type_id = *(m_spirv_code + p_node->word_offset + 2);
+      uint32_t column_type_id = ReadU32(m_module, p_node->word_offset + 2);
       Node* p_next_node = FindNode(column_type_id);
       if (p_next_node != nullptr) {
         result = ParseType(p_next_node, p_type);
@@ -1002,12 +1106,12 @@ Result Parser::ParseType(Node* p_node, Type* p_type)
 
     case spv::OpTypeImage: {
       p_type->m_type_flags |= TYPE_FLAG_EXTERNAL_IMAGE;
-      p_type->m_image_traits.dim          = static_cast<spv::Dim>(*(m_spirv_code + p_node->word_offset + 3));
-      p_type->m_image_traits.depth        = *(m_spirv_code + p_node->word_offset + 4);
-      p_type->m_image_traits.arrayed      = *(m_spirv_code + p_node->word_offset + 5);
-      p_type->m_image_traits.ms           = *(m_spirv_code + p_node->word_offset + 6);
-      p_type->m_image_traits.sampled      = *(m_spirv_code + p_node->word_offset + 7);
-      p_type->m_image_traits.image_format = static_cast<spv::ImageFormat>(*(m_spirv_code + p_node->word_offset + 8));
+      p_type->m_image_traits.dim          = static_cast<spv::Dim>(ReadU32(m_module, p_node->word_offset + 3));
+      p_type->m_image_traits.depth        = ReadU32(m_module, p_node->word_offset + 4);
+      p_type->m_image_traits.arrayed      = ReadU32(m_module, p_node->word_offset + 5);
+      p_type->m_image_traits.ms           = ReadU32(m_module, p_node->word_offset + 6);
+      p_type->m_image_traits.sampled      = ReadU32(m_module, p_node->word_offset + 7);
+      p_type->m_image_traits.image_format = static_cast<spv::ImageFormat>(ReadU32(m_module, p_node->word_offset + 8));
     }
     break;
 
@@ -1018,7 +1122,7 @@ Result Parser::ParseType(Node* p_node, Type* p_type)
 
     case spv::OpTypeSampledImage: {
       p_type->m_type_flags |= TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE;
-      uint32_t image_type_id = *(m_spirv_code + p_node->word_offset + 2);
+      uint32_t image_type_id = ReadU32(m_module, p_node->word_offset + 2);
       Node* p_next_node = FindNode(image_type_id);
       if (p_next_node != nullptr) {
         result = ParseType(p_next_node, p_type);
@@ -1031,12 +1135,12 @@ Result Parser::ParseType(Node* p_node, Type* p_type)
 
     case spv::OpTypeArray: {
       p_type->m_type_flags |= TYPE_FLAG_COMPOSITE_ARRAY;
-      uint32_t element_type_id = *(m_spirv_code + p_node->word_offset + 2);
-      uint32_t length_id = *(m_spirv_code + p_node->word_offset + 3);
+      uint32_t element_type_id = ReadU32(m_module, p_node->word_offset + 2);
+      uint32_t length_id = ReadU32(m_module, p_node->word_offset + 3);
       // Get length for current dimension
       Node* p_length_node = FindNode(length_id);
       if (p_length_node != nullptr) {
-        uint32_t length = *(m_spirv_code + p_length_node->word_offset + 3);
+        uint32_t length = ReadU32(m_module, p_length_node->word_offset + 3);
         p_type->m_array.push_back(length);
         // Parse next dimension or element type
         Node* p_next_node = FindNode(element_type_id);
@@ -1055,7 +1159,7 @@ Result Parser::ParseType(Node* p_node, Type* p_type)
 
     case spv::OpTypeRuntimeArray: {
       p_type->m_type_flags |= TYPE_FLAG_COMPOSITE_RUNTIME_ARRAY;
-      uint32_t element_type_id = *(m_spirv_code + p_node->word_offset + 2);
+      uint32_t element_type_id = ReadU32(m_module, p_node->word_offset + 2);
       // Parse next dimension or element type
       Node* p_next_node = FindNode(element_type_id);
       if (p_next_node != nullptr) {
@@ -1072,7 +1176,7 @@ Result Parser::ParseType(Node* p_node, Type* p_type)
       uint32_t word_index = 2;
       uint32_t member_index = 0;
       for (; word_index < p_node->word_count; ++word_index, ++member_index) {
-        uint32_t member_id = *(m_spirv_code + p_node->word_offset + word_index);
+        uint32_t member_id = ReadU32(m_module, p_node->word_offset + word_index);
         // Find member node
         Node* p_member_node = FindNode(member_id);
         if (p_member_node == nullptr) {
@@ -1098,8 +1202,8 @@ Result Parser::ParseType(Node* p_node, Type* p_type)
 
     case spv::OpTypePointer: {
       p_type->m_type_flags |= TYPE_FLAG_POINTER;
-      p_type->m_storage_class = static_cast<spv::StorageClass>(*(m_spirv_code + p_node->word_offset + 2));
-      uint32_t type_id = *(m_spirv_code + p_node->word_offset + 3);
+      p_type->m_storage_class = static_cast<spv::StorageClass>(ReadU32(m_module, p_node->word_offset + 2));
+      uint32_t type_id = ReadU32(m_module, p_node->word_offset + 3);
       // Parse type
       Node* p_next_node = FindNode(type_id);
       if (p_next_node != nullptr) {
@@ -1145,7 +1249,7 @@ Result Parser::ParseDescriptors(std::vector<Descriptor>* p_descriptors)
     auto it = FindIf(*p_descriptors, 
                       [binding_number,set_number](const Descriptor& elem) -> bool { 
                         return (elem.GetBindingNumber() == binding_number) && 
-                                (elem.GetSetNumber() == set_number); } );
+                               (elem.GetSetNumber() == set_number); } );
 
     if (it != std::end(*p_descriptors)) {
       result = ERROR_DUPLICATE_BINDING;
