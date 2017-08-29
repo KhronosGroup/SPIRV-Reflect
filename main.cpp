@@ -30,7 +30,8 @@ int main(int argn, char** argv)
   auto count = reflection.GetDescriptorCount();
   for (auto i = 0; i < count; ++i) {
     auto elem = reflection.GetDescriptor(i);
-    std::cout << elem->GetInfo() << std::endl;
+    std::cout << elem->GetInfo("  ") << "\n";
+    std::cout << "\n";
   }
 
   //reflection.GetDescriptorSet(0)->GetBinding(0)->SetBindingNumber(2);

@@ -179,7 +179,7 @@ void Descriptor::SetSetNumber(uint32_t set_number)
   }
 }
 
-std::string Descriptor::GetInfo() const
+std::string Descriptor::GetInfo(const std::string& indent) const
 {
   std::stringstream ss;
   bool hlsl = false;
@@ -192,6 +192,14 @@ std::string Descriptor::GetInfo() const
     ss << ")" << " ";
     ss << "uniform" << " ";
     ss << m_type->GetTypeName();
+    if ((m_type->GetVkDescriptorType() == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
+        (m_type->GetVkDescriptorType() == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER))
+    {
+      ss << " ";
+      ss << "{" << "\n";
+      m_type->WriteBlockContent(ss, indent);
+      ss << "}";
+    }
     if (!GetName().empty()) {
       ss << " " << GetName();
     }
@@ -473,10 +481,10 @@ Type::Type(ShaderReflection* p_module, uint32_t id, spv::Op op)
 {
 }
 
-void Type::ParseTypeString()
+void Type::ParseTypeStrings()
 {
   for (auto& member : m_members) {
-    member.ParseTypeString();
+    member.ParseTypeStrings();
   }
 
   if (m_type_name.empty()) {
@@ -757,14 +765,6 @@ Parser::Node* Parser::FindNode(uint32_t node_id) {
   return found_node;
 }
   
-Parser::Node* Parser::ResolveType(Node* p_node) {
-  Parser::Node* resolved_node = p_node;
-  while (resolved_node->type_id != 0) {
-    resolved_node = FindNode(resolved_node->type_id);
-  }
-  return resolved_node;
-}
-
 Result Parser::ParseNodes()
 {
   Result result = SUCCESS;
@@ -904,7 +904,7 @@ spirv_ref::Result Parser::ParseNames()
       p_target_name = &(p_target_node->member_names[member_index]);
     }
 
-    *p_target_name = ReadStr(m_module, node.word_offset, 2, node.word_count);
+    *p_target_name = ReadStr(m_module, node.word_offset, member_offset + 2, node.word_count);
   }
   return result;
 }
@@ -1039,8 +1039,9 @@ Result Parser::ParseTypes(std::vector<Type>* p_types)
       break;
     }
 
-    type.ParseTypeString();
+    type.m_type_attrs = node.decorations.type.attrs;
     type.ParseVkDesciptorType();
+    type.ParseTypeStrings();
     
     p_types->push_back(type);
   }
@@ -1173,6 +1174,10 @@ Result Parser::ParseType(Node* p_node, Type* p_type)
 
     case spv::OpTypeStruct: {
       p_type->m_type_flags |= TYPE_FLAG_STRUCTURE;
+      if ((p_node->decorations.type.attrs & TYPE_ATTR_BLOCK) || (p_node->decorations.type.attrs & TYPE_ATTR_BUFFER_BLOCK)) {
+        p_type->m_type_flags &= ~TYPE_FLAG_STRUCTURE;
+        p_type->m_type_flags |= TYPE_FLAG_EXTERNAL_BUFFER;
+      }
       uint32_t word_index = 2;
       uint32_t member_index = 0;
       for (; word_index < p_node->word_count; ++word_index, ++member_index) {

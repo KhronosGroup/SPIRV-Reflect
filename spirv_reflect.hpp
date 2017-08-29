@@ -174,8 +174,8 @@ private:
 
 private:
   Type(ShaderReflection* p_module, uint32_t id, spv::Op op);
-  void ParseTypeString();
   void ParseVkDesciptorType();
+  void ParseTypeStrings();
   void WriteBlockContent(std::ostream& os, const std::string& indent = "") const;
   friend class detail::Parser;
   friend class ShaderReflection;
@@ -250,7 +250,7 @@ public:
   uint32_t                        GetSetNumber() const;
   void                            SetSetNumber(uint32_t set_number);
   const std::string&              GetName() const { return m_name; }
-  std::string                     GetInfo() const;
+  std::string                     GetInfo(const std::string& indent = "") const;
 
   VkDescriptorType                GetVkDescriptorType() const;
 
@@ -448,11 +448,12 @@ private:
     std::map<uint32_t, std::string>         member_names;
   };
 
-  std::vector<Node> m_nodes;
+  std::vector<Node>     m_nodes;
+  std::vector<uint32_t> m_input_variable_ids;
+  std::vector<uint32_t> m_output_variable_ids;
 
 private:
   Node*   FindNode(uint32_t node_id);
-  Node*   ResolveType(Node* p_node);
   Result  ParseNodes();
   Result  ParseNames();
   Result  ParseDecorations();
