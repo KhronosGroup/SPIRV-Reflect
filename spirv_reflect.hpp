@@ -1,6 +1,7 @@
 #ifndef SPIRV_REFLECT_HPP
 #define SPIRV_REFLECT_HPP
 
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
@@ -30,9 +31,10 @@ enum TypeFlag {
   TYPE_FLAG_COMPONENT_FLOAT         = 0x00000008,
   TYPE_FLAG_COMPONENT               = 0x0000000F,
   // Types that are external resources such as buffer, image, or sampler.
-  TYPE_FLAG_EXTERNAL_BUFFER         = 0x00000010,
+  TYPE_FLAG_EXTERNAL_SAMPLER        = 0x00000010,
   TYPE_FLAG_EXTERNAL_IMAGE          = 0x00000020,
-  TYPE_FLAG_EXTERNAL_SAMPLER        = 0x00000040,
+  TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE  = 0x00000030,
+  TYPE_FLAG_EXTERNAL_BUFFER         = 0x00000080,
   TYPE_FLAG_EXTERNAL                = 0x000000F0,
   // Types that are composed of components or elements
   TYPE_FLAG_COMPOSITE_ARRAY         = 0x00010000,
@@ -56,6 +58,9 @@ enum TypeAttr {
   TYPE_ATTR_FLAT                    = 0x00000040,
 };
 
+class BlockVariable;
+class Block;
+class Descriptor;
 class DescriptorSet;
 class ShaderReflection;
 
@@ -72,21 +77,41 @@ T InvalidValue()
 //! \class Type
 //!
 //! Vulkan descriptor type mappings:
+//!   VK_DESCRIPTOR_TYPE_SAMPLER:
+//!     m_type_mask = TYPE_FLAG_EXTERNAL_SAMPLER
+//!
+//!   VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE | TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE
+//!     m_image_traits.dim = ! spv::DimBuffer
+//!     m_image_traits.image_format = spv::ImageFormatUnknown
+//!
 //!   VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
 //!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE
+//!     m_image_traits.dim = ! spv::DimBuffer
+//!     m_image_traits.image_format = spv::ImageFormatUnknown
 //!
-//!   VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 
-//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE | TYPE_FLAG_EXTERNAL_SAMPLER
+//!   VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE
+//!     m_image_traits.dim = ! spv::DimBuffer
+//!     m_image_traits.image_format = ! spv::ImageFormatUnknown
 //!
 //!   VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE | TYPE_FLAG_EXTERNAL_BUFFER
+//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE
 //!     m_image_traits.dim = spv::DimBuffer
 //!     m_image_traits.image_format = spv::ImageFormatUnknown
 //!
 //!   VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE | TYPE_FLAG_EXTERNAL_BUFFER
+//!     m_type_mask = TYPE_FLAG_EXTERNAL_IMAGE
 //!     m_image_traits.dim = spv::DimBuffer
-//!     m_image_traits.image_format = <any spv::ImageFormat enum except for spv::ImageFormatUnknown>
+//!     m_image_traits.image_format = ! spv::ImageFormatUnknown
+//!
+//!   VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+//!     m_type_mask = TYPE_FLAG_EXTERNAL_BUFFER
+//!     m_type_attrs = TYPE_ATTR_BLOCK
+//!
+//!   VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+//!     m_type_mask = TYPE_FLAG_EXTERNAL_BUFFER
+//!     m_type_attrs = TYPE_ATTR_BUFFER_BLOCK
 //!
 class Type {
 public:
@@ -118,9 +143,13 @@ public:
   ~Type();
 
   uint32_t                        GetTypeFlags() const { return m_type_flags; }
-  const std::string&              GetTypeName() const;
-  const std::string&              GetArrayDimString() const;
-  const std::string&              GetBlockMemberName() const;
+  uint32_t                        GetTypeAttrs() const { return m_type_attrs; }
+  const std::string&              GetTypeName() const { return m_type_name; }
+  const std::string&              GetArrayDimString() const { return m_array_dim_string; }
+  const std::string&              GetBlockMemberName() const { return m_block_member_name; }
+
+  VkDescriptorType                GetVkDescriptorType() const { return m_vk_descriptor_type; }
+
   std::string                     GetInfo(const std::string& indent = "") const;
 
 private:
@@ -138,15 +167,40 @@ private:
   };
   std::vector<uint32_t>           m_array;
   mutable std::string             m_type_name;
-  mutable std::string             m_array_string;
+  mutable std::string             m_array_dim_string;
   std::string                     m_block_member_name;
   std::vector<Type>               m_members;
+  VkDescriptorType                m_vk_descriptor_type = detail::InvalidValue<VkDescriptorType>();
 
 private:
   Type(ShaderReflection* p_module, uint32_t id, spv::Op op);
-  void BuildTypeStrings();
+  void ParseTypeString();
+  void ParseVkDesciptorType();
+  void WriteBlockContent(std::ostream& os, const std::string& indent = "") const;
   friend class detail::Parser;
   friend class ShaderReflection;
+  friend class Descriptor;
+};
+
+//! \class Variable
+//!
+//!
+class Variable {
+public:
+  Variable(ShaderReflection* p_module = nullptr);
+  ~Variable();
+
+  uint32_t                        GetOffset() const { return m_offset; }
+  const std::string&              GetName() const { return m_name; }
+
+protected:
+  ShaderReflection*               m_module = nullptr;
+  uint32_t                        m_offset = 0;
+  std::string                     m_name;
+  const detail::Type*             m_type = nullptr;
+
+private:
+  friend class detail::Parser;
 };
 
 } // namespace detail
@@ -154,19 +208,19 @@ private:
 //! \class BlockVariable
 //!
 //!
-class BlockVariable {
+class BlockVariable : public detail::Variable {
 public:
   BlockVariable();
   ~BlockVariable();
 
-private:
-  uint32_t                        m_offset = 0;
-  std::string                     m_name;
-  const detail::Type*             m_type = nullptr;
-  std::vector<uint32_t>           m_array;
+  size_t                          GetMemberCount() const { return m_members.size(); }
+  BlockVariable* const            GetMember(size_t index);
+
+protected:
   std::vector<BlockVariable>      m_members;
 
 private:
+  BlockVariable(ShaderReflection* p_module);
   friend class detail::Parser;
 };
 
@@ -177,6 +231,10 @@ class Block : public BlockVariable {
 public:
   Block();
   ~Block();
+
+private:
+  Block(ShaderReflection* p_module);
+  friend class detail::Parser;
 };
 
 //! \class DescriptorBinding
@@ -199,9 +257,9 @@ public:
 private:
   ShaderReflection*               m_module = nullptr;
   const detail::Type*             m_type = nullptr;
-  uint32_t                        m_binding_number = UINT32_MAX;
+  uint32_t                        m_binding_number = detail::InvalidValue<uint32_t>();
   uint32_t                        m_binding_number_word_offset = 0;
-  uint32_t                        m_set_number = UINT32_MAX;
+  uint32_t                        m_set_number = detail::InvalidValue<uint32_t>();
   uint32_t                        m_set_number_word_offset = 0;
   Block                           m_block;
   std::string                     m_name;
@@ -227,7 +285,7 @@ public:
 
 private:
   ShaderReflection*               m_module = nullptr;
-  uint32_t                        m_set_number = UINT32_MAX;
+  uint32_t                        m_set_number = detail::InvalidValue<uint32_t>();
   std::vector<Descriptor*>        m_bindings;
 
 private:
@@ -236,20 +294,37 @@ private:
   friend class ShaderReflection;
 };
 
+//! \class PushConstant
+//!
+//!
+class PushConstant : public Block {
+public:
+  PushConstant();
+  ~PushConstant();
+
+private:
+  PushConstant(ShaderReflection* p_module);
+  friend class detail::Parser;
+};
+
 //! \class IoVariable
 //!
 //!
-class IoVariable {
+class IoVariable : public detail::Variable {
 public:
   IoVariable();
   ~IoVariable();
 
-private:
-  ShaderReflection*               m_module = nullptr;
-  spv::StorageClass               m_storage_class;
-  uint32_t                        m_location_number_word_offset = 0;
+  size_t                          GetMemberCount() const { return m_members.size(); }
+  IoVariable* const               GetMember(size_t index);
 
 private:
+  uint32_t                        m_location_number_word_offset = 0;
+  uint32_t                        m_location_number = detail::InvalidValue<uint32_t>();
+  std::vector<IoVariable>         m_members;
+
+private:
+  IoVariable(ShaderReflection* p_module, uint32_t location_number_word_offset);
   friend class detail::Parser;
 };
 
@@ -266,11 +341,21 @@ public:
   const uint32_t*                 GetSpirvCode() const { return m_spirv_code; }
   uint32_t                        GetSpirvWordCount() const { return m_spirv_word_count; }
 
+  spv::ExecutionModel             GetExecutionModel() const { return m_execution_model; }
+
   size_t                          GetDescriptorCount() const { return m_descriptors.size(); }
   Descriptor* const               GetDescriptor(size_t index);
 
   size_t                          GetDescriptorSetCount() const { return m_descriptor_sets.size(); }
   DescriptorSet* const            GetDescriptorSet(size_t index);
+
+  size_t                          GetInputVariableCount() const { return m_input_variables.size(); }
+  IoVariable* const               GetInputVariable(size_t index);
+
+  size_t                          GetOutputVariableCount() const { return m_output_variables.size(); }
+  IoVariable* const               GetOutputVariable(size_t index);
+
+  VkShaderStageFlagBits           GetVkShaderStage() const;
 
 private:
   size_t                          m_spirv_size = 0;
@@ -280,7 +365,8 @@ private:
   std::vector<detail::Type>       m_types;
   std::vector<Descriptor>         m_descriptors;
   std::vector<DescriptorSet*>     m_descriptor_sets;
-  std::vector<IoVariable>         m_io_variables;
+  std::vector<IoVariable>         m_input_variables;
+  std::vector<IoVariable>         m_output_variables;
 
 private:
   Result SyncDescriptorSets();
@@ -339,15 +425,15 @@ private:
  
   struct VariableDecorations {
     TypeDecoration    type       = {};
-    NumberDecoration  set        = { 0, UINT32_MAX };
-    NumberDecoration  binding    = { 0, UINT32_MAX };
-    NumberDecoration  location   = { 0, UINT32_MAX };
-    NumberDecoration  offset     = { 0, UINT32_MAX };
+    NumberDecoration  set        = { 0, detail::InvalidValue<uint32_t>() };
+    NumberDecoration  binding    = { 0, detail::InvalidValue<uint32_t>() };
+    NumberDecoration  location   = { 0, detail::InvalidValue<uint32_t>() };
+    NumberDecoration  offset     = { 0, detail::InvalidValue<uint32_t>() };
   };
 
   struct Node {
     uint32_t                                result_id       = 0;
-    spv::Op                                 op              = spv::OpNop;
+    spv::Op                                 op              = detail::InvalidValue<spv::Op>();
     uint32_t                                result_type_id  = 0;
     uint32_t                                type_id         = 0;
     spv::StorageClass                       storage_class   = detail::InvalidValue<spv::StorageClass>();

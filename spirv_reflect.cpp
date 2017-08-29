@@ -41,6 +41,15 @@ BlockVariable::~BlockVariable()
 {
 }
 
+BlockVariable* const BlockVariable::GetMember(size_t index)
+{
+  BlockVariable* p_member = nullptr;
+  if (index < m_members.size()) {
+    p_member = &(m_members[index]);
+  }
+  return p_member;
+}
+
 // =================================================================================================
 // Block
 // =================================================================================================
@@ -69,12 +78,10 @@ Descriptor::Descriptor(ShaderReflection* p_module, uint32_t binding_number_word_
     const uint32_t spirv_word_count = m_module->GetSpirvWordCount();
 
     assert(m_binding_number_word_offset < spirv_word_count);
-    const uint32_t* p_binding_number = (p_spirv_code + m_binding_number_word_offset);
-    m_binding_number = *p_binding_number;
+    m_binding_number = *(p_spirv_code + m_binding_number_word_offset);
 
     assert(m_set_number_word_offset < spirv_word_count);
-    const uint32_t* p_set_number = (p_spirv_code + m_set_number_word_offset);
-    m_set_number = *p_set_number;
+    m_set_number = *(p_spirv_code + m_set_number_word_offset);
   }
 }
 
@@ -124,8 +131,10 @@ std::string Descriptor::GetInfo() const
     ss << "binding=" << m_binding_number;
     ss << ")" << " ";
     ss << "uniform" << " ";
-    ss << m_type->GetTypeName() << " ";
-    ss << GetName();
+    ss << m_type->GetTypeName();
+    if (!GetName().empty()) {
+      ss << " " << GetName();
+    }
     ss << m_type->GetArrayDimString();
     ss << ";";
   }
@@ -182,8 +191,30 @@ IoVariable::IoVariable()
 {
 }
 
+IoVariable::IoVariable(ShaderReflection* p_module, uint32_t location_number_word_offset)
+  : detail::Variable(p_module),
+    m_location_number_word_offset(location_number_word_offset)
+{
+  if (m_module != nullptr) {
+    const uint32_t* p_spirv_code = m_module->GetSpirvCode();
+    const uint32_t spirv_word_count = m_module->GetSpirvWordCount();
+
+    assert(m_location_number_word_offset < spirv_word_count);
+    m_location_number = *(p_spirv_code + m_location_number_word_offset);
+  }
+}
+
 IoVariable::~IoVariable()
 {
+}
+
+IoVariable* const IoVariable::GetMember(size_t index)
+{
+  IoVariable* p_member = nullptr;
+  if (index < m_members.size()) {
+    p_member = &(m_members[index]);
+  }
+  return p_member;
 }
 
 // =================================================================================================
@@ -212,15 +243,6 @@ ShaderReflection::~ShaderReflection()
   m_descriptor_sets.clear();
 }
 
-detail::Type* const ShaderReflection::GetType(size_t index)
-{
-  detail::Type* p_type = nullptr;
-  if (index < m_types.size()) {
-    p_type = &(m_types[index]);
-  }
-  return p_type;
-}
-
 Descriptor* const ShaderReflection::GetDescriptor(size_t index)
 {
   Descriptor* p_descriptor = nullptr;
@@ -237,6 +259,39 @@ DescriptorSet* const ShaderReflection::GetDescriptorSet(size_t index)
     p_descriptor_set = m_descriptor_sets[index];
   }
   return p_descriptor_set;
+}
+
+IoVariable* const ShaderReflection::GetInputVariable(size_t index)
+{
+  IoVariable* p_variable = nullptr;
+  if (index < m_input_variables.size()) {
+    p_variable = &(m_input_variables[index]);
+  }
+  return p_variable;
+}
+
+IoVariable* const ShaderReflection::GetOutputVariable(size_t index)
+{
+  IoVariable* p_variable = nullptr;
+  if (index < m_output_variables.size()) {
+    p_variable = &(m_output_variables[index]);
+  }
+  return p_variable;
+}
+
+VkShaderStageFlagBits ShaderReflection::GetVkShaderStage() const
+{
+  VkShaderStageFlagBits shader_stage = detail::InvalidValue<VkShaderStageFlagBits>();
+  switch (m_execution_model) {
+    default: break;
+    case spv::ExecutionModelVertex                  : shader_stage = VK_SHADER_STAGE_VERTEX_BIT; break;
+    case spv::ExecutionModelTessellationControl     : shader_stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT; break;
+    case spv::ExecutionModelTessellationEvaluation  : shader_stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT; break;
+    case spv::ExecutionModelGeometry                : shader_stage = VK_SHADER_STAGE_GEOMETRY_BIT; break;
+    case spv::ExecutionModelFragment                : shader_stage = VK_SHADER_STAGE_FRAGMENT_BIT; break;
+    case spv::ExecutionModelGLCompute               : shader_stage = VK_SHADER_STAGE_COMPUTE_BIT; break;
+  }
+  return shader_stage;
 }
 
 Result ShaderReflection::SyncDescriptorSets()
@@ -341,10 +396,10 @@ Type::Type(ShaderReflection* p_module, uint32_t id, spv::Op op)
 {
 }
 
-void Type::BuildTypeStrings()
+void Type::ParseTypeString()
 {
   for (auto& member : m_members) {
-    member.BuildTypeStrings();
+    member.ParseTypeString();
   }
 
   if (m_type_name.empty()) {
@@ -452,10 +507,10 @@ void Type::BuildTypeStrings()
   }
 
   
-  if (m_array_string.empty()) {
+  if (m_array_dim_string.empty()) {
     // Runtime Array
     if (m_type_flags & TYPE_FLAG_COMPOSITE_RUNTIME_ARRAY) {
-      m_array_string = "[]";
+      m_array_dim_string = "[]";
     }
     // Array
     else if (!m_array.empty()) {
@@ -463,73 +518,84 @@ void Type::BuildTypeStrings()
       for (auto& value : m_array) {
         ss << "[" << value << "]";
       }
-      m_array_string = ss.str();
+      m_array_dim_string = ss.str();
     }
   }
+}
+
+void Type::ParseVkDesciptorType()
+{
+  if (!(m_type_flags & TYPE_FLAG_EXTERNAL)) {
+    return;
+  }
+
+
 }
 
 Type::~Type()
 {
 }
 
-const std::string& Type::GetTypeName() const
+void Type::WriteBlockContent(std::ostream& os, const std::string& indent) const
 {
-  return m_type_name;
-}
+  const std::string& t = indent;
+  struct Entry {
+    std::string deco;
+    std::string type;
+    std::string name;
+    std::string array;
+  };
+  size_t deco_width = 0;
+  size_t type_width = 0;
+  size_t name_width = 0;
+  std::vector<Entry> entries;
+  for (const auto& member : m_members) {
+    Entry e;
+    e.type  = member.GetTypeName();
+    e.name  = member.GetBlockMemberName();
+    e.array = member.GetArrayDimString();
+    type_width = std::max(type_width, e.type.length());
+    name_width = std::max(name_width, e.name.length());
+    entries.push_back(e);
+  }
 
-const std::string& Type::GetArrayDimString() const
-{
-  return m_array_string;
-}
-
-const std::string& Type::GetBlockMemberName() const
-{
-  return m_block_member_name;
+  for (const auto& e : entries) {
+    os << t;
+    os << std::setw(type_width) << std::left << e.type;
+    os << " " << e.name << e.array;
+    os << ";";
+    os << "\n";
+  }
 }
 
 std::string Type::GetInfo(const std::string& indent) const
 {
   std::stringstream ss;
   if (m_type_flags & TYPE_FLAG_STRUCTURE) {
-    const std::string& t = indent;
-    struct Entry {
-      std::string deco;
-      std::string type;
-      std::string name;
-      std::string array;
-    };
-    size_t deco_width = 0;
-    size_t type_width = 0;
-    size_t name_width = 0;
-    std::vector<Entry> entries;
-    for (const auto& member : m_members) {
-      Entry e;
-      e.type  = member.GetTypeName();
-      e.name  = member.GetBlockMemberName();
-      e.array = member.GetArrayDimString();
-      type_width = std::max(type_width, e.type.length());
-      name_width = std::max(name_width, e.name.length());
-      entries.push_back(e);
-    }
-
     if (m_type_flags & TYPE_FLAG_POINTER) {
       ss << "ptr" << " ";
     }
 
     ss << "struct" << " " << GetTypeName() << " " << "{" << "\n";
-    for (const auto& e : entries) {
-      ss << t;
-      ss << std::setw(type_width) << std::left << e.type;
-      ss << " " << e.name << e.array;
-      ss << ";";
-      ss << "\n";
-    }
+    WriteBlockContent(ss, indent);
     ss << "};";
   }
   else {
     ss << GetTypeName();
   }
   return ss.str();
+}
+
+// =================================================================================================
+// Parser
+// =================================================================================================
+Variable::Variable(ShaderReflection* p_module)
+  : m_module(p_module)
+{
+}
+
+Variable::~Variable()
+{
 }
 
 // =================================================================================================
@@ -870,7 +936,7 @@ Result Parser::ParseTypes(std::vector<Type>* p_types)
       break;
     }
 
-    type.BuildTypeStrings();
+    type.ParseTypeString();
     
     p_types->push_back(type);
   }
@@ -951,7 +1017,7 @@ Result Parser::ParseType(Node* p_node, Type* p_type)
     break;
 
     case spv::OpTypeSampledImage: {
-      p_type->m_type_flags |= TYPE_FLAG_EXTERNAL_IMAGE;
+      p_type->m_type_flags |= TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE;
       uint32_t image_type_id = *(m_spirv_code + p_node->word_offset + 2);
       Node* p_next_node = FindNode(image_type_id);
       if (p_next_node != nullptr) {
@@ -959,14 +1025,6 @@ Result Parser::ParseType(Node* p_node, Type* p_type)
       }
       else {
         result = ERROR_INVALID_ID_REFERENCE;
-      }
-      if (result == SUCCESS) {
-        if (p_type->m_image_traits.dim == spv::DimBuffer) {
-          p_type->m_type_flags |= TYPE_FLAG_EXTERNAL_BUFFER;
-        }
-        else {
-          p_type->m_type_flags |= TYPE_FLAG_EXTERNAL_SAMPLER;
-        }
       }
     }
     break;
@@ -1075,7 +1133,9 @@ Result Parser::ParseDescriptors(std::vector<Descriptor>* p_descriptors)
       continue;
     }
 
-    if ((node.decorations.set.value == UINT32_MAX) || (node.decorations.binding.value == UINT32_MAX)) {
+    if ((node.decorations.set.value == detail::InvalidValue<uint32_t>()) || 
+        (node.decorations.binding.value == detail::InvalidValue<uint32_t>())) 
+    {
       continue;
     }
 

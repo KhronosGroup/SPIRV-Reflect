@@ -6,7 +6,7 @@
 
 int main(int argn, char** argv)
 {
-  std::string file_path = "C:\\Users\\haing\\code\\SPIRV-Vars\\tests\\all.ps.spv";
+  std::string file_path = argv[1];
 
   std::ifstream is(file_path.c_str(), std::ios::binary);
   assert(is.is_open());
@@ -21,13 +21,13 @@ int main(int argn, char** argv)
   spirv_ref::ShaderReflection reflection;
   spirv_ref::ParseShaderReflection(data.size(), data.data(), &reflection);
 
-  auto count = reflection.GetTypeCount();
-  for (auto i = 0; i < count; ++i) {
-    auto elem = reflection.GetType(i);
-    std::cout << elem->GetInfo("  ") << std::endl;
-  }
+  //auto count = reflection.GetTypeCount();
+  //for (auto i = 0; i < count; ++i) {
+  //  auto elem = reflection.GetType(i);
+  //  std::cout << elem->GetInfo("  ") << std::endl;
+  //}
 
-  count = reflection.GetDescriptorCount();
+  auto count = reflection.GetDescriptorCount();
   for (auto i = 0; i < count; ++i) {
     auto elem = reflection.GetDescriptor(i);
     std::cout << elem->GetInfo() << std::endl;
