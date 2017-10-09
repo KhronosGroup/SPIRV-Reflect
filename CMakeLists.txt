@@ -11,7 +11,7 @@ if (NOT VULKAN_DIR)
 endif()
 
 if ("${VULKAN_DIR}" STREQUAL "")
-  message(FATAL_ERROR "VULKAN_DIR not set, use -DVULAKN_DIR=<path> or set VULKAN_SDK environment variable")
+  message(FATAL_ERROR "VULKAN_DIR not set, use -DVULKAN_DIR=<path> or set VULKAN_SDK environment variable")
 endif()
 
 message("Using Vulkan found at ${VULKAN_DIR}")
