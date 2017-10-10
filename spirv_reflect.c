@@ -158,6 +158,8 @@ static void* AllocZeroed(size_t count, size_t size, SpvReflectResult* p_result)
 
 static void* Realloc(void* ptr, size_t new_size)
 {
+  (void)ptr;
+  (void)new_size;
   void* p_allocation = NULL;
   return p_allocation;
 }
@@ -1126,6 +1128,7 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
 
 static SpvReflectResult ParseDescriptorType(Parser* p_parser, SpvReflectShaderReflection* p_module)
 {
+  (void)p_parser;
   if (p_module->descriptor_binding_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
   }
@@ -1402,6 +1405,7 @@ static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShad
     }
 
     SpvReflectTypeDescription* p_type = FindType(p_module, p_node->type_id);
+    (void)p_type;
     if (IsNull(p_node)) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     }   
@@ -1563,6 +1567,7 @@ static SpvReflectResult ParsePushConstantBlocks(Parser* p_parser, SpvReflectShad
 
 static SpvReflectResult ParseUniqueSetNumbers(Parser* p_parser, SpvReflectShaderReflection* p_module)
 {
+  (void)p_parser;
   // Extract u
   for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
@@ -1603,6 +1608,7 @@ static int SortCompareDescriptorSet(const void* a, const void* b)
 
 static SpvReflectResult ParseDescriptorSets(Parser* p_parser, SpvReflectShaderReflection* p_module)
 {
+  (void)p_parser;
   for (uint32_t i = 0; i < p_module->descriptor_set_count; ++i) {
     SpvReflectDescriptorSet* p_descriptor_set = &p_module->descriptor_sets[i];
     SafeFree(&(void*)p_descriptor_set->bindings);
