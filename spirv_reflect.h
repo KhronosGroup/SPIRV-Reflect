@@ -122,6 +122,10 @@ typedef struct SpvReflectArrayTraits {
   uint32_t                          stride;
 } SpvReflectArrayTraits;
 
+typedef struct SpvReflectBindingArrayTraits {
+  uint32_t                          dims_count;
+  uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
+} SpvReflectArrayTraits;
 
 //! \struct SpvReflectType
 //!
@@ -198,7 +202,7 @@ typedef struct SpvReflectDescriptorBinding {
   SpvReflectResourceType            resource_type;
   SpvReflectImageTraits             image;
   SpvReflectBlockVariable           block;
-  SpvReflectArrayTraits             array;
+  SpvReflectBindingArrayTraits      array;
 
   SpvReflectTypeDescription*        type_description;
 } SpvReflectDescriptorBinding;
