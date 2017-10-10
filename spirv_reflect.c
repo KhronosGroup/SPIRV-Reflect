@@ -158,6 +158,8 @@ static void* AllocZeroed(size_t count, size_t size, SpvReflectResult* p_result)
 
 static void* Realloc(void* ptr, size_t new_size)
 {
+  (void)ptr;
+  (void)new_size;
   void* p_allocation = NULL;
   return p_allocation;
 }
@@ -196,35 +198,36 @@ static SpvReflectResult ReadU32(Parser* p_parser, uint32_t word_offset, uint32_t
 
 #define CHECKED_READU32(parser, word_offset, value)                       \
   {                                                                       \
-    SpvReflectResult result = ReadU32(p_parser,                           \
-                                      word_offset, (uint32_t*)&(value));  \
-    if (result != SPV_REFLECT_RESULT_SUCCESS) {                           \
-      return result;                                                      \
+    SpvReflectResult checked_readu32_result = ReadU32(parser,             \
+                                                      word_offset, (uint32_t*)&(value)); \
+    if (checked_readu32_result != SPV_REFLECT_RESULT_SUCCESS) {           \
+      return checked_readu32_result;                                      \
     }                                                                     \
   }
 
 #define CHECKED_READU32_CAST(parser, word_offset, value)                  \
   {                                                                       \
-    uint32_t u32 = UINT32_MAX;                                            \
-    SpvReflectResult result = ReadU32(p_parser,                           \
-                                      word_offset, (uint32_t*)&(u32));    \
-    if (result != SPV_REFLECT_RESULT_SUCCESS) {                           \
-      return result;                                                      \
+    uint32_t checked_readu32_cast_u32 = UINT32_MAX;                       \
+    SpvReflectResult checked_readu32_cast_result = ReadU32(parser,        \
+                                      word_offset,                        \
+                                      (uint32_t*)&(checked_readu32_cast_u32)); \
+    if (checked_readu32_cast_result != SPV_REFLECT_RESULT_SUCCESS) {      \
+      return checked_readu32_cast_result;                                 \
     }                                                                     \
-    value = u32;                                                          \
+    value = checked_readu32_cast_u32;                                     \
   }
 
-#define IF_READU32(result, parser, word_offset, value)          \
-  if (result == SPV_REFLECT_RESULT_SUCCESS) {                   \
+#define IF_READU32(result, parser, word_offset, value)      \
+  if ((result) == SPV_REFLECT_RESULT_SUCCESS) {               \
     result = ReadU32(parser, word_offset, (uint32_t*)&(value)); \
   }
 
 #define IF_READU32_CAST(result, parser, word_offset, value) \
-  if (result == SPV_REFLECT_RESULT_SUCCESS) {               \
-    uint32_t u32 = UINT32_MAX;                              \
-    result = ReadU32(parser, word_offset, &u32);            \
-    if (result == SPV_REFLECT_RESULT_SUCCESS) {             \
-      value = u32;                                          \
+  if ((result) == SPV_REFLECT_RESULT_SUCCESS) {             \
+    uint32_t if_readu32_cast_u32 = UINT32_MAX;              \
+    result = ReadU32(parser, word_offset, &if_readu32_cast_u32); \
+    if ((result) == SPV_REFLECT_RESULT_SUCCESS) {           \
+      value = if_readu32_cast_u32;                          \
     }                                                       \
   }
   
@@ -394,10 +397,10 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
   for (uint32_t i = 0; i < node_count; ++i) {
     p_parser->nodes[i].op = INVALID_VALUE;
     p_parser->nodes[i].storage_class = INVALID_VALUE;
-    p_parser->nodes[i].decorations.set.value = INVALID_VALUE;
-    p_parser->nodes[i].decorations.binding.value = INVALID_VALUE;
-    p_parser->nodes[i].decorations.location.value = INVALID_VALUE;
-    p_parser->nodes[i].decorations.offset.value = INVALID_VALUE;
+    p_parser->nodes[i].decorations.set.value = (uint32_t)INVALID_VALUE;
+    p_parser->nodes[i].decorations.binding.value = (uint32_t)INVALID_VALUE;
+    p_parser->nodes[i].decorations.location.value = (uint32_t)INVALID_VALUE;
+    p_parser->nodes[i].decorations.offset.value = (uint32_t)INVALID_VALUE;
   }
 
   // Parse nodes
@@ -445,7 +448,7 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
         }
 
         for (uint32_t var_index = 0; var_index < p_parser->interface_variable_count; ++var_index) {
-          uint32_t var_result_id = INVALID_VALUE;
+          uint32_t var_result_id = (uint32_t)INVALID_VALUE;
           uint32_t offset = name_start_word_offset + name_word_count + var_index;
           CHECKED_READU32(p_parser, p_node->word_offset + offset, var_result_id);     
           *(p_parser->io_vars + var_index) = var_result_id;
@@ -573,7 +576,7 @@ static SpvReflectResult ParseMemberCounts(Parser* p_parser)
       }
 
       uint32_t target_id = 0;
-      uint32_t member_index = INVALID_VALUE;
+      uint32_t member_index = (uint32_t)INVALID_VALUE;
       CHECKED_READU32(p_parser, p_node->word_offset + 1, target_id);
       CHECKED_READU32(p_parser, p_node->word_offset + 2, member_index);
       Node* p_target_node = FindNode(p_parser, target_id);
@@ -663,12 +666,12 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
     uint32_t member_offset = 0;
     if (p_node->op == SpvOpMemberDecorate) {
       member_offset = 1;
-      uint32_t member_index = INVALID_VALUE;
+      uint32_t member_index = (uint32_t)INVALID_VALUE;
       CHECKED_READU32(p_parser, p_node->word_offset + 2, member_index);
       p_target_decorations = &(p_target_node->member_decorations[member_index]);
     }
 
-    uint32_t decoration = INVALID_VALUE;
+    uint32_t decoration = (uint32_t)INVALID_VALUE;
     CHECKED_READU32(p_parser, p_node->word_offset + member_offset + 2, decoration);
     switch (decoration) {
       default: break;
@@ -763,7 +766,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
       // Mark all members types with an invalid state
       for (size_t i = 0; i < p_type->members->member_count; ++i) {
         SpvReflectTypeDescription* p_member_type = &(p_type->members[i]);
-        p_member_type->id = INVALID_VALUE;
+        p_member_type->id = (uint32_t)INVALID_VALUE;
         p_member_type->op = INVALID_VALUE;
         p_member_type->storage_class = INVALID_VALUE;
       }
@@ -807,7 +810,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
 
       case SpvOpTypeVector: { 
         p_type->flags |= SPV_REFLECT_TYPE_FLAG_VECTOR;
-        uint32_t component_type_id = INVALID_VALUE;
+        uint32_t component_type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 2, component_type_id);
         IF_READU32(result, p_parser, p_node->word_offset + 3, p_type->traits.numeric.vector.component_count);
         // Parse component type
@@ -823,7 +826,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
 
       case SpvOpTypeMatrix: {
         p_type->flags |= SPV_REFLECT_TYPE_FLAG_MATRIX;
-        uint32_t column_type_id = INVALID_VALUE;
+        uint32_t column_type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 2, column_type_id);
         IF_READU32(result, p_parser, p_node->word_offset + 3, p_type->traits.numeric.matrix.column_count);
         Node* p_next_node = FindNode(p_parser, column_type_id);
@@ -860,7 +863,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
 
       case SpvOpTypeSampledImage: {
         p_type->flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE;
-        uint32_t image_type_id = INVALID_VALUE; 
+        uint32_t image_type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 2, image_type_id);
         Node* p_next_node = FindNode(p_parser, image_type_id);
         if (IsNotNull(p_next_node)) {
@@ -875,8 +878,8 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
       case SpvOpTypeArray: {
         p_type->flags |= SPV_REFLECT_TYPE_FLAG_ARRAY;
         if (result == SPV_REFLECT_RESULT_SUCCESS) {
-          uint32_t element_type_id = INVALID_VALUE;
-          uint32_t length_id = INVALID_VALUE;
+          uint32_t element_type_id = (uint32_t)INVALID_VALUE;
+          uint32_t length_id = (uint32_t)INVALID_VALUE;
           IF_READU32(result, p_parser, p_node->word_offset + 2, element_type_id);
           IF_READU32(result, p_parser, p_node->word_offset + 3, length_id);
           // NOTE: Array stride is decorated using OpDecorate instead of 
@@ -909,7 +912,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
       break;
 
       case SpvOpTypeRuntimeArray: {
-        uint32_t element_type_id = INVALID_VALUE;
+        uint32_t element_type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 2, element_type_id);
         // Parse next dimension or element type
         Node* p_next_node = FindNode(p_parser, element_type_id);
@@ -928,7 +931,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
         uint32_t word_index = 2;
         uint32_t member_index = 0;
         for (; word_index < p_node->word_count; ++word_index, ++member_index) {
-          uint32_t member_id = INVALID_VALUE;
+          uint32_t member_id = (uint32_t)INVALID_VALUE;
           IF_READU32(result, p_parser, p_node->word_offset + word_index, member_id);
           // Find member node
           Node* p_member_node = FindNode(p_parser, member_id);
@@ -959,7 +962,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
 
       case SpvOpTypePointer: {
         IF_READU32_CAST(result, p_parser, p_node->word_offset + 3, p_type->storage_class);
-        uint32_t type_id = INVALID_VALUE;
+        uint32_t type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 3, type_id);
         // Parse type
         Node* p_next_node = FindNode(p_parser, type_id);
@@ -1001,7 +1004,7 @@ static SpvReflectResult ParseTypes(Parser* p_parser, SpvReflectShaderReflection*
   // Mark all types with an invalid state
   for (size_t i = 0; i < p_module->_internal->type_description_count; ++i) {
     SpvReflectTypeDescription* p_type = &(p_module->_internal->type_descriptions[i]);
-    p_type->id = INVALID_VALUE;
+    p_type->id = (uint32_t)INVALID_VALUE;
     p_type->op = INVALID_VALUE;
     p_type->storage_class = INVALID_VALUE;
   }
@@ -1060,9 +1063,9 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
   // Mark all types with an invalid state
   for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
-    p_descriptor->binding = INVALID_VALUE;
-    p_descriptor->set = INVALID_VALUE;
-    p_descriptor->descriptor_type = INVALID_VALUE;
+    p_descriptor->binding = (uint32_t)INVALID_VALUE;
+    p_descriptor->set = (uint32_t)INVALID_VALUE;
+    p_descriptor->descriptor_type = (VkDescriptorType)INVALID_VALUE;
   }
 
   p_module->_internal->descriptor_binding_infos = calloc(p_module->descriptor_binding_count, 
@@ -1126,6 +1129,7 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
 
 static SpvReflectResult ParseDescriptorType(Parser* p_parser, SpvReflectShaderReflection* p_module)
 {
+  (void)p_parser;
   if (p_module->descriptor_binding_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
   }
@@ -1402,6 +1406,7 @@ static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShad
     }
 
     SpvReflectTypeDescription* p_type = FindType(p_module, p_node->type_id);
+    (void)p_type;
     if (IsNull(p_node)) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     }   
@@ -1563,6 +1568,7 @@ static SpvReflectResult ParsePushConstantBlocks(Parser* p_parser, SpvReflectShad
 
 static SpvReflectResult ParseUniqueSetNumbers(Parser* p_parser, SpvReflectShaderReflection* p_module)
 {
+  (void)p_parser;
   // Extract u
   for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
@@ -1581,9 +1587,11 @@ static SpvReflectResult ParseUniqueSetNumbers(Parser* p_parser, SpvReflectShader
     }
 
     p_module->_internal->set_numbers_count += 1;
+    void *old_set_numbers = p_module->_internal->set_numbers;
     p_module->_internal->set_numbers = realloc(p_module->_internal->set_numbers ,
                                                p_module->_internal->set_numbers_count * sizeof(p_module->_internal->set_numbers));
     if (IsNull(p_module->_internal->set_numbers)) {
+      p_module->_internal->set_numbers = old_set_numbers;
       return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
     }
 
@@ -1603,6 +1611,7 @@ static int SortCompareDescriptorSet(const void* a, const void* b)
 
 static SpvReflectResult ParseDescriptorSets(Parser* p_parser, SpvReflectShaderReflection* p_module)
 {
+  (void)p_parser;
   for (uint32_t i = 0; i < p_module->descriptor_set_count; ++i) {
     SpvReflectDescriptorSet* p_descriptor_set = &p_module->descriptor_sets[i];
     SafeFree(&(void*)p_descriptor_set->bindings);

@@ -14,12 +14,12 @@
  limitations under the License.
 */
 
-#ifndef SPIRV_REFLECT_HPP
-#define SPIRV_REFLECT_HPP
+#ifndef SPIRV_REFLECT_H
+#define SPIRV_REFLECT_H
 
 #include <stdint.h>
 #include <spirv.h>
-#include <vulkan.h>
+#include <vulkan/vulkan.h>
 
 //! \enum SpvReflectResult
 //!
@@ -407,4 +407,4 @@ private:
 
 } // namespace spv_reflect
 #endif // defined(__cplusplus)
-#endif // SPIRV_REFLECT_HPP
+#endif // SPIRV_REFLECT_H
