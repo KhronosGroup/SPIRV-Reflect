@@ -1,0 +1,53 @@
+entry point     : main
+source lang     : HLSL
+source lang ver : 500
+
+  output variables: 1
+    0:
+      location  : 0
+      type      : 
+      qualifier : 
+
+  descriptor bindings: 4
+    0:
+      binding : 0
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+      name    : MyTexture
+    1:
+      binding : 1
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_SAMPLER
+      name    : MySampler
+    2:
+      binding : 2
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+      name    : MyRWTexture2D
+    3:
+      binding : 3
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+      name    :  (MyCBuffer)
+
+  descriptor sets: 1
+    0:
+      set           : 0
+      binding count : 4
+        0:
+          binding : 0
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture
+        1:
+          binding : 1
+          type    : VK_DESCRIPTOR_TYPE_SAMPLER
+          name    : MySampler
+        2:
+          binding : 2
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+          name    : MyRWTexture2D
+        3:
+          binding : 3
+          type    : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+          name    :  (MyCBuffer)
+
