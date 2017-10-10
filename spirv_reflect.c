@@ -1110,6 +1110,11 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
     p_descriptor->set = p_node->decorations.set.value;
     p_descriptor->type_description = p_type;
 
+    // Copy image traits
+    if ((p_type->flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK) == SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE) {
+      memcpy(&p_descriptor->image, &p_type->traits.image, sizeof(p_descriptor->image));
+    }
+
     p_module->_internal->descriptor_binding_infos[descriptor_index].descriptor = p_descriptor;
     p_module->_internal->descriptor_binding_infos[descriptor_index].binding_word_offset = p_node->decorations.binding.word_offset;
     p_module->_internal->descriptor_binding_infos[descriptor_index].set_word_offset = p_node->decorations.set.word_offset;
