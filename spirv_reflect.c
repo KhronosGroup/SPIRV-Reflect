@@ -1936,9 +1936,9 @@ SpvReflectBlockVariable* spvReflectGetPushConstant(const SpvReflectShaderReflect
   return p_push_constant;
 }
 
-const char* spvReflectSourceLanguage(SpvSourceLanguage value)
+const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang)
 {
-  switch (value) {
+  switch (source_lang) {
     case SpvSourceLanguageUnknown    : return "Unknown"; break;
     case SpvSourceLanguageESSL       : return "ESSL"; break;
     case SpvSourceLanguageGLSL       : return "GLSL"; break;
