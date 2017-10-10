@@ -198,35 +198,36 @@ static SpvReflectResult ReadU32(Parser* p_parser, uint32_t word_offset, uint32_t
 
 #define CHECKED_READU32(parser, word_offset, value)                       \
   {                                                                       \
-    SpvReflectResult result = ReadU32(p_parser,                           \
-                                      word_offset, (uint32_t*)&(value));  \
-    if (result != SPV_REFLECT_RESULT_SUCCESS) {                           \
-      return result;                                                      \
+    SpvReflectResult checked_readu32_result = ReadU32(parser,             \
+                                                      word_offset, (uint32_t*)&(value)); \
+    if (checked_readu32_result != SPV_REFLECT_RESULT_SUCCESS) {           \
+      return checked_readu32_result;                                      \
     }                                                                     \
   }
 
 #define CHECKED_READU32_CAST(parser, word_offset, value)                  \
   {                                                                       \
-    uint32_t u32 = UINT32_MAX;                                            \
-    SpvReflectResult result = ReadU32(p_parser,                           \
-                                      word_offset, (uint32_t*)&(u32));    \
-    if (result != SPV_REFLECT_RESULT_SUCCESS) {                           \
-      return result;                                                      \
+    uint32_t checked_readu32_cast_u32 = UINT32_MAX;                       \
+    SpvReflectResult checked_readu32_cast_result = ReadU32(parser,        \
+                                      word_offset,                        \
+                                      (uint32_t*)&(checked_readu32_cast_u32)); \
+    if (checked_readu32_cast_result != SPV_REFLECT_RESULT_SUCCESS) {      \
+      return checked_readu32_cast_result;                                 \
     }                                                                     \
-    value = u32;                                                          \
+    value = checked_readu32_cast_u32;                                     \
   }
 
-#define IF_READU32(result, parser, word_offset, value)          \
-  if (result == SPV_REFLECT_RESULT_SUCCESS) {                   \
+#define IF_READU32(result, parser, word_offset, value)      \
+  if ((result) == SPV_REFLECT_RESULT_SUCCESS) {               \
     result = ReadU32(parser, word_offset, (uint32_t*)&(value)); \
   }
 
 #define IF_READU32_CAST(result, parser, word_offset, value) \
-  if (result == SPV_REFLECT_RESULT_SUCCESS) {               \
-    uint32_t u32 = UINT32_MAX;                              \
-    result = ReadU32(parser, word_offset, &u32);            \
-    if (result == SPV_REFLECT_RESULT_SUCCESS) {             \
-      value = u32;                                          \
+  if ((result) == SPV_REFLECT_RESULT_SUCCESS) {             \
+    uint32_t if_readu32_cast_u32 = UINT32_MAX;              \
+    result = ReadU32(parser, word_offset, &if_readu32_cast_u32); \
+    if ((result) == SPV_REFLECT_RESULT_SUCCESS) {           \
+      value = if_readu32_cast_u32;                          \
     }                                                       \
   }
   
