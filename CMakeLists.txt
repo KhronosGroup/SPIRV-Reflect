@@ -19,8 +19,8 @@ message("Using Vulkan found at ${VULKAN_DIR}")
 include_directories(${VULKAN_DIR}/include/vulkan)
 
 add_executable(spirv-reflect ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-                             ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.hpp
-                             ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.cpp)
+                             ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h
+                             ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.c)
 
 if(WIN32)
     set_target_properties(spirv-reflect PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:Windows /INCREMENTAL:NO")
