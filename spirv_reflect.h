@@ -18,7 +18,7 @@
 #define SPIRV_REFLECT_H
 
 #include <stdint.h>
-#include <spirv.h>
+#include <vulkan/spirv.h>
 #include <vulkan/vulkan.h>
 
 //! \enum SpvReflectResult
