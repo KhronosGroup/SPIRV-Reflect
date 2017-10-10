@@ -1,0 +1,44 @@
+entry point     : main
+source lang     : GLSL
+source lang ver : 450
+
+  output variables: 1
+    0:
+      location  : 0
+      type      : 
+      qualifier : 
+
+  descriptor bindings: 3
+    0:
+      binding : 0
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+      name    : MyInputAttachment0
+    1:
+      binding : 1
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+      name    : MyInputAttachment1
+    2:
+      binding : 2
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+      name    : MyInputAttachment4
+
+  descriptor sets: 1
+    0:
+      set           : 0
+      binding count : 3
+        0:
+          binding : 0
+          type    : VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+          name    : MyInputAttachment0
+        1:
+          binding : 1
+          type    : VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+          name    : MyInputAttachment1
+        2:
+          binding : 2
+          type    : VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+          name    : MyInputAttachment4
+

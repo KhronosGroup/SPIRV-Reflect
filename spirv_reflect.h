@@ -198,6 +198,7 @@ typedef struct SpvReflectBlockVariable {
 typedef struct SpvReflectDescriptorBinding {
   const char*                       name;
   uint32_t                          binding;
+  uint32_t                          input_attachment_index;
   uint32_t                          set;
   VkDescriptorType                  descriptor_type;
   SpvReflectResourceType            resource_type;
