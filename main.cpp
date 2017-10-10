@@ -23,14 +23,19 @@
 #include <cassert>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 
 #include "spirv_reflect.h"
 
+struct TextLine {
+  std::vector<std::string>  text_elements;
+};
+
 // =================================================================================================
 // Stream Output
 // =================================================================================================
-inline const char* ToString(VkDescriptorType value) {
+const char* ToString(VkDescriptorType value) {
   switch (value) {
     default: return ""; break;
     case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER"; break;
@@ -48,7 +53,7 @@ inline const char* ToString(VkDescriptorType value) {
   return "";
 }
 
-inline const char* ToStringSimple(const SpvReflectTypeDescription& type)
+const char* ToStringSimple(const SpvReflectTypeDescription& type)
 {
 /*
   uint32_t masked = type.type_flags & SPV_REFLECT_TYPE_FLAG_COMPOSITE_MASK;
@@ -82,7 +87,55 @@ inline const char* ToStringSimple(const SpvReflectTypeDescription& type)
   return "";
 }
 
-inline void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, const char* indent = "")
+void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t member_count, const SpvReflectBlockVariable* p_members, std::vector<TextLine>* p_text_lines)
+{
+  const char* t = indent;
+  for (uint32_t member_index = 0; member_index < member_count; ++member_index) {
+    std::stringstream ss;
+    for (int indent_count = 0; indent_count < indent_depth; ++indent_count) {
+      ss << t;
+    }
+    std::string expanded_indent = ss.str();
+
+    const auto& member = p_members[member_index];
+    if (member.member_count > 0) {
+      TextLine text_line;
+      text_line.text_elements.push_back(expanded_indent);
+      text_line.text_elements.push_back("struct ");
+      text_line.text_elements.push_back(member.type_description->type_name);
+      text_line.text_elements.push_back(" {");
+      text_line.text_elements.push_back(std::to_string(member.offset));
+      text_line.text_elements.push_back(std::to_string(member.size));
+      p_text_lines->push_back(text_line);
+      ParseBlockMembersToTextLines(t, indent_depth + 1, member.member_count, member.members, p_text_lines);
+      text_line = TextLine();
+      text_line.text_elements.push_back(expanded_indent);
+      text_line.text_elements.push_back("} " + std::string(member.name) + ";");
+      p_text_lines->push_back(text_line);
+    }
+    else {
+      TextLine text_line;
+      text_line.text_elements.push_back(expanded_indent);
+      text_line.text_elements.push_back(member.name + std::string(";"));
+      text_line.text_elements.push_back(std::to_string(member.offset));
+      text_line.text_elements.push_back(std::to_string(member.size));
+      p_text_lines->push_back(text_line);
+    }
+  }
+}
+
+void StreamWrite(std::ostream& os, const char* indent, const std::vector<TextLine>& text_lines)
+{
+  for (auto& text_line : text_lines) {
+    os << indent;
+    for (auto& elem : text_line.text_elements) {
+      os << elem;
+    }
+    os << "\n";
+  }
+}
+
+void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, const char* indent = "")
 {
   const char* t = indent;
   os << t << "binding : " << obj.binding << "\n";
@@ -90,20 +143,38 @@ inline void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj
     os << t << "set     : " << obj.set << "\n";
   }
   os << t << "type    : " << ToString(obj.descriptor_type) << "\n";
+  if (obj.array.dims_count > 0) {  
+    os << t << "array   : ";
+    for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
+      os << "[" << obj.array.dims[dim_index] << "]";
+    }
+    os << "\n";
+  }
   os << t << "name    : " << obj.name;
   if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
     os << " " << "(" << obj.type_description->type_name << ")";
   }
+
+  if (obj.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+    std::vector<TextLine> text_lines;
+    ParseBlockMembersToTextLines("  ", 1, obj.block.member_count, obj.block.members, &text_lines);
+    if (!text_lines.empty()) {
+      os << "\n";
+      os << t << "struct" << " " << obj.type_description->type_name << " " << "{" << "\n";
+      StreamWrite(os, t, text_lines);
+      os << t << "};";
+    }
+  }
 }
 
-inline void StreamWrite(std::ostream& os, const SpvReflectDescriptorSet& obj, const char* indent = "")
+void StreamWrite(std::ostream& os, const SpvReflectDescriptorSet& obj, const char* indent = "")
 {
   const char* t = indent;
   os << t << "set           : " << obj.set << "\n";
   os << t << "binding count : " << obj.binding_count;
 }
 
-inline void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const char* indent = "")
+void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const char* indent = "")
 {
   const char* t = indent;
   os << t << "location  : ";
@@ -124,20 +195,20 @@ inline void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj
   }
 }
 
-inline void StreamWrite(std::ostream& os, const SpvReflectShaderReflection& obj, const char* indent = "")
+void StreamWrite(std::ostream& os, const SpvReflectShaderReflection& obj, const char* indent = "")
 {
   os << "entry point     : " << obj.entry_point_name << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
   os << "source lang ver : " << obj.source_language_version;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorBinding& obj)
+std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorBinding& obj)
 {
   StreamWrite(os, obj, true, "  ");
   return os;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorSet& obj)
+std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorSet& obj)
 {
   StreamWrite(os, obj, "  ");
   os << "\n";
@@ -151,12 +222,12 @@ inline std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorSet&
   return os;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const SpvReflectInterfaceVariable& obj)
+std::ostream& operator<<(std::ostream& os, const SpvReflectInterfaceVariable& obj)
 {
   return os;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const SpvReflectShaderReflection& obj)
+std::ostream& operator<<(std::ostream& os, const SpvReflectShaderReflection& obj)
 {
   const char* t     = "  ";
   const char* tt    = "    ";
