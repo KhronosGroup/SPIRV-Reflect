@@ -1586,9 +1586,11 @@ static SpvReflectResult ParseUniqueSetNumbers(Parser* p_parser, SpvReflectShader
     }
 
     p_module->_internal->set_numbers_count += 1;
+    void *old_set_numbers = p_module->_internal->set_numbers;
     p_module->_internal->set_numbers = realloc(p_module->_internal->set_numbers ,
                                                p_module->_internal->set_numbers_count * sizeof(p_module->_internal->set_numbers));
     if (IsNull(p_module->_internal->set_numbers)) {
+      p_module->_internal->set_numbers = old_set_numbers;
       return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
     }
 
