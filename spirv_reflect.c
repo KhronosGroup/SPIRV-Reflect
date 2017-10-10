@@ -1115,6 +1115,14 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
       memcpy(&p_descriptor->image, &p_type->traits.image, sizeof(p_descriptor->image));
     }
 
+    // Copy array traits
+    if (p_type->traits.array.dims_count > 0) {
+      p_descriptor->array.dims_count = p_type->traits.array.dims_count;
+      for (uint32_t dim_index = 0; dim_index < p_type->traits.array.dims_count; ++dim_index) {
+        p_descriptor->array.dims[dim_index] = p_type->traits.array.dims[dim_index];
+      }
+    }
+
     p_module->_internal->descriptor_binding_infos[descriptor_index].descriptor = p_descriptor;
     p_module->_internal->descriptor_binding_infos[descriptor_index].binding_word_offset = p_node->decorations.binding.word_offset;
     p_module->_internal->descriptor_binding_infos[descriptor_index].set_word_offset = p_node->decorations.set.word_offset;

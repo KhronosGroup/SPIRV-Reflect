@@ -1,0 +1,39 @@
+entry point     : main
+source lang     : HLSL
+source lang ver : 500
+
+  output variables: 1
+    0:
+      location  : 0
+      type      : 
+      qualifier : 
+
+  descriptor bindings: 2
+    0:
+      binding : 0
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_SAMPLER
+      array   : [4][3][2][1]
+      name    : MySampler
+    1:
+      binding : 1
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+      array   : [2]
+      name    : MyTexture
+
+  descriptor sets: 1
+    0:
+      set           : 0
+      binding count : 2
+        0:
+          binding : 0
+          type    : VK_DESCRIPTOR_TYPE_SAMPLER
+          array   : [4][3][2][1]
+          name    : MySampler
+        1:
+          binding : 1
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          array   : [2]
+          name    : MyTexture
+

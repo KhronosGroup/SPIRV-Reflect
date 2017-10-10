@@ -125,7 +125,7 @@ typedef struct SpvReflectArrayTraits {
 typedef struct SpvReflectBindingArrayTraits {
   uint32_t                          dims_count;
   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
-} SpvReflectArrayTraits;
+} SpvReflectBindingArrayTraits;
 
 //! \struct SpvReflectType
 //!
