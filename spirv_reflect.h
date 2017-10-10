@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 #include <spirv.h>
-#include <vulkan.h>
+#include <vulkan/vulkan.h>
 
 //! \enum SpvReflectResult
 //!

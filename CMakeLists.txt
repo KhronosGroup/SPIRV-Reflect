@@ -16,7 +16,7 @@ endif()
 
 message("Using Vulkan found at ${VULKAN_DIR}")
 
-include_directories(${VULKAN_DIR}/include/vulkan)
+include_directories(${VULKAN_DIR}/include)
 
 add_executable(spirv-reflect ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
                              ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h
