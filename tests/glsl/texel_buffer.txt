@@ -1,0 +1,35 @@
+entry point     : main
+source lang     : GLSL
+source lang ver : 450
+
+  output variables: 1
+    0:
+      location  : (built-in)
+      type      : 
+      qualifier : 
+
+  descriptor bindings: 2
+    0:
+      binding : 1
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+      name    : texel_buffer_i
+    1:
+      binding : 2
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+      name    : texel_buffer_f
+
+  descriptor sets: 1
+    0:
+      set           : 0
+      binding count : 2
+        0:
+          binding : 1
+          type    : VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+          name    : texel_buffer_i
+        1:
+          binding : 2
+          type    : VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+          name    : texel_buffer_f
+
