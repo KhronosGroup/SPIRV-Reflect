@@ -75,6 +75,7 @@ typedef struct Decorations {
   bool                  flat;
   NumberDecoration      set;
   NumberDecoration      binding;
+  NumberDecoration      input_attachment_index;
   NumberDecoration      location;
   NumberDecoration      offset;
   uint32_t              array_stride;
@@ -749,7 +750,14 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
         CHECKED_READU32(p_parser, word_offset, p_target_decorations->offset.value);
         p_target_decorations->offset.word_offset = word_offset;
       }
-      break;      
+      break;
+
+      case SpvDecorationInputAttachmentIndex: {
+        uint32_t word_offset = p_node->word_offset + member_offset+ 3;
+        CHECKED_READU32(p_parser, word_offset, p_target_decorations->input_attachment_index.value);
+        p_target_decorations->input_attachment_index.word_offset = word_offset;
+      }
+      break;
     }
   }
   return SPV_REFLECT_RESULT_SUCCESS;
@@ -1064,6 +1072,7 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
   for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
     p_descriptor->binding = (uint32_t)INVALID_VALUE;
+    p_descriptor->input_attachment_index = (uint32_t)INVALID_VALUE;
     p_descriptor->set = (uint32_t)INVALID_VALUE;
     p_descriptor->descriptor_type = (VkDescriptorType)INVALID_VALUE;
   }
@@ -1107,6 +1116,7 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
     SpvReflectDescriptorBinding* p_descriptor = &p_module->descriptor_bindings[descriptor_index];
     p_descriptor->name = p_node->name;
     p_descriptor->binding = p_node->decorations.binding.value;
+    p_descriptor->input_attachment_index = p_node->decorations.input_attachment_index.value;
     p_descriptor->set = p_node->decorations.set.value;
     p_descriptor->type_description = p_type;
 
@@ -1169,6 +1179,9 @@ static SpvReflectResult ParseDescriptorType(Parser* p_parser, SpvReflectShaderRe
             case IMAGE_SAMPLED: p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
             case IMAGE_STORAGE: p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
           }
+        }
+        else if(p_descriptor->image.dim == SpvDimSubpassData) {
+          p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
         }
         else {
           switch (p_descriptor->image.sampled) {
