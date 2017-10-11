@@ -40,6 +40,10 @@ enum {
 };
 
 enum {
+  MAX_NODE_NAME_LENGTH  = 1024,
+};
+
+enum {
   IMAGE_SAMPLED = 1,
   IMAGE_STORAGE = 2
 };
@@ -339,6 +343,9 @@ static void DestroyParser(Parser* p_parser)
       Node* p_node = &(p_parser->nodes[i]);
       if (IsNotNull(p_node->member_names)) {
         SafeFree(p_node->member_names);
+      }
+      if (IsNotNull(p_node->member_decorations)) {
+        SafeFree(p_node->member_decorations);
       }
     }
 
@@ -1145,9 +1152,8 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseDescriptorType(Parser* p_parser, SpvReflectShaderReflection* p_module)
+static SpvReflectResult ParseDescriptorType(SpvReflectShaderReflection* p_module)
 {
-  (void)p_parser;
   if (p_module->descriptor_binding_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
   }
@@ -1223,6 +1229,48 @@ static SpvReflectResult ParseDescriptorType(Parser* p_parser, SpvReflectShaderRe
       case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
       case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_CBV; break;
       case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER         : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
+    }
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
+static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderReflection* p_module)
+{
+  char name[MAX_NODE_NAME_LENGTH];
+  const char* k_count_tag = "@count";
+
+  for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
+    SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
+
+    if (p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+      continue;
+    }
+
+    const size_t descriptor_name_length = strlen(p_descriptor->name);
+
+    memset(name, 0, MAX_NODE_NAME_LENGTH);    
+    memcpy(name, p_descriptor->name, descriptor_name_length);
+#if defined(WIN32)
+    strcat_s(name, MAX_NODE_NAME_LENGTH, k_count_tag);
+#else
+    strcat(name, k_count_tag);
+#endif
+
+    SpvReflectDescriptorBinding* p_counter_descriptor = NULL;
+    for (uint32_t counter_descriptor_index = 0; counter_descriptor_index < p_module->descriptor_binding_count; ++counter_descriptor_index) {
+      SpvReflectDescriptorBinding* p_test_counter_descriptor = &(p_module->descriptor_bindings[counter_descriptor_index]);
+      if (p_test_counter_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+        continue;
+      }
+      if (strcmp(name, p_test_counter_descriptor->name) == 0) {
+        p_counter_descriptor = p_test_counter_descriptor;
+        break;
+      }
+    }
+
+    if (p_counter_descriptor != NULL) {
+      p_descriptor->uav_counter_binding = p_counter_descriptor;
     }
   }
 
@@ -1752,7 +1800,10 @@ SpvReflectResult spvReflectGetShaderReflection(size_t                       size
     result = ParseDescriptorBindings(&parser, p_module);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseDescriptorType(&parser, p_module);
+    result = ParseDescriptorType(p_module);
+  }
+  if (result == SPV_REFLECT_RESULT_SUCCESS) {
+    result = ParseUAVCounterBindings(p_module);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseDescriptorBlocks(&parser, p_module);
@@ -1816,7 +1867,6 @@ void spvReflectDestroyShaderReflection(SpvReflectShaderReflection* p_module)
   for (size_t i = 0; i < p_module->descriptor_set_count; ++i) {
     SpvReflectDescriptorSet* p_descriptor_set = &p_module->descriptor_sets[i];
     free(p_descriptor_set->bindings);
-    //SafeFree(&((void*)p_descriptor_set->bindings));
   }
   SafeFree(p_module->descriptor_sets);
 

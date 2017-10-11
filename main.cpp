@@ -143,6 +143,8 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
     os << t << "set     : " << obj.set << "\n";
   }
   os << t << "type    : " << ToString(obj.descriptor_type) << "\n";
+  
+  // array
   if (obj.array.dims_count > 0) {  
     os << t << "array   : ";
     for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
@@ -150,6 +152,18 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
     }
     os << "\n";
   }
+
+  // counter
+  if (obj.uav_counter_binding != nullptr) {
+    os << t << "counter : ";
+    os << "(";
+    os << "set=" << obj.uav_counter_binding->set << ", ";
+    os << "binding=" << obj.uav_counter_binding->binding << ", ";
+    os << "name=" << obj.uav_counter_binding->name;
+    os << ");";
+    os << "\n";
+  }
+
   os << t << "name    : " << obj.name;
   if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
     os << " " << "(" << obj.type_description->type_name << ")";

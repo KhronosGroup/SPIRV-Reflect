@@ -195,6 +195,8 @@ typedef struct SpvReflectBlockVariable {
 //! \struct SpvReflectDescriptorBinding
 //!
 //!
+typedef struct SpvReflectDescriptorBinding SpvReflectDescriptorBinding;
+
 typedef struct SpvReflectDescriptorBinding {
   const char*                       name;
   uint32_t                          binding;
@@ -205,6 +207,7 @@ typedef struct SpvReflectDescriptorBinding {
   SpvReflectImageTraits             image;
   SpvReflectBlockVariable           block;
   SpvReflectBindingArrayTraits      array;
+  SpvReflectDescriptorBinding*      uav_counter_binding;
 
   SpvReflectTypeDescription*        type_description;
 } SpvReflectDescriptorBinding;

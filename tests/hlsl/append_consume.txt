@@ -1,0 +1,63 @@
+entry point     : main
+source lang     : HLSL
+source lang ver : 500
+
+  output variables: 1
+    0:
+      location  : 0
+      type      : 
+      qualifier : 
+
+  descriptor bindings: 4
+    0:
+      binding : 0
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      name    : BufferIn@count (BufferIn@count)
+    1:
+      binding : 0
+      set     : 1
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      counter : (set=0, binding=0, name=BufferIn@count);
+      name    : BufferIn (BufferIn)
+    2:
+      binding : 1
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      name    : BufferOut@count (BufferIn@count)
+    3:
+      binding : 1
+      set     : 2
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      counter : (set=0, binding=1, name=BufferOut@count);
+      name    : BufferOut (BufferIn)
+
+  descriptor sets: 3
+    0:
+      set           : 0
+      binding count : 2
+        0:
+          binding : 0
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : BufferIn@count (BufferIn@count)
+        1:
+          binding : 1
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : BufferOut@count (BufferIn@count)
+    1:
+      set           : 1
+      binding count : 1
+        0:
+          binding : 0
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          counter : (set=0, binding=0, name=BufferIn@count);
+          name    : BufferIn (BufferIn)
+    2:
+      set           : 2
+      binding count : 1
+        0:
+          binding : 1
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          counter : (set=0, binding=1, name=BufferOut@count);
+          name    : BufferOut (BufferIn)
+
