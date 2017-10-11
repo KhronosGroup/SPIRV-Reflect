@@ -342,63 +342,14 @@ int main(int argn, char** argv)
   is.read(data.data(), size);
 
   spv_reflect::ShaderReflection reflection(data.size(), data.data());
+  data.~vector();
+
   auto re = reflection.GetShaderRelection();
-
   std::cout << re << std::endl;
-
-/*
-  auto count = reflection.GetDescriptorBindingCount();
-  for (auto i = 0; i < count; ++i) {
-    auto elem = reflection.GetDescriptorBinding(i);
-    std::cout << "Descriptor Binding" << "\n";
-    std::cout << *elem << "\n";
-    std::cout << "\n";
-  }
-  std::cout << "\n";
-*/
-
-/*
-  count = reflection.GetDescriptorSetCount();
-  for (auto i = 0; i < count; ++i) {
-    auto elem = reflection.GetDescriptorSet(i);
-    std::cout << "Descriptor Set" << "\n";
-    std::cout << *elem << "\n";
-    std::cout << "\n";
-  }
-*/
-
   std::cout << std::endl;
-  
-/*
-  spirv_ref::ShaderReflection reflection;
-  spirv_ref::ParseShaderReflection(data.size(), data.data(), &reflection);
 
-  //auto count = reflection.GetTypeCount();
-  //for (auto i = 0; i < count; ++i) {
-  //  auto elem = reflection.GetType(i);
-  //  std::cout << elem->GetInfo("  ") << std::endl;
-  //}
-
-  auto count = reflection.GetInputVariableCount();
-  for (auto i = 0; i < count; ++i) {
-    auto elem = reflection.GetInputVariable(i);
-    std::cout << elem->GetInfo("  ") << "\n";
-  }
-
-  count = reflection.GetOutputVariableCount();
-  for (auto i = 0; i < count; ++i) {
-    auto elem = reflection.GetOutputVariable(i);
-    std::cout << elem->GetInfo("  ") << "\n";
-  }
-
-  count = reflection.GetDescriptorCount();
-  for (auto i = 0; i < count; ++i) {
-    auto elem = reflection.GetDescriptor(i);
-    std::cout << elem->GetInfo("  ") << "\n";
-  }
-
-  //reflection.GetDescriptorSet(0)->GetBinding(0)->SetBindingNumber(2);
-*/
+  // Destroy this here so _CrtDumpMemoryLeaks doesn't report false positives.
+  reflection.~ShaderReflection();
 
 #if defined(WIN32)
   _CrtDumpMemoryLeaks();

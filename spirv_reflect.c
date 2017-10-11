@@ -1748,11 +1748,31 @@ static SpvReflectResult SynchronizeDescriptorSets(Parser*                     p_
 }
 
 SpvReflectResult spvReflectGetShaderReflection(size_t                       size, 
-                                               void*                        p_code, 
+                                               const void*                  p_code, 
                                                SpvReflectShaderReflection*  p_module)
 {
+  // Allocate module internals
+#ifdef __cplusplus
+  p_module->_internal = (SpvReflectShaderReflection::Internal*)calloc(1, sizeof(*(p_module->_internal)));
+#else
+  p_module->_internal = calloc(1, sizeof(*(p_module->_internal)));
+#endif
+  if (IsNull(p_module->_internal)) {
+    return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+  }
+  // Allocate SPIR-V code storage
+  p_module->_internal->spirv_size = size;
+  p_module->_internal->spirv_code = (uint32_t*)calloc(1, p_module->_internal->spirv_size);
+  if (IsNull(p_module->_internal->spirv_code)) {
+    SafeFree(p_module->_internal);
+    return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+  }
+  memcpy(p_module->_internal->spirv_code, p_code, size);
+
   Parser parser = { 0 };
-  SpvReflectResult result = CreateParser(size, p_code, &parser);
+  SpvReflectResult result = CreateParser(p_module->_internal->spirv_size, 
+                                         p_module->_internal->spirv_code, 
+                                         &parser);
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseNodes(&parser);
   }
@@ -1768,15 +1788,6 @@ SpvReflectResult spvReflectGetShaderReflection(size_t                       size
 
   // Start of reflection data parsing
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-#ifdef __cplusplus
-    p_module->_internal = (SpvReflectShaderReflection::Internal*)calloc(1, sizeof(*(p_module->_internal)));
-#else
-    p_module->_internal = calloc(1, sizeof(*(p_module->_internal)));
-#endif
-    if (IsNull(p_module->_internal)) {
-      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
-    }
-
     p_module->entry_point_name = parser.entry_point_name;
     p_module->entry_point_id = parser.entry_point_id;
     p_module->spirv_execution_model = parser.spirv_execution_model;
@@ -1816,6 +1827,11 @@ SpvReflectResult spvReflectGetShaderReflection(size_t                       size
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = SynchronizeDescriptorSets(&parser, p_module);
+  }
+
+  // Destroy module if parse was not successful
+  if (result != SPV_REFLECT_RESULT_SUCCESS) {
+    spvReflectDestroyShaderReflection(p_module);
   }
 
   DestroyParser(&parser);
@@ -1899,6 +1915,9 @@ void spvReflectDestroyShaderReflection(SpvReflectShaderReflection* p_module)
   SafeFree(p_module->_internal->descriptor_binding_infos); 
   SafeFree(p_module->_internal->interface_variable_infos); 
   SafeFree(p_module->_internal->set_numbers); 
+  // Free SPIR-V code
+  SafeFree(p_module->_internal->spirv_code);
+  // Free internal
   SafeFree(p_module->_internal);
 }
 

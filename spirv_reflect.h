@@ -243,7 +243,7 @@ typedef struct SpvReflectShaderReflection {
   SpvReflectBlockVariable*          push_constants;
 
   struct Internal {
-    size_t                          spirv_word_count;
+    size_t                          spirv_size;
     uint32_t*                       spirv_code;
 
     size_t                          type_description_count;
@@ -278,7 +278,7 @@ extern "C" {
 //! \return          SPV_REFLECT_RESULT_SUCCESS on success.
 //!
 SpvReflectResult spvReflectGetShaderReflection(size_t                       size, 
-                                               void*                        p_code, 
+                                               const void*                  p_code, 
                                                SpvReflectShaderReflection*  p_module);
 
 //! \fn spvReflectDestroyShaderReflection
@@ -379,28 +379,16 @@ class ShaderReflection {
 public:
   ShaderReflection() {}
 
-  ShaderReflection(size_t size, void* p_code, bool copy = false) : m_size(size), m_code(static_cast<uint8_t*>(p_code)), m_copied_code(copy) {
-    if (m_copied_code) {    
-      m_code = new uint8_t[size];
-      m_result = (m_code != nullptr) ? m_result : SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
-      if (m_result == SPV_REFLECT_RESULT_SUCCESS) {
-        std::memcpy(m_code, p_code, m_size);
-      }
-    }
-
-    if (m_result == SPV_REFLECT_RESULT_NOT_READY) {
-      m_result = spvReflectGetShaderReflection(m_size, m_code, &m_reflection);
-    }
+  ShaderReflection(size_t size, void* p_code) {
+    m_result = spvReflectGetShaderReflection(size, p_code, &m_reflection);
   }
 
   ~ShaderReflection() {
     spvReflectDestroyShaderReflection(&m_reflection);
-    if (m_copied_code && (m_code != nullptr)) {
-      delete m_code;
-      m_code = nullptr;
-      m_size = 0;
-      m_copied_code = false;
-    }
+  }
+
+  SpvReflectResult GetResult() const {
+    return m_result;
   }
 
   const SpvReflectShaderReflection& GetShaderRelection() const {
@@ -449,9 +437,6 @@ public:
 
 private:
   SpvReflectResult            m_result = SPV_REFLECT_RESULT_NOT_READY;
-  size_t                      m_size = 0;
-  uint8_t*                    m_code = nullptr;
-  bool                        m_copied_code = false;
   SpvReflectShaderReflection  m_reflection = {};
 };
 
