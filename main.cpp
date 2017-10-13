@@ -356,12 +356,12 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
 // =================================================================================================
 int main(int argn, char** argv)
 {
-#if defined(WIN32)
-  _CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_DEBUG );
-  _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
-  _CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_DEBUG );
-  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
+//#if defined(WIN32)
+//  _CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_DEBUG );
+//  _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
+//  _CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_DEBUG );
+//  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+//#endif
 
   std::string file_path = argv[1];
 
@@ -377,6 +377,14 @@ int main(int argn, char** argv)
 
   spv_reflect::ShaderModule reflection(data.size(), data.data());
   data.~vector();
+
+  std::cout << reflection << std::endl;
+  std::cout << std::endl;
+
+  //reflection.ChangeDescriptorSetNumber(reflection.GetDescriptorSet(0), 5);
+  reflection.ChangeDescriptorBindingNumber(reflection.GetDescriptorBinding(0, 0), 4, 7);
+
+  std::cout << "--------------------------------------------------------------------------------" << std::endl;
 
   std::cout << reflection << std::endl;
   std::cout << std::endl;
