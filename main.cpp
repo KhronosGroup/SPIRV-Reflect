@@ -209,7 +209,7 @@ void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const
   }
 }
 
-void StreamWrite(std::ostream& os, const SpvReflectShaderReflection& obj, const char* indent = "")
+void StreamWrite(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent = "")
 {
   os << "entry point     : " << obj.entry_point_name << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
@@ -241,76 +241,110 @@ std::ostream& operator<<(std::ostream& os, const SpvReflectInterfaceVariable& ob
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const SpvReflectShaderReflection& obj)
+std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
 {
   const char* t     = "  ";
   const char* tt    = "    ";
   const char* ttt   = "      ";
   const char* tttt  = "        ";
   const char* ttttt = "          ";
-  StreamWrite(os, obj, "");
 
-  //if (obj.input_variable_count)  {
-  //  os << "\n";
-  //  os << "\n";
-  //  os << t << "input variables: " << obj.input_variable_count << "\n";
-  //  for (uint32_t i = 0; i < obj.input_variable_count; ++i) {
-  //    os << tt << i << ":" << "\n";
-  //    StreamWrite(os, obj.input_variables[i], ttt);
-  //    if (i < (obj.input_variable_count - 1)) {
-  //      os << "\n";
-  //    }      
-  //  }
-  //}
+  StreamWrite(os, obj.GetShaderModule(), "");
 
-  if (obj.output_variable_count)  {
+  SpvReflectResult result = SPV_REFLECT_RESULT_NOT_READY;
+  uint32_t count = 0;
+  std::vector<uint32_t> locations;
+  std::vector<uint32_t> binding_numbers;
+  std::vector<uint32_t> set_numbers;
+
+  count = obj.GetInputVariableCount();
+  locations.resize(count);
+  result = obj.EnumerateDescriptorInputVariables(count, locations.data());
+  assert(result == SPV_REFLECT_RESULT_SUCCESS);
+  if (count > 0) {
     os << "\n";
     os << "\n";
-    os << t << "output variables: " << obj.output_variable_count << "\n";
-    for (uint32_t i = 0; i < obj.output_variable_count; ++i) {
+    os << t << "input variables: " << count << "\n";
+    for (size_t i = 0; i < locations.size(); ++i) {
+      uint32_t location = locations[i];
+      auto p_var = obj.GetInputVariable(location, &result);
+      assert(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
-      StreamWrite(os, obj.output_variables[i], ttt);
-      if (i < (obj.output_variable_count - 1)) {
+      StreamWrite(os, *p_var, ttt);
+      if (i < (count - 1)) {
         os << "\n";
-      }      
-    }
-  }
-  
-  if (obj.descriptor_binding_count > 0) {
-    os << "\n";
-    os << "\n";
-    os << t << "descriptor bindings: " << obj.descriptor_binding_count << "\n";
-    for (uint32_t i = 0; i < obj.descriptor_binding_count; ++i) {
-      os << tt << i << ":" << "\n";
-      StreamWrite(os, obj.descriptor_bindings[i], true, ttt);
-      if (i < (obj.descriptor_binding_count - 1)) {
-        os << "\n";
-      }      
+      }  
     }
   }
 
-  if (obj.descriptor_set_count > 0) {
+  count = obj.GetOutputVariableCount();
+  locations.resize(count);
+  result = obj.EnumerateDescriptorOutputVariables(count, locations.data());
+  assert(result == SPV_REFLECT_RESULT_SUCCESS);
+  if (count > 0) {
     os << "\n";
     os << "\n";
-    os << t << "descriptor sets: " << obj.descriptor_set_count << "\n";
-    for (uint32_t i = 0; i < obj.descriptor_set_count; ++i) {
+    os << t << "output variables: " << count << "\n";
+    for (size_t i = 0; i < locations.size(); ++i) {
+      uint32_t location = locations[i];
+      auto p_var = obj.GetOutputVariable(location, &result);
+      assert(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
-      const SpvReflectDescriptorSet& set = obj.descriptor_sets[i];
-      StreamWrite(os, set, ttt);
-      if (set.binding_count > 0) {
+      StreamWrite(os, *p_var, ttt);
+      if (i < (count - 1)) {
         os << "\n";
-        for (uint32_t j = 0; j < set.binding_count; ++j) {
-          const SpvReflectDescriptorBinding& binding = *set.bindings[j];
+      }  
+    }
+  }
+
+  count = obj.GetDescriptorBindingCount();
+  binding_numbers.resize(count);
+  set_numbers.resize(count);
+  result = obj.EnumerateDescriptorBindings(count, binding_numbers.data(), set_numbers.data());
+  if (count > 0) {
+    os << "\n";
+    os << "\n";
+    os << t << "output variables: " << count << "\n";
+    for (size_t i = 0; i < binding_numbers.size(); ++i) {
+      uint32_t binding_number = binding_numbers[i];
+      uint32_t set_number = set_numbers[i];
+      auto p_binding = obj.GetDescriptorBinding(binding_number, set_number, &result);
+      assert(result == SPV_REFLECT_RESULT_SUCCESS);
+      os << tt << i << ":" << "\n";
+      StreamWrite(os, *p_binding, true, ttt);
+      if (i < (count - 1)) {
+        os << "\n";
+      }  
+    }
+  }
+
+  count = obj.GetDescriptorSetCount();
+  set_numbers.resize(count);
+  result = obj.EnumerateDescriptorSets(count, set_numbers.data());
+  if (count > 0) {
+    os << "\n";
+    os << "\n";
+    os << t << "output variables: " << count << "\n";
+    for (size_t i = 0; i < set_numbers.size(); ++i) {
+      uint32_t set_number = set_numbers[i];
+      auto p_set = obj.GetDescriptorSet(set_number, &result);
+      assert(result == SPV_REFLECT_RESULT_SUCCESS);
+      os << tt << i << ":" << "\n";
+      StreamWrite(os, *p_set, ttt);
+      if (count > 0) {
+        os << "\n";
+        for (uint32_t j = 0; j < p_set->binding_count; ++j) {
+          const SpvReflectDescriptorBinding& binding = *p_set->bindings[j];
           os << tttt << j << ":" << "\n";
           StreamWrite(os, binding, false, ttttt);
-          if (j < (set.binding_count - 1)) {
+          if (j < (p_set->binding_count - 1)) {
             os << "\n";
           }
         }
       }
-      if (i < (obj.descriptor_set_count - 1)) {
+      if (i < (count - 1)) {
         os << "\n";
-      }      
+      }  
     }
   }
 
@@ -341,15 +375,14 @@ int main(int argn, char** argv)
   std::vector<char> data(size);
   is.read(data.data(), size);
 
-  spv_reflect::ShaderReflection reflection(data.size(), data.data());
+  spv_reflect::ShaderModule reflection(data.size(), data.data());
   data.~vector();
 
-  auto re = reflection.GetShaderRelection();
-  std::cout << re << std::endl;
+  std::cout << reflection << std::endl;
   std::cout << std::endl;
 
   // Destroy this here so _CrtDumpMemoryLeaks doesn't report false positives.
-  reflection.~ShaderReflection();
+  reflection.~ShaderModule();
 
 #if defined(WIN32)
   _CrtDumpMemoryLeaks();

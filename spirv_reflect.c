@@ -307,7 +307,7 @@ static Node* FindNode(Parser* p_parser, uint32_t result_id)
   return p_node;
 }
 
-static SpvReflectTypeDescription* FindType(SpvReflectShaderReflection* p_module, uint32_t type_id) 
+static SpvReflectTypeDescription* FindType(SpvReflectShaderModule* p_module, uint32_t type_id) 
 {
   SpvReflectTypeDescription* p_type = NULL;
   for (size_t i = 0; i < p_module->_internal->type_description_count; ++i) {
@@ -751,7 +751,7 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p_struct_member_decorations, SpvReflectShaderReflection* p_module, SpvReflectTypeDescription* p_type)
+static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p_struct_member_decorations, SpvReflectShaderModule* p_module, SpvReflectTypeDescription* p_type)
 {
   SpvReflectResult result = SPV_REFLECT_RESULT_SUCCESS;
 
@@ -984,7 +984,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
   return result;
 }
 
-static SpvReflectResult ParseTypes(Parser* p_parser, SpvReflectShaderReflection* p_module)
+static SpvReflectResult ParseTypes(Parser* p_parser, SpvReflectShaderModule* p_module)
 {
   if (p_parser->type_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
@@ -1030,7 +1030,7 @@ static int SortCompareDescriptorBinding(const void* a, const void* b)
   return value;
 }
 
-static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShaderReflection* p_module)
+static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShaderModule* p_module)
 {
   p_module->descriptor_binding_count = 0;
   for (size_t i = 0; i < p_parser->node_count; ++i) {
@@ -1067,7 +1067,7 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
 
 #if defined(__cplusplus)
   p_module->_internal->descriptor_binding_infos 
-    = (SpvReflectShaderReflection::Internal::DescriptorBindingInfo*)calloc(p_module->descriptor_binding_count, 
+    = (SpvReflectShaderModule::Internal::DescriptorBindingInfo*)calloc(p_module->descriptor_binding_count, 
                                                                            sizeof(*(p_module->_internal->descriptor_binding_infos)));
 #else
   p_module->_internal->descriptor_binding_infos = calloc(p_module->descriptor_binding_count, 
@@ -1152,7 +1152,7 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseDescriptorType(SpvReflectShaderReflection* p_module)
+static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
 {
   if (p_module->descriptor_binding_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
@@ -1235,7 +1235,7 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderReflection* p_module
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderReflection* p_module)
+static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module)
 {
   char name[MAX_NODE_NAME_LENGTH];
   const char* k_count_tag = "@count";
@@ -1277,7 +1277,7 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderReflection* p_mo
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflectShaderReflection* p_module, SpvReflectTypeDescription* p_type, SpvReflectBlockVariable* p_block)
+static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflectShaderModule* p_module, SpvReflectTypeDescription* p_type, SpvReflectBlockVariable* p_block)
 {
   if (IsNotNull(p_type->members) && (p_type->member_count > 0)) {
     p_block->member_count = p_type->member_count;
@@ -1320,7 +1320,7 @@ static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflec
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvReflectShaderReflection* p_module, SpvReflectBlockVariable* p_block)
+static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvReflectShaderModule* p_module, SpvReflectBlockVariable* p_block)
 {
   if (p_block->member_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;;
@@ -1393,7 +1393,7 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShaderReflection* p_module)
+static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShaderModule* p_module)
 {
   if (p_module->descriptor_binding_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
@@ -1423,7 +1423,7 @@ static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShader
 
 static SpvReflectResult ParseInterfaceVariable(Parser*                      p_parser,
                                                const Decorations*           p_decorations,
-                                               SpvReflectShaderReflection*  p_module,
+                                               SpvReflectShaderModule*  p_module,
                                                SpvReflectTypeDescription*   p_type,
                                                SpvReflectInterfaceVariable* p_var,
                                                bool*                        p_has_built_in)
@@ -1460,7 +1460,7 @@ static SpvReflectResult ParseInterfaceVariable(Parser*                      p_pa
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShaderReflection* p_module)
+static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShaderModule* p_module)
 {
   if (p_parser->interface_variable_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
@@ -1570,7 +1570,7 @@ static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShad
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParsePushConstantBlocks(Parser* p_parser, SpvReflectShaderReflection* p_module)
+static SpvReflectResult ParsePushConstantBlocks(Parser* p_parser, SpvReflectShaderModule* p_module)
 {
   for (size_t i = 0; i < p_parser->node_count; ++i) {
     Node* p_node = &(p_parser->nodes[i]);
@@ -1636,7 +1636,7 @@ static SpvReflectResult ParsePushConstantBlocks(Parser* p_parser, SpvReflectShad
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseUniqueSetNumbers(Parser* p_parser, SpvReflectShaderReflection* p_module)
+static SpvReflectResult ParseUniqueSetNumbers(Parser* p_parser, SpvReflectShaderModule* p_module)
 {
   (void)p_parser;
   // Extract u
@@ -1679,7 +1679,7 @@ static int SortCompareDescriptorSet(const void* a, const void* b)
   return value;
 }
 
-static SpvReflectResult ParseDescriptorSets(Parser* p_parser, SpvReflectShaderReflection* p_module)
+static SpvReflectResult ParseDescriptorSets(Parser* p_parser, SpvReflectShaderModule* p_module)
 {
   (void)p_parser;
   for (uint32_t i = 0; i < p_module->descriptor_set_count; ++i) {
@@ -1738,7 +1738,7 @@ static SpvReflectResult ParseDescriptorSets(Parser* p_parser, SpvReflectShaderRe
 }
 
 static SpvReflectResult SynchronizeDescriptorSets(Parser*                     p_parser, 
-                                                  SpvReflectShaderReflection* p_module)
+                                                  SpvReflectShaderModule* p_module)
 {
   SpvReflectResult result = ParseUniqueSetNumbers(p_parser, p_module);
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
@@ -1749,11 +1749,11 @@ static SpvReflectResult SynchronizeDescriptorSets(Parser*                     p_
 
 SpvReflectResult spvReflectGetShaderReflection(size_t                       size, 
                                                const void*                  p_code, 
-                                               SpvReflectShaderReflection*  p_module)
+                                               SpvReflectShaderModule*  p_module)
 {
   // Allocate module internals
 #ifdef __cplusplus
-  p_module->_internal = (SpvReflectShaderReflection::Internal*)calloc(1, sizeof(*(p_module->_internal)));
+  p_module->_internal = (SpvReflectShaderModule::Internal*)calloc(1, sizeof(*(p_module->_internal)));
 #else
   p_module->_internal = calloc(1, sizeof(*(p_module->_internal)));
 #endif
@@ -1873,7 +1873,7 @@ static void SafeFreeBlockVariables(SpvReflectBlockVariable* p_block)
   }
 }
 
-void spvReflectDestroyShaderReflection(SpvReflectShaderReflection* p_module)
+void spvReflectDestroyShaderReflection(SpvReflectShaderModule* p_module)
 {
   if (IsNull(p_module->_internal)) {
     return;
@@ -1921,15 +1921,139 @@ void spvReflectDestroyShaderReflection(SpvReflectShaderReflection* p_module)
   SafeFree(p_module->_internal);
 }
 
-SpvReflectDescriptorBinding* spvReflectGetDescriptorBinding(const SpvReflectShaderReflection* p_module, 
-                                                            uint32_t                          index,
-                                                            SpvReflectResult*                 p_result)
+SpvReflectResult spvReflectEnumerateDescriptorBindings(const SpvReflectShaderModule*  p_module,
+                                                       uint32_t*                      p_count,
+                                                       uint32_t*                      p_binding_numbers,
+                                                       uint32_t*                      p_set_numbers)
+{
+  if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+
+  if ((IsNotNull(p_binding_numbers) && IsNull(p_set_numbers)) || (IsNull(p_binding_numbers) && IsNotNull(p_set_numbers))) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+
+  if (IsNotNull(p_binding_numbers) && IsNotNull(p_set_numbers)) {
+    if (*p_count != p_module->descriptor_binding_count) {
+      return SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH;
+    }
+
+    for (uint32_t index = 0; index < *p_count; ++index) {
+      const SpvReflectDescriptorBinding* p_binding = &p_module->descriptor_bindings[index];
+      p_binding_numbers[index] = p_binding->binding;
+      p_set_numbers[index] = p_binding->set;
+    }
+  }
+  else {
+    *p_count = p_module->descriptor_binding_count;
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
+SpvReflectResult spvReflectEnumerateDescriptorSets(const SpvReflectShaderModule*  p_module,
+                                                   uint32_t*                      p_count,
+                                                   uint32_t*                      p_set_numbers)
+{
+  if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+
+  if (IsNotNull(p_set_numbers)) {
+    if (*p_count != p_module->descriptor_set_count) {
+      return SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH;
+    }
+
+    for (uint32_t index = 0; index < *p_count; ++index) {
+      const SpvReflectDescriptorSet* p_set = &p_module->descriptor_sets[index];
+      p_set_numbers[index] = p_set->set;
+    }
+  }
+  else {
+    *p_count = p_module->descriptor_set_count;
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
+SpvReflectResult spvReflectEnumerateInputVariables(const SpvReflectShaderModule* p_module,
+                                                   uint32_t*                     p_count,
+                                                   uint32_t*                     p_locations)
+{
+  if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+
+  if (IsNotNull(p_locations)) {
+    if (*p_count != p_module->input_variable_count) {
+      return SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH;
+    }
+
+    for (uint32_t index = 0; index < *p_count; ++index) {
+      const SpvReflectInterfaceVariable* p_var = &p_module->input_variables[index];
+      p_locations[index] = p_var->location;
+    }
+  }
+  else {
+    *p_count = p_module->input_variable_count;
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
+SpvReflectResult spvReflectEnumerateOutputVariables(const SpvReflectShaderModule* p_module,
+                                                    uint32_t*                     p_count,
+                                                    uint32_t*                     p_locations)
+{
+  if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+
+  if (IsNotNull(p_locations)) {
+    if (*p_count != p_module->output_variable_count) {
+      return SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH;
+    }
+
+    for (uint32_t index = 0; index < *p_count; ++index) {
+      const SpvReflectInterfaceVariable* p_var = &p_module->output_variables[index];
+      p_locations[index] = p_var->location;
+    }
+  }
+  else {
+    *p_count = p_module->output_variable_count;
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
+SpvReflectResult spvReflectEnumeratePushConstants(const SpvReflectShaderModule* p_module,
+                                                  uint32_t*                     p_count)
+{
+  if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+
+  if (IsNotNull(p_count)){
+    *p_count = p_module->push_constant_count;
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
+const SpvReflectDescriptorBinding* spvReflectGetDescriptorBinding(const SpvReflectShaderModule* p_module, 
+                                                                  uint32_t                      binding_number,
+                                                                  uint32_t                      set_number,
+                                                                  SpvReflectResult*             p_result)
 {
   SpvReflectDescriptorBinding* p_binding = NULL;
   assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
-    if (index < p_module->descriptor_binding_count) {
-      p_binding = &p_module->descriptor_bindings[index];
+    for (uint32_t index = 0; index < p_module->descriptor_binding_count; ++index) {
+      SpvReflectDescriptorBinding* p_potential = &p_module->descriptor_bindings[index];
+      if ((p_potential->binding == binding_number) && (p_potential->set == set_number)) {
+        p_binding = p_potential;
+      }
     }
   }
   if (IsNotNull(p_result)) {
@@ -1941,15 +2065,18 @@ SpvReflectDescriptorBinding* spvReflectGetDescriptorBinding(const SpvReflectShad
   return p_binding;
 }
 
-SpvReflectDescriptorSet* spvReflectGetDescriptorSet(const SpvReflectShaderReflection* p_module, 
-                                                    uint32_t                          index, 
-                                                    SpvReflectResult*                 p_result)
+const SpvReflectDescriptorSet* spvReflectGetDescriptorSet(const SpvReflectShaderModule* p_module, 
+                                                          uint32_t                      set_number, 
+                                                          SpvReflectResult*             p_result)
 {
   SpvReflectDescriptorSet* p_set = NULL;
   assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
-    if (index < p_module->descriptor_set_count) {
-      p_set = &p_module->descriptor_sets[index];
+    for (uint32_t index = 0; index < p_module->descriptor_set_count; ++index) {
+      SpvReflectDescriptorSet* p_potential = &p_module->descriptor_sets[index];
+      if (p_potential->set == set_number) {
+        p_set = p_potential;
+      }
     }
   }
   if (IsNotNull(p_result)) {
@@ -1961,15 +2088,18 @@ SpvReflectDescriptorSet* spvReflectGetDescriptorSet(const SpvReflectShaderReflec
   return p_set;
 }
 
-SpvReflectInterfaceVariable* spvReflectGetInputVariable(const SpvReflectShaderReflection* p_module, 
-                                                        uint32_t                          index, 
-                                                        SpvReflectResult*                 p_result)
+const SpvReflectInterfaceVariable* spvReflectGetInputVariable(const SpvReflectShaderModule* p_module, 
+                                                              uint32_t                      location, 
+                                                              SpvReflectResult*             p_result)
 {
   SpvReflectInterfaceVariable* p_var = NULL;
   assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
-    if (index < p_module->input_variable_count) {
-      p_var = &p_module->input_variables[index];
+    for (uint32_t index = 0; index < p_module->input_variable_count; ++index) {
+      SpvReflectInterfaceVariable* p_potential = &p_module->input_variables[index];
+      if (p_potential->location == location) {
+        p_var = p_potential;
+      }
     }
   }
   if (IsNotNull(p_result)) {
@@ -1981,15 +2111,18 @@ SpvReflectInterfaceVariable* spvReflectGetInputVariable(const SpvReflectShaderRe
   return p_var;
 }
 
-SpvReflectInterfaceVariable* spvReflectGetOutputVariable(const SpvReflectShaderReflection*  p_module, 
-                                                         uint32_t                           index, 
-                                                         SpvReflectResult*                  p_result)
+const SpvReflectInterfaceVariable* spvReflectGetOutputVariable(const SpvReflectShaderModule*  p_module, 
+                                                               uint32_t                       location, 
+                                                               SpvReflectResult*              p_result)
 {
   SpvReflectInterfaceVariable* p_var = NULL;
   assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
-    if (index < p_module->output_variable_count) {
-      p_var = &p_module->output_variables[index];
+    for (uint32_t index = 0; index < p_module->output_variable_count; ++index) {
+      SpvReflectInterfaceVariable* p_potential = &p_module->output_variables[index];
+      if (p_potential->location == location) {
+        p_var = p_potential;
+      }
     }
   }
   if (IsNotNull(p_result)) {
@@ -2001,7 +2134,9 @@ SpvReflectInterfaceVariable* spvReflectGetOutputVariable(const SpvReflectShaderR
   return p_var;
 }
 
-SpvReflectBlockVariable* spvReflectGetPushConstant(const SpvReflectShaderReflection* p_module, uint32_t index, SpvReflectResult* p_result)
+const SpvReflectBlockVariable* spvReflectGetPushConstant(const SpvReflectShaderModule* p_module, 
+                                                         uint32_t                      index, 
+                                                         SpvReflectResult*             p_result)
 {
   SpvReflectBlockVariable* p_push_constant = NULL;
   assert(IsNotNull(p_module));

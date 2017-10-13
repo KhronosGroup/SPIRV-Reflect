@@ -14,7 +14,9 @@
  limitations under the License.
 */
 
-//! \file spirv_reflect.h
+/*!
+ \file spirv_reflect.h
+*/
 #ifndef SPIRV_REFLECT_H
 #define SPIRV_REFLECT_H
 
@@ -22,9 +24,9 @@
 #include <vulkan/spirv.h>
 #include <vulkan/vulkan.h>
 
-//! \enum SpvReflectResult
-//!
-//!
+/*! \enum SpvReflectResult
+
+*/
 typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_SUCCESS,
   SPV_REFLECT_RESULT_NOT_READY,
@@ -32,15 +34,16 @@ typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED,
   SPV_REFLECT_RESULT_ERROR_RANGE_EXCEEDED,
   SPV_REFLECT_RESULT_ERROR_NULL_POINTER,
+  SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH,
   SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_CODE_SIZE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_OF,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE
 } SpvReflectResult;
 
-//! \enum SpvReflectTypeFlagBits
-//!
-//!
+/*! \enum SpvReflectTypeFlagBits
+
+*/
 typedef enum SpvReflectTypeFlagBits {
   SPV_REFLECT_TYPE_FLAG_UNDEFINED               = 0x00000000,
   SPV_REFLECT_TYPE_FLAG_VOID                    = 0x00000001,
@@ -60,9 +63,9 @@ typedef enum SpvReflectTypeFlagBits {
 
 typedef uint32_t SpvReflectTypeFlags;
 
-//! \enum SpvReflectDecorationBits
-//!
-//!
+/*! \enum SpvReflectDecorationBits
+
+*/
 typedef enum SpvReflectDecorationBits {
   SPV_REFLECT_DECORATION_NONE                   = 0x00000000,
   SPV_REFLECT_DECORATION_BLOCK                  = 0x00000001,
@@ -76,9 +79,9 @@ typedef enum SpvReflectDecorationBits {
 
 typedef uint32_t SpvReflectDecorations;
 
-//! \enum SpvReflectResourceType
-//!
-//!
+/*! \enum SpvReflectResourceType
+
+*/
 typedef enum SpvReflectResourceType {
   SPV_REFLECT_RESOURCE_FLAG_UNDEFINED           = 0x00000000,
   SPV_REFLECT_RESOURCE_FLAG_SAMPLER             = 0x00000001,
@@ -128,9 +131,9 @@ typedef struct SpvReflectBindingArrayTraits {
   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
 } SpvReflectBindingArrayTraits;
 
-//! \struct SpvReflectType
-//!
-//!
+/*! \struct SpvReflectTypeDescription
+
+*/
 typedef struct SpvReflectTypeDescription SpvReflectTypeDescription;
 
 typedef struct SpvReflectTypeDescription {
@@ -153,9 +156,9 @@ typedef struct SpvReflectTypeDescription {
 } SpvReflectTypeDescription;
 
 
-//! \struct SpvReflectInterfaceVariable
-//!
-//!
+/*! \struct SpvReflectInterfaceVariable
+
+*/
 typedef struct SpvReflectInterfaceVariable SpvReflectInterfaceVariable;
 
 typedef struct SpvReflectInterfaceVariable {
@@ -177,9 +180,9 @@ typedef struct SpvReflectInterfaceVariable {
   SpvReflectTypeDescription*        type_description;
 } SpvReflectInterfaceVariable;
 
-//! \struct SpvReflectBlockVariable
-//!
-//!
+/*! \struct SpvReflectBlockVariable
+
+*/
 typedef struct SpvReflectBlockVariable SpvReflectBlockVariable;
 
 typedef struct SpvReflectBlockVariable {
@@ -196,9 +199,9 @@ typedef struct SpvReflectBlockVariable {
   SpvReflectTypeDescription*        type_description;
 } SpvReflectBlockVariable;
 
-//! \struct SpvReflectDescriptorBinding
-//!
-//!
+/*! \struct SpvReflectDescriptorBinding
+
+*/
 typedef struct SpvReflectDescriptorBinding SpvReflectDescriptorBinding;
 
 typedef struct SpvReflectDescriptorBinding {
@@ -216,19 +219,19 @@ typedef struct SpvReflectDescriptorBinding {
   SpvReflectTypeDescription*        type_description;
 } SpvReflectDescriptorBinding;
 
-//! \struct SpvReflectDescriptorSet
-//!
-//!
+/*! \struct SpvReflectDescriptorSet
+
+*/
 typedef struct SpvReflectDescriptorSet {
   uint32_t                          set;
   uint32_t                          binding_count;
   SpvReflectDescriptorBinding**     bindings;
 } SpvReflectDescriptorSet;
 
-//! \struct SpvReflectShaderReflection
-//!
-//!
-typedef struct SpvReflectShaderReflection {
+/*! \struct SpvReflectShaderModule
+
+*/
+typedef struct SpvReflectShaderModule {
   const char*                       entry_point_name;
   uint32_t                          entry_point_id;
   SpvSourceLanguage                 source_language;
@@ -268,102 +271,116 @@ typedef struct SpvReflectShaderReflection {
     uint32_t*                       set_numbers;
   } * _internal;
     
-} SpvReflectShaderReflection;
+} SpvReflectShaderModule;
 
 #if defined(__cplusplus)
 extern "C" {
 #endif 
 
-//! \fn spvReflectGetShaderReflection
-//!
-//! \param size      Size in bytes of SPIR-V code.
-//! \param p_code    Pointer to SPIR-V code.
-//! \param p_module  Pointer to an instance of SpvReflectShaderReflection.
-//! \return          SPV_REFLECT_RESULT_SUCCESS on success.
-//!
+/*! \fn spvReflectGetShaderReflection
+
+ \param size      Size in bytes of SPIR-V code.
+
+ \param p_code    Pointer to SPIR-V code.
+
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+
+ \return          SPV_REFLECT_RESULT_SUCCESS on success.
+*/
 SpvReflectResult spvReflectGetShaderReflection(size_t                       size, 
                                                const void*                  p_code, 
-                                               SpvReflectShaderReflection*  p_module);
+                                               SpvReflectShaderModule*  p_module);
 
-//! \fn spvReflectDestroyShaderReflection
-//!
-//! \param p_module  Pointer to an instance of SpvReflectShaderReflection.
-//!
-void spvReflectDestroyShaderReflection(SpvReflectShaderReflection* p_module);
+/*! \fn spvReflectDestroyShaderReflection
 
-//! \fn spvReflectGetDescriptorBinding
-//!
-//! \param p_module  Pointer to an instance of SpvReflectShaderReflection.
-//! \param index     Index into SpvReflectShaderReflection.descriptor_bindings, relative to SpvReflectShaderReflection.descriptor_binding_count.
-//! \param p_result  Optional. 
-//!                  Returns SPV_REFLECT_RESULT_SUCCESS on success. 
-//!                  Returns SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND if \a index is out of bounds.
-//!                  Returns SPV_REFLECT_RESULT_ERROR_NULL_POINTER if \a p_module is null.
-//! \return          Returns a pointer to the descriptor binding at \index.
-//!
-SpvReflectDescriptorBinding* spvReflectGetDescriptorBinding(const SpvReflectShaderReflection* p_module, 
-                                                            uint32_t                          index, 
-                                                            SpvReflectResult*                 p_result);
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+*/
+void spvReflectDestroyShaderReflection(SpvReflectShaderModule* p_module);
 
-//! \fn spvReflectGetDescriptorSet
-//!
-//! \param p_module  Pointer to an instance of SpvReflectShaderReflection.
-//! \param index     Index into SpvReflectShaderReflection.descriptor_sets, relative to SpvReflectShaderReflection.descriptor_set_count.
-//! \param p_result  Optional. 
-//!                  Returns SPV_REFLECT_RESULT_SUCCESS on success. 
-//!                  Returns SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND if \a index is out of bounds.
-//!                  Returns SPV_REFLECT_RESULT_ERROR_NULL_POINTER if \a p_module is null.
-//! \return          Returns a pointer to the descriptor set at \index.
-//!
-SpvReflectDescriptorSet* spvReflectGetDescriptorSet(const SpvReflectShaderReflection* p_module, 
-                                                    uint32_t                          index, 
-                                                    SpvReflectResult*                 p_result);
+/*! \fn spvReflectEnumerateDescriptorBindings
 
-//! \fn spvReflectGetInputVariable
-//!
-//! \param p_module  Pointer to an instance of SpvReflectShaderReflection.
-//! \param index     Index into SpvReflectShaderReflection.input_variables, relative to SpvReflectShaderReflection.input_variable_count.
-//! \param p_result  Optional. 
-//!                  Returns SPV_REFLECT_RESULT_SUCCESS on success. 
-//!                  Returns SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND if \a index is out of bounds.
-//!                  Returns SPV_REFLECT_RESULT_ERROR_NULL_POINTER if \a p_module is null.
-//! \return          Returns a pointer to the input variable set at \index.
-//!
-SpvReflectInterfaceVariable* spvReflectGetInputVariable(const SpvReflectShaderReflection* p_module, 
-                                                        uint32_t                          index, 
-                                                        SpvReflectResult*                 p_result);
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+*/
+SpvReflectResult spvReflectEnumerateDescriptorBindings(const SpvReflectShaderModule*  p_module,
+                                                       uint32_t*                      p_count,
+                                                       uint32_t*                      p_binding_numbers,
+                                                       uint32_t*                      p_set_numbers);
 
-//! \fn spvReflectGetOutputVariable
-//!
-//! \param p_module  Pointer to an instance of SpvReflectShaderReflection.
-//! \param index     Index into SpvReflectShaderReflection.output_variables, relative to SpvReflectShaderReflection.output_variable_count.
-//! \param p_result  Optional. 
-//!                  Returns SPV_REFLECT_RESULT_SUCCESS on success. 
-//!                  Returns SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND if \a index is out of bounds.
-//!                  Returns SPV_REFLECT_RESULT_ERROR_NULL_POINTER if \a p_module is null.
-//! \return          Returns a pointer to the output variable set at \index.
-//!
-SpvReflectInterfaceVariable* spvReflectGetOutputVariable(const SpvReflectShaderReflection*  p_module, 
-                                                         uint32_t                           index, 
-                                                         SpvReflectResult*                  p_result);
+/*! \fn spvReflectEnumerateDescriptorSets
 
-//! \fn spvReflectGetOutputVariable
-//!
-//! \param p_module  Pointer to an instance of SpvReflectShaderReflection.
-//! \param index     Index into SpvReflectShaderReflection.push_constants, relative to SpvReflectShaderReflection.push_constant_count.
-//! \param p_result  Optional. 
-//!                  Returns SPV_REFLECT_RESULT_SUCCESS on success. 
-//!                  Returns SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND if \a index is out of bounds.
-//!                  Returns SPV_REFLECT_RESULT_ERROR_NULL_POINTER if \a p_module is null.
-//! \return          Returns a pointer to the push constant at \index.
-//!
-SpvReflectBlockVariable* spvReflectGetPushConstant(const SpvReflectShaderReflection*  p_module, 
-                                                   uint32_t                           index, 
-                                                   SpvReflectResult*                  p_result);
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+*/
+SpvReflectResult spvReflectEnumerateDescriptorSets(const SpvReflectShaderModule*  p_module,
+                                                   uint32_t*                      p_count,
+                                                   uint32_t*                      p_set_numbers);
 
-//! \fn spvReflectSourceLanguage
-//! \return  Returns string of source language specified in \a source_lang.
-//!
+/*! \fn spvReflectEnumerateInputVariables
+
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+*/
+SpvReflectResult spvReflectEnumerateInputVariables(const SpvReflectShaderModule* p_module,
+                                                   uint32_t*                     p_count,
+                                                   uint32_t*                     p_locations);
+
+/*! \fn spvReflectEnumerateOutputVariables
+
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+*/
+SpvReflectResult spvReflectEnumerateOutputVariables(const SpvReflectShaderModule* p_module,
+                                                    uint32_t*                     p_count,
+                                                    uint32_t*                     p_locations);
+
+/*! \fn spvReflectEnumeratePushConstants
+
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+*/
+SpvReflectResult spvReflectEnumeratePushConstants(const SpvReflectShaderModule* p_module,
+                                                  uint32_t*                     p_count);
+
+/*! \fn spvReflectGetDescriptorBinding
+
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+*/
+const SpvReflectDescriptorBinding* spvReflectGetDescriptorBinding(const SpvReflectShaderModule* p_module,
+                                                                  uint32_t                      binding_number,
+                                                                  uint32_t                      set_number,
+                                                                  SpvReflectResult*             p_result);
+/*! \fn spvReflectGetDescriptorSet
+
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+*/
+const SpvReflectDescriptorSet* spvReflectGetDescriptorSet(const SpvReflectShaderModule* p_module,
+                                                          uint32_t                      set_number, 
+                                                          SpvReflectResult*             p_result);
+
+/* \fn spvReflectGetInputVariable
+
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+*/
+const SpvReflectInterfaceVariable* spvReflectGetInputVariable(const SpvReflectShaderModule* p_module, 
+                                                              uint32_t                      location, 
+                                                              SpvReflectResult*             p_result);
+
+/*! \fn spvReflectGetOutputVariable
+
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+*/
+const SpvReflectInterfaceVariable* spvReflectGetOutputVariable(const SpvReflectShaderModule*  p_module, 
+                                                               uint32_t                       location, 
+                                                               SpvReflectResult*              p_result);
+
+/*! \fn spvReflectGetOutputVariable
+
+ \param p_module  Pointer to an instance of SpvReflectShaderModule.
+*/
+const SpvReflectBlockVariable* spvReflectGetPushConstant(const SpvReflectShaderModule*  p_module, 
+                                                         uint32_t                       index, 
+                                                         SpvReflectResult*              p_result);
+
+/*! \fn spvReflectSourceLanguage
+
+ \return  Returns string of source language specified in \a source_lang.
+*/
 const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang);
 
 #if defined(__cplusplus)
@@ -376,72 +393,100 @@ const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang);
 
 namespace spv_reflect {
 
-//! \class ShaderReflection
-//!
-//!
-class ShaderReflection {
-public:
-  ShaderReflection() {}
+/*!  \class ShaderReflection
 
-  ShaderReflection(size_t size, void* p_code) {
-    m_result = spvReflectGetShaderReflection(size, p_code, &m_reflection);
+*/
+class ShaderModule {
+public:
+  ShaderModule() {}
+
+  ShaderModule(size_t size, void* p_code) {
+    m_result = spvReflectGetShaderReflection(size, p_code, &m_module);
   }
 
-  ~ShaderReflection() {
-    spvReflectDestroyShaderReflection(&m_reflection);
+  ~ShaderModule() {
+    spvReflectDestroyShaderReflection(&m_module);
   }
 
   SpvReflectResult GetResult() const {
     return m_result;
   }
 
-  const SpvReflectShaderReflection& GetShaderRelection() const {
-    return m_reflection;
+  const SpvReflectShaderModule& GetShaderModule() const {
+    return m_module;
   }
 
   uint32_t GetDescriptorBindingCount() const {
-    return m_reflection.descriptor_binding_count;
+    uint32_t count = 0;
+    m_result = spvReflectEnumerateDescriptorBindings(&m_module, &count, nullptr, nullptr);
+    return count;
+  }
+
+  SpvReflectResult EnumerateDescriptorBindings(uint32_t count, uint32_t* p_binding_numbers, uint32_t* p_set_numbers) const {
+    m_result = spvReflectEnumerateDescriptorBindings(&m_module, &count, p_binding_numbers, p_set_numbers);
+    return m_result;
   }
 
   uint32_t GetDescriptorSetCount() const {
-    return m_reflection.descriptor_set_count;
+    uint32_t count = 0;
+    m_result = spvReflectEnumerateDescriptorSets(&m_module, &count, nullptr);
+    return count;
+  }
+
+  SpvReflectResult EnumerateDescriptorSets(uint32_t count, uint32_t* p_set_numbers) const {
+    m_result = spvReflectEnumerateDescriptorSets(&m_module, &count, p_set_numbers);
+    return m_result;
   }
 
   uint32_t GetInputVariableCount() const {
-    return m_reflection.input_variable_count;
+    uint32_t count = 0;
+    m_result = spvReflectEnumerateInputVariables(&m_module, &count, nullptr);
+    return count; 
   }
 
-  uint32_t GetOuptutVariableCount() const {
-    return m_reflection.output_variable_count;
+  SpvReflectResult EnumerateDescriptorInputVariables(uint32_t count, uint32_t* p_locations)const  {
+    m_result = spvReflectEnumerateInputVariables(&m_module, &count, p_locations);
+    return m_result;
+  }
+
+  uint32_t GetOutputVariableCount() const {
+    uint32_t count = 0;
+    m_result = spvReflectEnumerateOutputVariables(&m_module, &count, nullptr);
+    return count; 
+  }
+
+  SpvReflectResult EnumerateDescriptorOutputVariables(uint32_t count, uint32_t* p_locations) const {
+    m_result = spvReflectEnumerateOutputVariables(&m_module, &count, p_locations);
+    return m_result;
   }
 
   uint32_t GetPushConstantCount() const {
-    return m_reflection.push_constant_count;
+    return m_module.push_constant_count;
   }
   
-  SpvReflectDescriptorBinding* GetDescriptorBinding(uint32_t index, SpvReflectResult* p_result = nullptr) {
-    return spvReflectGetDescriptorBinding(&m_reflection, index, p_result);
+  const SpvReflectDescriptorBinding* GetDescriptorBinding(uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const {
+    return spvReflectGetDescriptorBinding(&m_module, binding_number, set_number, p_result);
   }
 
-  SpvReflectDescriptorSet* GetDescriptorSet(uint32_t index, SpvReflectResult* p_result = nullptr) {
-    return spvReflectGetDescriptorSet(&m_reflection, index, p_result);
+  const SpvReflectDescriptorSet* GetDescriptorSet(uint32_t set_number, SpvReflectResult* p_result = nullptr) const {
+    return spvReflectGetDescriptorSet(&m_module, set_number, p_result);
   }
 
-  SpvReflectInterfaceVariable* GetInputVariable(uint32_t index, SpvReflectResult* p_result = nullptr) {
-    return spvReflectGetInputVariable(&m_reflection, index, p_result);
+  const SpvReflectInterfaceVariable* GetInputVariable(uint32_t location, SpvReflectResult* p_result = nullptr) const {
+    return spvReflectGetInputVariable(&m_module, location, p_result);
   }
 
-  SpvReflectInterfaceVariable* GetOutputVariable(uint32_t index, SpvReflectResult* p_result = nullptr) {
-    return spvReflectGetOutputVariable(&m_reflection, index, p_result);
+  const SpvReflectInterfaceVariable* GetOutputVariable(uint32_t location, SpvReflectResult* p_result = nullptr) const {
+    return spvReflectGetOutputVariable(&m_module, location, p_result);
   }
 
-  SpvReflectBlockVariable* GetPushConstant(uint32_t index, SpvReflectResult* p_result = nullptr) {
-    return spvReflectGetPushConstant(&m_reflection, index, p_result);
+  const SpvReflectBlockVariable* GetPushConstant(uint32_t index, SpvReflectResult* p_result = nullptr) const {
+    return spvReflectGetPushConstant(&m_module, index, p_result);
   }
 
 private:
-  SpvReflectResult            m_result = SPV_REFLECT_RESULT_NOT_READY;
-  SpvReflectShaderReflection  m_reflection = {};
+  mutable SpvReflectResult  m_result = SPV_REFLECT_RESULT_NOT_READY;
+  SpvReflectShaderModule    m_module = {};
 };
 
 } // namespace spv_reflect
