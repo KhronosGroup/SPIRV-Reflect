@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "spirv_reflect.h"
+#include "examples/common.h"
 
 struct TextLine {
   std::vector<std::string>  text_elements;
@@ -181,12 +182,14 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
   }
 }
 
+/*
 void StreamWrite(std::ostream& os, const SpvReflectDescriptorSet& obj, const char* indent = "")
 {
   const char* t = indent;
   os << t << "set           : " << obj.set << "\n";
   os << t << "binding count : " << obj.binding_count;
 }
+*/
 
 void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const char* indent = "")
 {
@@ -224,7 +227,7 @@ std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorBinding& ob
 
 std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorSet& obj)
 {
-  StreamWrite(os, obj, "  ");
+  PrintDescriptorSet(os, obj, "  ");
   os << "\n";
   for (uint32_t i = 0; i < obj.binding_count; ++i) {
     os << "   " << i << ":"  << "\n";
@@ -330,7 +333,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       auto p_set = obj.GetDescriptorSet(set_number, &result);
       assert(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
-      StreamWrite(os, *p_set, ttt);
+      PrintDescriptorSet(os, *p_set, ttt);
       if (count > 0) {
         os << "\n";
         for (uint32_t j = 0; j < p_set->binding_count; ++j) {
