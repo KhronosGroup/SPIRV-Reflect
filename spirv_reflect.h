@@ -293,7 +293,7 @@ extern "C" {
  @return          SPV_REFLECT_RESULT_SUCCESS on success.
 
 */
-SpvReflectResult spvReflectGetShadeModule(size_t                   size, 
+SpvReflectResult spvReflectGetShaderModule(size_t                   size, 
                                           const void*              p_code, 
                                           SpvReflectShaderModule*  p_module);
 
@@ -571,7 +571,7 @@ public:
 
   */
   ShaderModule(size_t size, void* p_code) {
-    m_result = spvReflectGetShadeModule(size, p_code, &m_module);
+    m_result = spvReflectGetShaderModule(size, p_code, &m_module);
   }
 
   /*! @fn  ~ShaderModule
