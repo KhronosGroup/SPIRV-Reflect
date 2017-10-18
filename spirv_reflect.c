@@ -1719,7 +1719,7 @@ static SpvReflectResult SynchronizeDescriptorSets(SpvReflectShaderModule* p_modu
   return result;
 }
 
-SpvReflectResult spvReflectGetShaderReflection(size_t                   size, 
+SpvReflectResult spvReflectGetShadeModule(size_t                   size, 
                                                const void*              p_code, 
                                                SpvReflectShaderModule*  p_module)
 {
@@ -1812,7 +1812,7 @@ SpvReflectResult spvReflectGetShaderReflection(size_t                   size,
 
   // Destroy module if parse was not successful
   if (result != SPV_REFLECT_RESULT_SUCCESS) {
-    spvReflectDestroyShaderReflection(p_module);
+    spvReflectDestroyShaderModule(p_module);
   }
 
   DestroyParser(&parser);
@@ -1854,7 +1854,7 @@ static void SafeFreeBlockVariables(SpvReflectBlockVariable* p_block)
   }
 }
 
-void spvReflectDestroyShaderReflection(SpvReflectShaderModule* p_module)
+void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
 {
   if (IsNull(p_module->_internal)) {
     return;

@@ -100,7 +100,7 @@ enum {
 };
 
 enum {
-  SPV_REFLECT_SET_NUMBER_NOT_USED           = ~0
+  SPV_REFLECT_SET_NUMBER_NOT_USED               = ~0
 };
 
 typedef struct SpvReflectNumericTraits {
@@ -282,7 +282,7 @@ typedef struct SpvReflectShaderModule {
 extern "C" {
 #endif 
 
-/*! @fn spvReflectGetShaderReflection
+/*! @fn spvReflectGetShadeModule
 
  @param size      Size in bytes of SPIR-V code.
 
@@ -293,16 +293,16 @@ extern "C" {
  @return          SPV_REFLECT_RESULT_SUCCESS on success.
 
 */
-SpvReflectResult spvReflectGetShaderReflection(size_t                   size, 
-                                               const void*              p_code, 
-                                               SpvReflectShaderModule*  p_module);
+SpvReflectResult spvReflectGetShadeModule(size_t                   size, 
+                                          const void*              p_code, 
+                                          SpvReflectShaderModule*  p_module);
 
-/*! @fn spvReflectDestroyShaderReflection
+/*! @fn spvReflectDestroyShaderModule
 
  @param p_module  Pointer to an instance of SpvReflectShaderModule.
 
 */
-void spvReflectDestroyShaderReflection(SpvReflectShaderModule* p_module);
+void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module);
 
 /*! @fn spvReflectGetCodeSize
 
@@ -571,14 +571,14 @@ public:
 
   */
   ShaderModule(size_t size, void* p_code) {
-    m_result = spvReflectGetShaderReflection(size, p_code, &m_module);
+    m_result = spvReflectGetShadeModule(size, p_code, &m_module);
   }
 
   /*! @fn  ~ShaderModule
 
   */
   ~ShaderModule() {
-    spvReflectDestroyShaderReflection(&m_module);
+    spvReflectDestroyShaderModule(&m_module);
   }
 
   /*! @fn GetResult
