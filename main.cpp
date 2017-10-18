@@ -21,6 +21,7 @@
 #endif
 
 #include <cassert>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <sstream>

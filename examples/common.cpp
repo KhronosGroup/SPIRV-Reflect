@@ -1,6 +1,7 @@
 #include "common.h"
 
 #include <cassert>
+#include <cstring>
 #include <fstream>
 
 static const char* ToString(VkDescriptorType value) {
