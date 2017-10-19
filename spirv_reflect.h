@@ -70,7 +70,7 @@ typedef uint32_t SpvReflectTypeFlags;
 /*! @enum SpvReflectDecorationBits
 
 */
-typedef enum SpvReflectDecorationBits {
+typedef enum SpvReflectDecorationFlagBits {
   SPV_REFLECT_DECORATION_NONE                   = 0x00000000,
   SPV_REFLECT_DECORATION_BLOCK                  = 0x00000001,
   SPV_REFLECT_DECORATION_BUFFER_BLOCK           = 0x00000002,
@@ -79,9 +79,9 @@ typedef enum SpvReflectDecorationBits {
   SPV_REFLECT_DECORATION_BUILT_IN               = 0x00000010,
   SPV_REFLECT_DECORATION_NOPERSPECTIVE          = 0x00000020,
   SPV_REFLECT_DECORATION_FLAT                   = 0x00000040,
-} SpvReflectDecorationBits;
+} SpvReflectDecorationFlagBits;
 
-typedef uint32_t SpvReflectDecorations;
+typedef uint32_t SpvReflectDecorationFlags;
 
 /*! @enum SpvReflectResourceType
 
@@ -151,8 +151,8 @@ typedef struct SpvReflectTypeDescription {
   const char*                       type_name;
   const char*                       struct_member_name;
   SpvStorageClass                   storage_class;
-  SpvReflectTypeFlags               flags;
-  SpvReflectDecorations             decorations;
+  SpvReflectTypeFlags               type_flags;
+  SpvReflectDecorationFlags         decoration_flags;
 
   struct Traits {
     SpvReflectNumericTraits         numeric;
@@ -176,7 +176,8 @@ typedef struct SpvReflectInterfaceVariable {
   SpvStorageClass                   storage_class;
   const char*                       smenatic_name;
   uint32_t                          semantic_index;
-  SpvReflectDecorations             decorations;
+  SpvReflectDecorationFlags         decoration_flags;
+  SpvBuiltIn                        built_in;
   SpvReflectNumericTraits           numeric;
   SpvReflectArrayTraits             array;
   uint32_t                          member_count;
@@ -203,7 +204,7 @@ typedef struct SpvReflectBlockVariable {
   uint32_t                          offset;       // Measured in bytes
   uint32_t                          size;         // Measured in bytes
   uint32_t                          padded_size;  // Measured in bytes
-  SpvReflectDecorations             decorations;
+  SpvReflectDecorationFlags         decorations;
   SpvReflectNumericTraits           numeric;
   SpvReflectArrayTraits             array;
   uint32_t                          member_count;

@@ -4,7 +4,7 @@
 #include <cstring>
 #include <fstream>
 
-static const char* ToString(VkDescriptorType value) {
+static const char* ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
     default: return ""; break;
     case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER"; break;
@@ -22,7 +22,7 @@ static const char* ToString(VkDescriptorType value) {
   return "";
 }
 
-static const char* ToStringSimpleGlsl(const SpvReflectTypeDescription& type)
+static const char* ToStringGlslType(const SpvReflectTypeDescription& type)
 {
   switch (type.op) {
     case SpvOpTypeVector: {
@@ -51,7 +51,7 @@ static const char* ToStringSimpleGlsl(const SpvReflectTypeDescription& type)
   return "";
 }
 
-static const char* ToStringSimpleHlsl(const SpvReflectTypeDescription& type)
+static const char* ToStringHlslType(const SpvReflectTypeDescription& type)
 {
   switch (type.op) {
     case SpvOpTypeVector: {
@@ -80,13 +80,13 @@ static const char* ToStringSimpleHlsl(const SpvReflectTypeDescription& type)
   return "";
 }
 
-static const char* ToStringSimple(SpvSourceLanguage src_lang, const SpvReflectTypeDescription& type)
+static const char* ToStringType(SpvSourceLanguage src_lang, const SpvReflectTypeDescription& type)
 {
   if (src_lang == SpvSourceLanguageHLSL) {
-    return ToStringSimpleHlsl(type);
+    return ToStringHlslType(type);
   }
 
-  return ToStringSimpleGlsl(type);
+  return ToStringGlslType(type);
 }
 
 bool ReadFile(const std::string& file_path, std::vector<uint8_t>* p_buffer)
@@ -108,6 +108,159 @@ bool ReadFile(const std::string& file_path, std::vector<uint8_t>* p_buffer)
   return true;
 }
 
+static const char* ToStringGlslBuiltIn(SpvBuiltIn built_in)
+{
+  switch (built_in) {
+    default: return ""; break;
+    case SpvBuiltInPosition                     : return ""; break;
+    case SpvBuiltInPointSize                    : return ""; break;
+    case SpvBuiltInClipDistance                 : return ""; break;
+    case SpvBuiltInCullDistance                 : return ""; break;
+    case SpvBuiltInVertexId                     : return ""; break;
+    case SpvBuiltInInstanceId                   : return ""; break;
+    case SpvBuiltInPrimitiveId                  : return ""; break;
+    case SpvBuiltInInvocationId                 : return ""; break;
+    case SpvBuiltInLayer                        : return ""; break;
+    case SpvBuiltInViewportIndex                : return ""; break;
+    case SpvBuiltInTessLevelOuter               : return ""; break;
+    case SpvBuiltInTessLevelInner               : return ""; break;
+    case SpvBuiltInTessCoord                    : return ""; break;
+    case SpvBuiltInPatchVertices                : return ""; break;
+    case SpvBuiltInFragCoord                    : return ""; break;
+    case SpvBuiltInPointCoord                   : return ""; break;
+    case SpvBuiltInFrontFacing                  : return ""; break;
+    case SpvBuiltInSampleId                     : return ""; break;
+    case SpvBuiltInSamplePosition               : return ""; break;
+    case SpvBuiltInSampleMask                   : return ""; break;
+    case SpvBuiltInFragDepth                    : return ""; break;
+    case SpvBuiltInHelperInvocation             : return ""; break;
+    case SpvBuiltInNumWorkgroups                : return ""; break;
+    case SpvBuiltInWorkgroupSize                : return ""; break;
+    case SpvBuiltInWorkgroupId                  : return ""; break;
+    case SpvBuiltInLocalInvocationId            : return ""; break;
+    case SpvBuiltInGlobalInvocationId           : return ""; break;
+    case SpvBuiltInLocalInvocationIndex         : return ""; break;
+    case SpvBuiltInWorkDim                      : return ""; break;
+    case SpvBuiltInGlobalSize                   : return ""; break;
+    case SpvBuiltInEnqueuedWorkgroupSize        : return ""; break;
+    case SpvBuiltInGlobalOffset                 : return ""; break;
+    case SpvBuiltInGlobalLinearId               : return ""; break;
+    case SpvBuiltInSubgroupSize                 : return ""; break;
+    case SpvBuiltInSubgroupMaxSize              : return ""; break;
+    case SpvBuiltInNumSubgroups                 : return ""; break;
+    case SpvBuiltInNumEnqueuedSubgroups         : return ""; break;
+    case SpvBuiltInSubgroupId                   : return ""; break;
+    case SpvBuiltInSubgroupLocalInvocationId    : return ""; break;
+    case SpvBuiltInVertexIndex                  : return ""; break;
+    case SpvBuiltInInstanceIndex                : return ""; break;
+    case SpvBuiltInSubgroupEqMaskKHR            : return ""; break;
+    case SpvBuiltInSubgroupGeMaskKHR            : return ""; break;
+    case SpvBuiltInSubgroupGtMaskKHR            : return ""; break;
+    case SpvBuiltInSubgroupLeMaskKHR            : return ""; break;
+    case SpvBuiltInSubgroupLtMaskKHR            : return ""; break;
+    case SpvBuiltInBaseVertex                   : return ""; break;
+    case SpvBuiltInBaseInstance                 : return ""; break;
+    case SpvBuiltInDrawIndex                    : return ""; break;
+    case SpvBuiltInDeviceIndex                  : return ""; break;
+    case SpvBuiltInViewIndex                    : return ""; break;
+    case SpvBuiltInBaryCoordNoPerspAMD          : return ""; break;
+    case SpvBuiltInBaryCoordNoPerspCentroidAMD  : return ""; break;
+    case SpvBuiltInBaryCoordNoPerspSampleAMD    : return ""; break;
+    case SpvBuiltInBaryCoordSmoothAMD           : return ""; break;
+    case SpvBuiltInBaryCoordSmoothCentroidAMD   : return ""; break;
+    case SpvBuiltInBaryCoordSmoothSampleAMD     : return ""; break;
+    case SpvBuiltInBaryCoordPullModelAMD        : return ""; break;
+    case SpvBuiltInFragStencilRefEXT            : return ""; break;
+    case SpvBuiltInViewportMaskNV               : return ""; break;
+    case SpvBuiltInSecondaryPositionNV          : return ""; break;
+    case SpvBuiltInSecondaryViewportMaskNV      : return ""; break;
+    case SpvBuiltInPositionPerViewNV            : return ""; break;
+    case SpvBuiltInViewportMaskPerViewNV        : return ""; break;
+  }
+  return "";
+}
+
+static const char* ToStringHlslBuiltIn(SpvBuiltIn built_in)
+{
+  switch (built_in) {
+    default: return ""; break;
+    case SpvBuiltInPosition                     : return "SV_POSITION"; break;
+    case SpvBuiltInPointSize                    : return ""; break;
+    case SpvBuiltInClipDistance                 : return ""; break;
+    case SpvBuiltInCullDistance                 : return ""; break;
+    case SpvBuiltInVertexId                     : return ""; break;
+    case SpvBuiltInInstanceId                   : return ""; break;
+    case SpvBuiltInPrimitiveId                  : return ""; break;
+    case SpvBuiltInInvocationId                 : return ""; break;
+    case SpvBuiltInLayer                        : return ""; break;
+    case SpvBuiltInViewportIndex                : return ""; break;
+    case SpvBuiltInTessLevelOuter               : return ""; break;
+    case SpvBuiltInTessLevelInner               : return ""; break;
+    case SpvBuiltInTessCoord                    : return ""; break;
+    case SpvBuiltInPatchVertices                : return ""; break;
+    case SpvBuiltInFragCoord                    : return "SV_POSITION"; break;
+    case SpvBuiltInPointCoord                   : return ""; break;
+    case SpvBuiltInFrontFacing                  : return ""; break;
+    case SpvBuiltInSampleId                     : return ""; break;
+    case SpvBuiltInSamplePosition               : return ""; break;
+    case SpvBuiltInSampleMask                   : return ""; break;
+    case SpvBuiltInFragDepth                    : return ""; break;
+    case SpvBuiltInHelperInvocation             : return ""; break;
+    case SpvBuiltInNumWorkgroups                : return ""; break;
+    case SpvBuiltInWorkgroupSize                : return ""; break;
+    case SpvBuiltInWorkgroupId                  : return ""; break;
+    case SpvBuiltInLocalInvocationId            : return ""; break;
+    case SpvBuiltInGlobalInvocationId           : return ""; break;
+    case SpvBuiltInLocalInvocationIndex         : return ""; break;
+    case SpvBuiltInWorkDim                      : return ""; break;
+    case SpvBuiltInGlobalSize                   : return ""; break;
+    case SpvBuiltInEnqueuedWorkgroupSize        : return ""; break;
+    case SpvBuiltInGlobalOffset                 : return ""; break;
+    case SpvBuiltInGlobalLinearId               : return ""; break;
+    case SpvBuiltInSubgroupSize                 : return ""; break;
+    case SpvBuiltInSubgroupMaxSize              : return ""; break;
+    case SpvBuiltInNumSubgroups                 : return ""; break;
+    case SpvBuiltInNumEnqueuedSubgroups         : return ""; break;
+    case SpvBuiltInSubgroupId                   : return ""; break;
+    case SpvBuiltInSubgroupLocalInvocationId    : return ""; break;
+    case SpvBuiltInVertexIndex                  : return ""; break;
+    case SpvBuiltInInstanceIndex                : return ""; break;
+    case SpvBuiltInSubgroupEqMaskKHR            : return ""; break;
+    case SpvBuiltInSubgroupGeMaskKHR            : return ""; break;
+    case SpvBuiltInSubgroupGtMaskKHR            : return ""; break;
+    case SpvBuiltInSubgroupLeMaskKHR            : return ""; break;
+    case SpvBuiltInSubgroupLtMaskKHR            : return ""; break;
+    case SpvBuiltInBaseVertex                   : return ""; break;
+    case SpvBuiltInBaseInstance                 : return ""; break;
+    case SpvBuiltInDrawIndex                    : return ""; break;
+    case SpvBuiltInDeviceIndex                  : return ""; break;
+    case SpvBuiltInViewIndex                    : return ""; break;
+    case SpvBuiltInBaryCoordNoPerspAMD          : return ""; break;
+    case SpvBuiltInBaryCoordNoPerspCentroidAMD  : return ""; break;
+    case SpvBuiltInBaryCoordNoPerspSampleAMD    : return ""; break;
+    case SpvBuiltInBaryCoordSmoothAMD           : return ""; break;
+    case SpvBuiltInBaryCoordSmoothCentroidAMD   : return ""; break;
+    case SpvBuiltInBaryCoordSmoothSampleAMD     : return ""; break;
+    case SpvBuiltInBaryCoordPullModelAMD        : return ""; break;
+    case SpvBuiltInFragStencilRefEXT            : return ""; break;
+    case SpvBuiltInViewportMaskNV               : return ""; break;
+    case SpvBuiltInSecondaryPositionNV          : return ""; break;
+    case SpvBuiltInSecondaryViewportMaskNV      : return ""; break;
+    case SpvBuiltInPositionPerViewNV            : return ""; break;
+    case SpvBuiltInViewportMaskPerViewNV        : return ""; break;
+  }
+  return "";
+}
+
+static const char* ToStringBuiltIn(SpvSourceLanguage src_lang, SpvBuiltIn built_in)
+{
+  if (src_lang == SpvSourceLanguageHLSL) {
+    return ToStringHlslBuiltIn(built_in);
+  }
+
+  return ToStringGlslBuiltIn(built_in);
+}
+
 void PrintModuleInfo(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent)
 {
   os << "entry point     : " << obj.entry_point_name << "\n";
@@ -121,7 +274,7 @@ void PrintModuleInfo(std::ostream& os, const SpvReflectShaderModule& obj, const 
       case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT     : os << "HS"; break;
       case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT  : os << "DS"; break;
       case VK_SHADER_STAGE_GEOMETRY_BIT                 : os << "GS"; break;
-      case VK_SHADER_STAGE_FRAGMENT_BIT                 : os << "FS"; break;
+      case VK_SHADER_STAGE_FRAGMENT_BIT                 : os << "PS"; break;
       case VK_SHADER_STAGE_COMPUTE_BIT                  : os << "CS"; break;
     }
   }
@@ -153,7 +306,7 @@ void PrintDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding&
   if (write_set) {
     os << t << "set     : " << obj.set << "\n";
   }
-  os << t << "type    : " << ToString(obj.descriptor_type) << "\n";
+  os << t << "type    : " << ToStringVkDescriptorType(obj.descriptor_type) << "\n";
   
   // array
   if (obj.array.dims_count > 0) {  
@@ -185,19 +338,19 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const 
 {
   const char* t = indent;
   os << t << "location  : ";
-  if (obj.decorations & SPV_REFLECT_DECORATION_BUILT_IN) {
-    os << "(built-in)";
+  if (obj.decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
+    os << ToStringBuiltIn(src_lang, obj.built_in) << " " << "(built-in)";
   }
   else {
     os << obj.location;
   }
   os << "\n";
-  os << t << "type      : " << ToStringSimple(src_lang, *obj.type_description) << "\n";
+  os << t << "type      : " << ToStringType(src_lang, *obj.type_description) << "\n";
   os << t << "qualifier : ";
-  if (obj.decorations & SPV_REFLECT_DECORATION_FLAT) {
+  if (obj.decoration_flags & SPV_REFLECT_DECORATION_FLAT) {
     os << "flat";
   }
-  else   if (obj.decorations & SPV_REFLECT_DECORATION_NOPERSPECTIVE) {
+  else   if (obj.decoration_flags & SPV_REFLECT_DECORATION_NOPERSPECTIVE) {
     os << "noperspective";
   }
   os << "\n";

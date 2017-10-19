@@ -37,7 +37,7 @@ struct TextLine {
 // =================================================================================================
 // Stream Output
 // =================================================================================================
-const char* ToString(VkDescriptorType value) {
+const char* ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
     default: return ""; break;
     case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER"; break;
@@ -55,7 +55,7 @@ const char* ToString(VkDescriptorType value) {
   return "";
 }
 
-const char* ToStringSimple(const SpvReflectTypeDescription& type)
+const char* ToStringType(const SpvReflectTypeDescription& type)
 {
 /*
   uint32_t masked = type.type_flags & SPV_REFLECT_TYPE_FLAG_COMPOSITE_MASK;
@@ -144,7 +144,7 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
   if (write_set) {
     os << t << "set     : " << obj.set << "\n";
   }
-  os << t << "type    : " << ToString(obj.descriptor_type) << "\n";
+  os << t << "type    : " << ToStringVkDescriptorType(obj.descriptor_type) << "\n";
   
   // array
   if (obj.array.dims_count > 0) {  
@@ -196,19 +196,19 @@ void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const
 {
   const char* t = indent;
   os << t << "location  : ";
-  if (obj.decorations & SPV_REFLECT_DECORATION_BUILT_IN) {
+  if (obj.decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
     os << "(built-in)";
   }
   else {
     os << obj.location;
   }
   os << "\n";
-  os << t << "type      : " << ToStringSimple(*obj.type_description) << "\n";
+  os << t << "type      : " << ToStringType(*obj.type_description) << "\n";
   os << t << "qualifier : ";
-  if (obj.decorations & SPV_REFLECT_DECORATION_FLAT) {
+  if (obj.decoration_flags & SPV_REFLECT_DECORATION_FLAT) {
     os << "flat";
   }
-  else   if (obj.decorations & SPV_REFLECT_DECORATION_NOPERSPECTIVE) {
+  else   if (obj.decoration_flags & SPV_REFLECT_DECORATION_NOPERSPECTIVE) {
     os << "noperspective";
   }
 }
