@@ -22,6 +22,73 @@ static const char* ToString(VkDescriptorType value) {
   return "";
 }
 
+static const char* ToStringSimpleGlsl(const SpvReflectTypeDescription& type)
+{
+  switch (type.op) {
+    case SpvOpTypeVector: {
+      switch (type.traits.numeric.scalar.width) {
+        case 32: {
+          switch (type.traits.numeric.vector.component_count) {
+            case 2: return "vec2"; break;
+            case 3: return "vec3"; break;
+            case 4: return "vec4"; break;
+          }
+        }
+        break;
+
+        case 64: {
+          switch (type.traits.numeric.vector.component_count) {
+            case 2: return "dvec2"; break;
+            case 3: return "dvec3"; break;
+            case 4: return "dvec4"; break;
+          }
+        }
+        break;
+      }
+    }
+    break;
+  }
+  return "";
+}
+
+static const char* ToStringSimpleHlsl(const SpvReflectTypeDescription& type)
+{
+  switch (type.op) {
+    case SpvOpTypeVector: {
+      switch (type.traits.numeric.scalar.width) {
+        case 32: {
+          switch (type.traits.numeric.vector.component_count) {
+            case 2: return "float2"; break;
+            case 3: return "float3"; break;
+            case 4: return "float4"; break;
+          }
+        }
+        break;
+
+        case 64: {
+          switch (type.traits.numeric.vector.component_count) {
+            case 2: return "double2"; break;
+            case 3: return "double3"; break;
+            case 4: return "double4"; break;
+          }
+        }
+        break;
+      }
+    }
+    break;
+  }
+  return "";
+}
+
+static const char* ToStringSimple(SpvSourceLanguage src_lang, const SpvReflectTypeDescription& type)
+{
+  if (src_lang == SpvSourceLanguageHLSL) {
+    return ToStringSimpleHlsl(type);
+  }
+
+  return ToStringSimpleGlsl(type);
+}
+
 bool ReadFile(const std::string& file_path, std::vector<uint8_t>* p_buffer)
 {
   std::ifstream is(file_path.c_str(), std::ios::binary);
@@ -109,6 +176,33 @@ void PrintDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding&
   }
 
   os << t << "name    : " << obj.name;
+  if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
+    os << " " << "(" << obj.type_description->type_name << ")";
+  }
+}
+
+void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const SpvReflectInterfaceVariable& obj, const char* indent)
+{
+  const char* t = indent;
+  os << t << "location  : ";
+  if (obj.decorations & SPV_REFLECT_DECORATION_BUILT_IN) {
+    os << "(built-in)";
+  }
+  else {
+    os << obj.location;
+  }
+  os << "\n";
+  os << t << "type      : " << ToStringSimple(src_lang, *obj.type_description) << "\n";
+  os << t << "qualifier : ";
+  if (obj.decorations & SPV_REFLECT_DECORATION_FLAT) {
+    os << "flat";
+  }
+  else   if (obj.decorations & SPV_REFLECT_DECORATION_NOPERSPECTIVE) {
+    os << "noperspective";
+  }
+  os << "\n";
+
+  os << t << "name      : " << obj.name;
   if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
     os << " " << "(" << obj.type_description->type_name << ")";
   }

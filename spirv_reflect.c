@@ -1535,19 +1535,22 @@ static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShad
       ++output_index;
     }
 
-    bool has_buiilt_in = false;
+    bool has_built_in = p_node->decorations.built_in;
     SpvReflectResult result = ParseInterfaceVariable(p_parser,
                                                      &p_type_node->decorations,
                                                      p_module, 
                                                      p_type, 
                                                      p_var,
-                                                     &has_buiilt_in);
+                                                     &has_built_in);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
     }
 
+    // Name
+    p_var->name = p_node->name;
+
     // Decorate with built-in if any member is built-in
-    if (has_buiilt_in) {
+    if (has_built_in) {
       p_var->decorations |= SPV_REFLECT_DECORATION_BUILT_IN;
     }
 
