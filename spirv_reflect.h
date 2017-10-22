@@ -570,7 +570,7 @@ public:
    @param p_code
 
   */
-  ShaderModule(size_t size, void* p_code) {
+  ShaderModule(size_t size, const void* p_code) {
     m_result = spvReflectGetShaderModule(size, p_code, &m_module);
   }
 
