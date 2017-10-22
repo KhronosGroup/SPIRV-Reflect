@@ -182,6 +182,8 @@ typedef struct SpvReflectInterfaceVariable {
   uint32_t                          member_count;
   SpvReflectInterfaceVariable*      members;
 
+  VkFormat                          format;
+
   // NOTE: SPIR-V shares type references for variables
   //       that have the same underlying type. This means
   //       that the same type name will appear for multiple 

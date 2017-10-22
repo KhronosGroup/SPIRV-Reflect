@@ -1414,6 +1414,49 @@ static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShader
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+static SpvReflectResult ParseFormat(
+  const SpvReflectTypeDescription*  p_type,
+  VkFormat*                         p_format
+)
+{
+  SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
+  bool signedness = p_type->traits.numeric.scalar.signedness;
+  if (p_type->flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+    uint32_t component_count = p_type->traits.numeric.vector.component_count;
+    if (p_type->flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
+      switch (component_count) {
+        case 2: *p_format = VK_FORMAT_R32G32_SFLOAT; break;
+        case 3: *p_format = VK_FORMAT_R32G32B32_SFLOAT; break;
+        case 4: *p_format = VK_FORMAT_R32G32B32A32_SFLOAT; break;
+      }
+      result = SPV_REFLECT_RESULT_SUCCESS;
+    }
+    else if (p_type->flags & SPV_REFLECT_TYPE_FLAG_INT) {
+      switch (component_count) {
+        case 2: *p_format = signedness ? VK_FORMAT_R32G32_SINT : VK_FORMAT_R32G32_UINT; break;
+        case 3: *p_format = signedness ? VK_FORMAT_R32G32B32_SINT : VK_FORMAT_R32G32B32_UINT; break;
+        case 4: *p_format = signedness ? VK_FORMAT_R32G32B32A32_SINT : VK_FORMAT_R32G32B32A32_UINT; break;
+      }      
+      result = SPV_REFLECT_RESULT_SUCCESS;
+    }
+  }
+  else if (p_type->flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
+    *p_format = VK_FORMAT_R32_SFLOAT;
+      result = SPV_REFLECT_RESULT_SUCCESS;
+  }
+  else if (p_type->flags & SPV_REFLECT_TYPE_FLAG_INT) {
+    if (signedness) {
+      *p_format = VK_FORMAT_R32_SINT;
+      result = SPV_REFLECT_RESULT_SUCCESS;
+    }
+    else {
+      *p_format = VK_FORMAT_R32_UINT;
+      result = SPV_REFLECT_RESULT_SUCCESS;
+    }
+  }
+  return result;
+}
+
 static SpvReflectResult ParseInterfaceVariable(Parser*                      p_parser,
                                                const Decorations*           p_decorations,
                                                SpvReflectShaderModule*      p_module,
@@ -1446,9 +1489,19 @@ static SpvReflectResult ParseInterfaceVariable(Parser*                      p_pa
 
   p_var->name = p_type_node->name;
   p_var->decorations = ApplyDecorations(p_decorations);
+  ApplyNumericTraits(p_type, &p_var->numeric);
+  if (p_type->op == SpvOpTypeArray) {
+    ApplyArrayTraits(p_type, &p_var->array);
+  }
+
   p_var->type_description = p_type;
 
   *p_has_built_in |= p_decorations->built_in;
+
+  SpvReflectResult result = ParseFormat(p_var->type_description, &p_var->format);
+  if (result != SPV_REFLECT_RESULT_SUCCESS) {
+    return result;
+  }
 
   return SPV_REFLECT_RESULT_SUCCESS;
 }
