@@ -382,6 +382,7 @@ int main(int argn, char** argv)
   is.read(data.data(), size);
 
   spv_reflect::ShaderModule reflection(data.size(), data.data());
+  assert(reflection.GetResult() == SPV_REFLECT_RESULT_SUCCESS);
   data.~vector();
 
   std::cout << reflection << std::endl;
