@@ -100,6 +100,7 @@ enum {
 };
 
 enum {
+  SPV_REFLECT_BINDING_NUMBER_NOT_USED           = ~0,
   SPV_REFLECT_SET_NUMBER_NOT_USED               = ~0
 };
 
@@ -556,7 +557,56 @@ const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang);
 
 namespace spv_reflect {
 
-/*!  \class ShaderReflection
+/*! \class BlockVariable
+
+ BlockVariable assumes ShaderModule successfully parsed SPIR-V
+ and contains valid block variables. 
+
+ BlockVariable is self contained and stores its own copy of any
+ data it relies on. It does not require the module it came
+ from to remain in scope .
+
+*/
+class BlockVariable {
+public:
+  BlockVariable();
+  BlockVariable(uint32_t binding, uint32_t set, const SpvReflectBlockVariable* p_src_data);
+  ~BlockVariable();
+
+  uint32_t                          GetBinding() const;
+  uint32_t                          GetSet() const;
+
+  const std::string&                GetName() const;
+  uint32_t                          GetOffset() const;
+  uint32_t                          GetSize() const;
+  uint32_t                          GetPaddedSize() const;
+  const std::vector<uint32_t>       GetArrayDims() const;
+  const std::vector<BlockVariable>& GetMembers() const;
+
+private:
+  void CopyData(const SpvReflectBlockVariable*  p_src, BlockVariable* p_dst);
+  void ParseBlockVariable(const SpvReflectBlockVariable* p_src_data, BlockVariable* p_dst_data, const BlockVariable* p_parent);
+
+private:
+  uint32_t  m_binding = SPV_REFLECT_BINDING_NUMBER_NOT_USED;
+  uint32_t  m_set = SPV_REFLECT_BINDING_NUMBER_NOT_USED;  
+
+  struct VariableData {
+    std::string               name;
+    uint32_t                  offset;       // Measured in bytes
+    uint32_t                  size;         // Measured in bytes
+    uint32_t                  padded_size;  // Measured in bytes
+    SpvReflectDecorations     decorations;
+    SpvReflectNumericTraits   numeric;
+    std::vector<uint32_t>     array;
+  };
+  VariableData m_data = {};
+
+  const BlockVariable*        m_parent = nullptr;
+  std::vector<BlockVariable>  m_members;
+};
+
+/*! \class ShaderReflection
 
 */
 class ShaderModule {
@@ -596,6 +646,10 @@ private:
 };
 
 
+// =================================================================================================
+// ShaderModule
+// =================================================================================================
+
 /*! @fn ShaderModule
   
 */
@@ -608,7 +662,7 @@ inline ShaderModule::ShaderModule() {}
   @param  p_code
 
 */
-ShaderModule::ShaderModule(size_t size, const void* p_code) {
+inline ShaderModule::ShaderModule(size_t size, const void* p_code) {
   m_result = spvReflectGetShaderModule(size, 
                                         p_code, 
                                         &m_module);
@@ -618,7 +672,7 @@ ShaderModule::ShaderModule(size_t size, const void* p_code) {
 /*! @fn  ~ShaderModule
 
 */
-ShaderModule::~ShaderModule() {
+inline ShaderModule::~ShaderModule() {
   spvReflectDestroyShaderModule(&m_module);
 }
 
@@ -628,7 +682,7 @@ ShaderModule::~ShaderModule() {
   @return
 
 */
-SpvReflectResult ShaderModule::GetResult() const {
+inline SpvReflectResult ShaderModule::GetResult() const {
   return m_result;
 }
 
@@ -638,7 +692,7 @@ SpvReflectResult ShaderModule::GetResult() const {
   @return
 
 */
-const SpvReflectShaderModule& ShaderModule::GetShaderModule() const {
+inline const SpvReflectShaderModule& ShaderModule::GetShaderModule() const {
   return m_module;
 }
 
@@ -648,7 +702,7 @@ const SpvReflectShaderModule& ShaderModule::GetShaderModule() const {
   @return
 
   */
-uint32_t ShaderModule::GetCodeSize() const {
+inline uint32_t ShaderModule::GetCodeSize() const {
   return spvReflectGetCodeSize(&m_module);
 }
 
@@ -658,7 +712,7 @@ uint32_t ShaderModule::GetCodeSize() const {
   @return
 
 */
-const uint32_t* ShaderModule::GetCode() const {
+inline const uint32_t* ShaderModule::GetCode() const {
   return spvReflectGetCode(&m_module);
 }
 
@@ -668,7 +722,7 @@ const uint32_t* ShaderModule::GetCode() const {
   @return Returns entry point
 
 */
-const char* ShaderModule::GetEntryPointName() const {
+inline const char* ShaderModule::GetEntryPointName() const {
   return m_module.entry_point_name;
 }
 
@@ -681,7 +735,7 @@ const char* ShaderModule::GetEntryPointName() const {
   @return
 
 */
-SpvReflectResult ShaderModule::EnumerateDescriptorBindings(
+inline SpvReflectResult ShaderModule::EnumerateDescriptorBindings(
   uint32_t*                     p_count,
   SpvReflectDescriptorBinding** pp_bindings
 ) const 
@@ -700,7 +754,7 @@ SpvReflectResult ShaderModule::EnumerateDescriptorBindings(
   @return
 
 */
-SpvReflectResult ShaderModule::EnumerateDescriptorSets(
+inline SpvReflectResult ShaderModule::EnumerateDescriptorSets(
   uint32_t*                 p_count,
   SpvReflectDescriptorSet** pp_sets
 ) const 
@@ -719,7 +773,7 @@ SpvReflectResult ShaderModule::EnumerateDescriptorSets(
   @return
 
 */
-SpvReflectResult ShaderModule::EnumerateInputVariables(
+inline SpvReflectResult ShaderModule::EnumerateInputVariables(
   uint32_t*                     p_count,
   SpvReflectInterfaceVariable** pp_variables
 ) const 
@@ -738,7 +792,7 @@ SpvReflectResult ShaderModule::EnumerateInputVariables(
   @return
 
 */
-SpvReflectResult ShaderModule::EnumerateOutputVariables(
+inline SpvReflectResult ShaderModule::EnumerateOutputVariables(
   uint32_t*                     p_count,
   SpvReflectInterfaceVariable** pp_variables
 ) const 
@@ -757,7 +811,7 @@ SpvReflectResult ShaderModule::EnumerateOutputVariables(
   @return
 
 */
-SpvReflectResult ShaderModule::EnumeratePusConstants(
+inline SpvReflectResult ShaderModule::EnumeratePusConstants(
   uint32_t*                 p_count,
   SpvReflectBlockVariable** pp_push_constants
 ) const 
@@ -777,7 +831,7 @@ SpvReflectResult ShaderModule::EnumeratePusConstants(
   @return
 
 */
-const SpvReflectDescriptorBinding* ShaderModule::GetDescriptorBinding(
+inline const SpvReflectDescriptorBinding* ShaderModule::GetDescriptorBinding(
   uint32_t          binding_number,                                                           
   uint32_t          set_number, 
   SpvReflectResult* p_result
@@ -797,7 +851,7 @@ const SpvReflectDescriptorBinding* ShaderModule::GetDescriptorBinding(
   @return
 
 */
-const SpvReflectDescriptorSet* ShaderModule::GetDescriptorSet(
+inline const SpvReflectDescriptorSet* ShaderModule::GetDescriptorSet(
   uint32_t          set_number,
   SpvReflectResult* p_result
 ) const 
@@ -815,7 +869,7 @@ const SpvReflectDescriptorSet* ShaderModule::GetDescriptorSet(
   @return
 
 */
-const SpvReflectInterfaceVariable* ShaderModule::GetInputVariable(
+inline const SpvReflectInterfaceVariable* ShaderModule::GetInputVariable(
   uint32_t          location, 
   SpvReflectResult* p_result
 ) const 
@@ -833,7 +887,7 @@ const SpvReflectInterfaceVariable* ShaderModule::GetInputVariable(
   @return
 
 */
-const SpvReflectInterfaceVariable* ShaderModule::GetOutputVariable(
+inline const SpvReflectInterfaceVariable* ShaderModule::GetOutputVariable(
   uint32_t           location, 
   SpvReflectResult*  p_result
 ) const 
@@ -851,7 +905,7 @@ const SpvReflectInterfaceVariable* ShaderModule::GetOutputVariable(
   @return
 
 */
-const SpvReflectBlockVariable* ShaderModule::GetPushConstant(
+inline const SpvReflectBlockVariable* ShaderModule::GetPushConstant(
   uint32_t           index, 
   SpvReflectResult*  p_result
 ) const 
@@ -872,7 +926,7 @@ const SpvReflectBlockVariable* ShaderModule::GetPushConstant(
   @return
 
 */
-SpvReflectResult ShaderModule::ChangeDescriptorBindingNumber(
+inline SpvReflectResult ShaderModule::ChangeDescriptorBindingNumber(
   const SpvReflectDescriptorBinding* p_binding,
   uint32_t                           new_binding_number,
   uint32_t                           optional_new_set_number
@@ -892,7 +946,7 @@ SpvReflectResult ShaderModule::ChangeDescriptorBindingNumber(
   @return
 
 */
-SpvReflectResult ShaderModule::ChangeDescriptorSetNumber(
+inline SpvReflectResult ShaderModule::ChangeDescriptorSetNumber(
   const SpvReflectDescriptorSet* p_set,
   uint32_t                       new_set_number
 )
@@ -910,7 +964,7 @@ SpvReflectResult ShaderModule::ChangeDescriptorSetNumber(
   @return
 
 */
-SpvReflectResult ShaderModule::ChangeInputVariableLocation(
+inline SpvReflectResult ShaderModule::ChangeInputVariableLocation(
   const SpvReflectInterfaceVariable* p_input_variable,
   uint32_t                           new_location)
 {
@@ -927,13 +981,109 @@ SpvReflectResult ShaderModule::ChangeInputVariableLocation(
   @return
 
 */
-SpvReflectResult ShaderModule::ChangeOutputVariableLocation(
+inline SpvReflectResult ShaderModule::ChangeOutputVariableLocation(
   const SpvReflectInterfaceVariable* p_output_variable,
   uint32_t                           new_location)
 {
   return spvReflectChangeOutputVariableLocation(&m_module, 
                                                 p_output_variable, 
                                                 new_location);
+}
+
+// =================================================================================================
+// BlockVariable
+// =================================================================================================
+inline BlockVariable::BlockVariable() {}
+
+inline BlockVariable::BlockVariable(
+  uint32_t                        binding, 
+  uint32_t                        set, 
+  const SpvReflectBlockVariable*  p_src_data
+) 
+{
+  this->m_binding = binding;
+  this->m_set = set;
+  if (p_src_data != nullptr) {
+    ParseBlockVariable(p_src_data, this, nullptr);
+  }
+}
+
+inline BlockVariable::~BlockVariable() {}
+
+inline uint32_t BlockVariable::GetBinding() const 
+{ 
+  return m_binding; 
+}
+
+inline uint32_t BlockVariable::GetSet() const
+{ 
+  return m_set; 
+}
+
+inline const std::string& BlockVariable::GetName() const
+{ 
+  return m_data.name; 
+}
+
+inline uint32_t BlockVariable::GetOffset() const
+{ 
+  return m_data.offset; 
+}
+
+inline uint32_t BlockVariable::GetSize() const
+{ 
+  return m_data.size; 
+}
+
+inline uint32_t BlockVariable::GetPaddedSize() const
+{ 
+  return m_data.padded_size;
+}
+
+inline const std::vector<uint32_t> BlockVariable::GetArrayDims() const
+{
+  return m_data.array;
+}
+
+inline const std::vector<BlockVariable>& BlockVariable::GetMembers() const
+{ 
+  return m_members; 
+}
+
+inline void BlockVariable::CopyData(
+  const SpvReflectBlockVariable*  p_src, 
+  BlockVariable*                  p_dst
+) 
+{
+  p_dst->m_data.name        = p_src->name;
+  p_dst->m_data.offset      = p_src->offset;
+  p_dst->m_data.size        = p_src->size;
+  p_dst->m_data.padded_size = p_src->padded_size;
+  p_dst->m_data.decorations = p_src->decorations;
+  memcpy(&p_dst->m_data.numeric, &p_src->numeric, sizeof(p_src->numeric));
+  for (uint32_t i = 0; i < p_src->array.dims_count; ++i) {
+    p_dst->m_data.array.push_back(p_src->array.dims[i]);
+  }
+}
+
+inline void BlockVariable::ParseBlockVariable(
+  const SpvReflectBlockVariable*  p_src_data, 
+  BlockVariable*                  p_dst_data, 
+  const BlockVariable*            p_parent
+) 
+{
+  m_parent = p_parent;
+
+  CopyData(p_src_data, p_dst_data);
+
+  const uint32_t src_member_count = p_src_data->member_count;
+  const uint32_t dst_member_count = static_cast<uint32_t>(m_members.size()) + src_member_count;
+  m_members.resize(dst_member_count);
+  for (uint32_t member_index = 0; member_index < p_src_data->member_count; ++member_index) {
+    const SpvReflectBlockVariable* p_src_member = &p_src_data->members[member_index];
+    BlockVariable* p_dst_member = &m_members[member_index];
+    ParseBlockVariable(p_src_member, p_dst_member, this);
+  }
 }
 
 } // namespace spv_reflect
