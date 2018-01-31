@@ -27,8 +27,4 @@ add_executable(spirv-reflect ${CMAKE_SOURCE_DIR}/main.cpp
 
 target_include_directories(spirv-reflect PRIVATE ${CMAKE_SOURCE_DIR})
 
-if(WIN32)
-    set_target_properties(spirv-reflect PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:Windows /INCREMENTAL:NO")
-endif()
-
 add_subdirectory(examples)
