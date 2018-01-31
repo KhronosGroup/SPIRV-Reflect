@@ -588,8 +588,8 @@ private:
   void ParseBlockVariable(const SpvReflectBlockVariable* p_src_data, BlockVariable* p_dst_data, const BlockVariable* p_parent);
 
 private:
-  uint32_t  m_binding = SPV_REFLECT_BINDING_NUMBER_NOT_USED;
-  uint32_t  m_set = SPV_REFLECT_BINDING_NUMBER_NOT_USED;  
+  uint32_t  m_binding = static_cast<uint32_t>(SPV_REFLECT_BINDING_NUMBER_NOT_USED);
+  uint32_t  m_set = static_cast<uint32_t>(SPV_REFLECT_BINDING_NUMBER_NOT_USED);
 
   struct VariableData {
     std::string               name;
