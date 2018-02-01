@@ -13,8 +13,8 @@ int main(int argn, char** argv)
   result = spvReflectEnumerateDescriptorSets(&module, &count, NULL);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
-  std::vector<uint32_t> set_numbers(count);
-  result = spvReflectEnumerateDescriptorSets(&module, &count, set_numbers.data());
+  std::vector<SpvReflectDescriptorSet*> sets(count);
+  result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   const char* t  = "  ";
@@ -24,10 +24,14 @@ int main(int argn, char** argv)
   std::cout << "\n\n";
 
   std::cout << "Descriptor sets:" << "\n";
-  for (size_t index = 0; index < set_numbers.size(); ++index) {
-    uint32_t set_number = set_numbers[index];
-    auto p_set = spvReflectGetDescriptorSet(&module, set_number, &result);
+  for (size_t index = 0; index < sets.size(); ++index) {
+    auto p_set = sets[index];
+
+    // descriptor sets can also be retrieved directly from the module, by set index
+    auto p_set2 = spvReflectGetDescriptorSet(&module, p_set->set, &result);
     assert(result == SPV_REFLECT_RESULT_SUCCESS);
+    assert(p_set == p_set2);
+    (void)p_set2;
 
     std::cout << t << index << ":" << "\n";
     PrintDescriptorSet(std::cout, *p_set, tt);

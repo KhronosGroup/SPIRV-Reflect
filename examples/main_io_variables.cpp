@@ -13,16 +13,16 @@ int main(int argn, char** argv)
   result = spvReflectEnumerateInputVariables(&module, &count, NULL);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
-  std::vector<uint32_t> input_locations(count);
-  result = spvReflectEnumerateInputVariables(&module, &count, input_locations.data());
+  std::vector<SpvReflectInterfaceVariable*> input_vars(count);
+  result = spvReflectEnumerateInputVariables(&module, &count, input_vars.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   count = 0;
   result = spvReflectEnumerateOutputVariables(&module, &count, NULL);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
-  std::vector<uint32_t> output_locations(count);
-  result = spvReflectEnumerateOutputVariables(&module, &count, output_locations.data());
+  std::vector<SpvReflectInterfaceVariable*> output_vars(count);
+  result = spvReflectEnumerateOutputVariables(&module, &count, output_vars.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   const char* t  = "  ";
@@ -32,10 +32,14 @@ int main(int argn, char** argv)
   std::cout << "\n\n";
 
   std::cout << "Input variables:" << "\n";
-  for (size_t index = 0; index < input_locations.size(); ++index) {
-    uint32_t location = input_locations[index];
-    auto p_var = spvReflectGetInputVariable(&module, location, &result);
+  for (size_t index = 0; index < input_vars.size(); ++index) {
+    auto p_var = input_vars[index];
+
+    // input variables can also be retrieved directly from the module, by location
+    auto p_var2 = spvReflectGetInputVariable(&module, p_var->location, &result);
     assert(result == SPV_REFLECT_RESULT_SUCCESS);
+    assert(p_var == p_var2);
+    (void)p_var2;
 
     std::cout << t << index << ":" << "\n";
     PrintInterfaceVariable(std::cout, module.source_language, *p_var, tt);
@@ -43,10 +47,14 @@ int main(int argn, char** argv)
   }
 
   std::cout << "Output variables:" << "\n";
-  for (size_t index = 0; index < output_locations.size(); ++index) {
-    uint32_t location = output_locations[index];
-    auto p_var = spvReflectGetOutputVariable(&module, location, &result);
+  for (size_t index = 0; index < output_vars.size(); ++index) {
+    auto p_var = output_vars[index];
+
+    // output variables can also be retrieved directly from the module, by location
+    auto p_var2 = spvReflectGetOutputVariable(&module, p_var->location, &result);
     assert(result == SPV_REFLECT_RESULT_SUCCESS);
+    assert(p_var == p_var2);
+    (void)p_var2;
 
     std::cout << t << index << ":" << "\n";
     PrintInterfaceVariable(std::cout, module.source_language, *p_var, tt);
