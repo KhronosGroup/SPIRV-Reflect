@@ -22,9 +22,11 @@
 #ifndef SPIRV_REFLECT_H
 #define SPIRV_REFLECT_H
 
-#include <stdint.h>
 #include <vulkan/spirv.h>
 #include <vulkan/vulkan.h>
+
+#include <stdint.h>
+#include <string.h>
 
 /*! @enum SpvReflectResult
 
