@@ -2154,7 +2154,7 @@ SpvReflectResult spvReflectEnumerateOutputVariables(
   }
 
   if (IsNotNull(pp_variables)) {
-    if (*p_count != p_module->input_variable_count) {
+    if (*p_count != p_module->output_variable_count) {
       return SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH;
     }
 
@@ -2164,7 +2164,7 @@ SpvReflectResult spvReflectEnumerateOutputVariables(
     }
   }
   else {
-    *p_count = p_module->input_variable_count;
+    *p_count = p_module->output_variable_count;
   }
 
   return SPV_REFLECT_RESULT_SUCCESS;

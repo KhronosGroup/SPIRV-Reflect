@@ -177,7 +177,7 @@ typedef struct SpvReflectInterfaceVariable {
   const char*                       name;
   uint32_t                          location;
   SpvStorageClass                   storage_class;
-  const char*                       smenatic_name;
+  const char*                       semantic_name;
   uint32_t                          semantic_index;
   SpvReflectDecorations             decorations;
   SpvReflectNumericTraits           numeric;
