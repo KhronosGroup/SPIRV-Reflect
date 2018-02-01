@@ -356,6 +356,17 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
 }
 
 // =================================================================================================
+// PrintUsage()
+// =================================================================================================
+void PrintUsage()
+{
+  std::cout << "Usage: spirv-reflect [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
+            << "Options:" << std::endl
+            << " --help:               Display this message" << std::endl
+            << std::endl;
+}
+
+// =================================================================================================
 // main()
 // =================================================================================================
 int main(int argn, char** argv)
@@ -367,34 +378,44 @@ int main(int argn, char** argv)
 //  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 //#endif
 
-  std::string file_path = argv[1];
+  if (argn != 2) {
+    PrintUsage();
+    return EXIT_FAILURE;
+  } else if (std::string(argv[1]) == "--help") {
+    PrintUsage();
+    return EXIT_SUCCESS;
+  }
+  std::string input_spv_path = argv[1];
 
-  std::ifstream is(file_path.c_str(), std::ios::binary);
-  assert(is.is_open());
+  std::ifstream spv_ifstream(input_spv_path.c_str(), std::ios::binary);
+  if (!spv_ifstream.is_open()) {
+    std::cerr << "ERROR: could not open '" << input_spv_path << "' for reading" << std::endl;
+    return EXIT_FAILURE;
+  }
 
-  is.seekg(0, std::ios::end);
-  size_t size = is.tellg();
-  is.seekg(0, std::ios::beg);  
+  spv_ifstream.seekg(0, std::ios::end);
+  size_t size = spv_ifstream.tellg();
+  spv_ifstream.seekg(0, std::ios::beg);
 
-  std::vector<char> data(size);
-  is.read(data.data(), size);
+  {
+    std::vector<char> spv_data(size);
+    spv_ifstream.read(spv_data.data(), size);
 
-  spv_reflect::ShaderModule reflection(data.size(), data.data());
-  data.~vector();
+    spv_reflect::ShaderModule reflection(spv_data.size(), spv_data.data());
+    if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
+      std::cerr << "ERROR: could not process '" << input_spv_path
+                << "' (is it a valid SPIR-V bytecode?)" << std::endl;
+      return EXIT_FAILURE;
+    }
+ 
+#if 0 // test code to modify reflection data in-place
+    //reflection.ChangeDescriptorSetNumber(reflection.GetDescriptorSet(0), 5);
+    reflection.ChangeDescriptorBindingNumber(reflection.GetDescriptorBinding(0, 0), 4, 7);
+#endif
 
-  std::cout << reflection << std::endl;
-  std::cout << std::endl;
-
-  //reflection.ChangeDescriptorSetNumber(reflection.GetDescriptorSet(0), 5);
-  reflection.ChangeDescriptorBindingNumber(reflection.GetDescriptorBinding(0, 0), 4, 7);
-
-  std::cout << "--------------------------------------------------------------------------------" << std::endl;
-
-  std::cout << reflection << std::endl;
-  std::cout << std::endl;
-
-  // Destroy this here so _CrtDumpMemoryLeaks doesn't report false positives.
-  reflection.~ShaderModule();
+    std::cout << reflection << std::endl;
+    std::cout << std::endl;
+  }
 
 #if defined(WIN32)
   _CrtDumpMemoryLeaks();
