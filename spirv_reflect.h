@@ -630,7 +630,7 @@ public:
   SpvReflectResult  EnumerateDescriptorSets( uint32_t* p_count, SpvReflectDescriptorSet** pp_sets) const ;
   SpvReflectResult  EnumerateInputVariables(uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
   SpvReflectResult  EnumerateOutputVariables(uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
-  SpvReflectResult  EnumeratePusConstants(uint32_t* p_count, SpvReflectBlockVariable** pp_push_constants) const;
+  SpvReflectResult  EnumeratePushConstants(uint32_t* p_count, SpvReflectBlockVariable** pp_push_constants) const;
 
   const SpvReflectDescriptorBinding*  GetDescriptorBinding(uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
   const SpvReflectDescriptorSet*      GetDescriptorSet(uint32_t set_number, SpvReflectResult* p_result = nullptr) const; 
@@ -814,7 +814,7 @@ inline SpvReflectResult ShaderModule::EnumerateOutputVariables(
   @return
 
 */
-inline SpvReflectResult ShaderModule::EnumeratePusConstants(
+inline SpvReflectResult ShaderModule::EnumeratePushConstants(
   uint32_t*                 p_count,
   SpvReflectBlockVariable** pp_push_constants
 ) const 
