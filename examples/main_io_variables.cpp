@@ -4,9 +4,8 @@
 
 int main(int argn, char** argv)
 {
-
   SpvReflectShaderModule module = {};
-  SpvReflectResult result = spvReflectGetShaderModule(k_sample_spv_len, k_sample_spv, &module);
+  SpvReflectResult result = spvReflectGetShaderModule(sizeof(k_sample_spv), k_sample_spv, &module);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   uint32_t count = 0;
