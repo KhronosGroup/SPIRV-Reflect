@@ -70,13 +70,13 @@ typedef struct NumberDecoration {
 } NumberDecoration;
 
 typedef struct Decorations {
-  bool                  block;
-  bool                  buffer_block;
-  bool                  row_major;
-  bool                  column_major;
-  bool                  built_in;
-  bool                  noperspective;
-  bool                  flat;
+  bool                  is_block;
+  bool                  is_buffer_block;
+  bool                  is_row_major;
+  bool                  is_column_major;
+  bool                  is_built_in;
+  bool                  is_noperspective;
+  bool                  is_flat;
   NumberDecoration      set;
   NumberDecoration      binding;
   NumberDecoration      input_attachment_index;
@@ -84,6 +84,7 @@ typedef struct Decorations {
   NumberDecoration      offset;
   uint32_t              array_stride;
   uint32_t              matrix_stride;
+  SpvBuiltIn            built_in;
 } Decorations;
 
 typedef struct Node {
@@ -263,28 +264,28 @@ SpvReflectResult ReadStr(Parser* p_parser, uint32_t word_offset, uint32_t word_i
   return result;
 }
 
-SpvReflectDecorations ApplyDecorations(const Decorations* p_decoration_fields)
+SpvReflectDecorationFlags ApplyDecorations(const Decorations* p_decoration_fields)
 {
-  SpvReflectDecorations decorations = SPV_REFLECT_DECORATION_NONE;
-  if (p_decoration_fields->block) {
+  SpvReflectDecorationFlags decorations = SPV_REFLECT_DECORATION_NONE;
+  if (p_decoration_fields->is_block) {
     decorations |= SPV_REFLECT_DECORATION_BLOCK;
   }
-  if (p_decoration_fields->buffer_block) {
+  if (p_decoration_fields->is_buffer_block) {
     decorations |= SPV_REFLECT_DECORATION_BUFFER_BLOCK;
   }
-  if (p_decoration_fields->row_major) {
+  if (p_decoration_fields->is_row_major) {
     decorations |= SPV_REFLECT_DECORATION_ROW_MAJOR;
   }
-  if (p_decoration_fields->column_major) {
+  if (p_decoration_fields->is_column_major) {
     decorations |= SPV_REFLECT_DECORATION_COLUMN_MAJOR;
   }
-  if (p_decoration_fields->built_in) {
+  if (p_decoration_fields->is_built_in) {
     decorations |= SPV_REFLECT_DECORATION_BUILT_IN;
   }
-  if (p_decoration_fields->noperspective) {
+  if (p_decoration_fields->is_noperspective) {
     decorations |= SPV_REFLECT_DECORATION_NOPERSPECTIVE;
   }
-  if (p_decoration_fields->flat) {
+  if (p_decoration_fields->is_flat) {
     decorations |= SPV_REFLECT_DECORATION_FLAT;
   }
   return decorations;
@@ -396,6 +397,7 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
     p_parser->nodes[i].decorations.binding.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.location.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.offset.value = (uint32_t)INVALID_VALUE;
+    p_parser->nodes[i].decorations.built_in = (SpvBuiltIn)INVALID_VALUE;
   }
 
   // Parse nodes
@@ -672,22 +674,22 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
       default: break;
 
       case SpvDecorationBlock: {
-        p_target_decorations->block = true;
+        p_target_decorations->is_block = true;
       }
       break;
 
       case SpvDecorationBufferBlock: {
-        p_target_decorations->buffer_block = true;
+        p_target_decorations->is_buffer_block = true;
       }
       break;
 
       case SpvDecorationColMajor: {
-        p_target_decorations->column_major = true;
+        p_target_decorations->is_column_major = true;
       }
       break;
 
       case SpvDecorationRowMajor: {
-        p_target_decorations->row_major = true;
+        p_target_decorations->is_row_major = true;
       }
       break;
 
@@ -704,17 +706,19 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
       break;
 
       case SpvDecorationBuiltIn: {
-        p_target_decorations->built_in = true;
+        p_target_decorations->is_built_in = true;
+        uint32_t word_offset = p_node->word_offset + member_offset + 3;
+        CHECKED_READU32_CAST(p_parser, word_offset, SpvBuiltIn, p_target_decorations->built_in);
       }
       break;
 
       case SpvDecorationNoPerspective: {
-        p_target_decorations->noperspective = true;
+        p_target_decorations->is_noperspective = true;
       }
       break;
 
       case SpvDecorationFlat: {
-        p_target_decorations->flat = true;
+        p_target_decorations->is_flat = true;
       }
       break;
 
@@ -784,34 +788,34 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
     if (p_type->id == INVALID_VALUE) {
       p_type->id = p_node->result_id;
       p_type->op = p_node->op;
-      p_type->decorations = ApplyDecorations(&p_node->decorations);
+      p_type->decoration_flags = ApplyDecorations(&p_node->decorations);
     }
 
     switch (p_node->op) {
       default: break;
       case SpvOpTypeVoid: 
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_VOID;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_VOID;
         break;
 
       case SpvOpTypeBool:
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_BOOL;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_BOOL;
         break;
       
       case SpvOpTypeInt: {
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_INT;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_INT;
         IF_READU32(result, p_parser, p_node->word_offset + 2, p_type->traits.numeric.scalar.width);
         IF_READU32(result, p_parser, p_node->word_offset + 3, p_type->traits.numeric.scalar.signedness);
       } 
       break;
 
       case SpvOpTypeFloat: {
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_FLOAT;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_FLOAT;
         IF_READU32(result, p_parser, p_node->word_offset + 2, p_type->traits.numeric.scalar.width);
       }
       break;
 
       case SpvOpTypeVector: { 
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_VECTOR;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_VECTOR;
         uint32_t component_type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 2, component_type_id);
         IF_READU32(result, p_parser, p_node->word_offset + 3, p_type->traits.numeric.vector.component_count);
@@ -827,7 +831,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
       break;
 
       case SpvOpTypeMatrix: {
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_MATRIX;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_MATRIX;
         uint32_t column_type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 2, column_type_id);
         IF_READU32(result, p_parser, p_node->word_offset + 3, p_type->traits.numeric.matrix.column_count);
@@ -848,7 +852,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
       break;
 
       case SpvOpTypeImage: {
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE;
         IF_READU32_CAST(result, p_parser, p_node->word_offset + 3, SpvDim, p_type->traits.image.dim);
         IF_READU32(result, p_parser, p_node->word_offset + 4, p_type->traits.image.depth);
         IF_READU32(result, p_parser, p_node->word_offset + 5, p_type->traits.image.arrayed);
@@ -859,12 +863,12 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
       break;
 
       case SpvOpTypeSampler: {
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLER;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLER;
       }
       break;
 
       case SpvOpTypeSampledImage: {
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE;
         uint32_t image_type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 2, image_type_id);
         Node* p_next_node = FindNode(p_parser, image_type_id);
@@ -878,7 +882,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
       break;
 
       case SpvOpTypeArray: {
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_ARRAY;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_ARRAY;
         if (result == SPV_REFLECT_RESULT_SUCCESS) {
           uint32_t element_type_id = (uint32_t)INVALID_VALUE;
           uint32_t length_id = (uint32_t)INVALID_VALUE;
@@ -928,8 +932,8 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
       break;
 
       case SpvOpTypeStruct: {
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_STRUCT;
-        p_type->flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_BLOCK;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_STRUCT;
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_BLOCK;
         uint32_t word_index = 2;
         uint32_t member_index = 0;
         for (; word_index < p_node->word_count; ++word_index, ++member_index) {
@@ -1109,14 +1113,14 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
     p_descriptor->type_description = p_type;
 
     // Copy image traits
-    if ((p_type->flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK) == SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE) {
+    if ((p_type->type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK) == SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE) {
       memcpy(&p_descriptor->image, &p_type->traits.image, sizeof(p_descriptor->image));
     }
 
     // This is a workaround for: https://github.com/KhronosGroup/glslang/issues/1096
     {
       const uint32_t resource_mask = SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE | SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE;
-      if ((p_type->flags & resource_mask) == resource_mask) {
+      if ((p_type->type_flags & resource_mask) == resource_mask) {
         memcpy(&p_descriptor->image, &p_type->traits.image, sizeof(p_descriptor->image));
       }
     }
@@ -1155,7 +1159,7 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
     SpvReflectTypeDescription* p_type = p_descriptor->type_description;
 
-    switch (p_type->flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK) {
+    switch (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK) {
       default: assert(false && "unknown type flag"); break;
 
       case SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE: {
@@ -1200,10 +1204,10 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
       break;
 
       case SPV_REFLECT_TYPE_FLAG_EXTERNAL_BLOCK: {
-        if (p_type->decorations & SPV_REFLECT_DECORATION_BLOCK) {
+        if (p_type->decoration_flags & SPV_REFLECT_DECORATION_BLOCK) {
           p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         }
-        else if (p_type->decorations & SPV_REFLECT_DECORATION_BUFFER_BLOCK) {
+        else if (p_type->decoration_flags & SPV_REFLECT_DECORATION_BUFFER_BLOCK) {
           p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         }
         else {
@@ -1421,9 +1425,9 @@ static SpvReflectResult ParseFormat(
 {
   SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
   bool signedness = p_type->traits.numeric.scalar.signedness;
-  if (p_type->flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+  if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
     uint32_t component_count = p_type->traits.numeric.vector.component_count;
-    if (p_type->flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
+    if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
       switch (component_count) {
         case 2: *p_format = VK_FORMAT_R32G32_SFLOAT; break;
         case 3: *p_format = VK_FORMAT_R32G32B32_SFLOAT; break;
@@ -1431,7 +1435,7 @@ static SpvReflectResult ParseFormat(
       }
       result = SPV_REFLECT_RESULT_SUCCESS;
     }
-    else if (p_type->flags & SPV_REFLECT_TYPE_FLAG_INT) {
+    else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_INT) {
       switch (component_count) {
         case 2: *p_format = signedness ? VK_FORMAT_R32G32_SINT : VK_FORMAT_R32G32_UINT; break;
         case 3: *p_format = signedness ? VK_FORMAT_R32G32B32_SINT : VK_FORMAT_R32G32B32_UINT; break;
@@ -1440,11 +1444,11 @@ static SpvReflectResult ParseFormat(
       result = SPV_REFLECT_RESULT_SUCCESS;
     }
   }
-  else if (p_type->flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
+  else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
     *p_format = VK_FORMAT_R32_SFLOAT;
     result = SPV_REFLECT_RESULT_SUCCESS;
   }
-  else if (p_type->flags & SPV_REFLECT_TYPE_FLAG_INT) {
+  else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_INT) {
     if (signedness) {
       *p_format = VK_FORMAT_R32_SINT;
       result = SPV_REFLECT_RESULT_SUCCESS;
@@ -1454,7 +1458,7 @@ static SpvReflectResult ParseFormat(
       result = SPV_REFLECT_RESULT_SUCCESS;
     }
   }
-  else if (p_type->flags & SPV_REFLECT_TYPE_FLAG_STRUCT) {
+  else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT) {
     *p_format = VK_FORMAT_UNDEFINED;
     result = SPV_REFLECT_RESULT_SUCCESS;
   }
@@ -1492,7 +1496,8 @@ static SpvReflectResult ParseInterfaceVariable(Parser*                      p_pa
   }
 
   p_var->name = p_type_node->name;
-  p_var->decorations = ApplyDecorations(p_decorations);
+  p_var->decoration_flags = ApplyDecorations(p_decorations);
+  p_var->built_in = p_decorations->built_in;
   ApplyNumericTraits(p_type, &p_var->numeric);
   if (p_type->op == SpvOpTypeArray) {
     ApplyArrayTraits(p_type, &p_var->array);
@@ -1500,7 +1505,7 @@ static SpvReflectResult ParseInterfaceVariable(Parser*                      p_pa
 
   p_var->type_description = p_type;
 
-  *p_has_built_in |= p_decorations->built_in;
+  *p_has_built_in |= p_decorations->is_built_in;
 
   SpvReflectResult result = ParseFormat(p_var->type_description, &p_var->format);
   if (result != SPV_REFLECT_RESULT_SUCCESS) {
@@ -1598,25 +1603,33 @@ static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShad
       ++output_index;
     }
 
-    bool has_buiilt_in = false;
+    bool has_built_in = p_node->decorations.is_built_in;
     SpvReflectResult result = ParseInterfaceVariable(p_parser,
                                                      &p_type_node->decorations,
                                                      p_module, 
                                                      p_type, 
                                                      p_var,
-                                                     &has_buiilt_in);
+                                                     &has_built_in);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
     }
 
+    // Name
+    p_var->name = p_node->name;
+
     // Decorate with built-in if any member is built-in
-    if (has_buiilt_in) {
-      p_var->decorations |= SPV_REFLECT_DECORATION_BUILT_IN;
+    if (has_built_in) {
+      p_var->decoration_flags |= SPV_REFLECT_DECORATION_BUILT_IN;
     }
 
     // Location is decorated on OpVariable node, not the type node.
     p_var->location = p_node->decorations.location.value;
     p_var->word_offset.location = p_node->decorations.location.word_offset;
+
+    // Built in
+    if (p_node->decorations.is_built_in) {
+      p_var->built_in = p_node->decorations.built_in;
+    }
   }
 
   return SPV_REFLECT_RESULT_SUCCESS;
@@ -2154,7 +2167,7 @@ SpvReflectResult spvReflectEnumerateOutputVariables(
   }
 
   if (IsNotNull(pp_variables)) {
-    if (*p_count != p_module->input_variable_count) {
+    if (*p_count != p_module->output_variable_count) {
       return SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH;
     }
 
@@ -2164,7 +2177,7 @@ SpvReflectResult spvReflectEnumerateOutputVariables(
     }
   }
   else {
-    *p_count = p_module->input_variable_count;
+    *p_count = p_module->output_variable_count;
   }
 
   return SPV_REFLECT_RESULT_SUCCESS;

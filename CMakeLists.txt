@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 project(spirv-reflect)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
@@ -18,10 +19,12 @@ message("Using Vulkan found at ${VULKAN_DIR}")
 
 include_directories(${VULKAN_DIR}/include)
 
-add_executable(spirv-reflect ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-                             ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h
-                             ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.c)
+add_executable(spirv-reflect ${CMAKE_SOURCE_DIR}/main.cpp
+                             ${CMAKE_SOURCE_DIR}/spirv_reflect.h
+                             ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.c
+                             ${CMAKE_SOURCE_DIR}/examples/common.h
+                             ${CMAKE_SOURCE_DIR}/examples/common.cpp)
 
-if(WIN32)
-    set_target_properties(spirv-reflect PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:Windows /INCREMENTAL:NO")
-endif()
+target_include_directories(spirv-reflect PRIVATE ${CMAKE_SOURCE_DIR})
+
+add_subdirectory(examples)
