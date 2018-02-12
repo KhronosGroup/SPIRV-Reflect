@@ -1435,7 +1435,7 @@ static SpvReflectResult ParseFormat(
       }
       result = SPV_REFLECT_RESULT_SUCCESS;
     }
-    else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_INT) {
+    else if (p_type->type_flags & (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_BOOL)) {
       switch (component_count) {
         case 2: *p_format = signedness ? VK_FORMAT_R32G32_SINT : VK_FORMAT_R32G32_UINT; break;
         case 3: *p_format = signedness ? VK_FORMAT_R32G32B32_SINT : VK_FORMAT_R32G32B32_UINT; break;
@@ -1448,7 +1448,7 @@ static SpvReflectResult ParseFormat(
     *p_format = VK_FORMAT_R32_SFLOAT;
     result = SPV_REFLECT_RESULT_SUCCESS;
   }
-  else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_INT) {
+  else if (p_type->type_flags & (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_BOOL)) {
     if (signedness) {
       *p_format = VK_FORMAT_R32_SINT;
       result = SPV_REFLECT_RESULT_SUCCESS;
