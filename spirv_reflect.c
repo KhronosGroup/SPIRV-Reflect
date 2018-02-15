@@ -1601,6 +1601,11 @@ static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShad
       p_var = &(p_module->output_variables[output_index]);
       p_var->storage_class = SpvStorageClassOutput;
       ++output_index;
+    } else {
+      // interface variables can only have input or output storage classes;
+      // anything else is either a new addition or an error.
+      assert(false && "Unsupported storage class for interface variable");
+      return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_STORAGE_CLASS;
     }
 
     bool has_built_in = p_node->decorations.is_built_in;
