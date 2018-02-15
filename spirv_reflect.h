@@ -557,6 +557,7 @@ const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang);
 #if defined(__cplusplus)
 #include <cstdlib>
 #include <string>
+#include <vector>
 
 namespace spv_reflect {
 
