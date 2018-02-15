@@ -1400,7 +1400,7 @@ static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShader
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
     SpvReflectTypeDescription* p_type = p_descriptor->type_description;
     if ((p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) && 
-        (p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ) 
+        (p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) )
     {
       continue;
     }
