@@ -45,6 +45,7 @@ typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_OF,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_SET_NUMBER_OVERFLOW,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_STORAGE_CLASS,
 } SpvReflectResult;
 
 /*! @enum SpvReflectTypeFlagBits
@@ -146,8 +147,6 @@ typedef struct SpvReflectBindingArrayTraits {
 /*! @struct SpvReflectTypeDescription
 
 */
-typedef struct SpvReflectTypeDescription SpvReflectTypeDescription;
-
 typedef struct SpvReflectTypeDescription {
   uint32_t                          id;
   SpvOp                             op;
@@ -164,27 +163,25 @@ typedef struct SpvReflectTypeDescription {
   } traits;
 
   uint32_t                          member_count;
-  SpvReflectTypeDescription*        members;
+  struct SpvReflectTypeDescription* members;
 } SpvReflectTypeDescription;
 
 
 /*! @struct SpvReflectInterfaceVariable
 
 */
-typedef struct SpvReflectInterfaceVariable SpvReflectInterfaceVariable;
-
 typedef struct SpvReflectInterfaceVariable {
-  const char*                       name;
-  uint32_t                          location;
-  SpvStorageClass                   storage_class;
-  const char*                       semantic_name;
-  uint32_t                          semantic_index;
-  SpvReflectDecorationFlags         decoration_flags;
-  SpvBuiltIn                        built_in;
-  SpvReflectNumericTraits           numeric;
-  SpvReflectArrayTraits             array;
-  uint32_t                          member_count;
-  SpvReflectInterfaceVariable*      members;
+  const char*                         name;
+  uint32_t                            location;
+  SpvStorageClass                     storage_class;
+  const char*                         semantic_name;
+  uint32_t                            semantic_index;
+  SpvReflectDecorationFlags           decoration_flags;
+  SpvBuiltIn                          built_in;
+  SpvReflectNumericTraits             numeric;
+  SpvReflectArrayTraits               array;
+  uint32_t                            member_count;
+  struct SpvReflectInterfaceVariable* members;
 
   VkFormat                          format;
 
@@ -202,8 +199,6 @@ typedef struct SpvReflectInterfaceVariable {
 /*! @struct SpvReflectBlockVariable
 
 */
-typedef struct SpvReflectBlockVariable SpvReflectBlockVariable;
-
 typedef struct SpvReflectBlockVariable {
   const char*                       name;
   uint32_t                          offset;       // Measured in bytes
@@ -213,7 +208,7 @@ typedef struct SpvReflectBlockVariable {
   SpvReflectNumericTraits           numeric;
   SpvReflectArrayTraits             array;
   uint32_t                          member_count;
-  SpvReflectBlockVariable*          members;
+  struct SpvReflectBlockVariable*   members;
 
   SpvReflectTypeDescription*        type_description;
 } SpvReflectBlockVariable;
@@ -221,19 +216,17 @@ typedef struct SpvReflectBlockVariable {
 /*! @struct SpvReflectDescriptorBinding
 
 */
-typedef struct SpvReflectDescriptorBinding SpvReflectDescriptorBinding;
-
 typedef struct SpvReflectDescriptorBinding {
-  const char*                       name;
-  uint32_t                          binding;
-  uint32_t                          input_attachment_index;
-  uint32_t                          set;
-  VkDescriptorType                  descriptor_type;
-  SpvReflectResourceType            resource_type;
-  SpvReflectImageTraits             image;
-  SpvReflectBlockVariable           block;
-  SpvReflectBindingArrayTraits      array;
-  SpvReflectDescriptorBinding*      uav_counter_binding;
+  const char*                         name;
+  uint32_t                            binding;
+  uint32_t                            input_attachment_index;
+  uint32_t                            set;
+  VkDescriptorType                    descriptor_type;
+  SpvReflectResourceType              resource_type;
+  SpvReflectImageTraits               image;
+  SpvReflectBlockVariable             block;
+  SpvReflectBindingArrayTraits        array;
+  struct SpvReflectDescriptorBinding* uav_counter_binding;
 
   SpvReflectTypeDescription*        type_description;
 

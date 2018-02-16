@@ -1400,7 +1400,7 @@ static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShader
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
     SpvReflectTypeDescription* p_type = p_descriptor->type_description;
     if ((p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) && 
-        (p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ) 
+        (p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) )
     {
       continue;
     }
@@ -1435,7 +1435,7 @@ static SpvReflectResult ParseFormat(
       }
       result = SPV_REFLECT_RESULT_SUCCESS;
     }
-    else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_INT) {
+    else if (p_type->type_flags & (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_BOOL)) {
       switch (component_count) {
         case 2: *p_format = signedness ? VK_FORMAT_R32G32_SINT : VK_FORMAT_R32G32_UINT; break;
         case 3: *p_format = signedness ? VK_FORMAT_R32G32B32_SINT : VK_FORMAT_R32G32B32_UINT; break;
@@ -1448,7 +1448,7 @@ static SpvReflectResult ParseFormat(
     *p_format = VK_FORMAT_R32_SFLOAT;
     result = SPV_REFLECT_RESULT_SUCCESS;
   }
-  else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_INT) {
+  else if (p_type->type_flags & (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_BOOL)) {
     if (signedness) {
       *p_format = VK_FORMAT_R32_SINT;
       result = SPV_REFLECT_RESULT_SUCCESS;
@@ -1601,6 +1601,11 @@ static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShad
       p_var = &(p_module->output_variables[output_index]);
       p_var->storage_class = SpvStorageClassOutput;
       ++output_index;
+    } else {
+      // interface variables can only have input or output storage classes;
+      // anything else is either a new addition or an error.
+      assert(false && "Unsupported storage class for interface variable");
+      return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_STORAGE_CLASS;
     }
 
     bool has_built_in = p_node->decorations.is_built_in;
