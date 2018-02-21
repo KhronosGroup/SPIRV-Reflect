@@ -281,7 +281,7 @@ typedef struct SpvReflectShaderModule {
 extern "C" {
 #endif 
 
-/*! @fn spvReflectGetShadeModule
+/*! @fn spvReflectCreateShaderModule
 
  @param  size      Size in bytes of SPIR-V code.
  @param  p_code    Pointer to SPIR-V code.
@@ -289,9 +289,9 @@ extern "C" {
  @return           SPV_REFLECT_RESULT_SUCCESS on success.
 
 */
-SpvReflectResult spvReflectGetShaderModule(
-  size_t                   size, 
-  const void*              p_code, 
+SpvReflectResult spvReflectCreateShaderModule(
+  size_t                   size,
+  const void*              p_code,
   SpvReflectShaderModule*  p_module
 );
 
@@ -660,7 +660,7 @@ inline ShaderModule::ShaderModule() {}
 
 */
 inline ShaderModule::ShaderModule(size_t size, const void* p_code) {
-  m_result = spvReflectGetShaderModule(size, 
+  m_result = spvReflectCreateShaderModule(size, 
                                         p_code, 
                                         &m_module);
 }
