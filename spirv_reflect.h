@@ -28,6 +28,20 @@
 #include <stdint.h>
 #include <string.h>
 
+#ifdef _MSC_VER
+#define SPIRV_REFLECT_DEPRECATED(msg_str) __declspec(deprecated("This symbol is deprecated. Details: " msg_str))
+#elif defined(__clang__)
+#define SPIRV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
+#elif defined(__GNUC__)
+#if GCC_VERSION >= 40500
+#define SPIRV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
+#else
+#define SPIRV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated))
+#endif
+#else
+#define SPIRV_REFLECT_DEPRECATED(msg_str)
+#endif
+
 /*! @enum SpvReflectResult
 
 */
@@ -290,6 +304,13 @@ extern "C" {
 
 */
 SpvReflectResult spvReflectCreateShaderModule(
+  size_t                   size,
+  const void*              p_code,
+  SpvReflectShaderModule*  p_module
+);
+
+SPIRV_REFLECT_DEPRECATED("renamed to spvReflectCreateShaderModule")
+SpvReflectResult spvReflectGetShaderModule(
   size_t                   size,
   const void*              p_code,
   SpvReflectShaderModule*  p_module
