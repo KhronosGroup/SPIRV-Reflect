@@ -1807,6 +1807,9 @@ SpvReflectResult spvReflectGetShaderModule(
   SpvReflectShaderModule*  p_module
 )
 {
+  // Initialize all module fields to zero
+  memset(p_module, 0, sizeof(*p_module));
+
   // Allocate module internals
 #ifdef __cplusplus
   p_module->_internal = (SpvReflectShaderModule::Internal*)calloc(1, sizeof(*(p_module->_internal)));
