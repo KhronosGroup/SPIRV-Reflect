@@ -1,8 +1,10 @@
 #include "common.h"
 
+#include <array>
 #include <cassert>
 #include <cstring>
 #include <fstream>
+#include <iomanip>
 
 static const char* ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
@@ -363,12 +365,12 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const 
 
 //////////////////////////////////
 
-YamlWriter::YamlWriter(const SpvReflectShaderModule& shader_module) :
+SpvReflectToYaml::SpvReflectToYaml(const SpvReflectShaderModule& shader_module) :
   sm_(shader_module)
 {
 }
 
-void YamlWriter::WriteTypeDescription(std::ostream& os, const SpvReflectTypeDescription& td, uint32_t indent_level) {
+void SpvReflectToYaml::WriteTypeDescription(std::ostream& os, const SpvReflectTypeDescription& td, uint32_t indent_level) {
   // YAML anchors can only refer to points earlier in the doc, so child type descriptions must
   // be processed before the parent.
   for(uint32_t i=0; i<td.member_count; ++i) {
@@ -472,7 +474,7 @@ void YamlWriter::WriteTypeDescription(std::ostream& os, const SpvReflectTypeDesc
   // } SpvReflectTypeDescription;
 }
 
-void YamlWriter::WriteBlockVariable(std::ostream& os, const SpvReflectBlockVariable& bv, uint32_t indent_level) {
+void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBlockVariable& bv, uint32_t indent_level) {
   for(uint32_t i=0; i<bv.member_count; ++i) {
     WriteBlockVariable(os, bv.members[i], indent_level);
   }
@@ -560,7 +562,7 @@ void YamlWriter::WriteBlockVariable(std::ostream& os, const SpvReflectBlockVaria
   // } SpvReflectBlockVariable;
 }
 
-void YamlWriter::WriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& db, uint32_t indent_level) {
+void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& db, uint32_t indent_level) {
   if (db.uav_counter_binding != nullptr) {
     auto itor = descriptor_binding_to_index_.find(&db);
     if (itor == descriptor_binding_to_index_.end()) {
@@ -659,7 +661,7 @@ void YamlWriter::WriteDescriptorBinding(std::ostream& os, const SpvReflectDescri
   // } SpvReflectDescriptorBinding;
 }
 
-void YamlWriter::WriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVariable& iv, uint32_t indent_level) {
+void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVariable& iv, uint32_t indent_level) {
   for(uint32_t i=0; i<iv.member_count; ++i) {
     assert(interface_variable_to_index_.find(&iv.members[i]) == interface_variable_to_index_.end());
     WriteInterfaceVariable(os, iv.members[i], indent_level);
@@ -761,7 +763,7 @@ void YamlWriter::WriteInterfaceVariable(std::ostream& os, const SpvReflectInterf
   // } SpvReflectInterfaceVariable;
 }
 
-void YamlWriter::Write(std::ostream& os)
+void SpvReflectToYaml::Write(std::ostream& os)
 {
   if (!sm_._internal) {
     return;
@@ -771,7 +773,7 @@ void YamlWriter::Write(std::ostream& os)
   const std::string t0 = Indent(indent_level);
   const std::string t1 = Indent(indent_level+1);
   const std::string t2 = Indent(indent_level+2);
-  const std::string t3 = Indent(indent_level+2);
+  const std::string t3 = Indent(indent_level+3);
 
   type_description_to_index_.clear();
   os << t0 << "all_type_descriptions:" << std::endl;
@@ -881,7 +883,17 @@ void YamlWriter::Write(std::ostream& os)
     //   size_t                          spirv_size;
     os << t2 << "spirv_size: " << sm_._internal->spirv_size << std::endl;
     //   uint32_t*                       spirv_code;
-    os << t2 << "spirv_code:" << std::endl;  // TODO
+    os << t2 << "spirv_code: [";
+    for(size_t i=0; i < sm_._internal->spirv_word_count; ++i) {
+      if ((i % 8) == 0) {
+        os << std::endl << t3;
+      }
+      // std::iomanip can die in a fire.
+      char out_word[12];
+      snprintf(out_word, 12, "0x%08X,", sm_._internal->spirv_code[i]);
+      os << out_word;
+    }
+    os << "]" << std::endl;
     //   uint32_t                        spirv_word_count;
     os << t2 << "spirv_word_count: " << sm_._internal->spirv_word_count << std::endl;
     //   size_t                          type_description_count;

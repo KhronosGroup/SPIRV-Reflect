@@ -14,14 +14,20 @@ void PrintDescriptorSet(std::ostream& os, const SpvReflectDescriptorSet& obj, co
 void PrintDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, const char* indent = "");
 void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const SpvReflectInterfaceVariable& obj, const char* indent);
 
-class YamlWriter {
+class SpvReflectToYaml {
 public:
-  explicit YamlWriter(const SpvReflectShaderModule& shader_module);
+  explicit SpvReflectToYaml(const SpvReflectShaderModule& shader_module);
 
-  void Write(std::ostream& os);
+  friend std::ostream& operator<<(std::ostream& os, SpvReflectToYaml& to_yaml)
+  {
+    to_yaml.Write(os);
+    return os;
+  }
 private:
-  YamlWriter(const YamlWriter&) = delete;
-  YamlWriter(const YamlWriter&&) = delete;
+  void Write(std::ostream& os);
+
+  SpvReflectToYaml(const SpvReflectToYaml&) = delete;
+  SpvReflectToYaml(const SpvReflectToYaml&&) = delete;
   static std::string Indent(uint32_t level) {
     return std::string(2*level, ' ');
   }
@@ -37,6 +43,7 @@ private:
   std::map<const SpvReflectDescriptorBinding*, uint32_t> descriptor_binding_to_index_;
   std::map<const SpvReflectInterfaceVariable*, uint32_t> interface_variable_to_index_;
 };
+
 
 
 #endif
