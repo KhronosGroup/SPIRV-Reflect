@@ -360,3 +360,539 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const 
     os << " " << "(" << obj.type_description->type_name << ")";
   }
 }
+
+//////////////////////////////////
+
+YamlWriter::YamlWriter(const SpvReflectShaderModule& shader_module) :
+  sm_(shader_module)
+{
+}
+
+void YamlWriter::WriteTypeDescription(std::ostream& os, const SpvReflectTypeDescription& td, uint32_t indent_level) {
+  // YAML anchors can only refer to points earlier in the doc, so child type descriptions must
+  // be processed before the parent.
+  for(uint32_t i=0; i<td.member_count; ++i) {
+    WriteTypeDescription(os, td.members[i], indent_level);
+  }
+  const std::string t0 = Indent(indent_level);
+  const std::string t1 = Indent(indent_level+1);
+  const std::string t2 = Indent(indent_level+2);
+  const std::string t3 = Indent(indent_level+3);
+  const std::string t4 = Indent(indent_level+4);
+
+  // Determine the index of this type within the shader module's list.
+  assert(type_description_to_index_.find(&td) == type_description_to_index_.end());
+  uint32_t type_description_index = static_cast<uint32_t>(type_description_to_index_.size());
+  type_description_to_index_[&td] = type_description_index;
+
+  os << t0 << "- &td" << type_description_index << std::endl;
+  // typedef struct SpvReflectTypeDescription {
+  //   uint32_t                          id;
+  os << t1 << "id: " << td.id << std::endl;
+  //   SpvOp                             op;
+  os << t1 << "op: " << td.op << std::endl;
+  //   const char*                       type_name;
+  os << t1 << "type_name: " << SafeString(td.type_name) << std::endl;
+  //   const char*                       struct_member_name;
+  os << t1 << "struct_member_name: " << SafeString(td.struct_member_name) << std::endl;
+  //   SpvStorageClass                   storage_class;
+  os << t1 << "storage_class: " << td.storage_class << std::endl;
+  //   SpvReflectTypeFlags               type_flags;
+  os << t1 << "type_flags: " << td.type_flags << std::endl;
+  //   SpvReflectDecorationFlags         decoration_flags;
+  os << t1 << "decoration_flags: " << td.decoration_flags << std::endl;
+  //   struct Traits {
+  os << t1 << "traits:" << std::endl;
+  //     SpvReflectNumericTraits         numeric;
+  os << t2 << "numeric:" << std::endl;
+  // typedef struct SpvReflectNumericTraits {
+  //   struct Scalar {
+  os << t3 << "scalar:" << std::endl;
+  //     uint32_t                        width;
+  os << t4 << "width: " << td.traits.numeric.scalar.width << std::endl;
+  //     uint32_t                        signedness;
+  os << t4 << "signedness: " << td.traits.numeric.scalar.signedness << std::endl;
+  //   } scalar;
+  // 
+  //   struct Vector {
+  os << t3 << "vector:" << std::endl;
+  //     uint32_t                        component_count;
+  os << t4 << "component_count: " << td.traits.numeric.vector.component_count << std::endl;
+  //   } vector;
+  // 
+  //   struct Matrix {
+  os << t3 << "matrix:" << std::endl;
+  //     uint32_t                        column_count;
+  os << t4 << "column_count: " << td.traits.numeric.matrix.column_count << std::endl;
+  //     uint32_t                        row_count;
+  os << t4 << "row_count: " << td.traits.numeric.matrix.row_count << std::endl;
+  //     uint32_t                        stride; // Measured in bytes
+  os << t4 << "stride: " << td.traits.numeric.matrix.stride << std::endl;
+  //   } matrix;
+  // } SpvReflectNumericTraits;
+
+  //     SpvReflectImageTraits           image;
+  os << t2 << "image:" << std::endl;
+  // typedef struct SpvReflectImageTraits {
+  //   SpvDim                            dim;
+  os << t3 << "dim: " << td.traits.image.dim << std::endl;
+  //   uint32_t                          depth;
+  os << t3 << "depth: " << td.traits.image.depth << std::endl;
+  //   uint32_t                          arrayed;
+  os << t3 << "arrayed: " << td.traits.image.arrayed << std::endl;
+  //   uint32_t                          ms;
+  os << t3 << "ms: " << td.traits.image.ms << std::endl;
+  //   uint32_t                          sampled;
+  os << t3 << "sampled: " << td.traits.image.sampled << std::endl;
+  //   SpvImageFormat                    image_format;
+  os << t3 << "image_format: " << td.traits.image.image_format << std::endl;
+  // } SpvReflectImageTraits;
+
+  //     SpvReflectArrayTraits           array;
+  os << t2 << "array:" << std::endl;
+  // typedef struct SpvReflectArrayTraits {
+  //   uint32_t                          dims_count;
+  os << t3 << "dims_count: " << td.traits.array.dims_count << std::endl;
+  //   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
+  os << t3 << "dims:" << std::endl;
+  for(uint32_t i_dim=0; i_dim < td.traits.array.dims_count; ++i_dim) {
+    os << t4 << "- " << td.traits.array.dims[i_dim] << std::endl;
+  }
+  //   uint32_t                          stride; // Measured in bytes
+  os << t3 << "stride: " << td.traits.array.stride << std::endl;
+  // } SpvReflectArrayTraits;
+  //   } traits;
+  //   uint32_t                          member_count;
+  os << t1 << "member_count: " << td.member_count << std::endl;
+  //   struct SpvReflectTypeDescription* members;
+  os << t1 << "members:" << std::endl;
+  for(uint32_t i_member=0; i_member < td.member_count; ++i_member) {
+    os << t2 << "- *td" << type_description_to_index_[&(td.members[i_member])] << std::endl;
+  }
+  // } SpvReflectTypeDescription;
+}
+
+void YamlWriter::WriteBlockVariable(std::ostream& os, const SpvReflectBlockVariable& bv, uint32_t indent_level) {
+  for(uint32_t i=0; i<bv.member_count; ++i) {
+    WriteBlockVariable(os, bv.members[i], indent_level);
+  }
+
+  const std::string t0 = Indent(indent_level);
+  const std::string t1 = Indent(indent_level+1);
+  const std::string t2 = Indent(indent_level+2);
+  const std::string t3 = Indent(indent_level+3);
+
+  assert(block_variable_to_index_.find(&bv) == block_variable_to_index_.end());
+  uint32_t block_variable_index = static_cast<uint32_t>(block_variable_to_index_.size());
+  block_variable_to_index_[&bv] = block_variable_index;
+
+  os << t0 << "- &bv" << block_variable_index << std::endl;
+  // typedef struct SpvReflectBlockVariable {
+  //   const char*                       name;
+  os << t1 << "name: " << SafeString(bv.name) << std::endl;
+  //   uint32_t                          offset;       // Measured in bytes
+  os << t1 << "offset: " << bv.offset << std::endl;
+  //   uint32_t                          size;         // Measured in bytes
+  os << t1 << "size: " << bv.size << std::endl;
+  //   uint32_t                          padded_size;  // Measured in bytes
+  os << t1 << "padded_size: " << bv.padded_size << std::endl;
+  //   SpvReflectDecorationFlags         decorations;
+  os << t1 << "decorations: " << bv.decorations << std::endl;
+  //   SpvReflectNumericTraits           numeric;
+  os << t1 << "numeric:" << std::endl;
+  // typedef struct SpvReflectNumericTraits {
+  //   struct Scalar {
+  os << t2 << "scalar:" << std::endl;
+  //     uint32_t                        width;
+  os << t3 << "width: " << bv.numeric.scalar.width << std::endl;
+  //     uint32_t                        signedness;
+  os << t3 << "signedness: " << bv.numeric.scalar.signedness << std::endl;
+  //   } scalar;
+  // 
+  //   struct Vector {
+  os << t2 << "vector:" << std::endl;
+  //     uint32_t                        component_count;
+  os << t3 << "component_count: " << bv.numeric.vector.component_count << std::endl;
+  //   } vector;
+  // 
+  //   struct Matrix {
+  os << t2 << "matrix:" << std::endl;
+  //     uint32_t                        column_count;
+  os << t3 << "column_count: " << bv.numeric.matrix.column_count << std::endl;
+  //     uint32_t                        row_count;
+  os << t3 << "row_count: " << bv.numeric.matrix.row_count << std::endl;
+  //     uint32_t                        stride; // Measured in bytes
+  os << t3 << "stride: " << bv.numeric.matrix.stride << std::endl;
+  //   } matrix;
+  // } SpvReflectNumericTraits;
+
+  //   SpvReflectArrayTraits             array;
+  os << t1 << "array:" << std::endl;
+  // typedef struct SpvReflectArrayTraits {
+  //   uint32_t                          dims_count;
+  os << t2 << "dims_count: " << bv.array.dims_count << std::endl;
+  //   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
+  os << t2 << "dims:" << std::endl;
+  for(uint32_t i_dim=0; i_dim < bv.array.dims_count; ++i_dim) {
+    os << t3 << "- " << bv.array.dims[i_dim] << std::endl;
+  }
+  //   uint32_t                          stride; // Measured in bytes
+  os << t2 << "stride: " << bv.array.stride << std::endl;
+  // } SpvReflectArrayTraits;
+
+  //   uint32_t                          member_count;
+  os << t1 << "member_count: " << bv.member_count << std::endl;
+  //   struct SpvReflectBlockVariable*   members;
+  os << t1 << "members:" << std::endl;
+  for(uint32_t i=0; i<bv.member_count; ++i) {
+    auto itor = block_variable_to_index_.find(&bv.members[i]);
+    assert(itor != block_variable_to_index_.end());
+    os << t2 << "- *td" << itor->second << std::endl;
+  }
+  //   SpvReflectTypeDescription*        type_description;
+  if (bv.type_description == nullptr) {
+    os << t1 << "type_description:" << std::endl;
+  } else {
+    auto itor = type_description_to_index_.find(bv.type_description);
+    assert(itor != type_description_to_index_.end());
+    os << t1 << "type_description: *td" << itor->second << std::endl;
+  }
+  // } SpvReflectBlockVariable;
+}
+
+void YamlWriter::WriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& db, uint32_t indent_level) {
+  if (db.uav_counter_binding != nullptr) {
+    auto itor = descriptor_binding_to_index_.find(&db);
+    if (itor == descriptor_binding_to_index_.end()) {
+      WriteDescriptorBinding(os, *(db.uav_counter_binding), indent_level);
+    }
+  }
+
+  const std::string t0 = Indent(indent_level);
+  const std::string t1 = Indent(indent_level+1);
+  const std::string t2 = Indent(indent_level+2);
+  const std::string t3 = Indent(indent_level+3);
+
+  // A binding's UAV binding later may appear later in the table than the binding itself,
+  // in which case we've already output entries for both bindings, and can just write another
+  // reference here.
+  auto itor = descriptor_binding_to_index_.find(&db);
+  if (itor != descriptor_binding_to_index_.end()) {
+    os << t0 << "- *db" << itor->second << std::endl;
+    return;
+  }
+
+  uint32_t descriptor_binding_index = static_cast<uint32_t>(descriptor_binding_to_index_.size());
+  descriptor_binding_to_index_[&db] = descriptor_binding_index;
+
+  os << t0 << "- &db" << descriptor_binding_index << std::endl;
+  // typedef struct SpvReflectDescriptorBinding {
+  //   const char*                         name;
+  os << t1 << "name: " << SafeString(db.name) << std::endl;
+  //   uint32_t                            binding;
+  os << t1 << "binding: " << db.binding << std::endl;
+  //   uint32_t                            input_attachment_index;
+  os << t1 << "input_attachment_index: " << db.input_attachment_index << std::endl;
+  //   uint32_t                            set;
+  os << t1 << "set: " << db.set << std::endl;
+  //   VkDescriptorType                    descriptor_type;
+  os << t1 << "descriptor_type: " << db.descriptor_type << std::endl;
+  //   SpvReflectResourceType              resource_type;
+  os << t1 << "resource_type: " << db.resource_type << std::endl;
+  //   SpvReflectImageTraits               image;
+  os << t1 << "image:" << std::endl;
+  // typedef struct SpvReflectImageTraits {
+  //   SpvDim                            dim;
+  os << t2 << "dim: " << db.image.dim << std::endl;
+  //   uint32_t                          depth;
+  os << t2 << "depth: " << db.image.depth << std::endl;
+  //   uint32_t                          arrayed;
+  os << t2 << "arrayed: " << db.image.arrayed << std::endl;
+  //   uint32_t                          ms;
+  os << t2 << "ms: " << db.image.ms << std::endl;
+  //   uint32_t                          sampled;
+  os << t2 << "sampled: " << db.image.sampled << std::endl;
+  //   SpvImageFormat                    image_format;
+  os << t2 << "image_format: " << db.image.image_format << std::endl;
+  // } SpvReflectImageTraits;
+
+  //   SpvReflectBlockVariable             block;
+  {
+    auto itor = block_variable_to_index_.find(&db.block);
+    assert(itor != block_variable_to_index_.end());
+    os << t1 << "block: *bv" << itor->second << std::endl;
+  }
+  //   SpvReflectBindingArrayTraits        array;
+  os << t1 << "array:" << std::endl;
+  // typedef struct SpvReflectBindingArrayTraits {
+  //   uint32_t                          dims_count;
+  os << t2 << "dims_count: " << db.array.dims_count << std::endl;
+  //   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
+  os << t2 << "dims:" << std::endl;
+  for(uint32_t i_dim=0; i_dim < db.array.dims_count; ++i_dim) {
+    os << t3 << "- " << db.array.dims[i_dim] << std::endl;
+  }
+  // } SpvReflectBindingArrayTraits;
+  //   struct SpvReflectDescriptorBinding* uav_counter_binding;
+  if (db.uav_counter_binding == nullptr) {
+    os << t1 << "uav_counter_binding:" << std::endl;
+  } else {
+    auto itor = descriptor_binding_to_index_.find(db.uav_counter_binding);
+    assert(itor != descriptor_binding_to_index_.end());
+    os << t1 << "uav_counter_binding: *db" << itor->second << std::endl;
+  }
+  //   SpvReflectTypeDescription*        type_description;
+  if (db.type_description == nullptr) {
+    os << t1 << "type_description:" << std::endl;
+  } else {
+    auto itor = type_description_to_index_.find(db.type_description);
+    assert(itor != type_description_to_index_.end());
+    os << t1 << "type_description: *td" << itor->second << std::endl;
+  }
+  //   struct {
+  os << t1 << "word_offset:" << std::endl;
+  //     uint32_t                        binding;
+  os << t2 << "binding: " << db.word_offset.binding << std::endl;
+  //     uint32_t                        set;
+  os << t2 << "set: " << db.word_offset.set << std::endl;
+  //   } word_offset;
+  // } SpvReflectDescriptorBinding;
+}
+
+void YamlWriter::WriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVariable& iv, uint32_t indent_level) {
+  for(uint32_t i=0; i<iv.member_count; ++i) {
+    assert(interface_variable_to_index_.find(&iv.members[i]) == interface_variable_to_index_.end());
+    WriteInterfaceVariable(os, iv.members[i], indent_level);
+  }
+
+  const std::string t0 = Indent(indent_level);
+  const std::string t1 = Indent(indent_level+1);
+  const std::string t2 = Indent(indent_level+2);
+  const std::string t3 = Indent(indent_level+3);
+
+  uint32_t interface_variable_index = static_cast<uint32_t>(interface_variable_to_index_.size());
+  interface_variable_to_index_[&iv] = interface_variable_index;
+
+  // typedef struct SpvReflectInterfaceVariable {
+  os << t0 << "- &iv" << interface_variable_index << std::endl;
+  //   const char*                         name;
+  os << t1 << "name: " << SafeString(iv.name) << std::endl;
+  //   uint32_t                            location;
+  os << t1 << "location: " << iv.location << std::endl;
+  //   SpvStorageClass                     storage_class;
+  os << t1 << "storage_class: " << iv.storage_class << std::endl;
+  //   const char*                         semantic_name;
+  os << t1 << "semantic_name: " << SafeString(iv.semantic_name) << std::endl;
+  //   uint32_t                            semantic_index;
+  os << t1 << "semantic_index: " << iv.semantic_index << std::endl;
+  //   SpvReflectDecorationFlags           decoration_flags;
+  os << t1 << "decoration_flags: " << iv.decoration_flags << std::endl;
+  //   SpvBuiltIn                          built_in;
+  os << t1 << "built_in: " << iv.built_in << std::endl;
+  //   SpvReflectNumericTraits             numeric;
+  os << t1 << "numeric:" << std::endl;
+  // typedef struct SpvReflectNumericTraits {
+  //   struct Scalar {
+  os << t2 << "scalar:" << std::endl;
+  //     uint32_t                        width;
+  os << t3 << "width: " << iv.numeric.scalar.width << std::endl;
+  //     uint32_t                        signedness;
+  os << t3 << "signedness: " << iv.numeric.scalar.signedness << std::endl;
+  //   } scalar;
+  // 
+  //   struct Vector {
+  os << t2 << "vector:" << std::endl;
+  //     uint32_t                        component_count;
+  os << t3 << "component_count: " << iv.numeric.vector.component_count << std::endl;
+  //   } vector;
+  // 
+  //   struct Matrix {
+  os << t2 << "matrix:" << std::endl;
+  //     uint32_t                        column_count;
+  os << t3 << "column_count: " << iv.numeric.matrix.column_count << std::endl;
+  //     uint32_t                        row_count;
+  os << t3 << "row_count: " << iv.numeric.matrix.row_count << std::endl;
+  //     uint32_t                        stride; // Measured in bytes
+  os << t3 << "stride: " << iv.numeric.matrix.stride << std::endl;
+  //   } matrix;
+  // } SpvReflectNumericTraits;
+
+  //     SpvReflectArrayTraits           array;
+  os << t1 << "array:" << std::endl;
+  // typedef struct SpvReflectArrayTraits {
+  //   uint32_t                          dims_count;
+  os << t2 << "dims_count: " << iv.array.dims_count << std::endl;
+  //   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
+  os << t2 << "dims:" << std::endl;
+  for(uint32_t i_dim=0; i_dim < iv.array.dims_count; ++i_dim) {
+    os << t3 << "- " << iv.array.dims[i_dim] << std::endl;
+  }
+  //   uint32_t                          stride; // Measured in bytes
+  os << t2 << "stride: " << iv.array.stride << std::endl;
+  // } SpvReflectArrayTraits;
+
+  //   uint32_t                            member_count;
+  os << t1 << "member_count: " << iv.member_count << std::endl;
+  //   struct SpvReflectInterfaceVariable* members;
+  os << t1 << "members:" << std::endl;
+  for(uint32_t i=0; i<iv.member_count; ++i) {
+    auto itor = interface_variable_to_index_.find(&iv.members[i]);
+    assert(itor != interface_variable_to_index_.end());
+    os << t2 << "- *iv" << itor->second << std::endl;
+  }
+
+  //   VkFormat                          format;
+  os << t1 << "format: " << iv.format << std::endl;
+
+  //   SpvReflectTypeDescription*        type_description;
+  if (!iv.type_description) {
+    os << t1 << "type_description:" << std::endl;
+  } else {
+    auto itor = type_description_to_index_.find(iv.type_description);
+    assert(itor != type_description_to_index_.end());
+    os << t1 << "type_description: *td" << itor->second << std::endl;
+  }
+
+  //   struct {
+  os << t1 << "word_offset:" << std::endl;
+  //     uint32_t                        location;
+  os << t2 << "location: " << iv.word_offset.location << std::endl;
+  //   } word_offset;
+  // } SpvReflectInterfaceVariable;
+}
+
+void YamlWriter::Write(std::ostream& os)
+{
+  if (!sm_._internal) {
+    return;
+  }
+
+  uint32_t indent_level = 0;
+  const std::string t0 = Indent(indent_level);
+  const std::string t1 = Indent(indent_level+1);
+  const std::string t2 = Indent(indent_level+2);
+  const std::string t3 = Indent(indent_level+2);
+
+  type_description_to_index_.clear();
+  os << t0 << "all_type_descriptions:" << std::endl;
+  for(size_t i=0; i<sm_._internal->type_description_count; ++i) {
+    WriteTypeDescription(os, sm_._internal->type_descriptions[i], indent_level+1);
+  }
+
+  block_variable_to_index_.clear();
+  os << t0 << "all_block_variables:" << std::endl;
+  for(uint32_t i=0; i<sm_.descriptor_binding_count; ++i) {
+    WriteBlockVariable(os, sm_.descriptor_bindings[i].block, indent_level+1);
+  }
+  for(uint32_t i=0; i<sm_.push_constant_count; ++i) {
+    WriteBlockVariable(os, sm_.push_constants[i], indent_level+1);
+  }
+
+  descriptor_binding_to_index_.clear();
+  os << t0 << "all_descriptor_bindings:" << std::endl;
+  for(uint32_t i=0; i<sm_.descriptor_binding_count; ++i) {
+    WriteDescriptorBinding(os, sm_.descriptor_bindings[i], indent_level+1);
+  }
+
+  interface_variable_to_index_.clear();
+  os << t0 << "all_interface_variables:" << std::endl;
+  for(uint32_t i=0; i<sm_.input_variable_count; ++i) {
+    WriteInterfaceVariable(os, sm_.input_variables[i], indent_level+1);
+  }
+  for(uint32_t i=0; i<sm_.output_variable_count; ++i) {
+    WriteInterfaceVariable(os, sm_.output_variables[i], indent_level+1);
+  }
+
+  // struct SpvReflectShaderModule {
+  os << t0 << "module:" << std::endl;
+  // const char*                       entry_point_name;
+  os << t1 << "entry_point_name: " << SafeString(sm_.entry_point_name) << std::endl;
+  // uint32_t                          entry_point_id;
+  os << t1 << "entry_point_id: " << sm_.entry_point_id << std::endl;
+  // SpvSourceLanguage                 source_language;
+  os << t1 << "source_language: " << sm_.source_language << std::endl;
+  // uint32_t                          source_language_version;
+  os << t1 << "source_language_version: " << sm_.source_language_version << std::endl;
+  // SpvExecutionModel                 spirv_execution_model;
+  os << t1 << "spirv_execution_model: " << sm_.spirv_execution_model << std::endl;
+  // VkShaderStageFlagBits             vulkan_shader_stage;
+  os << t1 << "vulkan_shader_stage: " << sm_.vulkan_shader_stage << std::endl;
+  // uint32_t                          descriptor_binding_count;
+  os << t1 << "descriptor_binding_count: " << sm_.descriptor_binding_count << std::endl;
+  // SpvReflectDescriptorBinding*      descriptor_bindings;
+  os << t1 << "descriptor_bindings:" << std::endl;
+  for(uint32_t i=0; i<sm_.descriptor_binding_count; ++i) {
+    auto itor = descriptor_binding_to_index_.find(&sm_.descriptor_bindings[i]);
+    assert(itor != descriptor_binding_to_index_.end());
+    os << t2 << "- *db" << itor->second << std::endl;
+  }
+  // uint32_t                          descriptor_set_count;
+  os << t1 << "descriptor_set_count: " << sm_.descriptor_set_count << std::endl;
+  // SpvReflectDescriptorSet descriptor_sets[SPV_REFLECT_MAX_DESCRIPTOR_SETS];
+  os << t1 << "descriptor_sets:" << std::endl;
+  for(uint32_t i_set=0; i_set<sm_.descriptor_set_count; ++i_set) {
+    // typedef struct SpvReflectDescriptorSet {
+    const auto& dset = sm_.descriptor_sets[i_set];
+    //   uint32_t                          set;
+    os << t1 << "- " << "set: " << dset.set << std::endl;
+    //   uint32_t                          binding_count;
+    os << t2 << "binding_count: " << dset.binding_count << std::endl;
+    //   SpvReflectDescriptorBinding**     bindings;
+    os << t2 << "bindings:" << std::endl;
+    for(uint32_t i_binding=0; i_binding < dset.binding_count; ++i_binding) {
+      auto itor = descriptor_binding_to_index_.find(dset.bindings[i_binding]);
+      assert(itor != descriptor_binding_to_index_.end());
+      os << t3 << "- *db" << itor->second << std::endl;
+    }
+    // } SpvReflectDescriptorSet;
+
+  }
+  // uint32_t                          input_variable_count;
+  os << t1 << "input_variable_count: " << sm_.input_variable_count << ",\n";
+  // SpvReflectInterfaceVariable*      input_variables;
+  os << t1 << "input_variables:" << std::endl;
+  for(uint32_t i=0; i < sm_.input_variable_count; ++i) {
+    auto itor = interface_variable_to_index_.find(&sm_.input_variables[i]);
+    assert(itor != interface_variable_to_index_.end());
+    os << t2 << "- *iv" << itor->second << std::endl;
+  }
+  // uint32_t                          output_variable_count;
+  os << t1 << "output_variable_count: " << sm_.output_variable_count << ",\n";
+  // SpvReflectInterfaceVariable*      output_variables;
+  os << t1 << "output_variables:" << std::endl;
+  for(uint32_t i=0; i < sm_.output_variable_count; ++i) {
+    auto itor = interface_variable_to_index_.find(&sm_.output_variables[i]);
+    assert(itor != interface_variable_to_index_.end());
+    os << t2 << "- *iv" << itor->second << std::endl;
+  }
+  // uint32_t                          push_constant_count;
+  os << t1 << "push_constant_count: " << sm_.push_constant_count << ",\n";
+  // SpvReflectBlockVariable*          push_constants;
+  os << t1 << "push_constants:" << std::endl;
+  for(uint32_t i=0; i<sm_.push_constant_count; ++i) {
+    auto itor = block_variable_to_index_.find(&sm_.push_constants[i]);
+    assert(itor != block_variable_to_index_.end());
+    os << t2 << "- *bv" << itor->second << std::endl;
+  }
+
+  // struct Internal {
+  os << t1 << "_internal:" << std::endl;
+  if (sm_._internal) {
+    //   size_t                          spirv_size;
+    os << t2 << "spirv_size: " << sm_._internal->spirv_size << std::endl;
+    //   uint32_t*                       spirv_code;
+    os << t2 << "spirv_code:" << std::endl;  // TODO
+    //   uint32_t                        spirv_word_count;
+    os << t2 << "spirv_word_count: " << sm_._internal->spirv_word_count << std::endl;
+    //   size_t                          type_description_count;
+    os << t2 << "type_description_count: " << sm_._internal->type_description_count << std::endl;
+    //   SpvReflectTypeDescription*      type_descriptions;
+    os << t2 << "type_descriptions:" << std::endl;
+    for(uint32_t i=0; i<sm_._internal->type_description_count; ++i) {
+      auto itor = type_description_to_index_.find(&sm_._internal->type_descriptions[i]);
+      assert(itor != type_description_to_index_.end());
+      os << t3 << "- *td" << itor->second << std::endl;
+    }
+  }
+  // } * _internal;
+}
