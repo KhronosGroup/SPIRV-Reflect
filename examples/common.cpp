@@ -564,10 +564,12 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
   // A binding's UAV binding later may appear later in the table than the binding itself,
   // in which case we've already output entries for both bindings, and can just write another
   // reference here.
-  auto itor = descriptor_binding_to_index_.find(&db);
-  if (itor != descriptor_binding_to_index_.end()) {
-    os << t0 << "- *db" << itor->second << std::endl;
-    return;
+  {
+    auto itor = descriptor_binding_to_index_.find(&db);
+    if (itor != descriptor_binding_to_index_.end()) {
+      os << t0 << "- *db" << itor->second << std::endl;
+      return;
+    }
   }
 
   uint32_t descriptor_binding_index = static_cast<uint32_t>(descriptor_binding_to_index_.size());
