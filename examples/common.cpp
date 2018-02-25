@@ -8,18 +8,17 @@
 
 static const char* ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
-    default: return ""; break;
-    case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER"; break;
-    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER"; break;
-    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE"; break;
-    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE          : return "VK_DESCRIPTOR_TYPE_STORAGE_IMAGE"; break;
-    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER"; break;
-    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER"; break;
-    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER"; break;
-    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER         : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER"; break;
-    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC"; break;
-    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC"; break;
-    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       : return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT"; break;
+    case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER";
+    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER";
+    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE";
+    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE          : return "VK_DESCRIPTOR_TYPE_STORAGE_IMAGE";
+    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER";
+    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER";
+    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER";
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER         : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER";
+    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC";
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC";
+    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       : return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT";
   }
   return "";
 }
@@ -31,18 +30,18 @@ static const char* ToStringGlslType(const SpvReflectTypeDescription& type)
       switch (type.traits.numeric.scalar.width) {
         case 32: {
           switch (type.traits.numeric.vector.component_count) {
-            case 2: return "vec2"; break;
-            case 3: return "vec3"; break;
-            case 4: return "vec4"; break;
+            case 2: return "vec2";
+            case 3: return "vec3";
+            case 4: return "vec4";
           }
         }
         break;
 
         case 64: {
           switch (type.traits.numeric.vector.component_count) {
-            case 2: return "dvec2"; break;
-            case 3: return "dvec3"; break;
-            case 4: return "dvec4"; break;
+            case 2: return "dvec2";
+            case 3: return "dvec3";
+            case 4: return "dvec4";
           }
         }
         break;
@@ -60,18 +59,18 @@ static const char* ToStringHlslType(const SpvReflectTypeDescription& type)
       switch (type.traits.numeric.scalar.width) {
         case 32: {
           switch (type.traits.numeric.vector.component_count) {
-            case 2: return "float2"; break;
-            case 3: return "float3"; break;
-            case 4: return "float4"; break;
+            case 2: return "float2";
+            case 3: return "float3";
+            case 4: return "float4";
           }
         }
         break;
 
         case 64: {
           switch (type.traits.numeric.vector.component_count) {
-            case 2: return "double2"; break;
-            case 3: return "double3"; break;
-            case 4: return "double4"; break;
+            case 2: return "double2";
+            case 3: return "double3";
+            case 4: return "double4";
           }
         }
         break;
@@ -91,93 +90,74 @@ static const char* ToStringType(SpvSourceLanguage src_lang, const SpvReflectType
   return ToStringGlslType(type);
 }
 
-bool ReadFile(const std::string& file_path, std::vector<uint8_t>* p_buffer)
-{
-  std::ifstream is(file_path.c_str(), std::ios::binary);
-  if (!is.is_open()) {
-    return false;
-  }
-
-  is.seekg(0, std::ios::end);
-  size_t size = is.tellg();
-  is.seekg(0, std::ios::beg);  
-
-  std::vector<char> data(size);
-  is.read(data.data(), size);
-
-  is.close();
-
-  return true;
-}
-
 static const char* ToStringGlslBuiltIn(SpvBuiltIn built_in)
 {
   switch (built_in) {
-    default: return ""; break;
-    case SpvBuiltInPosition                     : return ""; break;
-    case SpvBuiltInPointSize                    : return ""; break;
-    case SpvBuiltInClipDistance                 : return ""; break;
-    case SpvBuiltInCullDistance                 : return ""; break;
-    case SpvBuiltInVertexId                     : return ""; break;
-    case SpvBuiltInInstanceId                   : return ""; break;
-    case SpvBuiltInPrimitiveId                  : return ""; break;
-    case SpvBuiltInInvocationId                 : return ""; break;
-    case SpvBuiltInLayer                        : return ""; break;
-    case SpvBuiltInViewportIndex                : return ""; break;
-    case SpvBuiltInTessLevelOuter               : return ""; break;
-    case SpvBuiltInTessLevelInner               : return ""; break;
-    case SpvBuiltInTessCoord                    : return ""; break;
-    case SpvBuiltInPatchVertices                : return ""; break;
-    case SpvBuiltInFragCoord                    : return ""; break;
-    case SpvBuiltInPointCoord                   : return ""; break;
-    case SpvBuiltInFrontFacing                  : return ""; break;
-    case SpvBuiltInSampleId                     : return ""; break;
-    case SpvBuiltInSamplePosition               : return ""; break;
-    case SpvBuiltInSampleMask                   : return ""; break;
-    case SpvBuiltInFragDepth                    : return ""; break;
-    case SpvBuiltInHelperInvocation             : return ""; break;
-    case SpvBuiltInNumWorkgroups                : return ""; break;
-    case SpvBuiltInWorkgroupSize                : return ""; break;
-    case SpvBuiltInWorkgroupId                  : return ""; break;
-    case SpvBuiltInLocalInvocationId            : return ""; break;
-    case SpvBuiltInGlobalInvocationId           : return ""; break;
-    case SpvBuiltInLocalInvocationIndex         : return ""; break;
-    case SpvBuiltInWorkDim                      : return ""; break;
-    case SpvBuiltInGlobalSize                   : return ""; break;
-    case SpvBuiltInEnqueuedWorkgroupSize        : return ""; break;
-    case SpvBuiltInGlobalOffset                 : return ""; break;
-    case SpvBuiltInGlobalLinearId               : return ""; break;
-    case SpvBuiltInSubgroupSize                 : return ""; break;
-    case SpvBuiltInSubgroupMaxSize              : return ""; break;
-    case SpvBuiltInNumSubgroups                 : return ""; break;
-    case SpvBuiltInNumEnqueuedSubgroups         : return ""; break;
-    case SpvBuiltInSubgroupId                   : return ""; break;
-    case SpvBuiltInSubgroupLocalInvocationId    : return ""; break;
-    case SpvBuiltInVertexIndex                  : return ""; break;
-    case SpvBuiltInInstanceIndex                : return ""; break;
-    case SpvBuiltInSubgroupEqMaskKHR            : return ""; break;
-    case SpvBuiltInSubgroupGeMaskKHR            : return ""; break;
-    case SpvBuiltInSubgroupGtMaskKHR            : return ""; break;
-    case SpvBuiltInSubgroupLeMaskKHR            : return ""; break;
-    case SpvBuiltInSubgroupLtMaskKHR            : return ""; break;
-    case SpvBuiltInBaseVertex                   : return ""; break;
-    case SpvBuiltInBaseInstance                 : return ""; break;
-    case SpvBuiltInDrawIndex                    : return ""; break;
-    case SpvBuiltInDeviceIndex                  : return ""; break;
-    case SpvBuiltInViewIndex                    : return ""; break;
-    case SpvBuiltInBaryCoordNoPerspAMD          : return ""; break;
-    case SpvBuiltInBaryCoordNoPerspCentroidAMD  : return ""; break;
-    case SpvBuiltInBaryCoordNoPerspSampleAMD    : return ""; break;
-    case SpvBuiltInBaryCoordSmoothAMD           : return ""; break;
-    case SpvBuiltInBaryCoordSmoothCentroidAMD   : return ""; break;
-    case SpvBuiltInBaryCoordSmoothSampleAMD     : return ""; break;
-    case SpvBuiltInBaryCoordPullModelAMD        : return ""; break;
-    case SpvBuiltInFragStencilRefEXT            : return ""; break;
-    case SpvBuiltInViewportMaskNV               : return ""; break;
-    case SpvBuiltInSecondaryPositionNV          : return ""; break;
-    case SpvBuiltInSecondaryViewportMaskNV      : return ""; break;
-    case SpvBuiltInPositionPerViewNV            : return ""; break;
-    case SpvBuiltInViewportMaskPerViewNV        : return ""; break;
+    case SpvBuiltInPosition                     : break;
+    case SpvBuiltInPointSize                    : break;
+    case SpvBuiltInClipDistance                 : break;
+    case SpvBuiltInCullDistance                 : break;
+    case SpvBuiltInVertexId                     : break;
+    case SpvBuiltInInstanceId                   : break;
+    case SpvBuiltInPrimitiveId                  : break;
+    case SpvBuiltInInvocationId                 : break;
+    case SpvBuiltInLayer                        : break;
+    case SpvBuiltInViewportIndex                : break;
+    case SpvBuiltInTessLevelOuter               : break;
+    case SpvBuiltInTessLevelInner               : break;
+    case SpvBuiltInTessCoord                    : break;
+    case SpvBuiltInPatchVertices                : break;
+    case SpvBuiltInFragCoord                    : break;
+    case SpvBuiltInPointCoord                   : break;
+    case SpvBuiltInFrontFacing                  : break;
+    case SpvBuiltInSampleId                     : break;
+    case SpvBuiltInSamplePosition               : break;
+    case SpvBuiltInSampleMask                   : break;
+    case SpvBuiltInFragDepth                    : break;
+    case SpvBuiltInHelperInvocation             : break;
+    case SpvBuiltInNumWorkgroups                : break;
+    case SpvBuiltInWorkgroupSize                : break;
+    case SpvBuiltInWorkgroupId                  : break;
+    case SpvBuiltInLocalInvocationId            : break;
+    case SpvBuiltInGlobalInvocationId           : break;
+    case SpvBuiltInLocalInvocationIndex         : break;
+    case SpvBuiltInWorkDim                      : break;
+    case SpvBuiltInGlobalSize                   : break;
+    case SpvBuiltInEnqueuedWorkgroupSize        : break;
+    case SpvBuiltInGlobalOffset                 : break;
+    case SpvBuiltInGlobalLinearId               : break;
+    case SpvBuiltInSubgroupSize                 : break;
+    case SpvBuiltInSubgroupMaxSize              : break;
+    case SpvBuiltInNumSubgroups                 : break;
+    case SpvBuiltInNumEnqueuedSubgroups         : break;
+    case SpvBuiltInSubgroupId                   : break;
+    case SpvBuiltInSubgroupLocalInvocationId    : break;
+    case SpvBuiltInVertexIndex                  : break;
+    case SpvBuiltInInstanceIndex                : break;
+    case SpvBuiltInSubgroupEqMaskKHR            : break;
+    case SpvBuiltInSubgroupGeMaskKHR            : break;
+    case SpvBuiltInSubgroupGtMaskKHR            : break;
+    case SpvBuiltInSubgroupLeMaskKHR            : break;
+    case SpvBuiltInSubgroupLtMaskKHR            : break;
+    case SpvBuiltInBaseVertex                   : break;
+    case SpvBuiltInBaseInstance                 : break;
+    case SpvBuiltInDrawIndex                    : break;
+    case SpvBuiltInDeviceIndex                  : break;
+    case SpvBuiltInViewIndex                    : break;
+    case SpvBuiltInBaryCoordNoPerspAMD          : break;
+    case SpvBuiltInBaryCoordNoPerspCentroidAMD  : break;
+    case SpvBuiltInBaryCoordNoPerspSampleAMD    : break;
+    case SpvBuiltInBaryCoordSmoothAMD           : break;
+    case SpvBuiltInBaryCoordSmoothCentroidAMD   : break;
+    case SpvBuiltInBaryCoordSmoothSampleAMD     : break;
+    case SpvBuiltInBaryCoordPullModelAMD        : break;
+    case SpvBuiltInFragStencilRefEXT            : break;
+    case SpvBuiltInViewportMaskNV               : break;
+    case SpvBuiltInSecondaryPositionNV          : break;
+    case SpvBuiltInSecondaryViewportMaskNV      : break;
+    case SpvBuiltInPositionPerViewNV            : break;
+    case SpvBuiltInViewportMaskPerViewNV        : break;
+    default: break;
   }
   return "";
 }
@@ -186,70 +166,71 @@ static const char* ToStringHlslBuiltIn(SpvBuiltIn built_in)
 {
   switch (built_in) {
     default: return ""; break;
-    case SpvBuiltInPosition                     : return "SV_POSITION"; break;
-    case SpvBuiltInPointSize                    : return ""; break;
-    case SpvBuiltInClipDistance                 : return ""; break;
-    case SpvBuiltInCullDistance                 : return ""; break;
-    case SpvBuiltInVertexId                     : return ""; break;
-    case SpvBuiltInInstanceId                   : return ""; break;
-    case SpvBuiltInPrimitiveId                  : return ""; break;
-    case SpvBuiltInInvocationId                 : return ""; break;
-    case SpvBuiltInLayer                        : return ""; break;
-    case SpvBuiltInViewportIndex                : return ""; break;
-    case SpvBuiltInTessLevelOuter               : return ""; break;
-    case SpvBuiltInTessLevelInner               : return ""; break;
-    case SpvBuiltInTessCoord                    : return ""; break;
-    case SpvBuiltInPatchVertices                : return ""; break;
+    case SpvBuiltInPosition                     : return "SV_POSITION";
+    case SpvBuiltInPointSize                    : break;
+    case SpvBuiltInClipDistance                 : break;
+    case SpvBuiltInCullDistance                 : break;
+    case SpvBuiltInVertexId                     : break;
+    case SpvBuiltInInstanceId                   : break;
+    case SpvBuiltInPrimitiveId                  : break;
+    case SpvBuiltInInvocationId                 : break;
+    case SpvBuiltInLayer                        : break;
+    case SpvBuiltInViewportIndex                : break;
+    case SpvBuiltInTessLevelOuter               : break;
+    case SpvBuiltInTessLevelInner               : break;
+    case SpvBuiltInTessCoord                    : break;
+    case SpvBuiltInPatchVertices                : break;
     case SpvBuiltInFragCoord                    : return "SV_POSITION"; break;
-    case SpvBuiltInPointCoord                   : return ""; break;
-    case SpvBuiltInFrontFacing                  : return ""; break;
-    case SpvBuiltInSampleId                     : return ""; break;
-    case SpvBuiltInSamplePosition               : return ""; break;
-    case SpvBuiltInSampleMask                   : return ""; break;
-    case SpvBuiltInFragDepth                    : return ""; break;
-    case SpvBuiltInHelperInvocation             : return ""; break;
-    case SpvBuiltInNumWorkgroups                : return ""; break;
-    case SpvBuiltInWorkgroupSize                : return ""; break;
-    case SpvBuiltInWorkgroupId                  : return ""; break;
-    case SpvBuiltInLocalInvocationId            : return ""; break;
-    case SpvBuiltInGlobalInvocationId           : return ""; break;
-    case SpvBuiltInLocalInvocationIndex         : return ""; break;
-    case SpvBuiltInWorkDim                      : return ""; break;
-    case SpvBuiltInGlobalSize                   : return ""; break;
-    case SpvBuiltInEnqueuedWorkgroupSize        : return ""; break;
-    case SpvBuiltInGlobalOffset                 : return ""; break;
-    case SpvBuiltInGlobalLinearId               : return ""; break;
-    case SpvBuiltInSubgroupSize                 : return ""; break;
-    case SpvBuiltInSubgroupMaxSize              : return ""; break;
-    case SpvBuiltInNumSubgroups                 : return ""; break;
-    case SpvBuiltInNumEnqueuedSubgroups         : return ""; break;
-    case SpvBuiltInSubgroupId                   : return ""; break;
-    case SpvBuiltInSubgroupLocalInvocationId    : return ""; break;
-    case SpvBuiltInVertexIndex                  : return ""; break;
-    case SpvBuiltInInstanceIndex                : return ""; break;
-    case SpvBuiltInSubgroupEqMaskKHR            : return ""; break;
-    case SpvBuiltInSubgroupGeMaskKHR            : return ""; break;
-    case SpvBuiltInSubgroupGtMaskKHR            : return ""; break;
-    case SpvBuiltInSubgroupLeMaskKHR            : return ""; break;
-    case SpvBuiltInSubgroupLtMaskKHR            : return ""; break;
-    case SpvBuiltInBaseVertex                   : return ""; break;
-    case SpvBuiltInBaseInstance                 : return ""; break;
-    case SpvBuiltInDrawIndex                    : return ""; break;
-    case SpvBuiltInDeviceIndex                  : return ""; break;
-    case SpvBuiltInViewIndex                    : return ""; break;
-    case SpvBuiltInBaryCoordNoPerspAMD          : return ""; break;
-    case SpvBuiltInBaryCoordNoPerspCentroidAMD  : return ""; break;
-    case SpvBuiltInBaryCoordNoPerspSampleAMD    : return ""; break;
-    case SpvBuiltInBaryCoordSmoothAMD           : return ""; break;
-    case SpvBuiltInBaryCoordSmoothCentroidAMD   : return ""; break;
-    case SpvBuiltInBaryCoordSmoothSampleAMD     : return ""; break;
-    case SpvBuiltInBaryCoordPullModelAMD        : return ""; break;
-    case SpvBuiltInFragStencilRefEXT            : return ""; break;
-    case SpvBuiltInViewportMaskNV               : return ""; break;
-    case SpvBuiltInSecondaryPositionNV          : return ""; break;
-    case SpvBuiltInSecondaryViewportMaskNV      : return ""; break;
-    case SpvBuiltInPositionPerViewNV            : return ""; break;
-    case SpvBuiltInViewportMaskPerViewNV        : return ""; break;
+    case SpvBuiltInPointCoord                   : break;
+    case SpvBuiltInFrontFacing                  : break;
+    case SpvBuiltInSampleId                     : break;
+    case SpvBuiltInSamplePosition               : break;
+    case SpvBuiltInSampleMask                   : break;
+    case SpvBuiltInFragDepth                    : break;
+    case SpvBuiltInHelperInvocation             : break;
+    case SpvBuiltInNumWorkgroups                : break;
+    case SpvBuiltInWorkgroupSize                : break;
+    case SpvBuiltInWorkgroupId                  : break;
+    case SpvBuiltInLocalInvocationId            : break;
+    case SpvBuiltInGlobalInvocationId           : break;
+    case SpvBuiltInLocalInvocationIndex         : break;
+    case SpvBuiltInWorkDim                      : break;
+    case SpvBuiltInGlobalSize                   : break;
+    case SpvBuiltInEnqueuedWorkgroupSize        : break;
+    case SpvBuiltInGlobalOffset                 : break;
+    case SpvBuiltInGlobalLinearId               : break;
+    case SpvBuiltInSubgroupSize                 : break;
+    case SpvBuiltInSubgroupMaxSize              : break;
+    case SpvBuiltInNumSubgroups                 : break;
+    case SpvBuiltInNumEnqueuedSubgroups         : break;
+    case SpvBuiltInSubgroupId                   : break;
+    case SpvBuiltInSubgroupLocalInvocationId    : break;
+    case SpvBuiltInVertexIndex                  : break;
+    case SpvBuiltInInstanceIndex                : break;
+    case SpvBuiltInSubgroupEqMaskKHR            : break;
+    case SpvBuiltInSubgroupGeMaskKHR            : break;
+    case SpvBuiltInSubgroupGtMaskKHR            : break;
+    case SpvBuiltInSubgroupLeMaskKHR            : break;
+    case SpvBuiltInSubgroupLtMaskKHR            : break;
+    case SpvBuiltInBaseVertex                   : break;
+    case SpvBuiltInBaseInstance                 : break;
+    case SpvBuiltInDrawIndex                    : break;
+    case SpvBuiltInDeviceIndex                  : break;
+    case SpvBuiltInViewIndex                    : break;
+    case SpvBuiltInBaryCoordNoPerspAMD          : break;
+    case SpvBuiltInBaryCoordNoPerspCentroidAMD  : break;
+    case SpvBuiltInBaryCoordNoPerspSampleAMD    : break;
+    case SpvBuiltInBaryCoordSmoothAMD           : break;
+    case SpvBuiltInBaryCoordSmoothCentroidAMD   : break;
+    case SpvBuiltInBaryCoordSmoothSampleAMD     : break;
+    case SpvBuiltInBaryCoordPullModelAMD        : break;
+    case SpvBuiltInFragStencilRefEXT            : break;
+    case SpvBuiltInViewportMaskNV               : break;
+    case SpvBuiltInSecondaryPositionNV          : break;
+    case SpvBuiltInSecondaryViewportMaskNV      : break;
+    case SpvBuiltInPositionPerViewNV            : break;
+    case SpvBuiltInViewportMaskPerViewNV        : break;
+    default: break;
   }
   return "";
 }
