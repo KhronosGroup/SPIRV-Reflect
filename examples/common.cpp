@@ -6,6 +6,151 @@
 #include <fstream>
 #include <iomanip>
 
+static std::string AsHexString(uint32_t n) {
+  // std::iomanip can die in a fire.
+  char out_word[11];
+  snprintf(out_word, 11, "0x%08X", n);
+  return std::string(out_word);
+}
+
+static const char* ToStringSpvSourceLanguage(SpvSourceLanguage lang) {
+  switch(lang) {
+    case SpvSourceLanguageUnknown: return "Unknown";
+    case SpvSourceLanguageESSL: return "ESSL";
+    case SpvSourceLanguageGLSL: return "GLSL";
+    case SpvSourceLanguageOpenCL_C: return "OpenCL_C";
+    case SpvSourceLanguageOpenCL_CPP: return "OpenCL_CPP";
+    case SpvSourceLanguageHLSL: return "HLSL";
+
+    case SpvSourceLanguageMax:
+      break;
+  }
+  assert(0 && "unhandled SpvSourceLanguage enum value");
+  return "???";
+}
+
+static const char* ToStringSpvExecutionModel(SpvExecutionModel model) {
+  switch(model) {
+    case SpvExecutionModelVertex: return "Vertex";
+    case SpvExecutionModelTessellationControl: return "TessellationControl";
+    case SpvExecutionModelTessellationEvaluation: return "TessellationEvaluation";
+    case SpvExecutionModelGeometry: return "Geometry";
+    case SpvExecutionModelFragment: return "Fragment";
+    case SpvExecutionModelGLCompute: return "GLCompute";
+    case SpvExecutionModelKernel: return "Kernel";
+    case SpvExecutionModelMax:
+      break;
+  }
+  assert(0 && "unhandled SpvExecutionModel enum value");
+  return "???";
+}
+
+static const char* ToStringSpvStorageClass(SpvStorageClass storage_class) {
+  switch(storage_class) {
+    case SpvStorageClassUniformConstant: return "UniformConstant";
+    case SpvStorageClassInput: return "Input";
+    case SpvStorageClassUniform: return "Uniform";
+    case SpvStorageClassOutput: return "Output";
+    case SpvStorageClassWorkgroup: return "Workgroup";
+    case SpvStorageClassCrossWorkgroup: return "CrossWorkgroup";
+    case SpvStorageClassPrivate: return "Private";
+    case SpvStorageClassFunction: return "Function";
+    case SpvStorageClassGeneric: return "Generic";
+    case SpvStorageClassPushConstant: return "PushConstant";
+    case SpvStorageClassAtomicCounter: return "AtomicCounter";
+    case SpvStorageClassImage: return "Image";
+    case SpvStorageClassStorageBuffer: return "StorageBuffer";
+
+    // Special case: this specific "unhandled" value does actually seem to show up.
+    case (SpvStorageClass)-1: return "INVALID_VALUE";
+
+    case SpvStorageClassMax:
+      break;
+  }
+  // TODO(cort): Figure out where unhandled SpvStorageClass values are coming from.
+  //assert(0 && "unhandled SpvStorageClass enum value");
+  return "???";
+}
+
+static const char* ToStringSpvReflectResourceType(SpvReflectResourceType res_type) {
+  switch(res_type) {
+    case SPV_REFLECT_RESOURCE_FLAG_UNDEFINED: return "UNDEFINED";
+    case SPV_REFLECT_RESOURCE_FLAG_SAMPLER: return "SAMPLER";
+    case SPV_REFLECT_RESOURCE_FLAG_CBV: return "CBV";
+    case SPV_REFLECT_RESOURCE_FLAG_SRV: return "SRV";
+    case SPV_REFLECT_RESOURCE_FLAG_UAV: return "UAV";
+  }
+  assert(0 && "unhandled SpvReflectResourceType enum value");
+  return "???";
+}
+
+static const char* ToStringSpvDim(SpvDim dim) {
+  switch(dim) {
+    case SpvDim1D: return "1D";
+    case SpvDim2D: return "2D";
+    case SpvDim3D: return "3D";
+    case SpvDimCube: return "Cube";
+    case SpvDimRect: return "Rect";
+    case SpvDimBuffer: return "Buffer";
+    case SpvDimSubpassData: return "SubpassData";
+
+    case SpvDimMax:
+      break;
+  }
+  assert(0 && "unhandled SpvDim enum value");
+  return "???";
+}
+
+static const char* ToStringSpvImageFormat(SpvImageFormat fmt) {
+  switch(fmt) {
+    case SpvImageFormatUnknown: return "Unknown";
+    case SpvImageFormatRgba32f: return "Rgba32f";
+    case SpvImageFormatRgba16f: return "Rgba16f";
+    case SpvImageFormatR32f: return "R32f";
+    case SpvImageFormatRgba8: return "Rgba8";
+    case SpvImageFormatRgba8Snorm: return "Rgba8Snorm";
+    case SpvImageFormatRg32f: return "Rg32f";
+    case SpvImageFormatRg16f: return "Rg16f";
+    case SpvImageFormatR11fG11fB10f: return "R11fG11fB10f";
+    case SpvImageFormatR16f: return "R16f";
+    case SpvImageFormatRgba16: return "Rgba16";
+    case SpvImageFormatRgb10A2: return "Rgb10A2";
+    case SpvImageFormatRg16: return "Rg16";
+    case SpvImageFormatRg8: return "Rg8";
+    case SpvImageFormatR16: return "R16";
+    case SpvImageFormatR8: return "R8";
+    case SpvImageFormatRgba16Snorm: return "Rgba16Snorm";
+    case SpvImageFormatRg16Snorm: return "Rg16Snorm";
+    case SpvImageFormatRg8Snorm: return "Rg8Snorm";
+    case SpvImageFormatR16Snorm: return "R16Snorm";
+    case SpvImageFormatR8Snorm: return "R8Snorm";
+    case SpvImageFormatRgba32i: return "Rgba32i";
+    case SpvImageFormatRgba16i: return "Rgba16i";
+    case SpvImageFormatRgba8i: return "Rgba8i";
+    case SpvImageFormatR32i: return "R32i";
+    case SpvImageFormatRg32i: return "Rg32i";
+    case SpvImageFormatRg16i: return "Rg16i";
+    case SpvImageFormatRg8i: return "Rg8i";
+    case SpvImageFormatR16i: return "R16i";
+    case SpvImageFormatR8i: return "R8i";
+    case SpvImageFormatRgba32ui: return "Rgba32ui";
+    case SpvImageFormatRgba16ui: return "Rgba16ui";
+    case SpvImageFormatRgba8ui: return "Rgba8ui";
+    case SpvImageFormatR32ui: return "R32ui";
+    case SpvImageFormatRgb10a2ui: return "Rgb10a2ui";
+    case SpvImageFormatRg32ui: return "Rg32ui";
+    case SpvImageFormatRg16ui: return "Rg16ui";
+    case SpvImageFormatRg8ui: return "Rg8ui";
+    case SpvImageFormatR16ui: return "R16ui";
+    case SpvImageFormatR8ui: return "R8ui";
+
+    case SpvImageFormatMax:
+      break;
+  }
+  assert(0 && "unhandled SpvImageFormat enum value");
+  return "???";
+}
+
 static const char* ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
     case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER";
@@ -19,8 +164,13 @@ static const char* ToStringVkDescriptorType(VkDescriptorType value) {
     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC";
     case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC";
     case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       : return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT";
+
+    case VK_DESCRIPTOR_TYPE_RANGE_SIZE:
+    case VK_DESCRIPTOR_TYPE_MAX_ENUM:
+      break;
   }
-  return "";
+  assert(0 && "unhandled VkDescriptorType enum value");
+  return "VK_DESCRIPTOR_TYPE_???";
 }
 
 static const char* ToStringGlslType(const SpvReflectTypeDescription& type)
@@ -165,7 +315,6 @@ static const char* ToStringGlslBuiltIn(SpvBuiltIn built_in)
 static const char* ToStringHlslBuiltIn(SpvBuiltIn built_in)
 {
   switch (built_in) {
-    default: return ""; break;
     case SpvBuiltInPosition                     : return "SV_POSITION";
     case SpvBuiltInPointSize                    : break;
     case SpvBuiltInClipDistance                 : break;
@@ -379,11 +528,11 @@ void SpvReflectToYaml::WriteTypeDescription(std::ostream& os, const SpvReflectTy
   //   const char*                       struct_member_name;
   os << t1 << "struct_member_name: " << SafeString(td.struct_member_name) << std::endl;
   //   SpvStorageClass                   storage_class;
-  os << t1 << "storage_class: " << td.storage_class << std::endl;
+  os << t1 << "storage_class: " << td.storage_class << " # " << ToStringSpvStorageClass(td.storage_class) << std::endl;
   //   SpvReflectTypeFlags               type_flags;
-  os << t1 << "type_flags: " << td.type_flags << std::endl;
+  os << t1 << "type_flags: " << AsHexString(td.type_flags) << std::endl;
   //   SpvReflectDecorationFlags         decoration_flags;
-  os << t1 << "decoration_flags: " << td.decoration_flags << std::endl;
+  os << t1 << "decoration_flags: " << AsHexString(td.decoration_flags) << std::endl;
   //   struct Traits {
   os << t1 << "traits:" << std::endl;
   //     SpvReflectNumericTraits         numeric;
@@ -431,7 +580,7 @@ void SpvReflectToYaml::WriteTypeDescription(std::ostream& os, const SpvReflectTy
   //   SpvImageFormat                    image_format;
   os << "image_format: " << td.traits.image.image_format;
   // } SpvReflectImageTraits;
-  os << " }" << std::endl;
+  os << " }" << " # dim=" << ToStringSpvDim(td.traits.image.dim) << " image_format=" << ToStringSpvImageFormat(td.traits.image.image_format) << std::endl;
 
   //     SpvReflectArrayTraits           array;
   os << t2 << "array: { ";
@@ -485,7 +634,7 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBloc
   //   uint32_t                          padded_size;  // Measured in bytes
   os << t1 << "padded_size: " << bv.padded_size << std::endl;
   //   SpvReflectDecorationFlags         decorations;
-  os << t1 << "decorations: " << bv.decorations << std::endl;
+  os << t1 << "decorations: " << AsHexString(bv.decorations) << std::endl;
   //   SpvReflectNumericTraits           numeric;
   // typedef struct SpvReflectNumericTraits {
   os << t1 << "numeric:" << std::endl;
@@ -586,9 +735,9 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
   //   uint32_t                            set;
   os << t1 << "set: " << db.set << std::endl;
   //   VkDescriptorType                    descriptor_type;
-  os << t1 << "descriptor_type: " << db.descriptor_type << std::endl;
+  os << t1 << "descriptor_type: " << db.descriptor_type << " # " << ToStringVkDescriptorType(db.descriptor_type) << std::endl;
   //   SpvReflectResourceType              resource_type;
-  os << t1 << "resource_type: " << db.resource_type << std::endl;
+  os << t1 << "resource_type: " << db.resource_type << " # " << ToStringSpvReflectResourceType(db.resource_type) << std::endl;
   //   SpvReflectImageTraits           image;
   os << t1 << "image: { ";
   // typedef struct SpvReflectImageTraits {
@@ -605,13 +754,13 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
   //   SpvImageFormat                    image_format;
   os << "image_format: " << db.image.image_format;
   // } SpvReflectImageTraits;
-  os << " }" << std::endl;
+  os << " }" << " # dim=" << ToStringSpvDim(db.image.dim) << " image_format=" << ToStringSpvImageFormat(db.image.image_format) << std::endl;
 
   //   SpvReflectBlockVariable             block;
   {
     auto itor = block_variable_to_index_.find(&db.block);
     assert(itor != block_variable_to_index_.end());
-    os << t1 << "block: *bv" << itor->second << std::endl;
+    os << t1 << "block: *bv" << itor->second << " # " << SafeString(db.block.name) << std::endl;
   }
   //   SpvReflectBindingArrayTraits        array;
   os << t1 << "array: { ";
@@ -632,7 +781,7 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
   } else {
     auto itor = descriptor_binding_to_index_.find(db.uav_counter_binding);
     assert(itor != descriptor_binding_to_index_.end());
-    os << t1 << "uav_counter_binding: *db" << itor->second << std::endl;
+    os << t1 << "uav_counter_binding: *db" << itor->second << " # " << SafeString(db.uav_counter_binding->name) << std::endl;
   }
   //   SpvReflectTypeDescription*        type_description;
   if (db.type_description == nullptr) {
@@ -672,13 +821,13 @@ void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflect
   //   uint32_t                            location;
   os << t1 << "location: " << iv.location << std::endl;
   //   SpvStorageClass                     storage_class;
-  os << t1 << "storage_class: " << iv.storage_class << std::endl;
+  os << t1 << "storage_class: " << iv.storage_class << " # " << ToStringSpvStorageClass(iv.storage_class) << std::endl;
   //   const char*                         semantic_name;
   os << t1 << "semantic_name: " << SafeString(iv.semantic_name) << std::endl;
   //   uint32_t                            semantic_index;
   os << t1 << "semantic_index: " << iv.semantic_index << std::endl;
   //   SpvReflectDecorationFlags           decoration_flags;
-  os << t1 << "decoration_flags: " << iv.decoration_flags << std::endl;
+  os << t1 << "decoration_flags: " << AsHexString(iv.decoration_flags) << std::endl;
   //   SpvBuiltIn                          built_in;
   os << t1 << "built_in: " << iv.built_in << std::endl;
   //   SpvReflectNumericTraits             numeric;
@@ -730,7 +879,7 @@ void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflect
   for(uint32_t i=0; i<iv.member_count; ++i) {
     auto itor = interface_variable_to_index_.find(&iv.members[i]);
     assert(itor != interface_variable_to_index_.end());
-    os << t2 << "- *iv" << itor->second << std::endl;
+    os << t2 << "- *iv" << itor->second << " # " << SafeString(iv.members[i].name) << std::endl;
   }
 
   //   VkFormat                          format;
@@ -764,6 +913,9 @@ void SpvReflectToYaml::Write(std::ostream& os)
   const std::string t1 = Indent(indent_level+1);
   const std::string t2 = Indent(indent_level+2);
   const std::string t3 = Indent(indent_level+3);
+
+  os << "%YAML 1.0" << std::endl;
+  os << "---" << std::endl;
 
   type_description_to_index_.clear();
   os << t0 << "all_type_descriptions:" << std::endl;
@@ -802,13 +954,13 @@ void SpvReflectToYaml::Write(std::ostream& os)
   // uint32_t                          entry_point_id;
   os << t1 << "entry_point_id: " << sm_.entry_point_id << std::endl;
   // SpvSourceLanguage                 source_language;
-  os << t1 << "source_language: " << sm_.source_language << std::endl;
+  os << t1 << "source_language: " << sm_.source_language << " # " << ToStringSpvSourceLanguage(sm_.source_language) << std::endl;
   // uint32_t                          source_language_version;
   os << t1 << "source_language_version: " << sm_.source_language_version << std::endl;
   // SpvExecutionModel                 spirv_execution_model;
-  os << t1 << "spirv_execution_model: " << sm_.spirv_execution_model << std::endl;
+  os << t1 << "spirv_execution_model: " << sm_.spirv_execution_model << " # " << ToStringSpvExecutionModel(sm_.spirv_execution_model) << std::endl;
   // VkShaderStageFlagBits             vulkan_shader_stage;
-  os << t1 << "vulkan_shader_stage: " << sm_.vulkan_shader_stage << std::endl;
+  os << t1 << "vulkan_shader_stage: " << AsHexString(sm_.vulkan_shader_stage) << std::endl;
   // uint32_t                          descriptor_binding_count;
   os << t1 << "descriptor_binding_count: " << sm_.descriptor_binding_count << std::endl;
   // SpvReflectDescriptorBinding*      descriptor_bindings;
@@ -816,7 +968,7 @@ void SpvReflectToYaml::Write(std::ostream& os)
   for(uint32_t i=0; i<sm_.descriptor_binding_count; ++i) {
     auto itor = descriptor_binding_to_index_.find(&sm_.descriptor_bindings[i]);
     assert(itor != descriptor_binding_to_index_.end());
-    os << t2 << "- *db" << itor->second << std::endl;
+    os << t2 << "- *db" << itor->second << " # " << SafeString(sm_.descriptor_bindings[i].name) << std::endl;
   }
   // uint32_t                          descriptor_set_count;
   os << t1 << "descriptor_set_count: " << sm_.descriptor_set_count << std::endl;
@@ -834,7 +986,7 @@ void SpvReflectToYaml::Write(std::ostream& os)
     for(uint32_t i_binding=0; i_binding < dset.binding_count; ++i_binding) {
       auto itor = descriptor_binding_to_index_.find(dset.bindings[i_binding]);
       assert(itor != descriptor_binding_to_index_.end());
-      os << t3 << "- *db" << itor->second << std::endl;
+      os << t3 << "- *db" << itor->second << " # " << SafeString(dset.bindings[i_binding]->name) << std::endl;
     }
     // } SpvReflectDescriptorSet;
 
@@ -846,7 +998,7 @@ void SpvReflectToYaml::Write(std::ostream& os)
   for(uint32_t i=0; i < sm_.input_variable_count; ++i) {
     auto itor = interface_variable_to_index_.find(&sm_.input_variables[i]);
     assert(itor != interface_variable_to_index_.end());
-    os << t2 << "- *iv" << itor->second << std::endl;
+    os << t2 << "- *iv" << itor->second << " # " << SafeString(sm_.input_variables[i].name) << std::endl;
   }
   // uint32_t                          output_variable_count;
   os << t1 << "output_variable_count: " << sm_.output_variable_count << ",\n";
@@ -855,7 +1007,7 @@ void SpvReflectToYaml::Write(std::ostream& os)
   for(uint32_t i=0; i < sm_.output_variable_count; ++i) {
     auto itor = interface_variable_to_index_.find(&sm_.output_variables[i]);
     assert(itor != interface_variable_to_index_.end());
-    os << t2 << "- *iv" << itor->second << std::endl;
+    os << t2 << "- *iv" << itor->second << " # " << SafeString(sm_.output_variables[i].name) << std::endl;
   }
   // uint32_t                          push_constant_count;
   os << t1 << "push_constant_count: " << sm_.push_constant_count << ",\n";
@@ -864,7 +1016,7 @@ void SpvReflectToYaml::Write(std::ostream& os)
   for(uint32_t i=0; i<sm_.push_constant_count; ++i) {
     auto itor = block_variable_to_index_.find(&sm_.push_constants[i]);
     assert(itor != block_variable_to_index_.end());
-    os << t2 << "- *bv" << itor->second << std::endl;
+    os << t2 << "- *bv" << itor->second << " # " << SafeString(sm_.push_constants[i].name) << std::endl;
   }
 
   // struct Internal {
@@ -897,4 +1049,6 @@ void SpvReflectToYaml::Write(std::ostream& os)
     }
   }
   // } * _internal;
+
+  os << "..." << std::endl;
 }
