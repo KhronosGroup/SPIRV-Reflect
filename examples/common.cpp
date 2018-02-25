@@ -550,7 +550,7 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBloc
 
 void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& db, uint32_t indent_level) {
   if (db.uav_counter_binding != nullptr) {
-    auto itor = descriptor_binding_to_index_.find(&db);
+    auto itor = descriptor_binding_to_index_.find(db.uav_counter_binding);
     if (itor == descriptor_binding_to_index_.end()) {
       WriteDescriptorBinding(os, *(db.uav_counter_binding), indent_level);
     }
