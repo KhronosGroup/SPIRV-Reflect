@@ -967,7 +967,7 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
       case SpvOpTypeOpaque: break;
 
       case SpvOpTypePointer: {
-        IF_READU32_CAST(result, p_parser, p_node->word_offset + 3, SpvStorageClass, p_type->storage_class);
+        IF_READU32_CAST(result, p_parser, p_node->word_offset + 2, SpvStorageClass, p_type->storage_class);
         uint32_t type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 3, type_id);
         // Parse type
