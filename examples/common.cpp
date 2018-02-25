@@ -406,64 +406,69 @@ void SpvReflectToYaml::WriteTypeDescription(std::ostream& os, const SpvReflectTy
   //   struct Traits {
   os << t1 << "traits:" << std::endl;
   //     SpvReflectNumericTraits         numeric;
-  os << t2 << "numeric:" << std::endl;
   // typedef struct SpvReflectNumericTraits {
+  os << t2 << "numeric:" << std::endl;
   //   struct Scalar {
-  os << t3 << "scalar:" << std::endl;
   //     uint32_t                        width;
-  os << t4 << "width: " << td.traits.numeric.scalar.width << std::endl;
   //     uint32_t                        signedness;
-  os << t4 << "signedness: " << td.traits.numeric.scalar.signedness << std::endl;
   //   } scalar;
-  // 
+  os << t3 << "scalar: { ";
+  os << "width: " << td.traits.numeric.scalar.width << ", ";
+  os << "signedness: " << td.traits.numeric.scalar.signedness;
+  os << " }" << std::endl;
   //   struct Vector {
-  os << t3 << "vector:" << std::endl;
   //     uint32_t                        component_count;
-  os << t4 << "component_count: " << td.traits.numeric.vector.component_count << std::endl;
   //   } vector;
-  // 
+  os << t3 << "vector: { ";
+  os << "component_count: " << td.traits.numeric.vector.component_count;
+  os << " }" << std::endl;
   //   struct Matrix {
-  os << t3 << "matrix:" << std::endl;
   //     uint32_t                        column_count;
-  os << t4 << "column_count: " << td.traits.numeric.matrix.column_count << std::endl;
   //     uint32_t                        row_count;
-  os << t4 << "row_count: " << td.traits.numeric.matrix.row_count << std::endl;
   //     uint32_t                        stride; // Measured in bytes
-  os << t4 << "stride: " << td.traits.numeric.matrix.stride << std::endl;
   //   } matrix;
+  os << t3 << "matrix: { ";
+  os << "column_count: " << td.traits.numeric.matrix.column_count << ", ";
+  os << "row_count: " << td.traits.numeric.matrix.row_count << ", ";;
+  os << "stride: " << td.traits.numeric.matrix.stride;
+  os << " }" << std::endl;
   // } SpvReflectNumericTraits;
 
   //     SpvReflectImageTraits           image;
-  os << t2 << "image:" << std::endl;
+  os << t2 << "image: { ";
   // typedef struct SpvReflectImageTraits {
   //   SpvDim                            dim;
-  os << t3 << "dim: " << td.traits.image.dim << std::endl;
+  os << "dim: " << td.traits.image.dim << ", ";
   //   uint32_t                          depth;
-  os << t3 << "depth: " << td.traits.image.depth << std::endl;
+  os << "depth: " << td.traits.image.depth << ", ";
   //   uint32_t                          arrayed;
-  os << t3 << "arrayed: " << td.traits.image.arrayed << std::endl;
+  os << "arrayed: " << td.traits.image.arrayed << ", ";
   //   uint32_t                          ms;
-  os << t3 << "ms: " << td.traits.image.ms << std::endl;
+  os << "ms: " << td.traits.image.ms << ", ";
   //   uint32_t                          sampled;
-  os << t3 << "sampled: " << td.traits.image.sampled << std::endl;
+  os << "sampled: " << td.traits.image.sampled << ", ";
   //   SpvImageFormat                    image_format;
-  os << t3 << "image_format: " << td.traits.image.image_format << std::endl;
+  os << "image_format: " << td.traits.image.image_format;
   // } SpvReflectImageTraits;
+  os << " }" << std::endl;
 
   //     SpvReflectArrayTraits           array;
-  os << t2 << "array:" << std::endl;
+  os << t2 << "array: { ";
   // typedef struct SpvReflectArrayTraits {
   //   uint32_t                          dims_count;
-  os << t3 << "dims_count: " << td.traits.array.dims_count << std::endl;
+  os << "dims_count: " << td.traits.array.dims_count << ", ";
   //   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
-  os << t3 << "dims:" << std::endl;
+  os << "dims: [";
   for(uint32_t i_dim=0; i_dim < td.traits.array.dims_count; ++i_dim) {
-    os << t4 << "- " << td.traits.array.dims[i_dim] << std::endl;
+    os << td.traits.array.dims[i_dim] << ",";
   }
+  os << "], ";
   //   uint32_t                          stride; // Measured in bytes
-  os << t3 << "stride: " << td.traits.array.stride << std::endl;
+  os << "stride: " << td.traits.array.stride;
   // } SpvReflectArrayTraits;
+  os << " }" << std::endl;
   //   } traits;
+
   //   uint32_t                          member_count;
   os << t1 << "member_count: " << td.member_count << std::endl;
   //   struct SpvReflectTypeDescription* members;
@@ -501,46 +506,46 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBloc
   //   SpvReflectDecorationFlags         decorations;
   os << t1 << "decorations: " << bv.decorations << std::endl;
   //   SpvReflectNumericTraits           numeric;
-  os << t1 << "numeric:" << std::endl;
   // typedef struct SpvReflectNumericTraits {
+  os << t1 << "numeric:" << std::endl;
   //   struct Scalar {
-  os << t2 << "scalar:" << std::endl;
   //     uint32_t                        width;
-  os << t3 << "width: " << bv.numeric.scalar.width << std::endl;
   //     uint32_t                        signedness;
-  os << t3 << "signedness: " << bv.numeric.scalar.signedness << std::endl;
   //   } scalar;
-  // 
+  os << t2 << "scalar: { ";
+  os << "width: " << bv.numeric.scalar.width << ", ";
+  os << "signedness: " << bv.numeric.scalar.signedness << " }" << std::endl;
   //   struct Vector {
-  os << t2 << "vector:" << std::endl;
   //     uint32_t                        component_count;
-  os << t3 << "component_count: " << bv.numeric.vector.component_count << std::endl;
   //   } vector;
-  // 
+  os << t2 << "vector: { ";
+  os << "component_count: " << bv.numeric.vector.component_count << " }" << std::endl;
   //   struct Matrix {
-  os << t2 << "matrix:" << std::endl;
   //     uint32_t                        column_count;
-  os << t3 << "column_count: " << bv.numeric.matrix.column_count << std::endl;
   //     uint32_t                        row_count;
-  os << t3 << "row_count: " << bv.numeric.matrix.row_count << std::endl;
   //     uint32_t                        stride; // Measured in bytes
-  os << t3 << "stride: " << bv.numeric.matrix.stride << std::endl;
   //   } matrix;
+  os << t2 << "matrix: { ";
+  os << "column_count: " << bv.numeric.matrix.column_count << ", ";
+  os << "row_count: " << bv.numeric.matrix.row_count << ", ";;
+  os << "stride: " << bv.numeric.matrix.stride << " }" << std::endl;
   // } SpvReflectNumericTraits;
 
-  //   SpvReflectArrayTraits             array;
-  os << t1 << "array:" << std::endl;
+  //     SpvReflectArrayTraits           array;
+  os << t1 << "array: { ";
   // typedef struct SpvReflectArrayTraits {
   //   uint32_t                          dims_count;
-  os << t2 << "dims_count: " << bv.array.dims_count << std::endl;
+  os << "dims_count: " << bv.array.dims_count << ", ";
   //   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
-  os << t2 << "dims:" << std::endl;
+  os << "dims: [";
   for(uint32_t i_dim=0; i_dim < bv.array.dims_count; ++i_dim) {
-    os << t3 << "- " << bv.array.dims[i_dim] << std::endl;
+    os << bv.array.dims[i_dim] << ",";
   }
+  os << "], ";
   //   uint32_t                          stride; // Measured in bytes
-  os << t2 << "stride: " << bv.array.stride << std::endl;
+  os << "stride: " << bv.array.stride;
   // } SpvReflectArrayTraits;
+  os << " }" << std::endl;
 
   //   uint32_t                          member_count;
   os << t1 << "member_count: " << bv.member_count << std::endl;
@@ -601,22 +606,23 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
   os << t1 << "descriptor_type: " << db.descriptor_type << std::endl;
   //   SpvReflectResourceType              resource_type;
   os << t1 << "resource_type: " << db.resource_type << std::endl;
-  //   SpvReflectImageTraits               image;
-  os << t1 << "image:" << std::endl;
+  //   SpvReflectImageTraits           image;
+  os << t1 << "image: { ";
   // typedef struct SpvReflectImageTraits {
   //   SpvDim                            dim;
-  os << t2 << "dim: " << db.image.dim << std::endl;
+  os << "dim: " << db.image.dim << ", ";
   //   uint32_t                          depth;
-  os << t2 << "depth: " << db.image.depth << std::endl;
+  os << "depth: " << db.image.depth << ", ";
   //   uint32_t                          arrayed;
-  os << t2 << "arrayed: " << db.image.arrayed << std::endl;
+  os << "arrayed: " << db.image.arrayed << ", ";
   //   uint32_t                          ms;
-  os << t2 << "ms: " << db.image.ms << std::endl;
+  os << "ms: " << db.image.ms << ", ";
   //   uint32_t                          sampled;
-  os << t2 << "sampled: " << db.image.sampled << std::endl;
+  os << "sampled: " << db.image.sampled << ", ";
   //   SpvImageFormat                    image_format;
-  os << t2 << "image_format: " << db.image.image_format << std::endl;
+  os << "image_format: " << db.image.image_format;
   // } SpvReflectImageTraits;
+  os << " }" << std::endl;
 
   //   SpvReflectBlockVariable             block;
   {
@@ -625,16 +631,18 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
     os << t1 << "block: *bv" << itor->second << std::endl;
   }
   //   SpvReflectBindingArrayTraits        array;
-  os << t1 << "array:" << std::endl;
+  os << t1 << "array: { ";
   // typedef struct SpvReflectBindingArrayTraits {
   //   uint32_t                          dims_count;
-  os << t2 << "dims_count: " << db.array.dims_count << std::endl;
+  os << "dims_count: " << db.array.dims_count << ", ";
   //   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
-  os << t2 << "dims:" << std::endl;
+  os << "dims: [";
   for(uint32_t i_dim=0; i_dim < db.array.dims_count; ++i_dim) {
-    os << t3 << "- " << db.array.dims[i_dim] << std::endl;
+    os << db.array.dims[i_dim] << ",";
   }
   // } SpvReflectBindingArrayTraits;
+  os << "] }" << std::endl;
+
   //   struct SpvReflectDescriptorBinding* uav_counter_binding;
   if (db.uav_counter_binding == nullptr) {
     os << t1 << "uav_counter_binding:" << std::endl;
@@ -652,12 +660,11 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
     os << t1 << "type_description: *td" << itor->second << std::endl;
   }
   //   struct {
-  os << t1 << "word_offset:" << std::endl;
   //     uint32_t                        binding;
-  os << t2 << "binding: " << db.word_offset.binding << std::endl;
   //     uint32_t                        set;
-  os << t2 << "set: " << db.word_offset.set << std::endl;
   //   } word_offset;
+  os << t1 << "word_offset: { binding: " << db.word_offset.binding;
+  os << ", set: " << db.word_offset.set << " }" << std::endl;
   // } SpvReflectDescriptorBinding;
 }
 
@@ -692,46 +699,46 @@ void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflect
   //   SpvBuiltIn                          built_in;
   os << t1 << "built_in: " << iv.built_in << std::endl;
   //   SpvReflectNumericTraits             numeric;
-  os << t1 << "numeric:" << std::endl;
   // typedef struct SpvReflectNumericTraits {
+  os << t1 << "numeric:" << std::endl;
   //   struct Scalar {
-  os << t2 << "scalar:" << std::endl;
   //     uint32_t                        width;
-  os << t3 << "width: " << iv.numeric.scalar.width << std::endl;
   //     uint32_t                        signedness;
-  os << t3 << "signedness: " << iv.numeric.scalar.signedness << std::endl;
   //   } scalar;
-  // 
+  os << t2 << "scalar: { ";
+  os << "width: " << iv.numeric.scalar.width << ", ";
+  os << "signedness: " << iv.numeric.scalar.signedness << " }" << std::endl;
   //   struct Vector {
-  os << t2 << "vector:" << std::endl;
   //     uint32_t                        component_count;
-  os << t3 << "component_count: " << iv.numeric.vector.component_count << std::endl;
   //   } vector;
-  // 
+  os << t2 << "vector: { ";
+  os << "component_count: " << iv.numeric.vector.component_count << " }" << std::endl;
   //   struct Matrix {
-  os << t2 << "matrix:" << std::endl;
   //     uint32_t                        column_count;
-  os << t3 << "column_count: " << iv.numeric.matrix.column_count << std::endl;
   //     uint32_t                        row_count;
-  os << t3 << "row_count: " << iv.numeric.matrix.row_count << std::endl;
   //     uint32_t                        stride; // Measured in bytes
-  os << t3 << "stride: " << iv.numeric.matrix.stride << std::endl;
   //   } matrix;
+  os << t2 << "matrix: { ";
+  os << "column_count: " << iv.numeric.matrix.column_count << ", ";
+  os << "row_count: " << iv.numeric.matrix.row_count << ", ";;
+  os << "stride: " << iv.numeric.matrix.stride << " }" << std::endl;
   // } SpvReflectNumericTraits;
 
   //     SpvReflectArrayTraits           array;
-  os << t1 << "array:" << std::endl;
+  os << t1 << "array: { ";
   // typedef struct SpvReflectArrayTraits {
   //   uint32_t                          dims_count;
-  os << t2 << "dims_count: " << iv.array.dims_count << std::endl;
+  os << "dims_count: " << iv.array.dims_count << ", ";
   //   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
-  os << t2 << "dims:" << std::endl;
+  os << "dims: [";
   for(uint32_t i_dim=0; i_dim < iv.array.dims_count; ++i_dim) {
-    os << t3 << "- " << iv.array.dims[i_dim] << std::endl;
+    os << iv.array.dims[i_dim] << ",";
   }
+  os << "], ";
   //   uint32_t                          stride; // Measured in bytes
-  os << t2 << "stride: " << iv.array.stride << std::endl;
+  os << "stride: " << iv.array.stride;
   // } SpvReflectArrayTraits;
+  os << " }" << std::endl;
 
   //   uint32_t                            member_count;
   os << t1 << "member_count: " << iv.member_count << std::endl;
@@ -756,10 +763,10 @@ void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflect
   }
 
   //   struct {
-  os << t1 << "word_offset:" << std::endl;
   //     uint32_t                        location;
-  os << t2 << "location: " << iv.word_offset.location << std::endl;
   //   } word_offset;
+  os << t1 << "word_offset: { location: " << iv.word_offset.location << " }" << std::endl;
+
   // } SpvReflectInterfaceVariable;
 }
 
@@ -885,7 +892,7 @@ void SpvReflectToYaml::Write(std::ostream& os)
     //   uint32_t*                       spirv_code;
     os << t2 << "spirv_code: [";
     for(size_t i=0; i < sm_._internal->spirv_word_count; ++i) {
-      if ((i % 8) == 0) {
+      if ((i % 6) == 0) {
         os << std::endl << t3;
       }
       // std::iomanip can die in a fire.
