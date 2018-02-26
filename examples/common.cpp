@@ -923,7 +923,7 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBloc
   for(uint32_t i=0; i<bv.member_count; ++i) {
     auto itor = block_variable_to_index_.find(&bv.members[i]);
     assert(itor != block_variable_to_index_.end());
-    os << t2 << "- *td" << itor->second << std::endl;
+    os << t2 << "- *bv" << itor->second << std::endl;
   }
   //   SpvReflectTypeDescription*        type_description;
   if (bv.type_description == nullptr) {
