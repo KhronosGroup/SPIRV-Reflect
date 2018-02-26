@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cstring>
 #include <fstream>
-#include <iomanip>
 
 static std::string AsHexString(uint32_t n) {
   // std::iomanip can die in a fire.
@@ -25,7 +24,7 @@ static const char* ToStringSpvSourceLanguage(SpvSourceLanguage lang) {
     case SpvSourceLanguageMax:
       break;
   }
-  assert(0 && "unhandled SpvSourceLanguage enum value");
+  // unhandled SpvSourceLanguage enum value
   return "???";
 }
 
@@ -41,7 +40,7 @@ static const char* ToStringSpvExecutionModel(SpvExecutionModel model) {
     case SpvExecutionModelMax:
       break;
   }
-  assert(0 && "unhandled SpvExecutionModel enum value");
+  // unhandled SpvExecutionModel enum value
   return "???";
 }
 
@@ -70,7 +69,7 @@ static const char* ToStringSpvStorageClass(SpvStorageClass storage_class) {
     return "INVALID_VALUE";
   }
 
-  assert(0 && "unhandled SpvStorageClass enum value");
+  // unhandled SpvStorageClass enum value
   return "???";
 }
 
@@ -87,7 +86,7 @@ static const char* ToStringSpvDim(SpvDim dim) {
     case SpvDimMax:
       break;
   }
-  assert(0 && "unhandled SpvDim enum value");
+  // unhandled SpvDim enum value
   return "???";
 }
 
@@ -137,7 +136,7 @@ static const char* ToStringSpvImageFormat(SpvImageFormat fmt) {
     case SpvImageFormatMax:
       break;
   }
-  assert(0 && "unhandled SpvImageFormat enum value");
+  // unhandled SpvImageFormat enum value
   return "???";
 }
 
@@ -149,7 +148,7 @@ static const char* ToStringSpvReflectResourceType(SpvReflectResourceType res_typ
   case SPV_REFLECT_RESOURCE_FLAG_SRV: return "SRV";
   case SPV_REFLECT_RESOURCE_FLAG_UAV: return "UAV";
   }
-  assert(0 && "unhandled SpvReflectResourceType enum value");
+  // unhandled SpvReflectResourceType enum value
   return "???";
 }
 
@@ -171,7 +170,7 @@ static const char* ToStringVkDescriptorType(VkDescriptorType value) {
     case VK_DESCRIPTOR_TYPE_MAX_ENUM:
       break;
   }
-  assert(0 && "unhandled VkDescriptorType enum value");
+  // unhandled VkDescriptorType enum value
   return "VK_DESCRIPTOR_TYPE_???";
 }
 
@@ -409,7 +408,7 @@ static const char* ToStringVkFormat(VkFormat fmt) {
       case VK_FORMAT_MAX_ENUM:
         break;
   }
-  assert(0 && "unhandled VkFormat enum value");
+  // unhandled VkFormat enum value
   return "VK_FORMAT_???";
 }
 
