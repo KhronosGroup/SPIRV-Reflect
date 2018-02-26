@@ -14,7 +14,11 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const 
 
 class SpvReflectToYaml {
 public:
-  explicit SpvReflectToYaml(const SpvReflectShaderModule& shader_module);
+  enum YamlFlagBits {
+    INCLUDE_INTERNAL_BIT = (1<<0),
+  };
+  using YamlFlags = uint32_t;
+  explicit SpvReflectToYaml(const SpvReflectShaderModule& shader_module, YamlFlags flags = 0);
 
   friend std::ostream& operator<<(std::ostream& os, SpvReflectToYaml& to_yaml)
   {
@@ -35,7 +39,15 @@ private:
   void WriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& db, uint32_t indent_level);
   void WriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVariable& iv, uint32_t indent_level);
 
+  // Write all SpvReflectTypeDescription objects reachable from the specified objects, if they haven't been
+  // written already.
+  void WriteBlockVariableTypes(std::ostream& os, const SpvReflectBlockVariable& bv, uint32_t indent_level);
+  void WriteDescriptorBindingTypes(std::ostream& os, const SpvReflectDescriptorBinding& db, uint32_t indent_level);
+  void WriteInterfaceVariableTypes(std::ostream& os, const SpvReflectInterfaceVariable& iv, uint32_t indent_level);
+
+
   const SpvReflectShaderModule& sm_;
+  YamlFlags flags_;
   std::map<const SpvReflectTypeDescription*, uint32_t> type_description_to_index_;
   std::map<const SpvReflectBlockVariable*, uint32_t> block_variable_to_index_;
   std::map<const SpvReflectDescriptorBinding*, uint32_t> descriptor_binding_to_index_;

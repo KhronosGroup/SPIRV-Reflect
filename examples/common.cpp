@@ -734,8 +734,8 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const 
 
 //////////////////////////////////
 
-SpvReflectToYaml::SpvReflectToYaml(const SpvReflectShaderModule& shader_module) :
-  sm_(shader_module)
+SpvReflectToYaml::SpvReflectToYaml(const SpvReflectShaderModule& shader_module, YamlFlags flags) :
+  sm_(shader_module), flags_(flags)
 {
 }
 
@@ -1141,6 +1141,40 @@ void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflect
   // } SpvReflectInterfaceVariable;
 }
 
+void SpvReflectToYaml::WriteBlockVariableTypes(std::ostream& os, const SpvReflectBlockVariable& bv, uint32_t indent_level) {
+  const auto* td = bv.type_description;
+  if (td && type_description_to_index_.find(td) == type_description_to_index_.end()) {
+    WriteTypeDescription(os, *td, indent_level);
+  }
+
+  for(uint32_t i=0; i<bv.member_count; ++i) {
+    WriteBlockVariableTypes(os, bv.members[i], indent_level);
+  }
+}
+void SpvReflectToYaml::WriteDescriptorBindingTypes(std::ostream& os, const SpvReflectDescriptorBinding& db, uint32_t indent_level) {
+  WriteBlockVariableTypes(os, db.block, indent_level);
+
+  if (db.uav_counter_binding) {
+    WriteDescriptorBindingTypes(os, *(db.uav_counter_binding), indent_level);
+  }
+
+  const auto* td = db.type_description;
+  if (td && type_description_to_index_.find(td) == type_description_to_index_.end()) {
+    WriteTypeDescription(os, *td, indent_level);
+  }
+}
+void SpvReflectToYaml::WriteInterfaceVariableTypes(std::ostream& os, const SpvReflectInterfaceVariable& iv, uint32_t indent_level) {
+  const auto* td = iv.type_description;
+  if (td && type_description_to_index_.find(td) == type_description_to_index_.end()) {
+    WriteTypeDescription(os, *td, indent_level);
+  }
+
+  for(uint32_t i=0; i<iv.member_count; ++i) {
+    WriteInterfaceVariableTypes(os, iv.members[i], indent_level);
+  }
+}
+
+
 void SpvReflectToYaml::Write(std::ostream& os)
 {
   if (!sm_._internal) {
@@ -1158,8 +1192,28 @@ void SpvReflectToYaml::Write(std::ostream& os)
 
   type_description_to_index_.clear();
   os << t0 << "all_type_descriptions:" << std::endl;
-  for(size_t i=0; i<sm_._internal->type_description_count; ++i) {
-    WriteTypeDescription(os, sm_._internal->type_descriptions[i], indent_level+1);
+  if (flags_ & INCLUDE_INTERNAL_BIT) {
+    // Write the entire internal type_description table; all type descriptions are
+    // reachable from there, though most of them are purely internal & not referenced
+    // by any of the public-facing structures.
+    for(size_t i=0; i<sm_._internal->type_description_count; ++i) {
+      WriteTypeDescription(os, sm_._internal->type_descriptions[i], indent_level+1);
+    }
+  } else {
+    // Iterate through all public-facing structures and write any type descriptions
+    // we find (and their children).
+    for(uint32_t i=0; i<sm_.descriptor_binding_count; ++i) {
+      WriteDescriptorBindingTypes(os, sm_.descriptor_bindings[i], indent_level+1);
+    }
+    for(uint32_t i=0; i<sm_.push_constant_count; ++i) {
+      WriteBlockVariableTypes(os, sm_.push_constants[i], indent_level+1);
+    }
+    for(uint32_t i=0; i<sm_.input_variable_count; ++i) {
+      WriteInterfaceVariableTypes(os, sm_.input_variables[i], indent_level+1);
+    }
+    for(uint32_t i=0; i<sm_.output_variable_count; ++i) {
+      WriteInterfaceVariableTypes(os, sm_.output_variables[i], indent_level+1);
+    }
   }
 
   block_variable_to_index_.clear();
@@ -1258,36 +1312,38 @@ void SpvReflectToYaml::Write(std::ostream& os)
     os << t2 << "- *bv" << itor->second << " # " << SafeString(sm_.push_constants[i].name) << std::endl;
   }
 
-  // struct Internal {
-  os << t1 << "_internal:" << std::endl;
-  if (sm_._internal) {
-    //   size_t                          spirv_size;
-    os << t2 << "spirv_size: " << sm_._internal->spirv_size << std::endl;
-    //   uint32_t*                       spirv_code;
-    os << t2 << "spirv_code: [";
-    for(size_t i=0; i < sm_._internal->spirv_word_count; ++i) {
-      if ((i % 6) == 0) {
-        os << std::endl << t3;
+  if (flags_ & INCLUDE_INTERNAL_BIT) {
+    // struct Internal {
+    os << t1 << "_internal:" << std::endl;
+    if (sm_._internal) {
+      //   size_t                          spirv_size;
+      os << t2 << "spirv_size: " << sm_._internal->spirv_size << std::endl;
+      //   uint32_t*                       spirv_code;
+      os << t2 << "spirv_code: [";
+      for(size_t i=0; i < sm_._internal->spirv_word_count; ++i) {
+        if ((i % 6) == 0) {
+          os << std::endl << t3;
+        }
+        // std::iomanip can die in a fire.
+        char out_word[12];
+        snprintf(out_word, 12, "0x%08X,", sm_._internal->spirv_code[i]);
+        os << out_word;
       }
-      // std::iomanip can die in a fire.
-      char out_word[12];
-      snprintf(out_word, 12, "0x%08X,", sm_._internal->spirv_code[i]);
-      os << out_word;
+      os << "]" << std::endl;
+      //   uint32_t                        spirv_word_count;
+      os << t2 << "spirv_word_count: " << sm_._internal->spirv_word_count << std::endl;
+      //   size_t                          type_description_count;
+      os << t2 << "type_description_count: " << sm_._internal->type_description_count << std::endl;
+      //   SpvReflectTypeDescription*      type_descriptions;
+      os << t2 << "type_descriptions:" << std::endl;
+      for(uint32_t i=0; i<sm_._internal->type_description_count; ++i) {
+        auto itor = type_description_to_index_.find(&sm_._internal->type_descriptions[i]);
+        assert(itor != type_description_to_index_.end());
+        os << t3 << "- *td" << itor->second << std::endl;
+      }
     }
-    os << "]" << std::endl;
-    //   uint32_t                        spirv_word_count;
-    os << t2 << "spirv_word_count: " << sm_._internal->spirv_word_count << std::endl;
-    //   size_t                          type_description_count;
-    os << t2 << "type_description_count: " << sm_._internal->type_description_count << std::endl;
-    //   SpvReflectTypeDescription*      type_descriptions;
-    os << t2 << "type_descriptions:" << std::endl;
-    for(uint32_t i=0; i<sm_._internal->type_description_count; ++i) {
-      auto itor = type_description_to_index_.find(&sm_._internal->type_descriptions[i]);
-      assert(itor != type_description_to_index_.end());
-      os << t3 << "- *td" << itor->second << std::endl;
-    }
+    // } * _internal;
   }
-  // } * _internal;
 
   os << "..." << std::endl;
 }

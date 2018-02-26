@@ -419,7 +419,9 @@ int main(int argn, char** argv)
 
     //std::cout << reflection << std::endl;
     //std::cout << std::endl;
-    std::cout << SpvReflectToYaml(reflection.GetShaderModule());
+    SpvReflectToYaml::YamlFlags yaml_flags = 0;
+    SpvReflectToYaml yamlizer(reflection.GetShaderModule(), yaml_flags);
+    std::cout << yamlizer;
   }
 
 #if defined(WIN32)
