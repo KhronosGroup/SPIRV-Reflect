@@ -417,8 +417,9 @@ int main(int argn, char** argv)
     reflection.ChangeDescriptorBindingNumber(reflection.GetDescriptorBinding(0, 0), 4, 7);
 #endif
 
-    std::cout << reflection << std::endl;
-    std::cout << std::endl;
+    //std::cout << reflection << std::endl;
+    //std::cout << std::endl;
+    std::cout << SpvReflectToYaml(reflection.GetShaderModule());
   }
 
 #if defined(WIN32)
