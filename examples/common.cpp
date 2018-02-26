@@ -412,6 +412,7 @@ static const char* ToStringVkFormat(VkFormat fmt) {
   assert(0 && "unhandled VkFormat enum value");
   return "VK_FORMAT_???";
 }
+
 static const char* ToStringGlslType(const SpvReflectTypeDescription& type)
 {
   switch (type.op) {
@@ -632,7 +633,7 @@ static const char* ToStringBuiltIn(SpvSourceLanguage src_lang, SpvBuiltIn built_
   return ToStringGlslBuiltIn(built_in);
 }
 
-void PrintModuleInfo(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent)
+void PrintModuleInfo(std::ostream& os, const SpvReflectShaderModule& obj, const char* /*indent*/)
 {
   os << "entry point     : " << obj.entry_point_name << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";

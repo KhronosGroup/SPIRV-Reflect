@@ -39,7 +39,6 @@ struct TextLine {
 // =================================================================================================
 const char* ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
-    default: return ""; break;
     case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER";
     case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER";
     case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE";
@@ -51,11 +50,15 @@ const char* ToStringVkDescriptorType(VkDescriptorType value) {
     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC";
     case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC";
     case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       : return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT";
+
+    case VK_DESCRIPTOR_TYPE_RANGE_SIZE:
+    case VK_DESCRIPTOR_TYPE_MAX_ENUM:
+      break;
   }
   return "";
 }
 
-const char* ToStringType(const SpvReflectTypeDescription& type)
+const char* ToStringType(const SpvReflectTypeDescription& /*type*/)
 {
 /*
   uint32_t masked = type.type_flags & SPV_REFLECT_TYPE_FLAG_COMPOSITE_MASK;
@@ -215,6 +218,7 @@ void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const
 
 void StreamWrite(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent = "")
 {
+  (void)indent;
   os << "entry point     : " << obj.entry_point_name << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
   os << "source lang ver : " << obj.source_language_version;
@@ -240,7 +244,7 @@ std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorSet& obj)
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const SpvReflectInterfaceVariable& obj)
+std::ostream& operator<<(std::ostream& os, const SpvReflectInterfaceVariable& /*obj*/)
 {
   return os;
 }
