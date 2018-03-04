@@ -1371,16 +1371,18 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
     }
   }
 
-  // Parse padded size using offset difference for all member except for the last entry...
+  // Parse padded size using offset difference for all members except for the last one.
   for (uint32_t member_index = 0; member_index < (p_block->member_count - 1); ++member_index) {
     SpvReflectBlockVariable* p_member_var = &p_block->members[member_index];
     SpvReflectBlockVariable* p_next_member_var = &p_block->members[member_index + 1];
     p_member_var->padded_size = p_next_member_var->offset - p_member_var->offset;
   }
-  // ...last entry just gets rounded up to near multiple of SPIRV_DATA_ALIGNMENT, which is 16.
+  // For the last member, pad its size so that the entire block ends on a multiple of
+  // SPIRV_DATA_ALIGNMENT.
   if (p_block->member_count > 0) {
     SpvReflectBlockVariable* p_member_var = &p_block->members[p_block->member_count - 1];
-    p_member_var->padded_size = RoundUp(p_member_var->size, SPIRV_DATA_ALIGNMENT);
+    p_member_var->padded_size =
+      RoundUp(p_member_var->offset + p_member_var->size, SPIRV_DATA_ALIGNMENT) - p_member_var->offset;
   }
 
   // @TODO validate this with assertion
