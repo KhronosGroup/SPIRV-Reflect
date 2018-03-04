@@ -368,10 +368,13 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
 // =================================================================================================
 void PrintUsage()
 {
-  std::cout << "Usage: spirv-reflect [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
-            << "Options:" << std::endl
-            << " --help:               Display this message" << std::endl
-            << std::endl;
+  std::cout
+    << "Usage: spirv-reflect [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
+    << "Options:" << std::endl
+    << " --help:               Display this message" << std::endl
+    << " --internal:           Include internal fields in output" << std::endl
+    << "                       (mainly for debugging SPIRV-Reflect itself)" << std::endl
+    << std::endl;
 }
 
 // =================================================================================================
@@ -386,16 +389,29 @@ int main(int argn, char** argv)
 //  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 //#endif
 
-  if (argn != 2) {
+  const char* input_spv_path = nullptr;
+  bool output_internal_data = false;
+  for (int i = 1; i < argn; ++i) {
+    std::string arg(argv[i]);
+    if (arg == "--help") {
+      PrintUsage();
+      return EXIT_SUCCESS;
+    } else if (arg == "--internal") {
+      output_internal_data = true;
+    } else if (i == argn - 1) {
+      input_spv_path = argv[i];
+    } else {
+      std::cerr << "Unrecognized argument: " << arg << std::endl;
+      PrintUsage();
+      return EXIT_FAILURE;
+    }
+  }
+  if (!input_spv_path) {
     PrintUsage();
     return EXIT_FAILURE;
-  } else if (std::string(argv[1]) == "--help") {
-    PrintUsage();
-    return EXIT_SUCCESS;
   }
-  std::string input_spv_path = argv[1];
 
-  std::ifstream spv_ifstream(input_spv_path.c_str(), std::ios::binary);
+  std::ifstream spv_ifstream(input_spv_path, std::ios::binary);
   if (!spv_ifstream.is_open()) {
     std::cerr << "ERROR: could not open '" << input_spv_path << "' for reading" << std::endl;
     return EXIT_FAILURE;
@@ -424,6 +440,9 @@ int main(int argn, char** argv)
     //std::cout << reflection << std::endl;
     //std::cout << std::endl;
     SpvReflectToYaml::YamlFlags yaml_flags = 0;
+    if (output_internal_data) {
+      yaml_flags |= SpvReflectToYaml::INCLUDE_INTERNAL_BIT;
+    }
     SpvReflectToYaml yamlizer(reflection.GetShaderModule(), yaml_flags);
     std::cout << yamlizer;
   }
