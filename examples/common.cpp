@@ -152,6 +152,21 @@ static const char* ToStringSpvReflectResourceType(SpvReflectResourceType res_typ
   return "???";
 }
 
+static const char* ToStringVkShaderStageFlagBits(VkShaderStageFlagBits stage) {
+  switch (stage) {
+  case VK_SHADER_STAGE_VERTEX_BIT: return "VERTEX";
+  case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT: return "TESSELLATION_CONTROL";
+  case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT: return "TESSELLATION_EVALUATION";
+  case VK_SHADER_STAGE_GEOMETRY_BIT: return "GEOMETRY";
+  case VK_SHADER_STAGE_FRAGMENT_BIT: return "FRAGMENT";
+  case VK_SHADER_STAGE_COMPUTE_BIT: return "COMPUTE";
+  case VK_SHADER_STAGE_ALL_GRAPHICS: return "ALL_GRAPHICS";
+  case VK_SHADER_STAGE_ALL: return "ALL";
+  }
+  // Unhandled VkShaderStageFlagBits enum value
+  return "???";
+}
+
 static const char* ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
     case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER";
@@ -1253,7 +1268,7 @@ void SpvReflectToYaml::Write(std::ostream& os)
   // SpvExecutionModel                 spirv_execution_model;
   os << t1 << "spirv_execution_model: " << sm_.spirv_execution_model << " # " << ToStringSpvExecutionModel(sm_.spirv_execution_model) << std::endl;
   // VkShaderStageFlagBits             vulkan_shader_stage;
-  os << t1 << "vulkan_shader_stage: " << AsHexString(sm_.vulkan_shader_stage) << std::endl;
+  os << t1 << "vulkan_shader_stage: " << AsHexString(sm_.vulkan_shader_stage) << " # " << ToStringVkShaderStageFlagBits(sm_.vulkan_shader_stage) << std::endl;
   // uint32_t                          descriptor_binding_count;
   os << t1 << "descriptor_binding_count: " << sm_.descriptor_binding_count << std::endl;
   // SpvReflectDescriptorBinding*      descriptor_bindings;
