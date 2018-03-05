@@ -90,6 +90,80 @@ static const char* ToStringSpvDim(SpvDim dim) {
   return "???";
 }
 
+static const char* ToStringSpvBuiltIn(SpvBuiltIn built_in) {
+  switch (built_in) {
+      case SpvBuiltInPosition: return "Position";
+      case SpvBuiltInPointSize: return "PointSize";
+      case SpvBuiltInClipDistance: return "ClipDistance";
+      case SpvBuiltInCullDistance: return "CullDistance";
+      case SpvBuiltInVertexId: return "VertexId";
+      case SpvBuiltInInstanceId: return "InstanceId";
+      case SpvBuiltInPrimitiveId: return "PrimitiveId";
+      case SpvBuiltInInvocationId: return "InvocationId";
+      case SpvBuiltInLayer: return "Layer";
+      case SpvBuiltInViewportIndex: return "ViewportIndex";
+      case SpvBuiltInTessLevelOuter: return "TessLevelOuter";
+      case SpvBuiltInTessLevelInner: return "TessLevelInner";
+      case SpvBuiltInTessCoord: return "TessCoord";
+      case SpvBuiltInPatchVertices: return "PatchVertices";
+      case SpvBuiltInFragCoord: return "FragCoord";
+      case SpvBuiltInPointCoord: return "PointCoord";
+      case SpvBuiltInFrontFacing: return "FrontFacing";
+      case SpvBuiltInSampleId: return "SampleId";
+      case SpvBuiltInSamplePosition: return "SamplePosition";
+      case SpvBuiltInSampleMask: return "SampleMask";
+      case SpvBuiltInFragDepth: return "FragDepth";
+      case SpvBuiltInHelperInvocation: return "HelperInvocation";
+      case SpvBuiltInNumWorkgroups: return "NumWorkgroups";
+      case SpvBuiltInWorkgroupSize: return "WorkgroupSize";
+      case SpvBuiltInWorkgroupId: return "WorkgroupId";
+      case SpvBuiltInLocalInvocationId: return "LocalInvocationId";
+      case SpvBuiltInGlobalInvocationId: return "GlobalInvocationId";
+      case SpvBuiltInLocalInvocationIndex: return "LocalInvocationIndex";
+      case SpvBuiltInWorkDim: return "WorkDim";
+      case SpvBuiltInGlobalSize: return "GlobalSize";
+      case SpvBuiltInEnqueuedWorkgroupSize: return "EnqueuedWorkgroupSize";
+      case SpvBuiltInGlobalOffset: return "GlobalOffset";
+      case SpvBuiltInGlobalLinearId: return "GlobalLinearId";
+      case SpvBuiltInSubgroupSize: return "SubgroupSize";
+      case SpvBuiltInSubgroupMaxSize: return "SubgroupMaxSize";
+      case SpvBuiltInNumSubgroups: return "NumSubgroups";
+      case SpvBuiltInNumEnqueuedSubgroups: return "NumEnqueuedSubgroups";
+      case SpvBuiltInSubgroupId: return "SubgroupId";
+      case SpvBuiltInSubgroupLocalInvocationId: return "SubgroupLocalInvocationId";
+      case SpvBuiltInVertexIndex: return "VertexIndex";
+      case SpvBuiltInInstanceIndex: return "InstanceIndex";
+      case SpvBuiltInSubgroupEqMaskKHR: return "SubgroupEqMaskKHR";
+      case SpvBuiltInSubgroupGeMaskKHR: return "SubgroupGeMaskKHR";
+      case SpvBuiltInSubgroupGtMaskKHR: return "SubgroupGtMaskKHR";
+      case SpvBuiltInSubgroupLeMaskKHR: return "SubgroupLeMaskKHR";
+      case SpvBuiltInSubgroupLtMaskKHR: return "SubgroupLtMaskKHR";
+      case SpvBuiltInBaseVertex: return "BaseVertex";
+      case SpvBuiltInBaseInstance: return "BaseInstance";
+      case SpvBuiltInDrawIndex: return "DrawIndex";
+      case SpvBuiltInDeviceIndex: return "DeviceIndex";
+      case SpvBuiltInViewIndex: return "ViewIndex";
+      case SpvBuiltInBaryCoordNoPerspAMD: return "BaryCoordNoPerspAMD";
+      case SpvBuiltInBaryCoordNoPerspCentroidAMD: return "BaryCoordNoPerspCentroidAMD";
+      case SpvBuiltInBaryCoordNoPerspSampleAMD: return "BaryCoordNoPerspSampleAMD";
+      case SpvBuiltInBaryCoordSmoothAMD: return "BaryCoordSmoothAMD";
+      case SpvBuiltInBaryCoordSmoothCentroidAMD: return "BaryCoordSmoothCentroidAMD";
+      case SpvBuiltInBaryCoordSmoothSampleAMD: return "BaryCoordSmoothSampleAMD";
+      case SpvBuiltInBaryCoordPullModelAMD: return "BaryCoordPullModelAMD";
+      case SpvBuiltInFragStencilRefEXT: return "FragStencilRefEXT";
+      case SpvBuiltInViewportMaskNV: return "ViewportMaskNV";
+      case SpvBuiltInSecondaryPositionNV: return "SecondaryPositionNV";
+      case SpvBuiltInSecondaryViewportMaskNV: return "SecondaryViewportMaskNV";
+      case SpvBuiltInPositionPerViewNV: return "PositionPerViewNV";
+      case SpvBuiltInViewportMaskPerViewNV: return "ViewportMaskPerViewNV";
+
+      case SpvBuiltInMax:
+        break;
+  }
+  // unhandled SpvBuiltIn enum value
+  return "???";
+}
+
 static const char* ToStringSpvImageFormat(SpvImageFormat fmt) {
   switch(fmt) {
     case SpvImageFormatUnknown: return "Unknown";
@@ -1083,7 +1157,7 @@ void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflect
   //   SpvReflectDecorationFlags           decoration_flags;
   os << t1 << "decoration_flags: " << AsHexString(iv.decoration_flags) << std::endl;
   //   SpvBuiltIn                          built_in;
-  os << t1 << "built_in: " << iv.built_in << std::endl;
+  os << t1 << "built_in: " << iv.built_in << " # " << ToStringSpvBuiltIn(iv.built_in) << std::endl;
   //   SpvReflectNumericTraits             numeric;
   // typedef struct SpvReflectNumericTraits {
   os << t1 << "numeric:" << std::endl;
