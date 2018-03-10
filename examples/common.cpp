@@ -823,8 +823,8 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const 
 
 //////////////////////////////////
 
-SpvReflectToYaml::SpvReflectToYaml(const SpvReflectShaderModule& shader_module, YamlFlags flags) :
-  sm_(shader_module), flags_(flags)
+SpvReflectToYaml::SpvReflectToYaml(const SpvReflectShaderModule& shader_module, uint32_t verbosity) :
+  sm_(shader_module), verbosity_(verbosity)
 {
 }
 
@@ -1014,13 +1014,15 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBloc
     assert(itor != block_variable_to_index_.end());
     os << t2 << "- *bv" << itor->second << std::endl;
   }
-  //   SpvReflectTypeDescription*        type_description;
-  if (bv.type_description == nullptr) {
-    os << t1 << "type_description:" << std::endl;
-  } else {
-    auto itor = type_description_to_index_.find(bv.type_description);
-    assert(itor != type_description_to_index_.end());
-    os << t1 << "type_description: *td" << itor->second << std::endl;
+  if (verbosity_ >= 1) {
+    //   SpvReflectTypeDescription*        type_description;
+    if (bv.type_description == nullptr) {
+      os << t1 << "type_description:" << std::endl;
+    } else {
+      auto itor = type_description_to_index_.find(bv.type_description);
+      assert(itor != type_description_to_index_.end());
+      os << t1 << "type_description: *td" << itor->second << std::endl;
+    }
   }
   // } SpvReflectBlockVariable;
 }
@@ -1111,13 +1113,15 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
     assert(itor != descriptor_binding_to_index_.end());
     os << t1 << "uav_counter_binding: *db" << itor->second << " # " << SafeString(db.uav_counter_binding->name) << std::endl;
   }
-  //   SpvReflectTypeDescription*        type_description;
-  if (db.type_description == nullptr) {
-    os << t1 << "type_description:" << std::endl;
-  } else {
-    auto itor = type_description_to_index_.find(db.type_description);
-    assert(itor != type_description_to_index_.end());
-    os << t1 << "type_description: *td" << itor->second << std::endl;
+  if (verbosity_ >= 1) {
+    //   SpvReflectTypeDescription*        type_description;
+    if (db.type_description == nullptr) {
+      os << t1 << "type_description:" << std::endl;
+    } else {
+      auto itor = type_description_to_index_.find(db.type_description);
+      assert(itor != type_description_to_index_.end());
+      os << t1 << "type_description: *td" << itor->second << std::endl;
+    }
   }
   //   struct {
   //     uint32_t                        binding;
@@ -1213,13 +1217,15 @@ void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflect
   //   VkFormat                          format;
   os << t1 << "format: " << iv.format << " # " << ToStringVkFormat(iv.format) << std::endl;
 
-  //   SpvReflectTypeDescription*        type_description;
-  if (!iv.type_description) {
-    os << t1 << "type_description:" << std::endl;
-  } else {
-    auto itor = type_description_to_index_.find(iv.type_description);
-    assert(itor != type_description_to_index_.end());
-    os << t1 << "type_description: *td" << itor->second << std::endl;
+  if (verbosity_ >= 1) {
+    //   SpvReflectTypeDescription*        type_description;
+    if (!iv.type_description) {
+      os << t1 << "type_description:" << std::endl;
+    } else {
+      auto itor = type_description_to_index_.find(iv.type_description);
+      assert(itor != type_description_to_index_.end());
+      os << t1 << "type_description: *td" << itor->second << std::endl;
+    }
   }
 
   //   struct {
@@ -1280,15 +1286,16 @@ void SpvReflectToYaml::Write(std::ostream& os)
   os << "---" << std::endl;
 
   type_description_to_index_.clear();
-  os << t0 << "all_type_descriptions:" << std::endl;
-  if (flags_ & INCLUDE_INTERNAL_BIT) {
+  if (verbosity_ >= 2) {
+    os << t0 << "all_type_descriptions:" << std::endl;
     // Write the entire internal type_description table; all type descriptions are
     // reachable from there, though most of them are purely internal & not referenced
     // by any of the public-facing structures.
     for(size_t i=0; i<sm_._internal->type_description_count; ++i) {
       WriteTypeDescription(os, sm_._internal->type_descriptions[i], indent_level+1);
     }
-  } else {
+  } else if (verbosity_ >= 1) {
+    os << t0 << "all_type_descriptions:" << std::endl;
     // Iterate through all public-facing structures and write any type descriptions
     // we find (and their children).
     for(uint32_t i=0; i<sm_.descriptor_binding_count; ++i) {
@@ -1401,7 +1408,7 @@ void SpvReflectToYaml::Write(std::ostream& os)
     os << t2 << "- *bv" << itor->second << " # " << SafeString(sm_.push_constants[i].name) << std::endl;
   }
 
-  if (flags_ & INCLUDE_INTERNAL_BIT) {
+  if (verbosity_ >= 2) {
     // struct Internal {
     os << t1 << "_internal:" << std::endl;
     if (sm_._internal) {

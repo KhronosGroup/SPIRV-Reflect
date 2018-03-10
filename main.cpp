@@ -371,9 +371,14 @@ void PrintUsage()
   std::cout
     << "Usage: spirv-reflect [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
     << "Options:" << std::endl
-    << " --help:               Display this message" << std::endl
-    << " --internal:           Include internal fields in output" << std::endl
-    << "                       (mainly for debugging SPIRV-Reflect itself)" << std::endl
+    << " --help         Display this message" << std::endl
+    << " -v VERBOSITY   Specify output verbosity:" << std::endl
+    << "                0: shader info, block variables, interface variables," << std::endl
+    << "                   descriptor bindings. No type descriptions. [default]" << std::endl
+    << "                1: Everything above, plus type descriptions." << std::endl
+    << "                2: Everything above, plus SPIR-V bytecode and all internal" << std::endl
+    << "                   type descriptions. If you're not working on SPIRV-Reflect" << std::endl
+    << "                   itself, you probably don't want this." << std::endl
     << std::endl;
 }
 
@@ -390,14 +395,14 @@ int main(int argn, char** argv)
 //#endif
 
   const char* input_spv_path = nullptr;
-  bool output_internal_data = false;
+  uint32_t verbosity = 0;
   for (int i = 1; i < argn; ++i) {
     std::string arg(argv[i]);
     if (arg == "--help") {
       PrintUsage();
       return EXIT_SUCCESS;
-    } else if (arg == "--internal") {
-      output_internal_data = true;
+    } else if (arg == "-v" && i+1 < argn) {
+      verbosity = static_cast<uint32_t>(strtol(argv[++i], nullptr, 10));
     } else if (i == argn - 1) {
       input_spv_path = argv[i];
     } else {
@@ -439,11 +444,7 @@ int main(int argn, char** argv)
 
     //std::cout << reflection << std::endl;
     //std::cout << std::endl;
-    SpvReflectToYaml::YamlFlags yaml_flags = 0;
-    if (output_internal_data) {
-      yaml_flags |= SpvReflectToYaml::INCLUDE_INTERNAL_BIT;
-    }
-    SpvReflectToYaml yamlizer(reflection.GetShaderModule(), yaml_flags);
+    SpvReflectToYaml yamlizer(reflection.GetShaderModule(), verbosity);
     std::cout << yamlizer;
   }
 

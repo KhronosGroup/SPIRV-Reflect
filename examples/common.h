@@ -14,11 +14,10 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const 
 
 class SpvReflectToYaml {
 public:
-  enum YamlFlagBits {
-    INCLUDE_INTERNAL_BIT = (1<<0),
-  };
-  using YamlFlags = uint32_t;
-  explicit SpvReflectToYaml(const SpvReflectShaderModule& shader_module, YamlFlags flags = 0);
+  // verbosity = 0: top-level tables only (module, block variables, interface variables, descriptor bindings).
+  // verbosity = 1: everything above, plus type description tables for all public objects.
+  // verbosity = 2: everything above, plus SPIRV bytecode and full type description table. HUGE.
+  explicit SpvReflectToYaml(const SpvReflectShaderModule& shader_module, uint32_t verbosity = 0);
 
   friend std::ostream& operator<<(std::ostream& os, SpvReflectToYaml& to_yaml)
   {
@@ -47,7 +46,7 @@ private:
 
 
   const SpvReflectShaderModule& sm_;
-  YamlFlags flags_;
+  uint32_t verbosity_ = 0;
   std::map<const SpvReflectTypeDescription*, uint32_t> type_description_to_index_;
   std::map<const SpvReflectBlockVariable*, uint32_t> block_variable_to_index_;
   std::map<const SpvReflectDescriptorBinding*, uint32_t> descriptor_binding_to_index_;
