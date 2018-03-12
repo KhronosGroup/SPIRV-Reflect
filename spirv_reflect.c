@@ -1802,8 +1802,17 @@ static SpvReflectResult SynchronizeDescriptorSets(SpvReflectShaderModule* p_modu
 }
 
 SpvReflectResult spvReflectGetShaderModule(
-  size_t                   size, 
-  const void*              p_code, 
+  size_t                   size,
+  const void*              p_code,
+  SpvReflectShaderModule*  p_module
+)
+{
+  return spvReflectCreateShaderModule(size, p_code, p_module);
+}
+
+SpvReflectResult spvReflectCreateShaderModule(
+  size_t                   size,
+  const void*              p_code,
   SpvReflectShaderModule*  p_module
 )
 {
