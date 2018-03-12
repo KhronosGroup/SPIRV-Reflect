@@ -1,16 +1,56 @@
+/* 
+Build with DXC using -O0 to preserve unused types:
 
-Texture2D             MyTexture     : register(t0);
+   dxc -spirv -O0 -T ps_5_0 -Fo binding_types.spv binding_types.hlsl 
 
-SamplerState          MySampler     : register(s1);
+*/
 
-RWTexture2D<float4>   MyRWTexture2D : register(u2);
-
-cbuffer               MyCBuffer     : register(b3) {
-  float4 color;
+cbuffer MyCBuffer {
+  float x;
 };
 
-float4 main(float4 sv_pos : SV_POSITION) : SV_TARGET {
-  float4 ret = MyTexture.Sample(MySampler, float2(0, 0)) + color;
-  MyRWTexture2D[int2(0, 0)] = ret;
-  return ret;
+struct Data { float x; };
+ConstantBuffer<Data>            MyConstantBuffer;
+
+Texture1D                       MyTexture1D;
+Texture2D                       MyTexture2D;
+Texture3D                       MyTexture3D;
+
+Texture1DArray                  MyTexture1DArray;
+Texture2DArray                  MyTexture2DArray;
+
+RWTexture1D<float4>             MyRWTexture1D;
+RWTexture2D<float4>             MyRWTexture2D;
+RWTexture3D<float4>             MyRWTexture3D;
+
+RWTexture1DArray<float4>        MyRWTexture1DArray;
+RWTexture2DArray<float4>        MyRWTexture2DArray;
+
+Texture2DMS<float4>             MyTexture2DMS;
+Texture2DMSArray<float4>        MyTexture2DMSArray;
+
+TextureCube<float4>             MyTextureCube;
+TextureCubeArray<float4>        MyTextureCubeArray;
+
+tbuffer MyTBuffer {
+  float q;
+};
+
+TextureBuffer<float4>           MyTextureBuffer;
+
+Buffer                          MyBuffer;
+RWBuffer<float4>                MyRWBuffer;
+
+StructuredBuffer<float>         MyStructuredBuffer;
+RWStructuredBuffer<float>       MyRWStructuredBuffer;
+
+AppendStructuredBuffer<float>   MyAppendStructuredBuffer;
+ConsumeStructuredBuffer<float>  MyConsumeStructuredBuffer;
+
+ByteAddressBuffer               MyByteAddressBuffer;
+RWByteAddressBuffer             MyRWByteAddressBuffer;
+
+float4 main(float P : SV_POSITION) : SV_TARGET 
+{
+  return float4(0, 0, 0, 0);
 }

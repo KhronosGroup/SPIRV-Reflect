@@ -1,6 +1,12 @@
 entry point     : main
-source lang     : HLSL
-source lang ver : 500
+source lang     : Unknown
+source lang ver : 0
+
+  input variables: 1
+    0:
+      location  : (built-in)
+      type      : 
+      qualifier : 
 
   output variables: 1
     0:
@@ -8,46 +14,335 @@ source lang ver : 500
       type      : 
       qualifier : 
 
-  descriptor bindings: 4
+  Descriptor bindings: 25
     0:
       binding : 0
       set     : 0
       type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
-      name    : MyTexture
+      name    : MyTexture1D (type.1d.image)
     1:
       binding : 1
       set     : 0
-      type    : VK_DESCRIPTOR_TYPE_SAMPLER
-      name    : MySampler
+      type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+      name    : MyTexture2D (type.2d.image)
     2:
       binding : 2
       set     : 0
-      type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-      name    : MyRWTexture2D
+      type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+      name    : MyTexture3D (type.3d.image)
     3:
       binding : 3
       set     : 0
-      type    : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-      name    :  (MyCBuffer)
+      type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+      name    : MyTexture1DArray (type.1d.image.array)
+    4:
+      binding : 4
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+      name    : MyTexture2DArray (type.2d.image.array)
+    5:
+      binding : 5
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+      name    : MyRWTexture1D (type.1d.image)
+    6:
+      binding : 6
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+      name    : MyRWTexture2D (type.2d.image)
+    7:
+      binding : 7
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+      name    : MyRWTexture3D (type.3d.image)
+    8:
+      binding : 8
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+      name    : MyRWTexture1DArray (type.1d.image.array)
+    9:
+      binding : 9
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+      name    : MyRWTexture2DArray (type.2d.image.array)
+    10:
+      binding : 10
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+      name    : MyTexture2DMS (type.2d.image)
+    11:
+      binding : 11
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+      name    : MyTexture2DMSArray (type.2d.image.array)
+    12:
+      binding : 12
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+      name    : MyTextureCube (type.cube.image)
+    13:
+      binding : 13
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+      name    : MyTextureCubeArray (type.cube.image.array)
+    14:
+      binding : 14
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+      name    : MyBuffer (type.buffer.image)
+    15:
+      binding : 15
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+      name    : MyRWBuffer (type.buffer.image)
+    16:
+      binding : 16
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      name    : MyStructuredBuffer (type.StructuredBuffer.float)
+    17:
+      binding : 17
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      name    : MyRWStructuredBuffer (type.RWStructuredBuffer.float)
+    18:
+      binding : 18
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      name    : counter.var.MyRWStructuredBuffer (type.ACSBuffer.counter)
+    19:
+      binding : 19
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      name    : MyAppendStructuredBuffer (type.RWStructuredBuffer.float)
+    20:
+      binding : 20
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      name    : counter.var.MyAppendStructuredBuffer (type.ACSBuffer.counter)
+    21:
+      binding : 21
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      name    : MyConsumeStructuredBuffer (type.RWStructuredBuffer.float)
+    22:
+      binding : 22
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      name    : counter.var.MyConsumeStructuredBuffer (type.ACSBuffer.counter)
+    23:
+      binding : 23
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      name    : MyByteAddressBuffer (type.ByteAddressBuffer)
+    24:
+      binding : 24
+      set     : 0
+      type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+      name    : MyRWByteAddressBuffer (type.RWByteAddressBuffer)
 
-  descriptor sets: 1
+  Descriptor sets: 1
     0:
       set           : 0
-      binding count : 4
+      binding count : 25
         0:
           binding : 0
           type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
-          name    : MyTexture
+          name    : MyTexture1D (type.1d.image)
         1:
           binding : 1
-          type    : VK_DESCRIPTOR_TYPE_SAMPLER
-          name    : MySampler
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture2D (type.2d.image)
         2:
           binding : 2
-          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-          name    : MyRWTexture2D
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture3D (type.3d.image)
         3:
           binding : 3
-          type    : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-          name    :  (MyCBuffer)
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture1DArray (type.1d.image.array)
+        4:
+          binding : 4
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture2DArray (type.2d.image.array)
+        5:
+          binding : 5
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+          name    : MyRWTexture1D (type.1d.image)
+        6:
+          binding : 6
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+          name    : MyRWTexture2D (type.2d.image)
+        7:
+          binding : 7
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+          name    : MyRWTexture3D (type.3d.image)
+        8:
+          binding : 8
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+          name    : MyRWTexture1DArray (type.1d.image.array)
+        9:
+          binding : 9
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+          name    : MyRWTexture2DArray (type.2d.image.array)
+        10:
+          binding : 10
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture2DMS (type.2d.image)
+        11:
+          binding : 11
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture2DMSArray (type.2d.image.array)
+        12:
+          binding : 12
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTextureCube (type.cube.image)
+        13:
+          binding : 13
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTextureCubeArray (type.cube.image.array)
+        14:
+          binding : 14
+          type    : VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+          name    : MyBuffer (type.buffer.image)
+        15:
+          binding : 15
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+          name    : MyRWBuffer (type.buffer.image)
+        16:
+          binding : 16
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyStructuredBuffer (type.StructuredBuffer.float)
+        17:
+          binding : 17
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyRWStructuredBuffer (type.RWStructuredBuffer.float)
+        18:
+          binding : 18
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : counter.var.MyRWStructuredBuffer (type.ACSBuffer.counter)
+        19:
+          binding : 19
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyAppendStructuredBuffer (type.RWStructuredBuffer.float)
+        20:
+          binding : 20
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : counter.var.MyAppendStructuredBuffer (type.ACSBuffer.counter)
+        21:
+          binding : 21
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyConsumeStructuredBuffer (type.RWStructuredBuffer.float)
+        22:
+          binding : 22
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : counter.var.MyConsumeStructuredBuffer (type.ACSBuffer.counter)
+        23:
+          binding : 23
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyByteAddressBuffer (type.ByteAddressBuffer)
+        24:
+          binding : 24
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyRWByteAddressBuffer (type.RWByteAddressBuffer)
+        0:
+          binding : 0
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture1D (type.1d.image)
+        1:
+          binding : 1
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture2D (type.2d.image)
+        2:
+          binding : 2
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture3D (type.3d.image)
+        3:
+          binding : 3
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture1DArray (type.1d.image.array)
+        4:
+          binding : 4
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture2DArray (type.2d.image.array)
+        5:
+          binding : 5
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+          name    : MyRWTexture1D (type.1d.image)
+        6:
+          binding : 6
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+          name    : MyRWTexture2D (type.2d.image)
+        7:
+          binding : 7
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+          name    : MyRWTexture3D (type.3d.image)
+        8:
+          binding : 8
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+          name    : MyRWTexture1DArray (type.1d.image.array)
+        9:
+          binding : 9
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+          name    : MyRWTexture2DArray (type.2d.image.array)
+        10:
+          binding : 10
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture2DMS (type.2d.image)
+        11:
+          binding : 11
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTexture2DMSArray (type.2d.image.array)
+        12:
+          binding : 12
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTextureCube (type.cube.image)
+        13:
+          binding : 13
+          type    : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+          name    : MyTextureCubeArray (type.cube.image.array)
+        14:
+          binding : 14
+          type    : VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+          name    : MyBuffer (type.buffer.image)
+        15:
+          binding : 15
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+          name    : MyRWBuffer (type.buffer.image)
+        16:
+          binding : 16
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyStructuredBuffer (type.StructuredBuffer.float)
+        17:
+          binding : 17
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyRWStructuredBuffer (type.RWStructuredBuffer.float)
+        18:
+          binding : 18
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : counter.var.MyRWStructuredBuffer (type.ACSBuffer.counter)
+        19:
+          binding : 19
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyAppendStructuredBuffer (type.RWStructuredBuffer.float)
+        20:
+          binding : 20
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : counter.var.MyAppendStructuredBuffer (type.ACSBuffer.counter)
+        21:
+          binding : 21
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyConsumeStructuredBuffer (type.RWStructuredBuffer.float)
+        22:
+          binding : 22
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : counter.var.MyConsumeStructuredBuffer (type.ACSBuffer.counter)
+        23:
+          binding : 23
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyByteAddressBuffer (type.ByteAddressBuffer)
+        24:
+          binding : 24
+          type    : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+          name    : MyRWByteAddressBuffer (type.RWByteAddressBuffer)
 
