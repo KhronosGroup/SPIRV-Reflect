@@ -143,7 +143,7 @@ typedef struct SpvReflectImageTraits {
   SpvDim                            dim;
   uint32_t                          depth;
   uint32_t                          arrayed;
-  uint32_t                          ms;
+  uint32_t                          ms; // 0: single-sampled; 1: multisampled
   uint32_t                          sampled;
   SpvImageFormat                    image_format;
 } SpvReflectImageTraits;
