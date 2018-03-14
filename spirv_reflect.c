@@ -77,6 +77,7 @@ typedef struct Decorations {
   bool                  is_built_in;
   bool                  is_noperspective;
   bool                  is_flat;
+  bool                  is_non_writable;
   NumberDecoration      set;
   NumberDecoration      binding;
   NumberDecoration      input_attachment_index;
@@ -287,6 +288,9 @@ SpvReflectDecorationFlags ApplyDecorations(const Decorations* p_decoration_field
   }
   if (p_decoration_fields->is_flat) {
     decorations |= SPV_REFLECT_DECORATION_FLAT;
+  }
+  if (p_decoration_fields->is_non_writable) {
+    decorations |= SPV_REFLECT_DECORATION_NON_WRITABLE;
   }
   return decorations;
 }
@@ -719,6 +723,11 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
 
       case SpvDecorationFlat: {
         p_target_decorations->is_flat = true;
+      }
+      break;
+
+      case SpvDecorationNonWritable: {
+        p_target_decorations->is_non_writable = true;
       }
       break;
 
@@ -1276,6 +1285,8 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
 
 static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflectShaderModule* p_module, SpvReflectTypeDescription* p_type, SpvReflectBlockVariable* p_block)
 {
+  bool has_non_writable = false;
+
   if (IsNotNull(p_type->members) && (p_type->member_count > 0)) {
     p_block->member_count = p_type->member_count;
     p_block->members = (SpvReflectBlockVariable*)calloc(p_block->member_count, sizeof(*p_block->members));
@@ -1302,6 +1313,9 @@ static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflec
       p_member_var->name = p_type_node->member_names[member_index];
       p_member_var->offset = p_type_node->member_decorations[member_index].offset.value;
       p_member_var->decorations = ApplyDecorations(&p_type_node->member_decorations[member_index]);
+      if (!has_non_writable && (p_member_var->decorations & SPV_REFLECT_DECORATION_NON_WRITABLE)) {
+        has_non_writable = true;
+      }
       ApplyNumericTraits(p_member_type, &p_member_var->numeric);
       if (p_member_type->op == SpvOpTypeArray) {
         ApplyArrayTraits(p_member_type, &p_member_var->array);
@@ -1313,6 +1327,9 @@ static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflec
 
   p_block->name = p_type->type_name;
   p_block->type_description = p_type;
+  if (has_non_writable) {
+    p_block->decorations |= SPV_REFLECT_DECORATION_NON_WRITABLE;
+  }
  
   return SPV_REFLECT_RESULT_SUCCESS;
 }
@@ -1785,6 +1802,33 @@ static SpvReflectResult ParseDescriptorSets(SpvReflectShaderModule* p_module)
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+static SpvReflectResult DisambiguateStorageBufferSrvUav(SpvReflectShaderModule* p_module)
+{
+  if (p_module->descriptor_binding_count == 0) {
+    return SPV_REFLECT_RESULT_SUCCESS;
+  }
+
+  for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
+    SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
+    // Skip everything that isn't a VK_DESCRIPTOR_TYPE_STORAGE_BUFFER descriptor
+    if (p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+      continue;
+    }
+
+    //
+    // Vulkan doesn't disambiguate between SRVs and UAVs so they 
+    // come back as VK_DESCRIPTOR_TYPE_STORAGE_BUFFER. The block
+    // parsing process will mark a block as non-writable should
+    // any member of the block or its descendants are non-writable.
+    //
+    if (p_descriptor->block.decorations & SPV_REFLECT_DECORATION_NON_WRITABLE) {
+      p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV;
+    }
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
 static SpvReflectResult SynchronizeDescriptorSets(SpvReflectShaderModule* p_module)
 {
   // Free and reset all descriptor set numbers
@@ -1901,6 +1945,9 @@ SpvReflectResult spvReflectCreateShaderModule(
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParsePushConstantBlocks(&parser, p_module);
+  }
+  if (result == SPV_REFLECT_RESULT_SUCCESS) {
+    result = DisambiguateStorageBufferSrvUav(p_module);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = SynchronizeDescriptorSets(p_module);

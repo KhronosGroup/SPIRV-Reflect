@@ -96,6 +96,7 @@ typedef enum SpvReflectDecorationFlagBits {
   SPV_REFLECT_DECORATION_BUILT_IN               = 0x00000010,
   SPV_REFLECT_DECORATION_NOPERSPECTIVE          = 0x00000020,
   SPV_REFLECT_DECORATION_FLAT                   = 0x00000040,
+  SPV_REFLECT_DECORATION_NON_WRITABLE           = 0x00000080,
 } SpvReflectDecorationFlagBits;
 
 typedef uint32_t SpvReflectDecorationFlags;
@@ -197,16 +198,16 @@ typedef struct SpvReflectInterfaceVariable {
   uint32_t                            member_count;
   struct SpvReflectInterfaceVariable* members;
 
-  VkFormat                          format;
+  VkFormat                            format;
 
   // NOTE: SPIR-V shares type references for variables
   //       that have the same underlying type. This means
   //       that the same type name will appear for multiple 
   //       variables.
-  SpvReflectTypeDescription*        type_description;
+  SpvReflectTypeDescription*          type_description;
 
   struct {
-    uint32_t                        location;
+    uint32_t                          location;
   } word_offset;
 } SpvReflectInterfaceVariable;
 
@@ -242,11 +243,11 @@ typedef struct SpvReflectDescriptorBinding {
   SpvReflectBindingArrayTraits        array;
   struct SpvReflectDescriptorBinding* uav_counter_binding;
 
-  SpvReflectTypeDescription*        type_description;
+  SpvReflectTypeDescription*          type_description;
 
   struct {
-    uint32_t                        binding;
-    uint32_t                        set;
+    uint32_t                          binding;
+    uint32_t                          set;
   } word_offset;
 } SpvReflectDescriptorBinding;
 

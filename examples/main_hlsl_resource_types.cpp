@@ -30,9 +30,17 @@
 #include "spirv_reflect.h"
 #include "examples/common.h"
 
-// =================================================================================================
-// Stream Output
-// =================================================================================================
+const char* ToStringHlslResourceType(SpvReflectResourceType type)
+{
+  switch (type) {
+    case SPV_REFLECT_RESOURCE_FLAG_SAMPLER : return "SAMPLER"; break;
+    case SPV_REFLECT_RESOURCE_FLAG_CBV     : return "CBV"; break;
+    case SPV_REFLECT_RESOURCE_FLAG_SRV     : return "SRV"; break;
+    case SPV_REFLECT_RESOURCE_FLAG_UAV     : return "UAV"; break;
+  }
+  return "";
+}
+
 const char* ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
     default: return ""; break;
@@ -57,7 +65,9 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
 
   os << " " << obj.name;
   os << "\n";
-  os << t << ToStringVkDescriptorType(obj.descriptor_type);
+  os << t;
+  os << ToStringVkDescriptorType(obj.descriptor_type);
+  os << " " << "(" << ToStringHlslResourceType(obj.resource_type) << ")";
   if ((obj.descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (obj.descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) || 
       (obj.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) || (obj.descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
     os << "\n";
@@ -68,45 +78,6 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
     os << "ms=" << obj.image.ms << ", ";
     os << "sampled=" << obj.image.sampled;
   }
-
-  //if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
-  //  os << " " << "(" << obj.type_description->type_name << ")";
-  //}
-
-/*
-  const char* t = indent;
-  os << t << "binding=" << obj.binding << ", ";
-  if (write_set) {
-    os << "set=" << obj.set;
-  }
-  os << "\n";
-  os << t << "type    : " << ToStringVkDescriptorType(obj.descriptor_type) << "\n";
-  
-  // array
-  if (obj.array.dims_count > 0) {  
-    os << t << "array   : ";
-    for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
-      os << "[" << obj.array.dims[dim_index] << "]";
-    }
-    os << "\n";
-  }
-
-  // counter
-  if (obj.uav_counter_binding != nullptr) {
-    os << t << "counter : ";
-    os << "(";
-    os << "set=" << obj.uav_counter_binding->set << ", ";
-    os << "binding=" << obj.uav_counter_binding->binding << ", ";
-    os << "name=" << obj.uav_counter_binding->name;
-    os << ");";
-    os << "\n";
-  }
-
-  os << t << "name    : " << obj.name;
-  if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
-    os << " " << "(" << obj.type_description->type_name << ")";
-  }
-*/
 }
 
 void StreamWrite(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent = "")
