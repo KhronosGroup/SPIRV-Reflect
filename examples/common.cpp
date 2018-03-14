@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstring>
 #include <fstream>
+#include <sstream>
 
 static std::string AsHexString(uint32_t n) {
   // std::iomanip can die in a fire.
@@ -224,6 +225,65 @@ static const char* ToStringSpvReflectResourceType(SpvReflectResourceType res_typ
   }
   // unhandled SpvReflectResourceType enum value
   return "???";
+}
+
+static std::string ToStringSpvReflectTypeFlags(SpvReflectTypeFlags type_flags) {
+  if (type_flags == SPV_REFLECT_TYPE_FLAG_UNDEFINED) {
+    return "UNDEFINED";
+  }
+
+#define PRINT_AND_CLEAR_TYPE_FLAG(stream, flags, bit) \
+  if (( (flags) & (SPV_REFLECT_TYPE_FLAG_##bit) ) == (SPV_REFLECT_TYPE_FLAG_##bit)) { \
+    stream << #bit << " "; \
+    flags ^= SPV_REFLECT_TYPE_FLAG_##bit; \
+  }
+  std::stringstream sstream;
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, ARRAY);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, STRUCT);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_MASK);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_BLOCK);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_SAMPLED_IMAGE);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_SAMPLER);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_IMAGE);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, MATRIX);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, VECTOR);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, FLOAT);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, INT);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, BOOL);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, VOID);
+#undef PRINT_AND_CLEAR_TYPE_FLAG
+  if (type_flags != 0) {
+    // Unhandled SpvReflectTypeFlags bit
+    sstream << "???";
+  }
+  return sstream.str();
+}
+
+static std::string ToStringSpvReflectDecorationFlags(SpvReflectDecorationFlags decoration_flags) {
+  if (decoration_flags == SPV_REFLECT_DECORATION_NONE) {
+    return "NONE";
+  }
+
+#define PRINT_AND_CLEAR_DECORATION_FLAG(stream, flags, bit) \
+  if (( (flags) & (SPV_REFLECT_DECORATION_##bit) ) == (SPV_REFLECT_DECORATION_##bit)) { \
+    stream << #bit << " "; \
+    flags ^= SPV_REFLECT_DECORATION_##bit; \
+  }
+  std::stringstream sstream;
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, NON_WRITABLE);
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, FLAT);
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, NOPERSPECTIVE);
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, BUILT_IN);
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, COLUMN_MAJOR);
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, ROW_MAJOR);
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, BUFFER_BLOCK);
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, BLOCK);
+#undef PRINT_AND_CLEAR_DECORATION_FLAG
+  if (decoration_flags != 0) {
+    // Unhandled SpvReflectDecorationFlags bit
+    sstream << "???";
+  }
+  return sstream.str();
 }
 
 static const char* ToStringVkShaderStageFlagBits(VkShaderStageFlagBits stage) {
@@ -858,9 +918,9 @@ void SpvReflectToYaml::WriteTypeDescription(std::ostream& os, const SpvReflectTy
   //   SpvStorageClass                   storage_class;
   os << t1 << "storage_class: " << td.storage_class << " # " << ToStringSpvStorageClass(td.storage_class) << std::endl;
   //   SpvReflectTypeFlags               type_flags;
-  os << t1 << "type_flags: " << AsHexString(td.type_flags) << std::endl;
+  os << t1 << "type_flags: " << AsHexString(td.type_flags) << " # " << ToStringSpvReflectTypeFlags(td.type_flags) << std::endl;
   //   SpvReflectDecorationFlags         decoration_flags;
-  os << t1 << "decoration_flags: " << AsHexString(td.decoration_flags) << std::endl;
+  os << t1 << "decoration_flags: " << AsHexString(td.decoration_flags) << " # " << ToStringSpvReflectDecorationFlags(td.decoration_flags) << std::endl;
   //   struct Traits {
   os << t1 << "traits:" << std::endl;
   //     SpvReflectNumericTraits         numeric;
@@ -962,7 +1022,7 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBloc
   //   uint32_t                          padded_size;  // Measured in bytes
   os << t1 << "padded_size: " << bv.padded_size << std::endl;
   //   SpvReflectDecorationFlags         decorations;
-  os << t1 << "decorations: " << AsHexString(bv.decorations) << std::endl;
+  os << t1 << "decorations: " << AsHexString(bv.decorations) << " # " << ToStringSpvReflectDecorationFlags(bv.decorations) << std::endl;
   //   SpvReflectNumericTraits           numeric;
   // typedef struct SpvReflectNumericTraits {
   os << t1 << "numeric:" << std::endl;
@@ -1159,7 +1219,7 @@ void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflect
   //   uint32_t                            semantic_index;
   os << t1 << "semantic_index: " << iv.semantic_index << std::endl;
   //   SpvReflectDecorationFlags           decoration_flags;
-  os << t1 << "decoration_flags: " << AsHexString(iv.decoration_flags) << std::endl;
+  os << t1 << "decoration_flags: " << AsHexString(iv.decoration_flags) << " # " << ToStringSpvReflectDecorationFlags(iv.decoration_flags)  << std::endl;
   //   SpvBuiltIn                          built_in;
   os << t1 << "built_in: " << iv.built_in << " # " << ToStringSpvBuiltIn(iv.built_in) << std::endl;
   //   SpvReflectNumericTraits             numeric;
