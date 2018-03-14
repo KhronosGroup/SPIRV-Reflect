@@ -182,7 +182,7 @@ static SpvReflectResult ReadU32(Parser* p_parser, uint32_t word_offset, uint32_t
   assert(IsNotNull(p_parser));
   assert(IsNotNull(p_parser->spirv_code));
   assert(InRange(p_parser, word_offset));
-  SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_OF;
+  SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_EOF;
   if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && InRange(p_parser, word_offset)) {
     *p_value = *(p_parser->spirv_code + word_offset);
     result = SPV_REFLECT_RESULT_SUCCESS;
@@ -231,7 +231,7 @@ SpvReflectResult ReadStr(Parser* p_parser, uint32_t word_offset, uint32_t word_i
   assert(IsNotNull(p_parser));
   assert(IsNotNull(p_parser->spirv_code));
   assert(InRange(p_parser, limit));
-  SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_OF;
+  SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_EOF;
   if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && InRange(p_parser, limit)) {
     const char* c_str = (const char*)(p_parser->spirv_code + word_offset + word_index);
     uint32_t n = word_count * SPIRV_WORD_SIZE;
@@ -334,7 +334,7 @@ static SpvReflectTypeDescription* FindType(SpvReflectShaderModule* p_module, uin
 static SpvReflectResult CreateParser(size_t size, void* p_code, Parser* p_parser)
 {
   if (p_code == NULL) {
-    return SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_OF;
+    return SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_EOF;
   }
 
   if ((size % 4) != 0) {
@@ -384,7 +384,7 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
   }
 
   if (node_count == 0) {
-    return SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_OF;
+    return SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_EOF;
   }
  
   // Allocate nodes
