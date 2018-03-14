@@ -1,7 +1,7 @@
-/* 
+/*
 Build with DXC using -O0 to preserve unused types:
 
-   dxc -spirv -O0 -T ps_5_0 -Fo binding_types.spv binding_types.hlsl 
+   dxc -spirv -O0 -T ps_5_0 -Fo binding_types.spv binding_types.hlsl
 
 */
 
@@ -36,7 +36,11 @@ tbuffer MyTBuffer {
   float q;
 };
 
-TextureBuffer<float4>           MyTextureBuffer;
+struct Data2 {
+  float4 x;
+};
+
+TextureBuffer<Data2>            MyTextureBuffer;
 
 Buffer                          MyBuffer;
 RWBuffer<float4>                MyRWBuffer;
@@ -50,7 +54,7 @@ ConsumeStructuredBuffer<float>  MyConsumeStructuredBuffer;
 ByteAddressBuffer               MyByteAddressBuffer;
 RWByteAddressBuffer             MyRWByteAddressBuffer;
 
-float4 main(float P : SV_POSITION) : SV_TARGET 
+float4 main(float P : SV_POSITION) : SV_TARGET
 {
   return float4(0, 0, 0, 0);
 }
