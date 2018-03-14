@@ -1312,8 +1312,8 @@ static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflec
 
       p_member_var->name = p_type_node->member_names[member_index];
       p_member_var->offset = p_type_node->member_decorations[member_index].offset.value;
-      p_member_var->decorations = ApplyDecorations(&p_type_node->member_decorations[member_index]);
-      if (!has_non_writable && (p_member_var->decorations & SPV_REFLECT_DECORATION_NON_WRITABLE)) {
+      p_member_var->decoration_flags = ApplyDecorations(&p_type_node->member_decorations[member_index]);
+      if (!has_non_writable && (p_member_var->decoration_flags & SPV_REFLECT_DECORATION_NON_WRITABLE)) {
         has_non_writable = true;
       }
       ApplyNumericTraits(p_member_type, &p_member_var->numeric);
@@ -1328,7 +1328,7 @@ static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflec
   p_block->name = p_type->type_name;
   p_block->type_description = p_type;
   if (has_non_writable) {
-    p_block->decorations |= SPV_REFLECT_DECORATION_NON_WRITABLE;
+    p_block->decoration_flags |= SPV_REFLECT_DECORATION_NON_WRITABLE;
   }
  
   return SPV_REFLECT_RESULT_SUCCESS;
@@ -1360,10 +1360,10 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
       break;
 
       case SpvOpTypeMatrix: {
-        if (p_member_var->decorations & SPV_REFLECT_DECORATION_COLUMN_MAJOR) {
+        if (p_member_var->decoration_flags & SPV_REFLECT_DECORATION_COLUMN_MAJOR) {
           p_member_var->size = p_member_var->numeric.matrix.column_count * p_member_var->numeric.matrix.stride;
         }
-        else if (p_member_var->decorations & SPV_REFLECT_DECORATION_ROW_MAJOR) {
+        else if (p_member_var->decoration_flags & SPV_REFLECT_DECORATION_ROW_MAJOR) {
           p_member_var->size = p_member_var->numeric.matrix.row_count * p_member_var->numeric.matrix.stride;
         }
       }
@@ -1821,7 +1821,7 @@ static SpvReflectResult DisambiguateStorageBufferSrvUav(SpvReflectShaderModule* 
     // parsing process will mark a block as non-writable should
     // any member of the block or its descendants are non-writable.
     //
-    if (p_descriptor->block.decorations & SPV_REFLECT_DECORATION_NON_WRITABLE) {
+    if (p_descriptor->block.decoration_flags & SPV_REFLECT_DECORATION_NON_WRITABLE) {
       p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV;
     }
   }

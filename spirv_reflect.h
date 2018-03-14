@@ -219,7 +219,7 @@ typedef struct SpvReflectBlockVariable {
   uint32_t                          offset;       // Measured in bytes
   uint32_t                          size;         // Measured in bytes
   uint32_t                          padded_size;  // Measured in bytes
-  SpvReflectDecorationFlags         decorations;
+  SpvReflectDecorationFlags         decoration_flags;
   SpvReflectNumericTraits           numeric;
   SpvReflectArrayTraits             array;
   uint32_t                          member_count;
@@ -1078,7 +1078,7 @@ inline void BlockVariable::CopyData(
   p_dst->m_data.offset      = p_src->offset;
   p_dst->m_data.size        = p_src->size;
   p_dst->m_data.padded_size = p_src->padded_size;
-  p_dst->m_data.decoration_flags = p_src->decorations;
+  p_dst->m_data.decoration_flags = p_src->decoration_flags;
   memcpy(&p_dst->m_data.numeric, &p_src->numeric, sizeof(p_src->numeric));
   for (uint32_t i = 0; i < p_src->array.dims_count; ++i) {
     p_dst->m_data.array.push_back(p_src->array.dims[i]);
