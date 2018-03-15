@@ -39,7 +39,7 @@ struct TextLine {
 // =================================================================================================
 std::string ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
-    default: return ""; break;
+    default: break;
     case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER"; break;
     case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER"; break;
     case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE"; break;
@@ -122,6 +122,9 @@ std::string ToStringBuiltIn(SpvBuiltIn value)
     case SpvBuiltInSecondaryViewportMaskNV : return "SecondaryViewportMaskNV"; break;
     case SpvBuiltInPositionPerViewNV : return "PositionPerViewNV"; break;
     case SpvBuiltInViewportMaskPerViewNV : return "ViewportMaskPerViewNV"; break;
+
+    case SpvBuiltInMax:
+      break;
   }
   return "";
 }
@@ -270,7 +273,7 @@ void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const
   }
 }
 
-void StreamWrite(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent = "")
+void StreamWrite(std::ostream& os, const SpvReflectShaderModule& obj, const char* /*indent*/ = "")
 {
   os << "entry point     : " << obj.entry_point_name << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
@@ -297,7 +300,7 @@ std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorSet& obj)
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const SpvReflectInterfaceVariable& obj)
+std::ostream& operator<<(std::ostream& os, const SpvReflectInterfaceVariable& /*obj*/)
 {
   return os;
 }

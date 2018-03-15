@@ -1234,7 +1234,14 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
       case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV; break;
       case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
       case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_CBV; break;
+      case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_CBV; break;
       case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER         : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
+      case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
+
+      case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+      case VK_DESCRIPTOR_TYPE_RANGE_SIZE:
+      case VK_DESCRIPTOR_TYPE_MAX_ENUM:
+        break;
     }
   }
 
@@ -1385,6 +1392,9 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
         }
       }
       break;
+
+      default:
+        break;
     }
   }
 
@@ -2464,6 +2474,9 @@ const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang)
     case SpvSourceLanguageOpenCL_C   : return "OpenCL_C"; break;
     case SpvSourceLanguageOpenCL_CPP : return "OpenCL_CPP"; break;
     case SpvSourceLanguageHLSL       : return "HLSL"; break;
+
+    case SpvSourceLanguageMax:
+      break;
   }
   return "";
 }
