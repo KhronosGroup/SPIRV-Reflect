@@ -2415,54 +2415,41 @@ SpvReflectResult spvReflectChangeDescriptorSetNumber(SpvReflectShaderModule*    
   return result;
 }
 
+static SpvReflectResult ChangeVariableLocation(SpvReflectShaderModule*      p_module,
+                                               SpvReflectInterfaceVariable* p_variable,
+                                               uint32_t                     new_location)
+{
+  if (p_variable->word_offset.location > (p_module->_internal->spirv_word_count - 1)) {
+    return SPV_REFLECT_RESULT_ERROR_RANGE_EXCEEDED;
+  }
+  uint32_t* p_code = p_module->_internal->spirv_code + p_variable->word_offset.location;
+  *p_code = new_location;
+  p_variable->location = new_location;
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
 SpvReflectResult spvReflectChangeInputVariableLocation(SpvReflectShaderModule*            p_module,
                                                        const SpvReflectInterfaceVariable* p_input_variable,
                                                        uint32_t                           new_location)
 {
-  SpvReflectInterfaceVariable* p_target_var = NULL;
   for (uint32_t index = 0; index < p_module->input_variable_count; ++index) {
     if(&p_module->input_variables[index] == p_input_variable) {
-      p_target_var = &p_module->input_variables[index];
-      break;
+      return ChangeVariableLocation(p_module, &p_module->input_variables[index], new_location);
     }
   }
-
-  if (IsNotNull(p_target_var)) {
-    if (p_target_var->word_offset.location > (p_module->_internal->spirv_word_count - 1)) {
-      return SPV_REFLECT_RESULT_ERROR_RANGE_EXCEEDED;
-    }
-    // Location
-    uint32_t* p_code = p_module->_internal->spirv_code + p_target_var->word_offset.location;
-    *p_code = new_location;
-    p_target_var->location = new_location;
-  }
-
-  return SPV_REFLECT_RESULT_SUCCESS;
+  return SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
 }
 
 SpvReflectResult spvReflectChangeOutputVariableLocation(SpvReflectShaderModule*             p_module,
                                                         const SpvReflectInterfaceVariable*  p_output_variable,
                                                         uint32_t                            new_location)
 {
-  SpvReflectInterfaceVariable* p_target_var = NULL;
   for (uint32_t index = 0; index < p_module->output_variable_count; ++index) {
     if(&p_module->output_variables[index] == p_output_variable) {
-      p_target_var = &p_module->output_variables[index];
-      break;
+      return ChangeVariableLocation(p_module, &p_module->output_variables[index], new_location);
     }
   }
-
-  if (IsNotNull(p_target_var)) {
-    if (p_target_var->word_offset.location > (p_module->_internal->spirv_word_count - 1)) {
-      return SPV_REFLECT_RESULT_ERROR_RANGE_EXCEEDED;
-    }
-    // Location
-    uint32_t* p_code = p_module->_internal->spirv_code + p_target_var->word_offset.location;
-    *p_code = new_location;
-    p_target_var->location = new_location;
-  }
-
-  return SPV_REFLECT_RESULT_SUCCESS;
+  return SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
 }
 
 const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang)
