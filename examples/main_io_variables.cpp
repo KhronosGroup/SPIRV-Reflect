@@ -35,7 +35,7 @@ int main(int argn, char** argv)
     auto p_var = input_vars[index];
 
     // input variables can also be retrieved directly from the module, by location
-    auto p_var2 = spvReflectGetInputVariable(&module, p_var->location, &result);
+    auto p_var2 = spvReflectGetInputVariableByLocation(&module, p_var->location, &result);
     assert(result == SPV_REFLECT_RESULT_SUCCESS);
     assert(p_var == p_var2);
     (void)p_var2;
@@ -50,7 +50,7 @@ int main(int argn, char** argv)
     auto p_var = output_vars[index];
 
     // output variables can also be retrieved directly from the module, by location
-    auto p_var2 = spvReflectGetOutputVariable(&module, p_var->location, &result);
+    auto p_var2 = spvReflectGetOutputVariableByLocation(&module, p_var->location, &result);
     assert(result == SPV_REFLECT_RESULT_SUCCESS);
     assert(p_var == p_var2);
     (void)p_var2;

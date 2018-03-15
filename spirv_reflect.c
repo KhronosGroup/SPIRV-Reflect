@@ -2352,9 +2352,9 @@ const SpvReflectDescriptorSet* spvReflectGetDescriptorSet(const SpvReflectShader
   return p_set;
 }
 
-const SpvReflectInterfaceVariable* spvReflectGetInputVariable(const SpvReflectShaderModule* p_module, 
-                                                              uint32_t                      location, 
-                                                              SpvReflectResult*             p_result)
+const SpvReflectInterfaceVariable* spvReflectGetInputVariableByLocation(const SpvReflectShaderModule* p_module,
+                                                                        uint32_t                      location,
+                                                                        SpvReflectResult*             p_result)
 {
   const SpvReflectInterfaceVariable* p_var = NULL;
   assert(IsNotNull(p_module));
@@ -2374,10 +2374,16 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariable(const SpvReflectSh
   }
   return p_var;
 }
+const SpvReflectInterfaceVariable* spvReflectGetInputVariable(const SpvReflectShaderModule* p_module,
+  uint32_t                      location,
+  SpvReflectResult*             p_result)
+{
+  return spvReflectGetInputVariableByLocation(p_module, location, p_result);
+}
 
-const SpvReflectInterfaceVariable* spvReflectGetOutputVariable(const SpvReflectShaderModule*  p_module, 
-                                                               uint32_t                       location, 
-                                                               SpvReflectResult*              p_result)
+const SpvReflectInterfaceVariable* spvReflectGetOutputVariableByLocation(const SpvReflectShaderModule*  p_module,
+                                                                         uint32_t                       location,
+                                                                         SpvReflectResult*              p_result)
 {
   const SpvReflectInterfaceVariable* p_var = NULL;
   assert(IsNotNull(p_module));
@@ -2396,6 +2402,12 @@ const SpvReflectInterfaceVariable* spvReflectGetOutputVariable(const SpvReflectS
                             : SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
   }
   return p_var;
+}
+const SpvReflectInterfaceVariable* spvReflectGetOutputVariable(const SpvReflectShaderModule*  p_module,
+  uint32_t                       location,
+  SpvReflectResult*              p_result)
+{
+  return spvReflectGetOutputVariableByLocation(p_module, location, p_result);
 }
 
 const SpvReflectBlockVariable* spvReflectGetPushConstant(const SpvReflectShaderModule* p_module, 
