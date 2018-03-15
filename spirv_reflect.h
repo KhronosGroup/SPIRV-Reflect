@@ -56,7 +56,7 @@ typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH,
   SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_CODE_SIZE,
-  SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_OF,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_EOF,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_SET_NUMBER_OVERFLOW,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_STORAGE_CLASS,
@@ -143,7 +143,7 @@ typedef struct SpvReflectImageTraits {
   SpvDim                            dim;
   uint32_t                          depth;
   uint32_t                          arrayed;
-  uint32_t                          ms;
+  uint32_t                          ms; // 0: single-sampled; 1: multisampled
   uint32_t                          sampled;
   SpvImageFormat                    image_format;
 } SpvReflectImageTraits;
@@ -219,7 +219,7 @@ typedef struct SpvReflectBlockVariable {
   uint32_t                          offset;       // Measured in bytes
   uint32_t                          size;         // Measured in bytes
   uint32_t                          padded_size;  // Measured in bytes
-  SpvReflectDecorationFlags         decorations;
+  SpvReflectDecorationFlags         decoration_flags;
   SpvReflectNumericTraits           numeric;
   SpvReflectArrayTraits             array;
   uint32_t                          member_count;
@@ -576,56 +576,7 @@ const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang);
 
 namespace spv_reflect {
 
-/*! \class BlockVariable
-
- BlockVariable assumes ShaderModule successfully parsed SPIR-V
- and contains valid block variables. 
-
- BlockVariable is self contained and stores its own copy of any
- data it relies on. It does not require the module it came
- from to remain in scope .
-
-*/
-class BlockVariable {
-public:
-  BlockVariable();
-  BlockVariable(uint32_t binding, uint32_t set, const SpvReflectBlockVariable* p_src_data);
-  ~BlockVariable();
-
-  uint32_t                          GetBinding() const;
-  uint32_t                          GetSet() const;
-
-  const std::string&                GetName() const;
-  uint32_t                          GetOffset() const;
-  uint32_t                          GetSize() const;
-  uint32_t                          GetPaddedSize() const;
-  const std::vector<uint32_t>       GetArrayDims() const;
-  const std::vector<BlockVariable>& GetMembers() const;
-
-private:
-  void CopyData(const SpvReflectBlockVariable*  p_src, BlockVariable* p_dst);
-  void ParseBlockVariable(const SpvReflectBlockVariable* p_src_data, BlockVariable* p_dst_data, const BlockVariable* p_parent);
-
-private:
-  uint32_t  m_binding = static_cast<uint32_t>(SPV_REFLECT_BINDING_NUMBER_NOT_USED);
-  uint32_t  m_set = static_cast<uint32_t>(SPV_REFLECT_BINDING_NUMBER_NOT_USED);
-
-  struct VariableData {
-    std::string               name;
-    uint32_t                  offset;       // Measured in bytes
-    uint32_t                  size;         // Measured in bytes
-    uint32_t                  padded_size;  // Measured in bytes
-    SpvReflectDecorationFlags decoration_flags;
-    SpvReflectNumericTraits   numeric;
-    std::vector<uint32_t>     array;
-  };
-  VariableData m_data = {};
-
-  const BlockVariable*        m_parent = nullptr;
-  std::vector<BlockVariable>  m_members;
-};
-
-/*! \class ShaderReflection
+/*! \class ShaderModule
 
 */
 class ShaderModule {
@@ -1007,102 +958,6 @@ inline SpvReflectResult ShaderModule::ChangeOutputVariableLocation(
   return spvReflectChangeOutputVariableLocation(&m_module, 
                                                 p_output_variable, 
                                                 new_location);
-}
-
-// =================================================================================================
-// BlockVariable
-// =================================================================================================
-inline BlockVariable::BlockVariable() {}
-
-inline BlockVariable::BlockVariable(
-  uint32_t                        binding, 
-  uint32_t                        set, 
-  const SpvReflectBlockVariable*  p_src_data
-) 
-{
-  this->m_binding = binding;
-  this->m_set = set;
-  if (p_src_data != nullptr) {
-    ParseBlockVariable(p_src_data, this, nullptr);
-  }
-}
-
-inline BlockVariable::~BlockVariable() {}
-
-inline uint32_t BlockVariable::GetBinding() const 
-{ 
-  return m_binding; 
-}
-
-inline uint32_t BlockVariable::GetSet() const
-{ 
-  return m_set; 
-}
-
-inline const std::string& BlockVariable::GetName() const
-{ 
-  return m_data.name; 
-}
-
-inline uint32_t BlockVariable::GetOffset() const
-{ 
-  return m_data.offset; 
-}
-
-inline uint32_t BlockVariable::GetSize() const
-{ 
-  return m_data.size; 
-}
-
-inline uint32_t BlockVariable::GetPaddedSize() const
-{ 
-  return m_data.padded_size;
-}
-
-inline const std::vector<uint32_t> BlockVariable::GetArrayDims() const
-{
-  return m_data.array;
-}
-
-inline const std::vector<BlockVariable>& BlockVariable::GetMembers() const
-{ 
-  return m_members; 
-}
-
-inline void BlockVariable::CopyData(
-  const SpvReflectBlockVariable*  p_src, 
-  BlockVariable*                  p_dst
-) 
-{
-  p_dst->m_data.name        = p_src->name;
-  p_dst->m_data.offset      = p_src->offset;
-  p_dst->m_data.size        = p_src->size;
-  p_dst->m_data.padded_size = p_src->padded_size;
-  p_dst->m_data.decoration_flags = p_src->decorations;
-  memcpy(&p_dst->m_data.numeric, &p_src->numeric, sizeof(p_src->numeric));
-  for (uint32_t i = 0; i < p_src->array.dims_count; ++i) {
-    p_dst->m_data.array.push_back(p_src->array.dims[i]);
-  }
-}
-
-inline void BlockVariable::ParseBlockVariable(
-  const SpvReflectBlockVariable*  p_src_data, 
-  BlockVariable*                  p_dst_data, 
-  const BlockVariable*            p_parent
-) 
-{
-  m_parent = p_parent;
-
-  CopyData(p_src_data, p_dst_data);
-
-  const uint32_t src_member_count = p_src_data->member_count;
-  const uint32_t dst_member_count = static_cast<uint32_t>(m_members.size()) + src_member_count;
-  m_members.resize(dst_member_count);
-  for (uint32_t member_index = 0; member_index < p_src_data->member_count; ++member_index) {
-    const SpvReflectBlockVariable* p_src_member = &p_src_data->members[member_index];
-    BlockVariable* p_dst_member = &m_members[member_index];
-    ParseBlockVariable(p_src_member, p_dst_member, this);
-  }
 }
 
 } // namespace spv_reflect
