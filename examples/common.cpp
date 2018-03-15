@@ -67,7 +67,7 @@ static const char* ToStringSpvStorageClass(SpvStorageClass storage_class) {
 
   // Special case: this specific "unhandled" value does actually seem to show up.
   if (storage_class == (SpvStorageClass)-1) {
-    return "INVALID_VALUE";
+    return "NOT APPLICABLE";
   }
 
   // unhandled SpvStorageClass enum value
