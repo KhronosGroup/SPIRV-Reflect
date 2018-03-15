@@ -34,16 +34,6 @@ if(WIN32)
 endif()
 
 ################################################################################
-# ubo_offsets
-################################################################################
-add_executable(ubo_offsets ${CMAKE_CURRENT_SOURCE_DIR}/main_ubo_offsets.cpp ${COMMON_FILES} ${SPIRV_REFLECT_FILES})
-target_include_directories(ubo_offsets PRIVATE ${CMAKE_SOURCE_DIR})
-
-if(WIN32)
-    set_target_properties(ubo_offsets PROPERTIES FOLDER "examples")
-endif()
-
-################################################################################
 # hlsl_resource_types
 ################################################################################
 add_executable(hlsl_resource_types ${CMAKE_CURRENT_SOURCE_DIR}/main_hlsl_resource_types.cpp ${COMMON_FILES} ${SPIRV_REFLECT_FILES})
