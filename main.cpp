@@ -37,7 +37,7 @@ struct TextLine {
 // =================================================================================================
 // Stream Output
 // =================================================================================================
-const char* ToStringVkDescriptorType(VkDescriptorType value) {
+std::string ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
     default: return ""; break;
     case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER"; break;
@@ -55,38 +55,130 @@ const char* ToStringVkDescriptorType(VkDescriptorType value) {
   return "";
 }
 
-const char* ToStringType(const SpvReflectTypeDescription& type)
+std::string ToStringBuiltIn(SpvBuiltIn value)
 {
-/*
-  uint32_t masked = type.type_flags & SPV_REFLECT_TYPE_FLAG_COMPOSITE_MASK;
-  switch (masked) {
-    case SPV_REFLECT_TYPE_FLAG_COMPOSITE_SCALAR: {
-      switch (type.scalar_traits.component_type) {
-        case SPV_REFLECT_COMPONENT_TYPE_FLOAT: return "float"; break;
-        case SPV_REFLECT_COMPONENT_TYPE_INT: return (type.scalar_traits.signedness ? "int" : "uint"); break;
-      }
-    } break;
-    case (SPV_REFLECT_TYPE_FLAG_COMPOSITE_VECTOR | SPV_REFLECT_TYPE_FLAG_COMPOSITE_SCALAR): {
-      switch (type.scalar_traits.component_type) {
-        case SPV_REFLECT_COMPONENT_TYPE_FLOAT: {
-          switch (type.vector_traits.component_count) {
-            case 2: return "vec2"; break;
-            case 3: return "vec3"; break;
-            case 4: return "vec4"; break;
-          }
-        } break;
-        case SPV_REFLECT_COMPONENT_TYPE_INT: {
-          switch (type.vector_traits.component_count) {
-            case 2: return (type.scalar_traits.signedness ? "ivec2" : "uvec2"); break;
-            case 3: return (type.scalar_traits.signedness ? "ivec3" : "uvec3"); break;
-            case 4: return (type.scalar_traits.signedness ? "ivec4" : "uvec4"); break;
-          }
-        } break;
-      }
-    } break;
+  switch (value) {
+    case SpvBuiltInPosition : return "Position"; break;
+    case SpvBuiltInPointSize : return "PointSize"; break;
+    case SpvBuiltInClipDistance : return "ClipDistance"; break;
+    case SpvBuiltInCullDistance : return "CullDistance"; break;
+    case SpvBuiltInVertexId : return "VertexId"; break;
+    case SpvBuiltInInstanceId : return "InstanceId"; break;
+    case SpvBuiltInPrimitiveId : return "PrimitiveId"; break;
+    case SpvBuiltInInvocationId : return "InvocationId"; break;
+    case SpvBuiltInLayer : return "Layer"; break;
+    case SpvBuiltInViewportIndex : return "ViewportIndex"; break;
+    case SpvBuiltInTessLevelOuter : return "TessLevelOuter"; break;
+    case SpvBuiltInTessLevelInner : return "TessLevelInner"; break;
+    case SpvBuiltInTessCoord : return "TessCoord"; break;
+    case SpvBuiltInPatchVertices : return "PatchVertices"; break;
+    case SpvBuiltInFragCoord : return "FragCoord"; break;
+    case SpvBuiltInPointCoord : return "PointCoord"; break;
+    case SpvBuiltInFrontFacing : return "FrontFacing"; break;
+    case SpvBuiltInSampleId : return "SampleId"; break;
+    case SpvBuiltInSamplePosition : return "SamplePosition"; break;
+    case SpvBuiltInSampleMask : return "SampleMask"; break;
+    case SpvBuiltInFragDepth : return "FragDepth"; break;
+    case SpvBuiltInHelperInvocation : return "HelperInvocation"; break;
+    case SpvBuiltInNumWorkgroups : return "NumWorkgroups"; break;
+    case SpvBuiltInWorkgroupSize : return "WorkgroupSize"; break;
+    case SpvBuiltInWorkgroupId : return "WorkgroupId"; break;
+    case SpvBuiltInLocalInvocationId : return "LocalInvocationId"; break;
+    case SpvBuiltInGlobalInvocationId : return "GlobalInvocationId"; break;
+    case SpvBuiltInLocalInvocationIndex : return "LocalInvocationIndex"; break;
+    case SpvBuiltInWorkDim : return "WorkDim"; break;
+    case SpvBuiltInGlobalSize : return "GlobalSize"; break;
+    case SpvBuiltInEnqueuedWorkgroupSize : return "EnqueuedWorkgroupSize"; break;
+    case SpvBuiltInGlobalOffset : return "GlobalOffset"; break;
+    case SpvBuiltInGlobalLinearId : return "GlobalLinearId"; break;
+    case SpvBuiltInSubgroupSize : return "SubgroupSize"; break;
+    case SpvBuiltInSubgroupMaxSize : return "SubgroupMaxSize"; break;
+    case SpvBuiltInNumSubgroups : return "NumSubgroups"; break;
+    case SpvBuiltInNumEnqueuedSubgroups : return "NumEnqueuedSubgroups"; break;
+    case SpvBuiltInSubgroupId : return "SubgroupId"; break;
+    case SpvBuiltInSubgroupLocalInvocationId : return "SubgroupLocalInvocationId"; break;
+    case SpvBuiltInVertexIndex : return "VertexIndex"; break;
+    case SpvBuiltInInstanceIndex : return "InstanceIndex"; break;
+    case SpvBuiltInSubgroupEqMaskKHR : return "SubgroupEqMaskKHR"; break;
+    case SpvBuiltInSubgroupGeMaskKHR : return "SubgroupGeMaskKHR"; break;
+    case SpvBuiltInSubgroupGtMaskKHR : return "SubgroupGtMaskKHR"; break;
+    case SpvBuiltInSubgroupLeMaskKHR : return "SubgroupLeMaskKHR"; break;
+    case SpvBuiltInSubgroupLtMaskKHR : return "SubgroupLtMaskKHR"; break;
+    case SpvBuiltInBaseVertex : return "BaseVertex"; break;
+    case SpvBuiltInBaseInstance : return "BaseInstance"; break;
+    case SpvBuiltInDrawIndex : return "DrawIndex"; break;
+    case SpvBuiltInDeviceIndex : return "DeviceIndex"; break;
+    case SpvBuiltInViewIndex : return "ViewIndex"; break;
+    case SpvBuiltInBaryCoordNoPerspAMD : return "BaryCoordNoPerspAMD"; break;
+    case SpvBuiltInBaryCoordNoPerspCentroidAMD : return "BaryCoordNoPerspCentroidAMD"; break;
+    case SpvBuiltInBaryCoordNoPerspSampleAMD : return "BaryCoordNoPerspSampleAMD"; break;
+    case SpvBuiltInBaryCoordSmoothAMD : return "BaryCoordSmoothAMD"; break;
+    case SpvBuiltInBaryCoordSmoothCentroidAMD : return "BaryCoordSmoothCentroidAMD"; break;
+    case SpvBuiltInBaryCoordSmoothSampleAMD : return "BaryCoordSmoothSampleAMD"; break;
+    case SpvBuiltInBaryCoordPullModelAMD : return "BaryCoordPullModelAMD"; break;
+    case SpvBuiltInFragStencilRefEXT : return "FragStencilRefEXT"; break;
+    case SpvBuiltInViewportMaskNV : return "ViewportMaskNV"; break;
+    case SpvBuiltInSecondaryPositionNV : return "SecondaryPositionNV"; break;
+    case SpvBuiltInSecondaryViewportMaskNV : return "SecondaryViewportMaskNV"; break;
+    case SpvBuiltInPositionPerViewNV : return "PositionPerViewNV"; break;
+    case SpvBuiltInViewportMaskPerViewNV : return "ViewportMaskPerViewNV"; break;
   }
-*/
   return "";
+}
+
+std::string ToStringComponentType(const SpvReflectTypeDescription& type)
+{
+  uint32_t masked_type = type.type_flags & 0xF;
+  if (masked_type == 0) {
+    return "";
+  }
+
+  std::stringstream ss;
+  switch (masked_type) {
+    default: assert(false && "unsupported component type"); break;
+    case SPV_REFLECT_TYPE_FLAG_BOOL  : ss << "bool"; break;
+    case SPV_REFLECT_TYPE_FLAG_INT   : ss << (type.traits.numeric.scalar.signedness ? "int" : "uint"); break;
+    case SPV_REFLECT_TYPE_FLAG_FLOAT : ss << "float"; break;
+  }
+
+  if (type.type_flags & SPV_REFLECT_TYPE_FLAG_MATRIX) {
+    ss << type.traits.numeric.matrix.row_count;
+    ss << "x";
+    ss << type.traits.numeric.matrix.column_count;
+  }
+  else if (type.type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+    ss << type.traits.numeric.vector.component_count;
+  }
+
+  //uint32_t masked = type.type_flags & SPV_REFLECT_TYPE_FLAG_COMPOSITE_MASK;
+  //switch (masked) {
+  //  case SPV_REFLECT_TYPE_FLAG_COMPOSITE_SCALAR: {
+  //    switch (type.scalar_traits.component_type) {
+  //      case SPV_REFLECT_COMPONENT_TYPE_FLOAT: return "float"; break;
+  //      case SPV_REFLECT_COMPONENT_TYPE_INT: return (type.scalar_traits.signedness ? "int" : "uint"); break;
+  //    }
+  //  } break;
+  //  case (SPV_REFLECT_TYPE_FLAG_COMPOSITE_VECTOR | SPV_REFLECT_TYPE_FLAG_COMPOSITE_SCALAR): {
+  //    switch (type.scalar_traits.component_type) {
+  //      case SPV_REFLECT_COMPONENT_TYPE_FLOAT: {
+  //        switch (type.vector_traits.component_count) {
+  //          case 2: return "vec2"; break;
+  //          case 3: return "vec3"; break;
+  //          case 4: return "vec4"; break;
+  //        }
+  //      } break;
+  //      case SPV_REFLECT_COMPONENT_TYPE_INT: {
+  //        switch (type.vector_traits.component_count) {
+  //          case 2: return (type.scalar_traits.signedness ? "ivec2" : "uvec2"); break;
+  //          case 3: return (type.scalar_traits.signedness ? "ivec3" : "uvec3"); break;
+  //          case 4: return (type.scalar_traits.signedness ? "ivec4" : "uvec4"); break;
+  //        }
+  //      } break;
+  //    }
+  //  } break;
+  //}
+
+  return ss.str();
 }
 
 void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t member_count, const SpvReflectBlockVariable* p_members, std::vector<TextLine>* p_text_lines)
@@ -118,6 +210,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
     else {
       TextLine text_line;
       text_line.text_elements.push_back(expanded_indent);
+      text_line.text_elements.push_back(ToStringComponentType(*member.type_description));
       text_line.text_elements.push_back(member.name + std::string(";"));
       text_line.text_elements.push_back(std::to_string(member.offset));
       text_line.text_elements.push_back(std::to_string(member.size));
@@ -203,7 +296,8 @@ void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const
     os << obj.location;
   }
   os << "\n";
-  os << t << "type      : " << ToStringType(*obj.type_description) << "\n";
+  os << t << "type      : " << ToStringComponentType(*obj.type_description) << "\n";
+  os << t << "name      : " << (obj.name != NULL ? obj.name : "") << "\n";
   os << t << "qualifier : ";
   if (obj.decoration_flags & SPV_REFLECT_DECORATION_FLAT) {
     os << "flat";

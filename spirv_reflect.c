@@ -1633,6 +1633,10 @@ static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShad
                                                      p_type, 
                                                      p_var,
                                                      &has_built_in);
+    if ((p_var->name == NULL) && (p_node->name)) {
+      p_var->name = p_node->name;
+    }
+
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
     }
