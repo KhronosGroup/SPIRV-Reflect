@@ -150,34 +150,6 @@ std::string ToStringComponentType(const SpvReflectTypeDescription& type)
     ss << type.traits.numeric.vector.component_count;
   }
 
-  //uint32_t masked = type.type_flags & SPV_REFLECT_TYPE_FLAG_COMPOSITE_MASK;
-  //switch (masked) {
-  //  case SPV_REFLECT_TYPE_FLAG_COMPOSITE_SCALAR: {
-  //    switch (type.scalar_traits.component_type) {
-  //      case SPV_REFLECT_COMPONENT_TYPE_FLOAT: return "float"; break;
-  //      case SPV_REFLECT_COMPONENT_TYPE_INT: return (type.scalar_traits.signedness ? "int" : "uint"); break;
-  //    }
-  //  } break;
-  //  case (SPV_REFLECT_TYPE_FLAG_COMPOSITE_VECTOR | SPV_REFLECT_TYPE_FLAG_COMPOSITE_SCALAR): {
-  //    switch (type.scalar_traits.component_type) {
-  //      case SPV_REFLECT_COMPONENT_TYPE_FLOAT: {
-  //        switch (type.vector_traits.component_count) {
-  //          case 2: return "vec2"; break;
-  //          case 3: return "vec3"; break;
-  //          case 4: return "vec4"; break;
-  //        }
-  //      } break;
-  //      case SPV_REFLECT_COMPONENT_TYPE_INT: {
-  //        switch (type.vector_traits.component_count) {
-  //          case 2: return (type.scalar_traits.signedness ? "ivec2" : "uvec2"); break;
-  //          case 3: return (type.scalar_traits.signedness ? "ivec3" : "uvec3"); break;
-  //          case 4: return (type.scalar_traits.signedness ? "ivec4" : "uvec4"); break;
-  //        }
-  //      } break;
-  //    }
-  //  } break;
-  //}
-
   return ss.str();
 }
 
@@ -275,15 +247,6 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
     }
   }
 }
-
-/*
-void StreamWrite(std::ostream& os, const SpvReflectDescriptorSet& obj, const char* indent = "")
-{
-  const char* t = indent;
-  os << t << "set           : " << obj.set << "\n";
-  os << t << "binding count : " << obj.binding_count;
-}
-*/
 
 void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const char* indent = "")
 {
@@ -505,11 +468,6 @@ int main(int argn, char** argv)
                 << "' (is it a valid SPIR-V bytecode?)" << std::endl;
       return EXIT_FAILURE;
     }
- 
-#if 0 // test code to modify reflection data in-place
-    //reflection.ChangeDescriptorSetNumber(reflection.GetDescriptorSet(0), 5);
-    reflection.ChangeDescriptorBindingNumber(reflection.GetDescriptorBinding(0, 0), 4, 7);
-#endif
 
     std::cout << reflection << std::endl;
     std::cout << std::endl;
