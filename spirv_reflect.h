@@ -29,17 +29,17 @@
 #include <string.h>
 
 #ifdef _MSC_VER
-#define SPIRV_REFLECT_DEPRECATED(msg_str) __declspec(deprecated("This symbol is deprecated. Details: " msg_str))
+#define SPV_REFLECT_DEPRECATED(msg_str) __declspec(deprecated("This symbol is deprecated. Details: " msg_str))
 #elif defined(__clang__)
-#define SPIRV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
+#define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
 #elif defined(__GNUC__)
 #if GCC_VERSION >= 40500
-#define SPIRV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
+#define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
 #else
-#define SPIRV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated))
+#define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated))
 #endif
 #else
-#define SPIRV_REFLECT_DEPRECATED(msg_str)
+#define SPV_REFLECT_DEPRECATED(msg_str)
 #endif
 
 /*! @enum SpvReflectResult
@@ -310,7 +310,7 @@ SpvReflectResult spvReflectCreateShaderModule(
   SpvReflectShaderModule*  p_module
 );
 
-SPIRV_REFLECT_DEPRECATED("renamed to spvReflectCreateShaderModule")
+SPV_REFLECT_DEPRECATED("renamed to spvReflectCreateShaderModule")
 SpvReflectResult spvReflectGetShaderModule(
   size_t                   size,
   const void*              p_code,
@@ -416,7 +416,7 @@ SpvReflectResult spvReflectEnumeratePushConstantBlocks(
   uint32_t*                     p_count,
   SpvReflectBlockVariable**     pp_blocks
 );
-SPIRV_REFLECT_DEPRECATED("renamed to spvReflectEnumeratePushConstantBlocks")
+SPV_REFLECT_DEPRECATED("renamed to spvReflectEnumeratePushConstantBlocks")
 SpvReflectResult spvReflectEnumeratePushConstants(
   const SpvReflectShaderModule* p_module,
   uint32_t*                     p_count,
@@ -469,7 +469,7 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariableByLocation(
   uint32_t                      location,
   SpvReflectResult*             p_result
 );
-SPIRV_REFLECT_DEPRECATED("renamed to spvReflectGetInputVariableByLocation")
+SPV_REFLECT_DEPRECATED("renamed to spvReflectGetInputVariableByLocation")
 const SpvReflectInterfaceVariable* spvReflectGetInputVariable(
   const SpvReflectShaderModule* p_module,
   uint32_t                      location,
@@ -490,7 +490,7 @@ const SpvReflectInterfaceVariable* spvReflectGetOutputVariableByLocation(
   uint32_t                       location,
   SpvReflectResult*              p_result
 );
-SPIRV_REFLECT_DEPRECATED("renamed to spvReflectGetOutputVariableByLocation")
+SPV_REFLECT_DEPRECATED("renamed to spvReflectGetOutputVariableByLocation")
 const SpvReflectInterfaceVariable* spvReflectGetOutputVariable(
   const SpvReflectShaderModule*  p_module,
   uint32_t                       location,
@@ -511,7 +511,7 @@ const SpvReflectBlockVariable* spvReflectGetPushConstantBlock(
   uint32_t                       index,
   SpvReflectResult*              p_result
 );
-SPIRV_REFLECT_DEPRECATED("renamed to spvReflectGetPushConstantBlock")
+SPV_REFLECT_DEPRECATED("renamed to spvReflectGetPushConstantBlock")
 const SpvReflectBlockVariable* spvReflectGetPushConstant(
   const SpvReflectShaderModule*  p_module,
   uint32_t                       index,
@@ -534,7 +534,7 @@ SpvReflectResult spvReflectRemapDescriptorBinding(
   uint32_t                           new_binding_number,
   uint32_t                           new_set_number
 );
-SPIRV_REFLECT_DEPRECATED("Renamed to spvReflectRemapDescriptorBinding")
+SPV_REFLECT_DEPRECATED("Renamed to spvReflectRemapDescriptorBinding")
 SpvReflectResult spvReflectChangeDescriptorBindingNumber(
   SpvReflectShaderModule*            p_module,
   const SpvReflectDescriptorBinding* p_descriptor_binding,
@@ -556,7 +556,7 @@ SpvReflectResult spvReflectRemapDescriptorSet(
   const SpvReflectDescriptorSet* p_set,
   uint32_t                       new_set_number
 );
-SPIRV_REFLECT_DEPRECATED("Renamed to spvReflectRemapDescriptorSet")
+SPV_REFLECT_DEPRECATED("Renamed to spvReflectRemapDescriptorSet")
 SpvReflectResult spvReflectChangeDescriptorSetNumber(
   SpvReflectShaderModule*        p_module,
   const SpvReflectDescriptorSet* p_descriptor_set,
@@ -635,7 +635,7 @@ public:
   SpvReflectResult  EnumerateInputVariables(uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
   SpvReflectResult  EnumerateOutputVariables(uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
   SpvReflectResult  EnumeratePushConstantBlocks(uint32_t* p_count, SpvReflectBlockVariable** pp_blocks) const;
-  SPIRV_REFLECT_DEPRECATED("Renamed to EnumeratePushConstantBlocks")
+  SPV_REFLECT_DEPRECATED("Renamed to EnumeratePushConstantBlocks")
   SpvReflectResult  EnumeratePushConstants(uint32_t* p_count, SpvReflectBlockVariable** pp_blocks) const {
     return EnumeratePushConstantBlocks(p_count, pp_blocks);
   }
@@ -643,17 +643,17 @@ public:
   const SpvReflectDescriptorBinding*  GetDescriptorBinding(uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
   const SpvReflectDescriptorSet*      GetDescriptorSet(uint32_t set_number, SpvReflectResult* p_result = nullptr) const; 
   const SpvReflectInterfaceVariable*  GetInputVariableByLocation(uint32_t location,  SpvReflectResult* p_result = nullptr) const;
-  SPIRV_REFLECT_DEPRECATED("Renamed to GetInputVariableByLocation")
+  SPV_REFLECT_DEPRECATED("Renamed to GetInputVariableByLocation")
   const SpvReflectInterfaceVariable*  GetInputVariable(uint32_t location,  SpvReflectResult* p_result = nullptr) const {
     return GetInputVariableByLocation(location, p_result);
   }
   const SpvReflectInterfaceVariable*  GetOutputVariableByLocation(uint32_t location, SpvReflectResult*  p_result = nullptr) const;
-  SPIRV_REFLECT_DEPRECATED("Renamed to GetOutputVariableByLocation")
+  SPV_REFLECT_DEPRECATED("Renamed to GetOutputVariableByLocation")
   const SpvReflectInterfaceVariable*  GetOutputVariable(uint32_t location, SpvReflectResult*  p_result = nullptr) const {
     return GetOutputVariableByLocation(location, p_result);
   }
   const SpvReflectBlockVariable*      GetPushConstantBlock(uint32_t index, SpvReflectResult*  p_result = nullptr) const;
-  SPIRV_REFLECT_DEPRECATED("Renamed to EnumeratePushConstantBlocks")
+  SPV_REFLECT_DEPRECATED("Renamed to GetPushConstantBlock")
   const SpvReflectBlockVariable*      GetPushConstant(uint32_t index, SpvReflectResult*  p_result = nullptr) const {
     return GetPushConstantBlock(index, p_result);
   }
@@ -661,13 +661,13 @@ public:
   SpvReflectResult RemapDescriptorBinding(const SpvReflectDescriptorBinding* p_binding,
       uint32_t new_binding_number = SPV_REFLECT_BINDING_NUMBER_DONT_CHANGE,
       uint32_t optional_new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE);
-  SPIRV_REFLECT_DEPRECATED("Renamed to RemapDescriptorBinding")
+  SPV_REFLECT_DEPRECATED("Renamed to RemapDescriptorBinding")
   SpvReflectResult ChangeDescriptorBindingNumber(const SpvReflectDescriptorBinding* p_binding, uint32_t new_binding_number = SPV_REFLECT_BINDING_NUMBER_DONT_CHANGE,
       uint32_t new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE) {
     return RemapDescriptorBinding(p_binding, new_binding_number, new_set_number);
   }
   SpvReflectResult RemapDescriptorSet(const SpvReflectDescriptorSet* p_set, uint32_t new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE);
-  SPIRV_REFLECT_DEPRECATED("Renamed to RemapDescriptorSet")
+  SPV_REFLECT_DEPRECATED("Renamed to RemapDescriptorSet")
   SpvReflectResult ChangeDescriptorSetNumber(const SpvReflectDescriptorSet* p_set, uint32_t new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE) {
     return RemapDescriptorSet(p_set, new_set_number);
   }
