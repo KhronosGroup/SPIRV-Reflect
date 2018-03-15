@@ -24,7 +24,11 @@ add_executable(spirv-reflect ${CMAKE_SOURCE_DIR}/main.cpp
                              ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.c
                              ${CMAKE_SOURCE_DIR}/examples/common.h
                              ${CMAKE_SOURCE_DIR}/examples/common.cpp)
-
+target_compile_options(spirv-reflect PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+    $<$<CXX_COMPILER_ID:GNU>:-Wall -Werror>
+    $<$<CXX_COMPILER_ID:Clang>:-Wall -Werror>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wall -Werror>)
 target_include_directories(spirv-reflect PRIVATE ${CMAKE_SOURCE_DIR})
 
 add_subdirectory(examples)

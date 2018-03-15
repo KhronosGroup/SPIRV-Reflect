@@ -6,7 +6,7 @@
 
 static const char* ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
-    default: return ""; break;
+    default: break;
     case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER"; break;
     case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER"; break;
     case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE"; break;
@@ -47,6 +47,9 @@ static const char* ToStringGlslType(const SpvReflectTypeDescription& type)
       }
     }
     break;
+
+    default:
+      break;
   }
   return "";
 }
@@ -76,6 +79,9 @@ static const char* ToStringHlslType(const SpvReflectTypeDescription& type)
       }
     }
     break;
+
+    default:
+      break;
   }
   return "";
 }
@@ -89,7 +95,7 @@ static const char* ToStringType(SpvSourceLanguage src_lang, const SpvReflectType
   return ToStringGlslType(type);
 }
 
-bool ReadFile(const std::string& file_path, std::vector<uint8_t>* p_buffer)
+bool ReadFile(const std::string& file_path, std::vector<uint8_t>* /*p_buffer*/)
 {
   std::ifstream is(file_path.c_str(), std::ios::binary);
   if (!is.is_open()) {
@@ -111,7 +117,7 @@ bool ReadFile(const std::string& file_path, std::vector<uint8_t>* p_buffer)
 static const char* ToStringGlslBuiltIn(SpvBuiltIn built_in)
 {
   switch (built_in) {
-    default: return ""; break;
+    default: break;
     case SpvBuiltInPosition                     : return ""; break;
     case SpvBuiltInPointSize                    : return ""; break;
     case SpvBuiltInClipDistance                 : return ""; break;
@@ -183,7 +189,7 @@ static const char* ToStringGlslBuiltIn(SpvBuiltIn built_in)
 static const char* ToStringHlslBuiltIn(SpvBuiltIn built_in)
 {
   switch (built_in) {
-    default: return ""; break;
+    default: break;
     case SpvBuiltInPosition                     : return "SV_POSITION"; break;
     case SpvBuiltInPointSize                    : return ""; break;
     case SpvBuiltInClipDistance                 : return ""; break;
@@ -261,7 +267,7 @@ static const char* ToStringBuiltIn(SpvSourceLanguage src_lang, SpvBuiltIn built_
   return ToStringGlslBuiltIn(built_in);
 }
 
-void PrintModuleInfo(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent)
+void PrintModuleInfo(std::ostream& os, const SpvReflectShaderModule& obj, const char* /*indent*/)
 {
   os << "entry point     : " << obj.entry_point_name << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
