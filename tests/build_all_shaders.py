@@ -39,6 +39,8 @@ if __name__ == "__main__":
 
   if not args.dxc:
     print("WARNING: dxc not found in PATH; HLSL shaders will be compiled with glslc.")
+  if not args.glslc:
+    print("WARNING: glslc not found in PATH. This is a bad sign.")
   for shader in shaders:
     try:
       src_path = shader['source']
@@ -51,7 +53,7 @@ if __name__ == "__main__":
         cmd_args = [args.dxc, "-spirv", "-O3", "-T", shader['profile'], "-E", shader['entry'], "-Fo", spv_path, src_path]
       if args.verbose:
         print(" ".join(cmd_args))
-      print("%s -> %s" % (src_path, spv_path))
       cmd_output = subprocess.check_output(cmd_args, stderr = subprocess.STDOUT)
+      print("%s -> %s" % (src_path, spv_path))
     except subprocess.CalledProcessError as error:
       print("Compilation failed with error code %d:\n%s" % (error.returncode, error.output.decode('utf-8')))
