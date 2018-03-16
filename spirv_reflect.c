@@ -2348,10 +2348,10 @@ const SpvReflectBlockVariable* spvReflectGetPushConstant(const SpvReflectShaderM
   return spvReflectGetPushConstantBlock(p_module, index, p_result);
 }
 
-SpvReflectResult spvReflectRemapDescriptorBinding(SpvReflectShaderModule*            p_module,
-                                                  const SpvReflectDescriptorBinding* p_binding,
-                                                  uint32_t                           new_binding_number,
-                                                  uint32_t                           new_set_binding)
+SpvReflectResult spvReflectChangeDescriptorBindingNumbers(SpvReflectShaderModule*            p_module,
+                                                          const SpvReflectDescriptorBinding* p_binding,
+                                                          uint32_t                           new_binding_number,
+                                                          uint32_t                           new_set_binding)
 {
   SpvReflectDescriptorBinding* p_target_descriptor = NULL;
   for (uint32_t index = 0; index < p_module->descriptor_binding_count; ++index) {
@@ -2390,12 +2390,12 @@ SpvReflectResult spvReflectChangeDescriptorBindingNumber(SpvReflectShaderModule*
   uint32_t                           new_binding_number,
   uint32_t                           optional_new_set_number)
 {
-  return spvReflectRemapDescriptorBinding(p_module,p_descriptor_binding, new_binding_number, optional_new_set_number);
+  return spvReflectChangeDescriptorBindingNumbers(p_module,p_descriptor_binding, new_binding_number, optional_new_set_number);
 }
 
-SpvReflectResult spvReflectRemapDescriptorSet(SpvReflectShaderModule*        p_module,
-                                              const SpvReflectDescriptorSet* p_set,
-                                              uint32_t                       new_set_number)
+SpvReflectResult spvReflectChangeDescriptorSetNumber(SpvReflectShaderModule*        p_module,
+                                                     const SpvReflectDescriptorSet* p_set,
+                                                     uint32_t                       new_set_number)
 {
   SpvReflectDescriptorSet* p_target_set = NULL;
   for (uint32_t index = 0; index < SPV_REFLECT_MAX_DESCRIPTOR_SETS; ++index) {
@@ -2422,12 +2422,6 @@ SpvReflectResult spvReflectRemapDescriptorSet(SpvReflectShaderModule*        p_m
   }
 
   return result;
-}
-SpvReflectResult spvReflectChangeDescriptorSetNumber(SpvReflectShaderModule*        p_module,
-  const SpvReflectDescriptorSet* p_descriptor_set,
-  uint32_t                       new_set_number)
-{
-  return spvReflectRemapDescriptorSet(p_module, p_descriptor_set, new_set_number);
 }
 
 static SpvReflectResult ChangeVariableLocation(SpvReflectShaderModule*      p_module,

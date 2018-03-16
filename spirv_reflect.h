@@ -618,7 +618,7 @@ const SpvReflectBlockVariable* spvReflectGetPushConstant(
 );
 
 
-/*! @fn spvReflectRemapDescriptorBinding
+/*! @fn spvReflectChangeDescriptorBindingNumbers
  @brief  Assign new set and/or binding numbers to a descriptor binding.
          In addition to updating the reflection data, this function modifies
          the underlying SPIR-V bytecode. The updated code can be retrieved
@@ -642,13 +642,13 @@ const SpvReflectBlockVariable* spvReflectGetPushConstant(
                              Otherwise, the error code indicates the cause of
                              the failure.
 */
-SpvReflectResult spvReflectRemapDescriptorBinding(
+SpvReflectResult spvReflectChangeDescriptorBindingNumbers(
   SpvReflectShaderModule*            p_module,
   const SpvReflectDescriptorBinding* p_binding,
   uint32_t                           new_binding_number,
   uint32_t                           new_set_number
 );
-SPV_REFLECT_DEPRECATED("Renamed to spvReflectRemapDescriptorBinding")
+SPV_REFLECT_DEPRECATED("Renamed to spvReflectChangeDescriptorBindingNumbers")
 SpvReflectResult spvReflectChangeDescriptorBindingNumber(
   SpvReflectShaderModule*            p_module,
   const SpvReflectDescriptorBinding* p_descriptor_binding,
@@ -656,7 +656,7 @@ SpvReflectResult spvReflectChangeDescriptorBindingNumber(
   uint32_t                           optional_new_set_number
 );
 
-/*! @fn spvReflectRemapDescriptorSet
+/*! @fn spvReflectChangeDescriptorSetNumber
  @brief  Assign a new set number to an entire descriptor set (including
          all descriptor bindings in that set).
          In addition to updating the reflection data, this function modifies
@@ -678,18 +678,11 @@ SpvReflectResult spvReflectChangeDescriptorBindingNumber(
                          Otherwise, the error code indicates the cause of
                          the failure.
 */
-SpvReflectResult spvReflectRemapDescriptorSet(
+SpvReflectResult spvReflectChangeDescriptorSetNumber(
   SpvReflectShaderModule*        p_module,
   const SpvReflectDescriptorSet* p_set,
   uint32_t                       new_set_number
 );
-SPV_REFLECT_DEPRECATED("Renamed to spvReflectRemapDescriptorSet")
-SpvReflectResult spvReflectChangeDescriptorSetNumber(
-  SpvReflectShaderModule*        p_module,
-  const SpvReflectDescriptorSet* p_descriptor_set,
-  uint32_t                       new_set_number
-);
-
 
 /*! @fn spvReflectChangeInputVariableLocation
  @brief  Assign a new location to an input interface variable.
@@ -799,19 +792,15 @@ public:
     return GetPushConstantBlock(index, p_result);
   }
 
-  SpvReflectResult RemapDescriptorBinding(const SpvReflectDescriptorBinding* p_binding,
+  SpvReflectResult ChangeDescriptorBindingNumbers(const SpvReflectDescriptorBinding* p_binding,
       uint32_t new_binding_number = SPV_REFLECT_BINDING_NUMBER_DONT_CHANGE,
       uint32_t optional_new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE);
-  SPV_REFLECT_DEPRECATED("Renamed to RemapDescriptorBinding")
+  SPV_REFLECT_DEPRECATED("Renamed to ChangeDescriptorBindingNumbers")
   SpvReflectResult ChangeDescriptorBindingNumber(const SpvReflectDescriptorBinding* p_binding, uint32_t new_binding_number = SPV_REFLECT_BINDING_NUMBER_DONT_CHANGE,
       uint32_t new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE) {
-    return RemapDescriptorBinding(p_binding, new_binding_number, new_set_number);
+    return ChangeDescriptorBindingNumbers(p_binding, new_binding_number, new_set_number);
   }
-  SpvReflectResult RemapDescriptorSet(const SpvReflectDescriptorSet* p_set, uint32_t new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE);
-  SPV_REFLECT_DEPRECATED("Renamed to RemapDescriptorSet")
-  SpvReflectResult ChangeDescriptorSetNumber(const SpvReflectDescriptorSet* p_set, uint32_t new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE) {
-    return RemapDescriptorSet(p_set, new_set_number);
-  }
+  SpvReflectResult ChangeDescriptorSetNumber(const SpvReflectDescriptorSet* p_set, uint32_t new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE);
   SpvReflectResult ChangeInputVariableLocation(const SpvReflectInterfaceVariable* p_input_variable, uint32_t new_location);
   SpvReflectResult ChangeOutputVariableLocation(const SpvReflectInterfaceVariable* p_output_variable, uint32_t new_location);
 
@@ -1091,7 +1080,7 @@ inline const SpvReflectBlockVariable* ShaderModule::GetPushConstantBlock(
 }
 
 
-/*! @fn RemapDescriptorBinding
+/*! @fn ChangeDescriptorBindingNumbers
 
   @param  p_binding
   @param  new_binding_number
@@ -1099,34 +1088,34 @@ inline const SpvReflectBlockVariable* ShaderModule::GetPushConstantBlock(
   @return
 
 */
-inline SpvReflectResult ShaderModule::RemapDescriptorBinding(
+inline SpvReflectResult ShaderModule::ChangeDescriptorBindingNumbers(
   const SpvReflectDescriptorBinding* p_binding,
   uint32_t                           new_binding_number,
   uint32_t                           new_set_number
 )
 {
-  return spvReflectRemapDescriptorBinding(&m_module,
-                                          p_binding,
-                                          new_binding_number,
-                                          new_set_number);
+  return spvReflectChangeDescriptorBindingNumbers(&m_module,
+                                                  p_binding,
+                                                  new_binding_number,
+                                                  new_set_number);
 }
 
 
-/*! @fn RemapDescriptorSet
+/*! @fn ChangeDescriptorSetNumber
 
   @param  p_set
   @param  new_set_number
   @return
 
 */
-inline SpvReflectResult ShaderModule::RemapDescriptorSet(
+inline SpvReflectResult ShaderModule::ChangeDescriptorSetNumber(
   const SpvReflectDescriptorSet* p_set,
   uint32_t                       new_set_number
 )
 {
-  return spvReflectRemapDescriptorSet(&m_module,
-                                      p_set,
-                                      new_set_number);
+  return spvReflectChangeDescriptorSetNumber(&m_module,
+                                             p_set,
+                                             new_set_number);
 }
 
 
