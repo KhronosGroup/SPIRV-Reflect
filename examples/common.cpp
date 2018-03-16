@@ -586,6 +586,9 @@ static const char* ToStringGlslType(const SpvReflectTypeDescription& type)
       }
     }
     break;
+
+    default:
+      break;
   }
   return "";
 }
@@ -615,6 +618,9 @@ static const char* ToStringHlslType(const SpvReflectTypeDescription& type)
       }
     }
     break;
+
+    default:
+      break;
   }
   return "";
 }
@@ -1021,8 +1027,8 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBloc
   os << t1 << "size: " << bv.size << std::endl;
   //   uint32_t                          padded_size;  // Measured in bytes
   os << t1 << "padded_size: " << bv.padded_size << std::endl;
-  //   SpvReflectDecorationFlags         decorations;
-  os << t1 << "decorations: " << AsHexString(bv.decorations) << " # " << ToStringSpvReflectDecorationFlags(bv.decorations) << std::endl;
+  //   SpvReflectDecorationFlags         decoration_flags;
+  os << t1 << "decorations: " << AsHexString(bv.decoration_flags) << " # " << ToStringSpvReflectDecorationFlags(bv.decoration_flags) << std::endl;
   //   SpvReflectNumericTraits           numeric;
   // typedef struct SpvReflectNumericTraits {
   os << t1 << "numeric:" << std::endl;
@@ -1361,8 +1367,8 @@ void SpvReflectToYaml::Write(std::ostream& os)
     for(uint32_t i=0; i<sm_.descriptor_binding_count; ++i) {
       WriteDescriptorBindingTypes(os, sm_.descriptor_bindings[i], indent_level+1);
     }
-    for(uint32_t i=0; i<sm_.push_constant_count; ++i) {
-      WriteBlockVariableTypes(os, sm_.push_constants[i], indent_level+1);
+    for(uint32_t i=0; i<sm_.push_constant_block_count; ++i) {
+      WriteBlockVariableTypes(os, sm_.push_constant_blocks[i], indent_level+1);
     }
     for(uint32_t i=0; i<sm_.input_variable_count; ++i) {
       WriteInterfaceVariableTypes(os, sm_.input_variables[i], indent_level+1);
@@ -1377,8 +1383,8 @@ void SpvReflectToYaml::Write(std::ostream& os)
   for(uint32_t i=0; i<sm_.descriptor_binding_count; ++i) {
     WriteBlockVariable(os, sm_.descriptor_bindings[i].block, indent_level+1);
   }
-  for(uint32_t i=0; i<sm_.push_constant_count; ++i) {
-    WriteBlockVariable(os, sm_.push_constants[i], indent_level+1);
+  for(uint32_t i=0; i<sm_.push_constant_block_count; ++i) {
+    WriteBlockVariable(os, sm_.push_constant_blocks[i], indent_level+1);
   }
 
   descriptor_binding_to_index_.clear();
@@ -1459,13 +1465,13 @@ void SpvReflectToYaml::Write(std::ostream& os)
     os << t2 << "- *iv" << itor->second << " # " << SafeString(sm_.output_variables[i].name) << std::endl;
   }
   // uint32_t                          push_constant_count;
-  os << t1 << "push_constant_count: " << sm_.push_constant_count << ",\n";
+  os << t1 << "push_constant_count: " << sm_.push_constant_block_count << ",\n";
   // SpvReflectBlockVariable*          push_constants;
   os << t1 << "push_constants:" << std::endl;
-  for(uint32_t i=0; i<sm_.push_constant_count; ++i) {
-    auto itor = block_variable_to_index_.find(&sm_.push_constants[i]);
+  for(uint32_t i=0; i<sm_.push_constant_block_count; ++i) {
+    auto itor = block_variable_to_index_.find(&sm_.push_constant_blocks[i]);
     assert(itor != block_variable_to_index_.end());
-    os << t2 << "- *bv" << itor->second << " # " << SafeString(sm_.push_constants[i].name) << std::endl;
+    os << t2 << "- *bv" << itor->second << " # " << SafeString(sm_.push_constant_blocks[i].name) << std::endl;
   }
 
   if (verbosity_ >= 2) {
