@@ -188,10 +188,10 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
     else {
       TextLine text_line;
       text_line.text_elements.push_back(expanded_indent);
-      text_line.text_elements.push_back(ToStringComponentType(*member.type_description));
-      text_line.text_elements.push_back(member.name + std::string(";"));
-      text_line.text_elements.push_back(std::to_string(member.offset));
-      text_line.text_elements.push_back(std::to_string(member.size));
+      text_line.text_elements.push_back(ToStringComponentType(*member.type_description) + std::string(" "));
+      text_line.text_elements.push_back(member.name + std::string("; // "));
+      text_line.text_elements.push_back(std::string("offset=") + std::to_string(member.offset) + std::string(" "));
+      text_line.text_elements.push_back(std::string("size=") + std::to_string(member.size));
       p_text_lines->push_back(text_line);
     }
   }
