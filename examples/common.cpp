@@ -1,6 +1,5 @@
 #include "common.h"
 
-#include <array>
 #include <cassert>
 #include <cstring>
 #include <fstream>
@@ -1486,10 +1485,7 @@ void SpvReflectToYaml::Write(std::ostream& os)
         if ((i % 6) == 0) {
           os << std::endl << t3;
         }
-        // std::iomanip can die in a fire.
-        char out_word[12];
-        snprintf(out_word, 12, "0x%08X,", sm_._internal->spirv_code[i]);
-        os << out_word;
+        os << AsHexString(sm_._internal->spirv_code[i]) << ",";
       }
       os << "]" << std::endl;
       //   uint32_t                        spirv_word_count;
