@@ -429,16 +429,17 @@ void PrintUsage()
 {
   std::cout
     << "Usage: spirv-reflect [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
+    << "Prints a summary of the reflection data extracted from SPIR-V bytecode." << std::endl
     << "Options:" << std::endl
     << " --help         Display this message" << std::endl
-    << " -v VERBOSITY   Specify output verbosity:" << std::endl
+    << " -y, --yaml     Format output as YAML. [default: disabled]" << std::endl
+    << " -v VERBOSITY   Specify output verbosity (YAML output only):" << std::endl
     << "                0: shader info, block variables, interface variables," << std::endl
     << "                   descriptor bindings. No type descriptions. [default]" << std::endl
     << "                1: Everything above, plus type descriptions." << std::endl
     << "                2: Everything above, plus SPIR-V bytecode and all internal" << std::endl
     << "                   type descriptions. If you're not working on SPIRV-Reflect" << std::endl
-    << "                   itself, you probably don't want this." << std::endl
-    << std::endl;
+    << "                   itself, you probably don't want this." << std::endl;
 }
 
 // =================================================================================================
@@ -454,14 +455,17 @@ int main(int argn, char** argv)
 //#endif
 
   const char* input_spv_path = nullptr;
-  uint32_t verbosity = 0;
+  uint32_t yaml_verbosity = 0;
+  bool output_as_yaml = false;
   for (int i = 1; i < argn; ++i) {
     std::string arg(argv[i]);
     if (arg == "--help") {
       PrintUsage();
       return EXIT_SUCCESS;
+    } else if (arg == "-y" || arg == "--yaml") {
+      output_as_yaml = true;
     } else if (arg == "-v" && i+1 < argn) {
-      verbosity = static_cast<uint32_t>(strtol(argv[++i], nullptr, 10));
+      yaml_verbosity = static_cast<uint32_t>(strtol(argv[++i], nullptr, 10));
     } else if (i == argn - 1) {
       input_spv_path = argv[i];
     } else {
@@ -492,14 +496,17 @@ int main(int argn, char** argv)
     spv_reflect::ShaderModule reflection(spv_data.size(), spv_data.data());
     if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
       std::cerr << "ERROR: could not process '" << input_spv_path
-                << "' (is it a valid SPIR-V bytecode?)" << std::endl;
+        << "' (is it a valid SPIR-V bytecode?)" << std::endl;
       return EXIT_FAILURE;
     }
 
-    //std::cout << reflection << std::endl;
-    //std::cout << std::endl;
-    SpvReflectToYaml yamlizer(reflection.GetShaderModule(), verbosity);
-    std::cout << yamlizer;
+    if (output_as_yaml) {
+      SpvReflectToYaml yamlizer(reflection.GetShaderModule(), yaml_verbosity);
+      std::cout << yamlizer;
+    } else {
+      std::cout << reflection << std::endl;
+      std::cout << std::endl;
+    }
   }
 
 #if defined(WIN32)
