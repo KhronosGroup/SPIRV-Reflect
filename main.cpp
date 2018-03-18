@@ -20,8 +20,10 @@
   #include <crtdbg.h>
 #endif
 
+#include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -30,8 +32,28 @@
 #include "spirv_reflect.h"
 #include "examples/common.h"
 
+enum TextLineFlags {
+  TEXT_LINE_FLAGS_STRUCT_BEGIN  = 0x01,
+  TEXT_LINE_FLAGS_STRUCT_END    = 0x02,
+  TEXT_LINE_FLAGS_LINES         = 0x04,
+};
+
 struct TextLine {
-  std::vector<std::string>  text_elements;
+  std::string           indent;
+  std::string           modifier;
+  std::string           type_name;
+  std::string           name;
+  uint32_t              offset;
+  uint32_t              absolute_offset;
+  uint32_t              size;
+  uint32_t              padded_size;
+  uint32_t              flags;
+  std::vector<TextLine> lines;
+  std::string           formatted_line;
+  std::string           formatted_offset;
+  std::string           formatted_absolute_offset;
+  std::string           formatted_size;
+  std::string           formatted_padded_size;
 };
 
 // =================================================================================================
@@ -163,48 +185,158 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
 {
   const char* t = indent;
   for (uint32_t member_index = 0; member_index < member_count; ++member_index) {
-    std::stringstream ss;
+    std::stringstream ss_indent;
     for (int indent_count = 0; indent_count < indent_depth; ++indent_count) {
-      ss << t;
+      ss_indent << t;
     }
-    std::string expanded_indent = ss.str();
+    std::string expanded_indent = ss_indent.str();
 
     const auto& member = p_members[member_index];
     if (member.member_count > 0) {
-      TextLine text_line;
-      text_line.text_elements.push_back(expanded_indent);
-      text_line.text_elements.push_back("struct ");
-      text_line.text_elements.push_back(member.type_description->type_name);
-      text_line.text_elements.push_back(" {");
-      text_line.text_elements.push_back(std::to_string(member.offset));
-      text_line.text_elements.push_back(std::to_string(member.size));
-      p_text_lines->push_back(text_line);
-      ParseBlockMembersToTextLines(t, indent_depth + 1, member.member_count, member.members, p_text_lines);
-      text_line = TextLine();
-      text_line.text_elements.push_back(expanded_indent);
-      text_line.text_elements.push_back("} " + std::string(member.name) + ";");
-      p_text_lines->push_back(text_line);
+      // Begin struct
+      TextLine tl = {};
+      tl.indent = expanded_indent;
+      tl.type_name = member.type_description->type_name;
+      tl.offset = member.offset;
+      tl.absolute_offset = member.absolute_offset;
+      tl.size = member.size;
+      tl.padded_size = member.padded_size;
+      tl.flags = TEXT_LINE_FLAGS_STRUCT_BEGIN;
+      p_text_lines->push_back(tl);
+
+      // Members
+      tl = {};
+      ParseBlockMembersToTextLines(t, indent_depth + 1, member.member_count, member.members, &tl.lines);
+      tl.flags = TEXT_LINE_FLAGS_LINES;
+      p_text_lines->push_back(tl);      
+
+      // End struct
+      tl = {};
+      tl.indent = expanded_indent;
+      tl.name = member.name;
+      tl.offset = member.offset;
+      tl.absolute_offset = member.absolute_offset;
+      tl.size = member.size;
+      tl.padded_size = member.padded_size;
+      tl.flags = TEXT_LINE_FLAGS_STRUCT_END;
+      p_text_lines->push_back(tl);      
     }
     else {
-      TextLine text_line;
-      text_line.text_elements.push_back(expanded_indent);
-      text_line.text_elements.push_back(ToStringComponentType(*member.type_description) + std::string(" "));
-      text_line.text_elements.push_back(member.name + std::string("; // "));
-      text_line.text_elements.push_back(std::string("offset=") + std::to_string(member.offset) + std::string(" "));
-      text_line.text_elements.push_back(std::string("size=") + std::to_string(member.size));
-      p_text_lines->push_back(text_line);
+      TextLine tl = {};
+      tl.indent = expanded_indent;
+      tl.type_name = ToStringComponentType(*member.type_description);
+      tl.name = member.name;
+      tl.offset = member.offset;
+      tl.absolute_offset = member.absolute_offset;
+      tl.size = member.size;
+      tl.padded_size = member.padded_size;
+      p_text_lines->push_back(tl);      
+    }
+  }
+}
+
+void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent, std::vector<TextLine>* p_formatted_lines)
+{
+  size_t modifier_width = 0;
+  size_t type_name_width = 0;
+  size_t name_width = 0;
+
+  // Widths
+  for (auto& tl : text_lines) {
+    if (tl.flags != 0) {
+      continue;
+    }
+    modifier_width = std::max<size_t>(modifier_width, tl.modifier.length());
+    type_name_width = std::max<size_t>(type_name_width, tl.type_name.length());
+    name_width = std::max<size_t>(name_width, tl.name.length());
+  }
+
+  // Output
+  size_t n = text_lines.size();
+  for (size_t i = 0; i < n; ++i) {
+    auto& tl = text_lines[i];
+
+    std::stringstream ss;
+    if (tl.flags & TEXT_LINE_FLAGS_STRUCT_BEGIN) {
+      ss << indent;
+      ss << tl.indent;
+      ss << "struct ";
+      ss << tl.type_name;
+      ss << " {";
+    }
+    else if (tl.flags & TEXT_LINE_FLAGS_STRUCT_END) {
+      ss << indent;
+      ss << tl.indent;
+      ss << "} ";
+      ss << tl.name;
+      ss << ";";
+    }
+    else if (tl.flags & TEXT_LINE_FLAGS_LINES) {
+      FormatTextLines(tl.lines, indent, p_formatted_lines);
+    }
+    else {
+      ss << indent;
+      ss << tl.indent;
+      if (modifier_width > 0) {
+        ss << std::setw(modifier_width) << tl.modifier;
+        ss << " ";
+      }     
+      ss << std::setw(type_name_width) << tl.type_name;
+      ss << " ";
+      ss << std::setw(name_width) << tl.name;
+      ss << ";";
+    }
+
+    // Reuse the various strings to store the formatted texts
+    TextLine out_tl = {};
+    out_tl.formatted_line = ss.str();
+    if (out_tl.formatted_line.length() > 0) {
+      out_tl.flags = tl.flags;
+      out_tl.formatted_offset = std::to_string(tl.offset);
+      out_tl.formatted_absolute_offset = std::to_string(tl.absolute_offset);
+      out_tl.formatted_size = std::to_string(tl.size);
+      out_tl.formatted_padded_size = std::to_string(tl.padded_size);
+      p_formatted_lines->push_back(out_tl);
     }
   }
 }
 
 void StreamWrite(std::ostream& os, const char* indent, const std::vector<TextLine>& text_lines)
 {
-  for (auto& text_line : text_lines) {
-    os << indent;
-    for (auto& elem : text_line.text_elements) {
-      os << elem;
+  std::vector<TextLine> formatted_lines;
+  FormatTextLines(text_lines, indent, &formatted_lines);
+
+  size_t line_width = 0;
+  size_t offset_width = 0;
+  size_t absolute_offset_width = 0;
+  size_t size_width = 0;
+  size_t padded_size_width = 0;
+
+  // Width
+  for (auto& tl : formatted_lines) {
+    line_width = std::max<size_t>(line_width, tl.formatted_line.length());
+    offset_width = std::max<size_t>(offset_width, tl.formatted_offset.length());
+    absolute_offset_width = std::max<size_t>(absolute_offset_width, tl.formatted_absolute_offset.length());
+    size_width = std::max<size_t>(size_width, tl.formatted_size.length());
+    padded_size_width = std::max<size_t>(padded_size_width, tl.formatted_padded_size.length());
+  }
+
+  size_t n = formatted_lines.size();
+  for (size_t i = 0; i < n; ++i) {
+    auto& tl = formatted_lines[i];
+
+    os << std::setw(line_width) << std::left << tl.formatted_line;
+    if (tl.flags != TEXT_LINE_FLAGS_STRUCT_END) {
+      os << " " << "//" << " ";
+      os << "offset = " << std::setw(offset_width) << std::right << tl.formatted_offset << ", ";
+      os << "abs offset = " << std::setw(absolute_offset_width) << std::right << tl.formatted_absolute_offset << ", ";
+      os << "size = " << std::setw(size_width) << std::right << tl.formatted_size << ", ";
+      os << "padded size = " << std::setw(padded_size_width) << std::right << tl.formatted_padded_size << ", ";
     }
-    os << "\n";
+
+    if (i < (n - 1)) {
+      os << "\n";
+    }
   }
 }
 
@@ -244,12 +376,14 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
 
   if (obj.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
     std::vector<TextLine> text_lines;
-    ParseBlockMembersToTextLines("  ", 1, obj.block.member_count, obj.block.members, &text_lines);
+    //ParseBlockMembersToTextLines("    ", 1, obj.block.member_count, obj.block.members, &text_lines);
+    ParseBlockMembersToTextLines("    ", 1, 1, &obj.block, &text_lines);
     if (!text_lines.empty()) {
       os << "\n";
-      os << t << "struct" << " " << obj.type_description->type_name << " " << "{" << "\n";
+      //os << t << "struct" << " " << obj.type_description->type_name << " " << "{" << "\n";
       StreamWrite(os, t, text_lines);
-      os << t << "};";
+      os << "\n";
+      //os << t << "};";
     }
   }
 }

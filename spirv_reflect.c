@@ -1398,6 +1398,12 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
     }
   }
 
+  // Absolute offsets
+  for (uint32_t member_index = 0; member_index < p_block->member_count; ++member_index) {
+    SpvReflectBlockVariable* p_member_var = &p_block->members[member_index];
+    p_member_var->absolute_offset = p_member_var->offset + p_block->offset;
+  }
+
   // Parse padded size using offset difference for all member except for the last entry...
   for (uint32_t member_index = 0; member_index < (p_block->member_count - 1); ++member_index) {
     SpvReflectBlockVariable* p_member_var = &p_block->members[member_index];
@@ -1408,12 +1414,13 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
   // subtract the offset.
   if (p_block->member_count > 0) {
     SpvReflectBlockVariable* p_member_var = &p_block->members[p_block->member_count - 1];
-    p_member_var->padded_size = RoundUp(p_member_var->size, SPIRV_DATA_ALIGNMENT)- p_member_var->offset;
+    p_member_var->padded_size = RoundUp(p_member_var->offset  + p_member_var->size, SPIRV_DATA_ALIGNMENT) - p_member_var->offset;
   }
 
   // @TODO validate this with assertion
   p_block->size = p_block->members[p_block->member_count - 1].offset + 
                   p_block->members[p_block->member_count - 1].padded_size;
+  p_block->padded_size = p_block->size;
   
   return SPV_REFLECT_RESULT_SUCCESS;
 }

@@ -216,9 +216,10 @@ typedef struct SpvReflectInterfaceVariable {
 */
 typedef struct SpvReflectBlockVariable {
   const char*                       name;
-  uint32_t                          offset;       // Measured in bytes
-  uint32_t                          size;         // Measured in bytes
-  uint32_t                          padded_size;  // Measured in bytes
+  uint32_t                          offset;           // Measured in bytes
+  uint32_t                          absolute_offset;  // Measured in bytes
+  uint32_t                          size;             // Measured in bytes
+  uint32_t                          padded_size;      // Measured in bytes
   SpvReflectDecorationFlags         decoration_flags;
   SpvReflectNumericTraits           numeric;
   SpvReflectArrayTraits             array;
