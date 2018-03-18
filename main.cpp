@@ -39,18 +39,21 @@ struct TextLine {
 // =================================================================================================
 std::string ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
-    default: break;
-    case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER"; break;
-    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER"; break;
-    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE"; break;
-    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE          : return "VK_DESCRIPTOR_TYPE_STORAGE_IMAGE"; break;
-    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER"; break;
-    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER"; break;
-    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER"; break;
-    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER         : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER"; break;
-    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC"; break;
-    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC"; break;
-    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       : return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT"; break;
+    case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER";
+    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER";
+    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE";
+    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE          : return "VK_DESCRIPTOR_TYPE_STORAGE_IMAGE";
+    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER";
+    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER";
+    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER";
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER         : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER";
+    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC";
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC";
+    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       : return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT";
+
+    case VK_DESCRIPTOR_TYPE_RANGE_SIZE:
+    case VK_DESCRIPTOR_TYPE_MAX_ENUM:
+      break;
   }
   return "";
 }
@@ -185,10 +188,10 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
     else {
       TextLine text_line;
       text_line.text_elements.push_back(expanded_indent);
-      text_line.text_elements.push_back(ToStringComponentType(*member.type_description));
-      text_line.text_elements.push_back(member.name + std::string(";"));
-      text_line.text_elements.push_back(std::to_string(member.offset));
-      text_line.text_elements.push_back(std::to_string(member.size));
+      text_line.text_elements.push_back(ToStringComponentType(*member.type_description) + std::string(" "));
+      text_line.text_elements.push_back(member.name + std::string("; // "));
+      text_line.text_elements.push_back(std::string("offset=") + std::to_string(member.offset) + std::string(" "));
+      text_line.text_elements.push_back(std::string("size=") + std::to_string(member.size));
       p_text_lines->push_back(text_line);
     }
   }
@@ -424,10 +427,19 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
 // =================================================================================================
 void PrintUsage()
 {
-  std::cout << "Usage: spirv-reflect [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
-            << "Options:" << std::endl
-            << " --help:               Display this message" << std::endl
-            << std::endl;
+  std::cout
+    << "Usage: spirv-reflect [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
+    << "Prints a summary of the reflection data extracted from SPIR-V bytecode." << std::endl
+    << "Options:" << std::endl
+    << " --help         Display this message" << std::endl
+    << " -y, --yaml     Format output as YAML. [default: disabled]" << std::endl
+    << " -v VERBOSITY   Specify output verbosity (YAML output only):" << std::endl
+    << "                0: shader info, block variables, interface variables," << std::endl
+    << "                   descriptor bindings. No type descriptions. [default]" << std::endl
+    << "                1: Everything above, plus type descriptions." << std::endl
+    << "                2: Everything above, plus SPIR-V bytecode and all internal" << std::endl
+    << "                   type descriptions. If you're not working on SPIRV-Reflect" << std::endl
+    << "                   itself, you probably don't want this." << std::endl;
 }
 
 // =================================================================================================
@@ -442,16 +454,32 @@ int main(int argn, char** argv)
 //  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 //#endif
 
-  if (argn != 2) {
+  const char* input_spv_path = nullptr;
+  uint32_t yaml_verbosity = 0;
+  bool output_as_yaml = false;
+  for (int i = 1; i < argn; ++i) {
+    std::string arg(argv[i]);
+    if (arg == "--help") {
+      PrintUsage();
+      return EXIT_SUCCESS;
+    } else if (arg == "-y" || arg == "--yaml") {
+      output_as_yaml = true;
+    } else if (arg == "-v" && i+1 < argn) {
+      yaml_verbosity = static_cast<uint32_t>(strtol(argv[++i], nullptr, 10));
+    } else if (i == argn - 1) {
+      input_spv_path = argv[i];
+    } else {
+      std::cerr << "Unrecognized argument: " << arg << std::endl;
+      PrintUsage();
+      return EXIT_FAILURE;
+    }
+  }
+  if (!input_spv_path) {
     PrintUsage();
     return EXIT_FAILURE;
-  } else if (std::string(argv[1]) == "--help") {
-    PrintUsage();
-    return EXIT_SUCCESS;
   }
-  std::string input_spv_path = argv[1];
 
-  std::ifstream spv_ifstream(input_spv_path.c_str(), std::ios::binary);
+  std::ifstream spv_ifstream(input_spv_path, std::ios::binary);
   if (!spv_ifstream.is_open()) {
     std::cerr << "ERROR: could not open '" << input_spv_path << "' for reading" << std::endl;
     return EXIT_FAILURE;
@@ -468,12 +496,17 @@ int main(int argn, char** argv)
     spv_reflect::ShaderModule reflection(spv_data.size(), spv_data.data());
     if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
       std::cerr << "ERROR: could not process '" << input_spv_path
-                << "' (is it a valid SPIR-V bytecode?)" << std::endl;
+        << "' (is it a valid SPIR-V bytecode?)" << std::endl;
       return EXIT_FAILURE;
     }
 
-    std::cout << reflection << std::endl;
-    std::cout << std::endl;
+    if (output_as_yaml) {
+      SpvReflectToYaml yamlizer(reflection.GetShaderModule(), yaml_verbosity);
+      std::cout << yamlizer;
+    } else {
+      std::cout << reflection << std::endl;
+      std::cout << std::endl;
+    }
   }
 
 #if defined(WIN32)
