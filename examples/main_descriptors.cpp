@@ -2,6 +2,12 @@
 #include "sample_spv.h"
 #include <cassert>
 
+struct DescriptorSetLayoutData {
+  uint32_t set_number;
+  VkDescriptorSetLayoutCreateInfo create_info;
+  std::vector<VkDescriptorSetLayoutBinding> bindings;
+};
+
 int main(int argn, char** argv)
 {
   SpvReflectShaderModule module = {};
@@ -16,6 +22,34 @@ int main(int argn, char** argv)
   result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
+  // Demonstrates how to generate all necessary data structures to create a
+  // VkDescriptorSetLayout for each descriptor set in this shader.
+  std::vector<DescriptorSetLayoutData> set_layouts(sets.size(), DescriptorSetLayoutData{});
+  for (size_t i_set = 0; i_set < sets.size(); ++i_set) {
+    const SpvReflectDescriptorSet& refl_set = *(sets[i_set]);
+    DescriptorSetLayoutData& layout = set_layouts[i_set];
+    layout.bindings.resize(refl_set.binding_count);
+    for (uint32_t i_binding = 0; i_binding < refl_set.binding_count; ++i_binding) {
+      const SpvReflectDescriptorBinding& refl_binding = *(refl_set.bindings[i_binding]);
+      VkDescriptorSetLayoutBinding& layout_binding = layout.bindings[i_binding];
+      layout_binding.binding = refl_binding.binding;
+      layout_binding.descriptorType = refl_binding.descriptor_type;
+      layout_binding.descriptorCount = 1;
+      for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
+        layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
+      }
+      layout_binding.stageFlags = module.vulkan_shader_stage;
+    }
+    layout.set_number = refl_set.set;
+    layout.create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layout.create_info.bindingCount = refl_set.binding_count;
+    layout.create_info.pBindings = layout.bindings.data();
+  }
+  // Nothing further is done with set_layouts in this sample; in a real application
+  // they would be merged with similar structures from other shader stages and/or pipelines
+  // to create a VkPipelineLayout.
+
+  // Log the descriptor set contents to stdout
   const char* t  = "  ";
   const char* tt = "    ";
 
