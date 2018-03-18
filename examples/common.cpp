@@ -1020,11 +1020,13 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBloc
   // typedef struct SpvReflectBlockVariable {
   //   const char*                       name;
   os << t1 << "name: " << SafeString(bv.name) << std::endl;
-  //   uint32_t                          offset;       // Measured in bytes
+  //   uint32_t                          offset;           // Measured in bytes
   os << t1 << "offset: " << bv.offset << std::endl;
-  //   uint32_t                          size;         // Measured in bytes
+  //   uint32_t                          absolute_offset;  // Measured in bytes
+  os << t1 << "absolute_offset: " << bv.absolute_offset << std::endl;
+  //   uint32_t                          size;             // Measured in bytes
   os << t1 << "size: " << bv.size << std::endl;
-  //   uint32_t                          padded_size;  // Measured in bytes
+  //   uint32_t                          padded_size;      // Measured in bytes
   os << t1 << "padded_size: " << bv.padded_size << std::endl;
   //   SpvReflectDecorationFlags         decoration_flags;
   os << t1 << "decorations: " << AsHexString(bv.decoration_flags) << " # " << ToStringSpvReflectDecorationFlags(bv.decoration_flags) << std::endl;
