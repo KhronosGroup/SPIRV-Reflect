@@ -494,6 +494,9 @@ SpvReflectResult spvReflectEnumeratePushConstants(
                          If no match can be found, or if an unrelated error
                          occurs, the return value will be NULL. Detailed
                          error results are written to *pResult.
+@note                    If the module contains multiple desriptor bindings
+                         with the same set and binding numbers, there are
+                         no guarantees about which binding will be returned.
 
 */
 const SpvReflectDescriptorBinding* spvReflectGetDescriptorBinding(
@@ -624,8 +627,6 @@ const SpvReflectBlockVariable* spvReflectGetPushConstant(
          In addition to updating the reflection data, this function modifies
          the underlying SPIR-V bytecode. The updated code can be retrieved
          with spvReflectGetCode().
-         It is the caller's responsibility to avoid assigning the same
-         set/binding numbers to multiple descriptor bindings.
  @param  p_module            Pointer to an instance of SpvReflectShaderModule.
  @param  p_binding           Pointer to the descriptor binding to modify.
  @param  new_binding_number  The new binding number to assign to the
@@ -663,8 +664,6 @@ SpvReflectResult spvReflectChangeDescriptorBindingNumber(
          In addition to updating the reflection data, this function modifies
          the underlying SPIR-V bytecode. The updated code can be retrieved
          with spvReflectGetCode().
-         It is the caller's responsibility to avoid assigning the same
-         set/binding numbers to multiple descriptor bindings.
  @param  p_module        Pointer to an instance of SpvReflectShaderModule.
  @param  p_set           Pointer to the descriptor binding to modify.
  @param  new_set_number  The new set number to assign to the
