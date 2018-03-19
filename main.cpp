@@ -56,9 +56,17 @@ struct TextLine {
   std::string           formatted_padded_size;
 };
 
-// =================================================================================================
-// Stream Output
-// =================================================================================================
+const char* ToStringHlslResourceType(SpvReflectResourceType type)
+{
+  switch (type) {
+    case SPV_REFLECT_RESOURCE_FLAG_SAMPLER : return "SAMPLER"; break;
+    case SPV_REFLECT_RESOURCE_FLAG_CBV     : return "CBV"; break;
+    case SPV_REFLECT_RESOURCE_FLAG_SRV     : return "SRV"; break;
+    case SPV_REFLECT_RESOURCE_FLAG_UAV     : return "UAV"; break;
+  }
+  return "";
+}
+
 std::string ToStringVkDescriptorType(VkDescriptorType value) {
   switch (value) {
     case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER";
@@ -278,13 +286,12 @@ void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent
       ss << indent;
       ss << tl.indent;
       if (modifier_width > 0) {
-        ss << std::setw(modifier_width) << tl.modifier;
+        ss << std::setw(modifier_width) << std::left << tl.modifier;
         ss << " ";
       }     
-      ss << std::setw(type_name_width) << tl.type_name;
+      ss << std::setw(type_name_width) << std::left << tl.type_name;
       ss << " ";
-      ss << std::setw(name_width) << tl.name;
-      ss << ";";
+      ss << std::setw(name_width) << (tl.name + ";");
     }
 
     // Reuse the various strings to store the formatted texts
@@ -325,13 +332,38 @@ void StreamWrite(std::ostream& os, const char* indent, const std::vector<TextLin
   for (size_t i = 0; i < n; ++i) {
     auto& tl = formatted_lines[i];
 
-    os << std::setw(line_width) << std::left << tl.formatted_line;
-    if (tl.flags != TEXT_LINE_FLAGS_STRUCT_END) {
+
+    if (tl.flags == TEXT_LINE_FLAGS_STRUCT_BEGIN) {
+      if (i > 0) {
+        os << "\n";
+      }
+
+      size_t pos = tl.formatted_line.find_first_not_of(' ');
+      if (pos != std::string::npos) {
+        std::string s(pos, ' ');
+        os << s << "//" << " ";
+        os << "offset = " << tl.formatted_offset << ", ";
+        os << "abs offset = " << tl.formatted_absolute_offset << ", ";
+        os << "size = " << tl.formatted_size << ", ";
+        os << "padded size = " << tl.formatted_padded_size;
+        os << "\n";
+      }
+
+      os << std::setw(line_width) << std::left << tl.formatted_line;
+    }
+    else if (tl.flags == TEXT_LINE_FLAGS_STRUCT_END) {
+      os << std::setw(line_width) << std::left << tl.formatted_line;
+      if (i < (n - 1)) {
+        os << "\n";
+      }
+    }
+    else {
+      os << std::setw(line_width) << std::left << tl.formatted_line;
       os << " " << "//" << " ";
       os << "offset = " << std::setw(offset_width) << std::right << tl.formatted_offset << ", ";
       os << "abs offset = " << std::setw(absolute_offset_width) << std::right << tl.formatted_absolute_offset << ", ";
       os << "size = " << std::setw(size_width) << std::right << tl.formatted_size << ", ";
-      os << "padded size = " << std::setw(padded_size_width) << std::right << tl.formatted_padded_size << ", ";
+      os << "padded size = " << std::setw(padded_size_width) << std::right << tl.formatted_padded_size;
     }
 
     if (i < (n - 1)) {
@@ -347,7 +379,8 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
   if (write_set) {
     os << t << "set     : " << obj.set << "\n";
   }
-  os << t << "type    : " << ToStringVkDescriptorType(obj.descriptor_type) << "\n";
+  os << t << "type    : " << ToStringVkDescriptorType(obj.descriptor_type);
+  os << " " << "(" << ToStringHlslResourceType(obj.resource_type) << ")" << "\n";
   
   // array
   if (obj.array.dims_count > 0) {  
@@ -376,14 +409,11 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
 
   if (obj.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
     std::vector<TextLine> text_lines;
-    //ParseBlockMembersToTextLines("    ", 1, obj.block.member_count, obj.block.members, &text_lines);
     ParseBlockMembersToTextLines("    ", 1, 1, &obj.block, &text_lines);
     if (!text_lines.empty()) {
       os << "\n";
-      //os << t << "struct" << " " << obj.type_description->type_name << " " << "{" << "\n";
       StreamWrite(os, t, text_lines);
       os << "\n";
-      //os << t << "};";
     }
   }
 }

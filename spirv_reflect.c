@@ -1353,6 +1353,11 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
     SpvReflectTypeDescription* p_member_type = p_member_var->type_description;
 
     switch (p_member_type->op) {
+      case SpvOpTypeBool: {
+        p_member_var->size = SPIRV_WORD_SIZE;
+      }
+      break;
+
       case SpvOpTypeInt:
       case SpvOpTypeFloat: {
         p_member_var->size = p_member_type->traits.numeric.scalar.width / SPIRV_BYTE_WIDTH;
