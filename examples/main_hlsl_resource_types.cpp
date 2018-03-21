@@ -138,7 +138,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
 // =================================================================================================
 void PrintUsage()
 {
-  std::cout << "Usage: spirv-reflect [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
+  std::cout << "Usage: hlsl_resource_types [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
             << "Options:" << std::endl
             << " --help:               Display this message" << std::endl
             << std::endl;
