@@ -832,9 +832,9 @@ void PrintDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding&
     os << t << "set     : " << obj.set << "\n";
   }
   os << t << "type    : " << ToStringVkDescriptorType(obj.descriptor_type) << "\n";
-  
+
   // array
-  if (obj.array.dims_count > 0) {  
+  if (obj.array.dims_count > 0) {
     os << t << "array   : ";
     for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
       os << "[" << obj.array.dims[dim_index] << "]";

@@ -1,12 +1,12 @@
 /*
  Copyright 2017 Google Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,7 +15,7 @@
 */
 
 #if defined(WIN32)
-  #define _CRTDBG_MAP_ALLOC  
+  #define _CRTDBG_MAP_ALLOC
   #include <stdlib.h>
   #include <crtdbg.h>
 #endif
@@ -69,7 +69,7 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
   os << t;
   os << ToStringVkDescriptorType(obj.descriptor_type);
   os << " " << "(" << ToStringHlslResourceType(obj.resource_type) << ")";
-  if ((obj.descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (obj.descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) || 
+  if ((obj.descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (obj.descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
       (obj.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) || (obj.descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
     os << "\n";
     os << t;
@@ -127,7 +127,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       StreamWrite(os, *p_binding, true, ttt);
       if (i < (count - 1)) {
         os << "\n\n";
-      }  
+      }
     }
   }
 
