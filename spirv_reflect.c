@@ -225,7 +225,7 @@ static SpvReflectResult ReadU32(Parser* p_parser, uint32_t word_offset, uint32_t
     }                                                       \
   }
   
-SpvReflectResult ReadStr(Parser* p_parser, uint32_t word_offset, uint32_t word_index, uint32_t word_count, uint32_t* p_buf_size, char *p_buf)
+static SpvReflectResult ReadStr(Parser* p_parser, uint32_t word_offset, uint32_t word_index, uint32_t word_count, uint32_t* p_buf_size, char *p_buf)
 {
   uint32_t limit = (word_offset + word_count);
   assert(IsNotNull(p_parser));
@@ -265,7 +265,7 @@ SpvReflectResult ReadStr(Parser* p_parser, uint32_t word_offset, uint32_t word_i
   return result;
 }
 
-SpvReflectDecorationFlags ApplyDecorations(const Decorations* p_decoration_fields)
+static SpvReflectDecorationFlags ApplyDecorations(const Decorations* p_decoration_fields)
 {
   SpvReflectDecorationFlags decorations = SPV_REFLECT_DECORATION_NONE;
   if (p_decoration_fields->is_block) {
@@ -295,12 +295,12 @@ SpvReflectDecorationFlags ApplyDecorations(const Decorations* p_decoration_field
   return decorations;
 }
 
-void ApplyNumericTraits(const SpvReflectTypeDescription* p_type, SpvReflectNumericTraits* p_numeric_traits)
+static void ApplyNumericTraits(const SpvReflectTypeDescription* p_type, SpvReflectNumericTraits* p_numeric_traits)
 {
   memcpy(p_numeric_traits, &p_type->traits.numeric, sizeof(p_type->traits.numeric));
 }
 
-void ApplyArrayTraits(const SpvReflectTypeDescription* p_type, SpvReflectArrayTraits* p_array_traits)
+static void ApplyArrayTraits(const SpvReflectTypeDescription* p_type, SpvReflectArrayTraits* p_array_traits)
 {
   memcpy(p_array_traits, &p_type->traits.array, sizeof(p_type->traits.array));
 }
@@ -1045,7 +1045,7 @@ static int SortCompareDescriptorBinding(const void* a, const void* b)
 {
   const SpvReflectDescriptorBinding* p_elem_a = (const SpvReflectDescriptorBinding*)a;
   const SpvReflectDescriptorBinding* p_elem_b = (const SpvReflectDescriptorBinding*)b;
-  int value = p_elem_a->binding - p_elem_b->binding;
+  int value = (int)(p_elem_a->binding) - (int)(p_elem_b->binding);
   return value;
 }
 
@@ -1754,7 +1754,7 @@ static int SortCompareDescriptorSet(const void* a, const void* b)
 {
   const SpvReflectDescriptorSet* p_elem_a = (const SpvReflectDescriptorSet*)a;
   const SpvReflectDescriptorSet* p_elem_b = (const SpvReflectDescriptorSet*)b;
-  int value = p_elem_a->set - p_elem_b->set;
+  int value = (int)(p_elem_a->set) - (int)(p_elem_b->set);
   return value;
 }
 
@@ -2476,12 +2476,12 @@ SpvReflectResult spvReflectChangeOutputVariableLocation(SpvReflectShaderModule* 
 const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang)
 {
   switch (source_lang) {
-    case SpvSourceLanguageUnknown    : return "Unknown"; break;
-    case SpvSourceLanguageESSL       : return "ESSL"; break;
-    case SpvSourceLanguageGLSL       : return "GLSL"; break;
-    case SpvSourceLanguageOpenCL_C   : return "OpenCL_C"; break;
-    case SpvSourceLanguageOpenCL_CPP : return "OpenCL_CPP"; break;
-    case SpvSourceLanguageHLSL       : return "HLSL"; break;
+    case SpvSourceLanguageUnknown    : return "Unknown";
+    case SpvSourceLanguageESSL       : return "ESSL";
+    case SpvSourceLanguageGLSL       : return "GLSL";
+    case SpvSourceLanguageOpenCL_C   : return "OpenCL_C";
+    case SpvSourceLanguageOpenCL_CPP : return "OpenCL_CPP";
+    case SpvSourceLanguageHLSL       : return "HLSL";
 
     case SpvSourceLanguageMax:
       break;

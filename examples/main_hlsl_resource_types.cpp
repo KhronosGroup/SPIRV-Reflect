@@ -33,10 +33,11 @@
 const char* ToStringHlslResourceType(SpvReflectResourceType type)
 {
   switch (type) {
-    case SPV_REFLECT_RESOURCE_FLAG_SAMPLER : return "SAMPLER"; break;
-    case SPV_REFLECT_RESOURCE_FLAG_CBV     : return "CBV"; break;
-    case SPV_REFLECT_RESOURCE_FLAG_SRV     : return "SRV"; break;
-    case SPV_REFLECT_RESOURCE_FLAG_UAV     : return "UAV"; break;
+    case SPV_REFLECT_RESOURCE_FLAG_UNDEFINED : return "UNDEFINED";
+    case SPV_REFLECT_RESOURCE_FLAG_SAMPLER   : return "SAMPLER";
+    case SPV_REFLECT_RESOURCE_FLAG_CBV       : return "CBV";
+    case SPV_REFLECT_RESOURCE_FLAG_SRV       : return "SRV";
+    case SPV_REFLECT_RESOURCE_FLAG_UAV       : return "UAV";
   }
   return "";
 }
