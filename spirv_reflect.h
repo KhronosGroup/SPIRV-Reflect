@@ -1,12 +1,12 @@
 /*
  Copyright 2017 Google Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,7 +15,7 @@
 */
 
 /*!
- 
+
  @file spirv_reflect.h
 
 */
@@ -202,7 +202,7 @@ typedef struct SpvReflectInterfaceVariable {
 
   // NOTE: SPIR-V shares type references for variables
   //       that have the same underlying type. This means
-  //       that the same type name will appear for multiple 
+  //       that the same type name will appear for multiple
   //       variables.
   SpvReflectTypeDescription*          type_description;
 
@@ -290,12 +290,12 @@ typedef struct SpvReflectShaderModule {
     size_t                          type_description_count;
     SpvReflectTypeDescription*      type_descriptions;
   } * _internal;
-    
+
 } SpvReflectShaderModule;
 
 #if defined(__cplusplus)
 extern "C" {
-#endif 
+#endif
 
 /*! @fn spvReflectCreateShaderModule
 
@@ -525,7 +525,7 @@ const SpvReflectDescriptorBinding* spvReflectGetDescriptorBinding(
 */
 const SpvReflectDescriptorSet* spvReflectGetDescriptorSet(
   const SpvReflectShaderModule* p_module,
-  uint32_t                      set_number, 
+  uint32_t                      set_number,
   SpvReflectResult*             p_result
 );
 
@@ -545,7 +545,7 @@ const SpvReflectDescriptorSet* spvReflectGetDescriptorSet(
                    If no match can be found, or if an unrelated error
                    occurs, the return value will be NULL. Detailed
                    error results are written to *pResult.
-@note              
+@note
 
 */
 const SpvReflectInterfaceVariable* spvReflectGetInputVariableByLocation(
@@ -576,7 +576,7 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariable(
                    If no match can be found, or if an unrelated error
                    occurs, the return value will be NULL. Detailed
                    error results are written to *pResult.
-@note              
+@note
 
 */
 const SpvReflectInterfaceVariable* spvReflectGetOutputVariableByLocation(
@@ -775,7 +775,7 @@ public:
   }
 
   const SpvReflectDescriptorBinding*  GetDescriptorBinding(uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
-  const SpvReflectDescriptorSet*      GetDescriptorSet(uint32_t set_number, SpvReflectResult* p_result = nullptr) const; 
+  const SpvReflectDescriptorSet*      GetDescriptorSet(uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
   const SpvReflectInterfaceVariable*  GetInputVariableByLocation(uint32_t location,  SpvReflectResult* p_result = nullptr) const;
   SPV_REFLECT_DEPRECATED("Renamed to GetInputVariableByLocation")
   const SpvReflectInterfaceVariable*  GetInputVariable(uint32_t location,  SpvReflectResult* p_result = nullptr) const {
@@ -815,7 +815,7 @@ private:
 // =================================================================================================
 
 /*! @fn ShaderModule
-  
+
 */
 inline ShaderModule::ShaderModule() {}
 
@@ -827,8 +827,8 @@ inline ShaderModule::ShaderModule() {}
 
 */
 inline ShaderModule::ShaderModule(size_t size, const void* p_code) {
-  m_result = spvReflectCreateShaderModule(size, 
-                                        p_code, 
+  m_result = spvReflectCreateShaderModule(size,
+                                        p_code,
                                         &m_module);
 }
 
@@ -880,7 +880,7 @@ inline const uint32_t* ShaderModule::GetCode() const {
   return spvReflectGetCode(&m_module);
 }
 
-  
+
 /*! @fn GetEntryPoint
 
   @return Returns entry point
@@ -902,7 +902,7 @@ inline const char* ShaderModule::GetEntryPointName() const {
 inline SpvReflectResult ShaderModule::EnumerateDescriptorBindings(
   uint32_t*                     p_count,
   SpvReflectDescriptorBinding** pp_bindings
-) const 
+) const
 {
   m_result = spvReflectEnumerateDescriptorBindings(&m_module,
                                                     p_count,
@@ -921,9 +921,9 @@ inline SpvReflectResult ShaderModule::EnumerateDescriptorBindings(
 inline SpvReflectResult ShaderModule::EnumerateDescriptorSets(
   uint32_t*                 p_count,
   SpvReflectDescriptorSet** pp_sets
-) const 
+) const
 {
-  m_result = spvReflectEnumerateDescriptorSets(&m_module, 
+  m_result = spvReflectEnumerateDescriptorSets(&m_module,
                                                 p_count,
                                                 pp_sets);
   return m_result;
@@ -940,7 +940,7 @@ inline SpvReflectResult ShaderModule::EnumerateDescriptorSets(
 inline SpvReflectResult ShaderModule::EnumerateInputVariables(
   uint32_t*                     p_count,
   SpvReflectInterfaceVariable** pp_variables
-) const 
+) const
 {
   m_result = spvReflectEnumerateInputVariables(&m_module,
                                                 p_count,
@@ -959,7 +959,7 @@ inline SpvReflectResult ShaderModule::EnumerateInputVariables(
 inline SpvReflectResult ShaderModule::EnumerateOutputVariables(
   uint32_t*                     p_count,
   SpvReflectInterfaceVariable** pp_variables
-) const 
+) const
 {
   m_result = spvReflectEnumerateOutputVariables(&m_module,
                                                 p_count,
@@ -978,14 +978,14 @@ inline SpvReflectResult ShaderModule::EnumerateOutputVariables(
 inline SpvReflectResult ShaderModule::EnumeratePushConstantBlocks(
   uint32_t*                 p_count,
   SpvReflectBlockVariable** pp_blocks
-) const 
+) const
 {
   m_result = spvReflectEnumeratePushConstantBlocks(&m_module,
                                               p_count,
                                               pp_blocks);
   return m_result;
 }
-  
+
 
 /*! @fn GetDescriptorBinding
 
@@ -996,14 +996,14 @@ inline SpvReflectResult ShaderModule::EnumeratePushConstantBlocks(
 
 */
 inline const SpvReflectDescriptorBinding* ShaderModule::GetDescriptorBinding(
-  uint32_t          binding_number,                                                           
-  uint32_t          set_number, 
+  uint32_t          binding_number,
+  uint32_t          set_number,
   SpvReflectResult* p_result
-) const 
+) const
 {
-  return spvReflectGetDescriptorBinding(&m_module, 
-                                        binding_number, 
-                                        set_number, 
+  return spvReflectGetDescriptorBinding(&m_module,
+                                        binding_number,
+                                        set_number,
                                         p_result);
 }
 
@@ -1018,10 +1018,10 @@ inline const SpvReflectDescriptorBinding* ShaderModule::GetDescriptorBinding(
 inline const SpvReflectDescriptorSet* ShaderModule::GetDescriptorSet(
   uint32_t          set_number,
   SpvReflectResult* p_result
-) const 
+) const
 {
-  return spvReflectGetDescriptorSet(&m_module, 
-                                    set_number, 
+  return spvReflectGetDescriptorSet(&m_module,
+                                    set_number,
                                     p_result);
 }
 
@@ -1034,9 +1034,9 @@ inline const SpvReflectDescriptorSet* ShaderModule::GetDescriptorSet(
 
 */
 inline const SpvReflectInterfaceVariable* ShaderModule::GetInputVariableByLocation(
-  uint32_t          location, 
+  uint32_t          location,
   SpvReflectResult* p_result
-) const 
+) const
 {
   return spvReflectGetInputVariableByLocation(&m_module,
                                     location,
@@ -1052,9 +1052,9 @@ inline const SpvReflectInterfaceVariable* ShaderModule::GetInputVariableByLocati
 
 */
 inline const SpvReflectInterfaceVariable* ShaderModule::GetOutputVariableByLocation(
-  uint32_t           location, 
+  uint32_t           location,
   SpvReflectResult*  p_result
-) const 
+) const
 {
   return spvReflectGetOutputVariableByLocation(&m_module,
                                       location,
@@ -1072,7 +1072,7 @@ inline const SpvReflectInterfaceVariable* ShaderModule::GetOutputVariableByLocat
 inline const SpvReflectBlockVariable* ShaderModule::GetPushConstantBlock(
   uint32_t           index,
   SpvReflectResult*  p_result
-) const 
+) const
 {
   return spvReflectGetPushConstantBlock(&m_module,
                                     index,
@@ -1130,8 +1130,8 @@ inline SpvReflectResult ShaderModule::ChangeInputVariableLocation(
   const SpvReflectInterfaceVariable* p_input_variable,
   uint32_t                           new_location)
 {
-  return spvReflectChangeInputVariableLocation(&m_module, 
-                                                p_input_variable, 
+  return spvReflectChangeInputVariableLocation(&m_module,
+                                                p_input_variable,
                                                 new_location);
 }
 
@@ -1147,8 +1147,8 @@ inline SpvReflectResult ShaderModule::ChangeOutputVariableLocation(
   const SpvReflectInterfaceVariable* p_output_variable,
   uint32_t                           new_location)
 {
-  return spvReflectChangeOutputVariableLocation(&m_module, 
-                                                p_output_variable, 
+  return spvReflectChangeOutputVariableLocation(&m_module,
+                                                p_output_variable,
                                                 new_location);
 }
 

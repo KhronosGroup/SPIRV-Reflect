@@ -1,12 +1,12 @@
 /*
  Copyright 2017 Google Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,7 +15,7 @@
 */
 
 #if defined(WIN32)
-  #define _CRTDBG_MAP_ALLOC  
+  #define _CRTDBG_MAP_ALLOC
   #include <stdlib.h>
   #include <crtdbg.h>
 #endif
@@ -59,11 +59,13 @@ struct TextLine {
 const char* ToStringHlslResourceType(SpvReflectResourceType type)
 {
   switch (type) {
-    case SPV_REFLECT_RESOURCE_FLAG_SAMPLER : return "SAMPLER"; break;
-    case SPV_REFLECT_RESOURCE_FLAG_CBV     : return "CBV"; break;
-    case SPV_REFLECT_RESOURCE_FLAG_SRV     : return "SRV"; break;
-    case SPV_REFLECT_RESOURCE_FLAG_UAV     : return "UAV"; break;
+    case SPV_REFLECT_RESOURCE_FLAG_UNDEFINED: return "UNDEFINED";
+    case SPV_REFLECT_RESOURCE_FLAG_SAMPLER  : return "SAMPLER";
+    case SPV_REFLECT_RESOURCE_FLAG_CBV      : return "CBV";
+    case SPV_REFLECT_RESOURCE_FLAG_SRV      : return "SRV";
+    case SPV_REFLECT_RESOURCE_FLAG_UAV      : return "UAV";
   }
+  // Unhandled SpvReflectResourceType enum value
   return "";
 }
 
@@ -216,7 +218,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       tl = {};
       ParseBlockMembersToTextLines(t, indent_depth + 1, member.member_count, member.members, &tl.lines);
       tl.flags = TEXT_LINE_FLAGS_LINES;
-      p_text_lines->push_back(tl);      
+      p_text_lines->push_back(tl);
 
       // End struct
       tl = {};
@@ -227,7 +229,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       tl.size = member.size;
       tl.padded_size = member.padded_size;
       tl.flags = TEXT_LINE_FLAGS_STRUCT_END;
-      p_text_lines->push_back(tl);      
+      p_text_lines->push_back(tl);
     }
     else {
       TextLine tl = {};
@@ -238,7 +240,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       tl.absolute_offset = member.absolute_offset;
       tl.size = member.size;
       tl.padded_size = member.padded_size;
-      p_text_lines->push_back(tl);      
+      p_text_lines->push_back(tl);
     }
   }
 }
@@ -288,7 +290,7 @@ void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent
       if (modifier_width > 0) {
         ss << std::setw(modifier_width) << std::left << tl.modifier;
         ss << " ";
-      }     
+      }
       ss << std::setw(type_name_width) << std::left << tl.type_name;
       ss << " ";
       ss << std::setw(name_width) << (tl.name + ";");
@@ -381,9 +383,9 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
   }
   os << t << "type    : " << ToStringVkDescriptorType(obj.descriptor_type);
   os << " " << "(" << ToStringHlslResourceType(obj.resource_type) << ")" << "\n";
-  
+
   // array
-  if (obj.array.dims_count > 0) {  
+  if (obj.array.dims_count > 0) {
     os << t << "array   : ";
     for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
       os << "[" << obj.array.dims[dim_index] << "]";
@@ -505,7 +507,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       StreamWrite(os, *p_var, ttt);
       if (i < (count - 1)) {
         os << "\n";
-      }  
+      }
     }
   }
 
@@ -526,7 +528,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       StreamWrite(os, *p_var, ttt);
       if (i < (count - 1)) {
         os << "\n";
-      }  
+      }
     }
   }
 
@@ -547,7 +549,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       StreamWrite(os, *p_binding, true, ttt);
       if (i < (count - 1)) {
         os << "\n";
-      }  
+      }
     }
   }
 
@@ -579,7 +581,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       }
       if (i < (count - 1)) {
         os << "\n";
-      }  
+      }
     }
   }
 

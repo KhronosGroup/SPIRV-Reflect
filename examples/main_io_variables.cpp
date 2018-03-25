@@ -243,6 +243,6 @@ int main(int argn, char** argv)
   }
 
   spvReflectDestroyShaderModule(&module);
-  
+
   return 0;
 }
