@@ -27,11 +27,12 @@ add_executable(spirv-reflect ${CMAKE_SOURCE_DIR}/main.cpp
                              ${CMAKE_SOURCE_DIR}/examples/arg_parser.h
                              ${CMAKE_SOURCE_DIR}/examples/arg_parser.cpp)
 target_compile_options(spirv-reflect PRIVATE
-    #$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
-    #$<$<CXX_COMPILER_ID:GNU>:-Wall -Werror>
-    #$<$<CXX_COMPILER_ID:Clang>:-Wall -Werror>
-    #$<$<CXX_COMPILER_ID:AppleClang>:-Wall -Werror>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+    $<$<CXX_COMPILER_ID:GNU>:-Wall -Werror>
+    $<$<CXX_COMPILER_ID:Clang>:-Wall -Werror>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wall -Werror>
 	)
 target_include_directories(spirv-reflect PRIVATE ${CMAKE_SOURCE_DIR})
 
 add_subdirectory(examples)
+add_subdirectory(util/stripper)
