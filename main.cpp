@@ -1,12 +1,12 @@
 /*
  Copyright 2017 Google Inc.
-
+ 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
-
+ 
  http://www.apache.org/licenses/LICENSE-2.0
-
+ 
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,7 +15,7 @@
 */
 
 #if defined(WIN32)
-  #define _CRTDBG_MAP_ALLOC
+  #define _CRTDBG_MAP_ALLOC  
   #include <stdlib.h>
   #include <crtdbg.h>
 #endif
@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "spirv_reflect.h"
+#include "examples/arg_parser.h"
 #include "examples/common.h"
 
 enum TextLineFlags {
@@ -59,13 +60,11 @@ struct TextLine {
 const char* ToStringHlslResourceType(SpvReflectResourceType type)
 {
   switch (type) {
-    case SPV_REFLECT_RESOURCE_FLAG_UNDEFINED: return "UNDEFINED";
-    case SPV_REFLECT_RESOURCE_FLAG_SAMPLER  : return "SAMPLER";
-    case SPV_REFLECT_RESOURCE_FLAG_CBV      : return "CBV";
-    case SPV_REFLECT_RESOURCE_FLAG_SRV      : return "SRV";
-    case SPV_REFLECT_RESOURCE_FLAG_UAV      : return "UAV";
+    case SPV_REFLECT_RESOURCE_FLAG_SAMPLER : return "SAMPLER"; break;
+    case SPV_REFLECT_RESOURCE_FLAG_CBV     : return "CBV"; break;
+    case SPV_REFLECT_RESOURCE_FLAG_SRV     : return "SRV"; break;
+    case SPV_REFLECT_RESOURCE_FLAG_UAV     : return "UAV"; break;
   }
-  // Unhandled SpvReflectResourceType enum value
   return "";
 }
 
@@ -218,7 +217,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       tl = {};
       ParseBlockMembersToTextLines(t, indent_depth + 1, member.member_count, member.members, &tl.lines);
       tl.flags = TEXT_LINE_FLAGS_LINES;
-      p_text_lines->push_back(tl);
+      p_text_lines->push_back(tl);      
 
       // End struct
       tl = {};
@@ -229,7 +228,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       tl.size = member.size;
       tl.padded_size = member.padded_size;
       tl.flags = TEXT_LINE_FLAGS_STRUCT_END;
-      p_text_lines->push_back(tl);
+      p_text_lines->push_back(tl);      
     }
     else {
       TextLine tl = {};
@@ -240,7 +239,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       tl.absolute_offset = member.absolute_offset;
       tl.size = member.size;
       tl.padded_size = member.padded_size;
-      p_text_lines->push_back(tl);
+      p_text_lines->push_back(tl);      
     }
   }
 }
@@ -290,7 +289,7 @@ void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent
       if (modifier_width > 0) {
         ss << std::setw(modifier_width) << std::left << tl.modifier;
         ss << " ";
-      }
+      }     
       ss << std::setw(type_name_width) << std::left << tl.type_name;
       ss << " ";
       ss << std::setw(name_width) << (tl.name + ";");
@@ -383,9 +382,9 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
   }
   os << t << "type    : " << ToStringVkDescriptorType(obj.descriptor_type);
   os << " " << "(" << ToStringHlslResourceType(obj.resource_type) << ")" << "\n";
-
+  
   // array
-  if (obj.array.dims_count > 0) {
+  if (obj.array.dims_count > 0) {  
     os << t << "array   : ";
     for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
       os << "[" << obj.array.dims[dim_index] << "]";
@@ -425,13 +424,15 @@ void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const
   const char* t = indent;
   os << t << "location  : ";
   if (obj.decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
-    os << "(built-in)";
+    os << "(built-in)" << " ";
+    os << ToStringBuiltIn(obj.built_in);
   }
   else {
     os << obj.location;
   }
   os << "\n";
   os << t << "type      : " << ToStringComponentType(*obj.type_description) << "\n";
+  os << t << "semantic  : " << (obj.semantic != NULL ? obj.semantic : "") << "\n";
   os << t << "name      : " << (obj.name != NULL ? obj.name : "") << "\n";
   os << t << "qualifier : ";
   if (obj.decoration_flags & SPV_REFLECT_DECORATION_FLAT) {
@@ -507,7 +508,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       StreamWrite(os, *p_var, ttt);
       if (i < (count - 1)) {
         os << "\n";
-      }
+      }  
     }
   }
 
@@ -528,7 +529,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       StreamWrite(os, *p_var, ttt);
       if (i < (count - 1)) {
         os << "\n";
-      }
+      }  
     }
   }
 
@@ -549,7 +550,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       StreamWrite(os, *p_binding, true, ttt);
       if (i < (count - 1)) {
         os << "\n";
-      }
+      }  
     }
   }
 
@@ -581,7 +582,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       }
       if (i < (count - 1)) {
         os << "\n";
-      }
+      }  
     }
   }
 
@@ -598,14 +599,15 @@ void PrintUsage()
     << "Prints a summary of the reflection data extracted from SPIR-V bytecode." << std::endl
     << "Options:" << std::endl
     << " --help         Display this message" << std::endl
-    << " -y, --yaml     Format output as YAML. [default: disabled]" << std::endl
+    << " -y,--yaml      Format output as YAML. [default: disabled]" << std::endl
     << " -v VERBOSITY   Specify output verbosity (YAML output only):" << std::endl
     << "                0: shader info, block variables, interface variables," << std::endl
     << "                   descriptor bindings. No type descriptions. [default]" << std::endl
     << "                1: Everything above, plus type descriptions." << std::endl
     << "                2: Everything above, plus SPIR-V bytecode and all internal" << std::endl
     << "                   type descriptions. If you're not working on SPIRV-Reflect" << std::endl
-    << "                   itself, you probably don't want this." << std::endl;
+    << "                   itself, you probably don't want this." << std::endl
+    << "-e,--entrypoint Print entry point found in shader module" << std::endl;
 }
 
 // =================================================================================================
@@ -613,39 +615,30 @@ void PrintUsage()
 // =================================================================================================
 int main(int argn, char** argv)
 {
-//#if defined(WIN32)
-//  _CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_DEBUG );
-//  _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
-//  _CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_DEBUG );
-//  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-//#endif
-
-  const char* input_spv_path = nullptr;
-  uint32_t yaml_verbosity = 0;
-  bool output_as_yaml = false;
-  for (int i = 1; i < argn; ++i) {
-    std::string arg(argv[i]);
-    if (arg == "--help") {
-      PrintUsage();
-      return EXIT_SUCCESS;
-    } else if (arg == "-y" || arg == "--yaml") {
-      output_as_yaml = true;
-    } else if (arg == "-v" && i+1 < argn) {
-      yaml_verbosity = static_cast<uint32_t>(strtol(argv[++i], nullptr, 10));
-    } else if (i == argn - 1) {
-      input_spv_path = argv[i];
-    } else {
-      std::cerr << "Unrecognized argument: " << arg << std::endl;
-      PrintUsage();
-      return EXIT_FAILURE;
-    }
-  }
-  if (!input_spv_path) {
+  ArgParser arg_parser;
+  arg_parser.AddFlag("h", "help", "");
+  arg_parser.AddFlag("y", "yaml", "");
+  arg_parser.AddOptionInt("v", "verbosity", "", 0);
+  arg_parser.AddFlag("e", "entrypoint", "");
+  if (!arg_parser.Parse(argn, argv, std::cerr)) {
     PrintUsage();
     return EXIT_FAILURE;
   }
 
-  std::ifstream spv_ifstream(input_spv_path, std::ios::binary);
+  bool output_as_yaml = arg_parser.GetFlag("y", "yaml");
+
+  int yaml_verbosity = 0;
+  arg_parser.GetInt("v", "verbosity", &yaml_verbosity);
+
+	bool entry_point_only = arg_parser.GetFlag("e", "entrypoint");
+
+	std::string input_spv_path;
+	if (!arg_parser.GetArg(0, &input_spv_path)) {
+    std::cerr << "ERROR: no SPIR-V file specified" << std::endl;
+    return EXIT_FAILURE;
+	}
+			
+  std::ifstream spv_ifstream(input_spv_path.c_str(), std::ios::binary);
   if (!spv_ifstream.is_open()) {
     std::cerr << "ERROR: could not open '" << input_spv_path << "' for reading" << std::endl;
     return EXIT_FAILURE;
@@ -666,18 +659,19 @@ int main(int argn, char** argv)
       return EXIT_FAILURE;
     }
 
-    if (output_as_yaml) {
-      SpvReflectToYaml yamlizer(reflection.GetShaderModule(), yaml_verbosity);
-      std::cout << yamlizer;
-    } else {
-      std::cout << reflection << std::endl;
-      std::cout << std::endl;
-    }
+		if (entry_point_only) {
+      std::cout << reflection.GetEntryPointName() << std::endl;
+		}
+		else {
+			if (output_as_yaml) {
+				SpvReflectToYaml yamlizer(reflection.GetShaderModule(), yaml_verbosity);
+				std::cout << yamlizer;
+			} else {
+				std::cout << reflection << std::endl;
+				std::cout << std::endl;
+			}
+		}
   }
 
-#if defined(WIN32)
-  _CrtDumpMemoryLeaks();
-#endif
-
-  return 0;
+  return EXIT_SUCCESS;
 }

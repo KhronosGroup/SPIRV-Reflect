@@ -27,6 +27,15 @@
   #include <stdlib.h>
 #endif
 
+// Temporary enums until these make it into SPIR-V/Vulkan
+enum {
+  SpvReflectOpDecorateId                      = 332,
+  SpvReflectOpDecorateStringGOOGLE            = 5632,
+  SpvReflectOpMemberDecorateStringGOOGLE      = 5633,
+  SpvReflectDecorationHlslCounterBufferGOOGLE = 5634,
+  SpvReflectDecorationHlslSemanticGOOGLE      = 5635
+};
+
 enum {
   SPIRV_STARTING_WORD_INDEX = 5,
   SPIRV_WORD_SIZE           = sizeof(uint32_t),
@@ -63,11 +72,15 @@ typedef struct ImageTraits {
   SpvImageFormat        image_format;
 } ImageTraits;
 
-
 typedef struct NumberDecoration {
   uint32_t              word_offset;
   uint32_t              value;
 } NumberDecoration;
+
+typedef struct StringDecoration {
+  uint32_t              word_offset;
+  const char*           value;
+} StringDecoration;
 
 typedef struct Decorations {
   bool                  is_block;
@@ -83,6 +96,8 @@ typedef struct Decorations {
   NumberDecoration      input_attachment_index;
   NumberDecoration      location;
   NumberDecoration      offset;
+  NumberDecoration      uav_counter_buffer;
+  StringDecoration      semantic;
   uint32_t              array_stride;
   uint32_t              matrix_stride;
   SpvBuiltIn            built_in;
@@ -401,6 +416,7 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
     p_parser->nodes[i].decorations.binding.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.location.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.offset.value = (uint32_t)INVALID_VALUE;
+    p_parser->nodes[i].decorations.uav_counter_buffer.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.built_in = (SpvBuiltIn)INVALID_VALUE;
   }
 
@@ -652,7 +668,11 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
   for (uint32_t i = 0; i < p_parser->node_count; ++i) {
     Node* p_node = &(p_parser->nodes[i]);
 
-    if ((p_node->op != SpvOpDecorate) && (p_node->op != SpvOpMemberDecorate)) {
+    if ((p_node->op != SpvOpDecorate) && (p_node->op != SpvOpMemberDecorate) &&
+        (p_node->op != SpvReflectOpDecorateId) && 
+        (p_node->op != SpvReflectOpDecorateStringGOOGLE) && 
+        (p_node->op != SpvReflectOpMemberDecorateStringGOOGLE)) 
+    {
      continue;
     }
 
@@ -763,6 +783,20 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
         uint32_t word_offset = p_node->word_offset + member_offset+ 3;
         CHECKED_READU32(p_parser, word_offset, p_target_decorations->input_attachment_index.value);
         p_target_decorations->input_attachment_index.word_offset = word_offset;
+      }
+      break;
+
+      case SpvReflectDecorationHlslCounterBufferGOOGLE: {
+        uint32_t word_offset = p_node->word_offset + member_offset+ 3;
+        CHECKED_READU32(p_parser, word_offset, p_target_decorations->uav_counter_buffer.value);
+        p_target_decorations->uav_counter_buffer.word_offset = word_offset;
+      }
+      break;
+
+      case SpvReflectDecorationHlslSemanticGOOGLE: {
+        uint32_t word_offset = p_node->word_offset + member_offset + 3;
+        p_target_decorations->semantic.value = (const char*)(p_parser->spirv_code + word_offset);
+        p_target_decorations->semantic.word_offset = word_offset;
       }
       break;
     }
@@ -1082,6 +1116,7 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
     p_descriptor->input_attachment_index = (uint32_t)INVALID_VALUE;
     p_descriptor->set = (uint32_t)INVALID_VALUE;
     p_descriptor->descriptor_type = (VkDescriptorType)INVALID_VALUE;
+    p_descriptor->uav_counter_id = (VkDescriptorType)INVALID_VALUE;
   }
 
   size_t descriptor_index = 0;
@@ -1115,10 +1150,12 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
     }
 
     SpvReflectDescriptorBinding* p_descriptor = &p_module->descriptor_bindings[descriptor_index];
+    p_descriptor->spirv_id = p_node->result_id;
     p_descriptor->name = p_node->name;
     p_descriptor->binding = p_node->decorations.binding.value;
     p_descriptor->input_attachment_index = p_node->decorations.input_attachment_index.value;
     p_descriptor->set = p_node->decorations.set.value;
+    p_descriptor->uav_counter_id = p_node->decorations.uav_counter_buffer.value;
     p_descriptor->type_description = p_type;
 
     // Copy image traits
@@ -1260,25 +1297,41 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
       continue;
     }
 
-    const size_t descriptor_name_length = strlen(p_descriptor->name);
+    SpvReflectDescriptorBinding* p_counter_descriptor = NULL;
+    // Use UAV counter buffer id if present...
+    if (p_descriptor->uav_counter_id != UINT32_MAX) {
+      for (uint32_t counter_descriptor_index = 0; counter_descriptor_index < p_module->descriptor_binding_count; ++counter_descriptor_index) {
+        SpvReflectDescriptorBinding* p_test_counter_descriptor = &(p_module->descriptor_bindings[counter_descriptor_index]);
+        if (p_test_counter_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+          continue;
+        }
+        if (p_descriptor->uav_counter_id == p_test_counter_descriptor->spirv_id) {
+          p_counter_descriptor = p_test_counter_descriptor;
+          break;
+        }
+      }
+    }
+    // ...otherwise use old @count convention.
+    else {
+      const size_t descriptor_name_length = strlen(p_descriptor->name);
 
-    memset(name, 0, MAX_NODE_NAME_LENGTH);
-    memcpy(name, p_descriptor->name, descriptor_name_length);
+      memset(name, 0, MAX_NODE_NAME_LENGTH);    
+      memcpy(name, p_descriptor->name, descriptor_name_length);
 #if defined(WIN32)
-    strcat_s(name, MAX_NODE_NAME_LENGTH, k_count_tag);
+      strcat_s(name, MAX_NODE_NAME_LENGTH, k_count_tag);
 #else
-    strcat(name, k_count_tag);
+      strcat(name, k_count_tag);
 #endif
 
-    SpvReflectDescriptorBinding* p_counter_descriptor = NULL;
-    for (uint32_t counter_descriptor_index = 0; counter_descriptor_index < p_module->descriptor_binding_count; ++counter_descriptor_index) {
-      SpvReflectDescriptorBinding* p_test_counter_descriptor = &(p_module->descriptor_bindings[counter_descriptor_index]);
-      if (p_test_counter_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
-        continue;
-      }
-      if (strcmp(name, p_test_counter_descriptor->name) == 0) {
-        p_counter_descriptor = p_test_counter_descriptor;
-        break;
+      for (uint32_t counter_descriptor_index = 0; counter_descriptor_index < p_module->descriptor_binding_count; ++counter_descriptor_index) {
+        SpvReflectDescriptorBinding* p_test_counter_descriptor = &(p_module->descriptor_bindings[counter_descriptor_index]);
+        if (p_test_counter_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+          continue;
+        }
+        if (strcmp(name, p_test_counter_descriptor->name) == 0) {
+          p_counter_descriptor = p_test_counter_descriptor;
+          break;
+        }
       }
     }
 
@@ -1506,7 +1559,7 @@ static SpvReflectResult ParseFormat(
 }
 
 static SpvReflectResult ParseInterfaceVariable(Parser*                      p_parser,
-                                               const Decorations*           p_decorations,
+                                               const Decorations*           p_type_node_decorations,
                                                SpvReflectShaderModule*      p_module,
                                                SpvReflectTypeDescription*   p_type,
                                                SpvReflectInterfaceVariable* p_var,
@@ -1536,8 +1589,8 @@ static SpvReflectResult ParseInterfaceVariable(Parser*                      p_pa
   }
 
   p_var->name = p_type_node->name;
-  p_var->decoration_flags = ApplyDecorations(p_decorations);
-  p_var->built_in = p_decorations->built_in;
+  p_var->decoration_flags = ApplyDecorations(p_type_node_decorations);
+  p_var->built_in = p_type_node_decorations->built_in;
   ApplyNumericTraits(p_type, &p_var->numeric);
   if (p_type->op == SpvOpTypeArray) {
     ApplyArrayTraits(p_type, &p_var->array);
@@ -1545,7 +1598,7 @@ static SpvReflectResult ParseInterfaceVariable(Parser*                      p_pa
 
   p_var->type_description = p_type;
 
-  *p_has_built_in |= p_decorations->is_built_in;
+  *p_has_built_in |= p_type_node_decorations->is_built_in;
 
   SpvReflectResult result = ParseFormat(p_var->type_description, &p_var->format);
   if (result != SPV_REFLECT_RESULT_SUCCESS) {
@@ -1654,17 +1707,17 @@ static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShad
                                                      p_module,
                                                      p_type,
                                                      p_var,
-                                                     &has_built_in);
-    if ((p_var->name == NULL) && (p_node->name)) {
-      p_var->name = p_node->name;
-    }
-
+                                                     &has_built_in);   
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
     }
 
+    // SPIR-V result id
+    p_var->spirv_id = p_node->result_id;
     // Name
     p_var->name = p_node->name;
+    // Semantic
+    p_var->semantic = p_node->decorations.semantic.value;
 
     // Decorate with built-in if any member is built-in
     if (has_built_in) {

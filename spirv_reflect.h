@@ -186,11 +186,11 @@ typedef struct SpvReflectTypeDescription {
 
 */
 typedef struct SpvReflectInterfaceVariable {
+  uint32_t                            spirv_id;
   const char*                         name;
   uint32_t                            location;
   SpvStorageClass                     storage_class;
-  const char*                         semantic_name;
-  uint32_t                            semantic_index;
+  const char*                         semantic;
   SpvReflectDecorationFlags           decoration_flags;
   SpvBuiltIn                          built_in;
   SpvReflectNumericTraits             numeric;
@@ -233,6 +233,7 @@ typedef struct SpvReflectBlockVariable {
 
 */
 typedef struct SpvReflectDescriptorBinding {
+  uint32_t                            spirv_id;
   const char*                         name;
   uint32_t                            binding;
   uint32_t                            input_attachment_index;
@@ -242,6 +243,7 @@ typedef struct SpvReflectDescriptorBinding {
   SpvReflectImageTraits               image;
   SpvReflectBlockVariable             block;
   SpvReflectBindingArrayTraits        array;
+  uint32_t                            uav_counter_id;
   struct SpvReflectDescriptorBinding* uav_counter_binding;
 
   SpvReflectTypeDescription*          type_description;

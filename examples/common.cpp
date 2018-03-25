@@ -832,9 +832,9 @@ void PrintDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding&
     os << t << "set     : " << obj.set << "\n";
   }
   os << t << "type    : " << ToStringVkDescriptorType(obj.descriptor_type) << "\n";
-
+  
   // array
-  if (obj.array.dims_count > 0) {
+  if (obj.array.dims_count > 0) {  
     os << t << "array   : ";
     for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
       os << "[" << obj.array.dims[dim_index] << "]";
@@ -1222,9 +1222,7 @@ void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflect
   //   SpvStorageClass                     storage_class;
   os << t1 << "storage_class: " << iv.storage_class << " # " << ToStringSpvStorageClass(iv.storage_class) << std::endl;
   //   const char*                         semantic_name;
-  os << t1 << "semantic_name: " << SafeString(iv.semantic_name) << std::endl;
-  //   uint32_t                            semantic_index;
-  os << t1 << "semantic_index: " << iv.semantic_index << std::endl;
+  os << t1 << "semantic: " << SafeString(iv.semantic) << std::endl;
   //   SpvReflectDecorationFlags           decoration_flags;
   os << t1 << "decoration_flags: " << AsHexString(iv.decoration_flags) << " # " << ToStringSpvReflectDecorationFlags(iv.decoration_flags)  << std::endl;
   //   SpvBuiltIn                          built_in;
@@ -1507,3 +1505,4 @@ void SpvReflectToYaml::Write(std::ostream& os)
 
   os << "..." << std::endl;
 }
+
