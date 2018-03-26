@@ -480,8 +480,6 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
   const char* t     = "  ";
   const char* tt    = "    ";
   const char* ttt   = "      ";
-  const char* tttt  = "        ";
-  const char* ttttt = "          ";
 
   StreamWrite(os, obj.GetShaderModule(), "");
 
@@ -569,17 +567,6 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       assert(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
       PrintDescriptorSet(os, *p_set, ttt);
-      if (count > 0) {
-        os << "\n";
-        for (uint32_t j = 0; j < p_set->binding_count; ++j) {
-          const SpvReflectDescriptorBinding& binding = *p_set->bindings[j];
-          os << tttt << j << ":" << "\n";
-          StreamWrite(os, binding, false, ttttt);
-          if (j < (p_set->binding_count - 1)) {
-            os << "\n";
-          }
-        }
-      }
       if (i < (count - 1)) {
         os << "\n";
       }  
@@ -607,7 +594,7 @@ void PrintUsage()
     << "                2: Everything above, plus SPIR-V bytecode and all internal" << std::endl
     << "                   type descriptions. If you're not working on SPIRV-Reflect" << std::endl
     << "                   itself, you probably don't want this." << std::endl
-    << "-e,--entrypoint Print entry point found in shader module" << std::endl;
+    << "-e,--entrypoint Only print the entry point found in shader module." << std::endl;
 }
 
 // =================================================================================================
