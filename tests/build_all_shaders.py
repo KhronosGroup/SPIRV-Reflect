@@ -50,7 +50,7 @@ if __name__ == "__main__":
       if ext.lower() == ".glsl" or (ext.lower() == ".hlsl" and not args.dxc):
         cmd_args = [args.glslc, "-fshader-stage=" + shader['stage'], "-fentry-point=" + shader['entry'], "-o", spv_path, src_path]
       elif ext.lower() == ".hlsl":
-        cmd_args = [args.dxc, "-spirv", "-O3", "-T", shader['profile'], "-E", shader['entry'], "-Fo", spv_path, src_path]
+        cmd_args = [args.dxc, "-spirv", "-fspv-reflect", "-O0", "-T", shader['profile'], "-E", shader['entry'], "-Fo", spv_path, src_path]
       if args.verbose:
         print(" ".join(cmd_args))
       cmd_output = subprocess.check_output(cmd_args, stderr = subprocess.STDOUT)
