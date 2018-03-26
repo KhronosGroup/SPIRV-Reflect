@@ -870,6 +870,9 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const 
     os << obj.location;
   }
   os << "\n";
+  if (obj.semantic != nullptr) {
+    os << t << "semantic  : " << obj.semantic << "\n";
+  }
   os << t << "type      : " << ToStringType(src_lang, *obj.type_description) << "\n";
   os << t << "qualifier : ";
   if (obj.decoration_flags & SPV_REFLECT_DECORATION_FLAT) {
@@ -1123,6 +1126,8 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
 
   os << t0 << "- &db" << descriptor_binding_index << std::endl;
   // typedef struct SpvReflectDescriptorBinding {
+  //   uint32_t                            spirv_id;
+  os << t1 << "spirv_id: " << db.spirv_id << std::endl;
   //   const char*                         name;
   os << t1 << "name: " << SafeString(db.name) << std::endl;
   //   uint32_t                            binding;
@@ -1172,6 +1177,8 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
   // } SpvReflectBindingArrayTraits;
   os << "] }" << std::endl;
 
+  //   uint32_t                            uav_counter_id;
+  os << t1 << "uav_counter_id: " << db.uav_counter_id << std::endl;
   //   struct SpvReflectDescriptorBinding* uav_counter_binding;
   if (db.uav_counter_binding == nullptr) {
     os << t1 << "uav_counter_binding:" << std::endl;
@@ -1215,13 +1222,15 @@ void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflect
 
   // typedef struct SpvReflectInterfaceVariable {
   os << t0 << "- &iv" << interface_variable_index << std::endl;
+  //   uint32_t                            spirv_id;
+  os << t1 << "spirv_id: " << iv.spirv_id << std::endl;
   //   const char*                         name;
   os << t1 << "name: " << SafeString(iv.name) << std::endl;
   //   uint32_t                            location;
   os << t1 << "location: " << iv.location << std::endl;
   //   SpvStorageClass                     storage_class;
   os << t1 << "storage_class: " << iv.storage_class << " # " << ToStringSpvStorageClass(iv.storage_class) << std::endl;
-  //   const char*                         semantic_name;
+  //   const char*                         semantic;
   os << t1 << "semantic: " << SafeString(iv.semantic) << std::endl;
   //   SpvReflectDecorationFlags           decoration_flags;
   os << t1 << "decoration_flags: " << AsHexString(iv.decoration_flags) << " # " << ToStringSpvReflectDecorationFlags(iv.decoration_flags)  << std::endl;
