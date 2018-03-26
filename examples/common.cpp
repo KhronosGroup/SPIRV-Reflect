@@ -8,7 +8,9 @@
 static std::string AsHexString(uint32_t n) {
   // std::iomanip can die in a fire.
   char out_word[11];
-  snprintf(out_word, 11, "0x%08X", n);
+  int len = snprintf(out_word, 11, "0x%08X", n);
+  assert(len == 10);
+  (void)len;
   return std::string(out_word);
 }
 
