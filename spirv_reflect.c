@@ -1,5 +1,5 @@
 /*
- Copyright 2017 Google Inc.
+ Copyright 2017-2018 Google Inc.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -349,15 +349,22 @@ static SpvReflectTypeDescription* FindType(SpvReflectShaderModule* p_module, uin
 static SpvReflectResult CreateParser(size_t size, void* p_code, Parser* p_parser)
 {
   if (p_code == NULL) {
-    return SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_EOF;
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
   }
 
+  if (size < SPIRV_MINIMUM_FILE_SIZE) {
+    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_CODE_SIZE;
+  }
   if ((size % 4) != 0) {
     return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_CODE_SIZE;
   }
 
   p_parser->spirv_word_count = size / SPIRV_WORD_SIZE;
   p_parser->spirv_code = (uint32_t*)p_code;
+
+  if (p_parser->spirv_code[0] != SpvMagicNumber) {
+    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_MAGIC_NUMBER;
+  }
 
   return SPV_REFLECT_RESULT_SUCCESS;
 }

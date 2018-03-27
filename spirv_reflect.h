@@ -1,5 +1,5 @@
 /*
- Copyright 2017 Google Inc.
+ Copyright 2017-2018 Google Inc.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -12,6 +12,14 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
+*/
+
+/*
+
+VERSION HISTORY
+
+  1.0   (2018-03-27) Initial public release
+
 */
 
 /*!
@@ -56,6 +64,7 @@ typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH,
   SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_CODE_SIZE,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_MAGIC_NUMBER,
   SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_EOF,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_SET_NUMBER_OVERFLOW,
