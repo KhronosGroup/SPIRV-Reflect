@@ -14,6 +14,14 @@
  limitations under the License.
 */
 
+/*
+
+VERSION HISTORY
+
+  1.0   (2018-03-27) Initial public release
+
+*/
+
 /*!
 
  @file spirv_reflect.h
