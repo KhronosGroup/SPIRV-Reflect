@@ -1,6 +1,7 @@
 #include "stripper.h"
 
 #include <cstdio>
+#include <cstring>
 #include <vector>
 
 int SpvStripReflect(uint32_t *data, size_t len) {
