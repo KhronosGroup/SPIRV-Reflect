@@ -773,7 +773,9 @@ public:
 
   uint32_t        GetCodeSize() const;
   const uint32_t* GetCode() const;
-  const char*     GetEntryPointName() const;
+
+  const char*           GetEntryPointName() const;
+  VkShaderStageFlagBits GetVulkanShaderStage() const;
 
   SpvReflectResult  EnumerateDescriptorBindings(uint32_t* p_count, SpvReflectDescriptorBinding** pp_bindings) const;
   SpvReflectResult  EnumerateDescriptorSets( uint32_t* p_count, SpvReflectDescriptorSet** pp_sets) const ;
@@ -901,6 +903,14 @@ inline const char* ShaderModule::GetEntryPointName() const {
   return m_module.entry_point_name;
 }
 
+/*! @fn GetShaderStage
+
+  @return Returns Vulkan shader stage
+
+*/
+inline VkShaderStageFlagBits ShaderModule::GetVulkanShaderStage() const {
+  return m_module.vulkan_shader_stage;
+}
 
 /*! @fn EnumerateDescriptorBindings
 

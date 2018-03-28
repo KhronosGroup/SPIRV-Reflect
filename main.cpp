@@ -57,6 +57,20 @@ struct TextLine {
   std::string           formatted_padded_size;
 };
 
+const char* ToStringVulkanShaderStage(VkShaderStageFlagBits stage)
+{
+  switch (stage) {
+  default: break;
+    case VK_SHADER_STAGE_VERTEX_BIT                  : return "VS";
+    case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT    : return "HS";
+    case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT : return "DS";
+    case VK_SHADER_STAGE_GEOMETRY_BIT                : return "GS";
+    case VK_SHADER_STAGE_FRAGMENT_BIT                : return "PS";
+    case VK_SHADER_STAGE_COMPUTE_BIT                 : return "CS";
+  }
+  return "";
+}
+
 const char* ToStringHlslResourceType(SpvReflectResourceType type)
 {
   switch (type) {
@@ -594,7 +608,8 @@ void PrintUsage()
     << "                2: Everything above, plus SPIR-V bytecode and all internal" << std::endl
     << "                   type descriptions. If you're not working on SPIRV-Reflect" << std::endl
     << "                   itself, you probably don't want this." << std::endl
-    << "-e,--entrypoint Only print the entry point found in shader module." << std::endl;
+    << "-e,--entrypoint Prints the entry point found in shader module." << std::endl
+    << "-s,--stage      Prints the Vulkan shader stage found in shader module." << std::endl;
 }
 
 // =================================================================================================
@@ -607,6 +622,7 @@ int main(int argn, char** argv)
   arg_parser.AddFlag("y", "yaml", "");
   arg_parser.AddOptionInt("v", "verbosity", "", 0);
   arg_parser.AddFlag("e", "entrypoint", "");
+  arg_parser.AddFlag("s", "stage", "");
   if (!arg_parser.Parse(argn, argv, std::cerr)) {
     PrintUsage();
     return EXIT_FAILURE;
@@ -617,7 +633,8 @@ int main(int argn, char** argv)
   int yaml_verbosity = 0;
   arg_parser.GetInt("v", "verbosity", &yaml_verbosity);
 
-	bool entry_point_only = arg_parser.GetFlag("e", "entrypoint");
+	bool print_entry_point = arg_parser.GetFlag("e", "entrypoint");
+  bool print_shader_stage = arg_parser.GetFlag("s", "stage");
 
 	std::string input_spv_path;
 	if (!arg_parser.GetArg(0, &input_spv_path)) {
@@ -646,8 +663,21 @@ int main(int argn, char** argv)
       return EXIT_FAILURE;
     }
 
-		if (entry_point_only) {
-      std::cout << reflection.GetEntryPointName() << std::endl;
+		if (print_entry_point || print_shader_stage) {
+      size_t printed_count = 0;
+      if (print_entry_point) {
+        std::cout<< reflection.GetEntryPointName();
+        ++printed_count;
+      }
+
+      if (print_shader_stage) {
+        if (printed_count > 0) {
+          std::cout << ";";
+        }
+        std::cout << ToStringVulkanShaderStage(reflection.GetVulkanShaderStage());
+      }
+
+      std::cout << std::endl;
 		}
 		else {
 			if (output_as_yaml) {
