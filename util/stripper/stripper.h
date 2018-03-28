@@ -1,6 +1,7 @@
 #ifndef LIBSPIRV_SPV_STRIP_REFLECT_
 #define LIBSPIRV_SPV_STRIP_REFLECT_
 
+#include <cstddef>
 #include <cstdint>
 
 // Strips SPIR-V reflection decorations in the SPIR-V binary module pointed by
