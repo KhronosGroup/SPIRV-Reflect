@@ -545,6 +545,8 @@ const SpvReflectDescriptorSet* spvReflectGetDescriptorSet(
 
  @param  p_module  Pointer to an instance of SpvReflectShaderModule.
  @param  location  The "location" value of the requested input variable.
+                   A location of 0xFFFFFFFF will always return NULL
+                   with *p_result == ELEMENT_NOT_FOUND.
  @param  p_result  If successful, SPV_REFLECT_RESULT_SUCCESS will be
                    written to *p_result. Otherwise, a error code
                    indicating the cause of the failure will be stored
@@ -571,11 +573,39 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariable(
   SpvReflectResult*             p_result
 );
 
+/* @fn spvReflectGetInputVariableBySemantic
+
+ @param  p_module  Pointer to an instance of SpvReflectShaderModule.
+ @param  semantic  The "semantic" value of the requested input variable.
+                   A semantic of NULL will return NULL.
+                   A semantic of "" will always return NULL with
+                   *p_result == ELEMENT_NOT_FOUND.
+ @param  p_result  If successful, SPV_REFLECT_RESULT_SUCCESS will be
+                   written to *p_result. Otherwise, a error code
+                   indicating the cause of the failure will be stored
+                   here.
+ @return           If the module contains an input interface variable
+                   with the provided semantic, a pointer to that
+                   variable is returned. The caller must not free this
+                   pointer.
+                   If no match can be found, or if an unrelated error
+                   occurs, the return value will be NULL. Detailed
+                   error results are written to *pResult.
+@note
+
+*/
+const SpvReflectInterfaceVariable* spvReflectGetInputVariableBySemantic(
+  const SpvReflectShaderModule* p_module,
+  const char*                   semantic,
+  SpvReflectResult*             p_result
+);
 
 /* @fn spvReflectGetOutputVariableByLocation
 
  @param  p_module  Pointer to an instance of SpvReflectShaderModule.
  @param  location  The "location" value of the requested output variable.
+                   A location of 0xFFFFFFFF will always return NULL
+                   with *p_result == ELEMENT_NOT_FOUND.
  @param  p_result  If successful, SPV_REFLECT_RESULT_SUCCESS will be
                    written to *p_result. Otherwise, a error code
                    indicating the cause of the failure will be stored
@@ -602,6 +632,32 @@ const SpvReflectInterfaceVariable* spvReflectGetOutputVariable(
   SpvReflectResult*              p_result
 );
 
+/* @fn spvReflectGetOutputVariableBySemantic
+
+ @param  p_module  Pointer to an instance of SpvReflectShaderModule.
+ @param  semantic  The "semantic" value of the requested output variable.
+                   A semantic of NULL will return NULL.
+                   A semantic of "" will always return NULL with
+                   *p_result == ELEMENT_NOT_FOUND.
+ @param  p_result  If successful, SPV_REFLECT_RESULT_SUCCESS will be
+                   written to *p_result. Otherwise, a error code
+                   indicating the cause of the failure will be stored
+                   here.
+ @return           If the module contains an output interface variable
+                   with the provided semantic, a pointer to that
+                   variable is returned. The caller must not free this
+                   pointer.
+                   If no match can be found, or if an unrelated error
+                   occurs, the return value will be NULL. Detailed
+                   error results are written to *pResult.
+@note
+
+*/
+const SpvReflectInterfaceVariable* spvReflectGetOutputVariableBySemantic(
+  const SpvReflectShaderModule*  p_module,
+  const char*                    semantic,
+  SpvReflectResult*              p_result
+);
 
 /*! @fn spvReflectGetPushConstantBlock
 
@@ -794,11 +850,13 @@ public:
   const SpvReflectInterfaceVariable*  GetInputVariable(uint32_t location,  SpvReflectResult* p_result = nullptr) const {
     return GetInputVariableByLocation(location, p_result);
   }
+  const SpvReflectInterfaceVariable*  GetInputVariableBySemantic(const char* semantic,  SpvReflectResult* p_result = nullptr) const;
   const SpvReflectInterfaceVariable*  GetOutputVariableByLocation(uint32_t location, SpvReflectResult*  p_result = nullptr) const;
   SPV_REFLECT_DEPRECATED("Renamed to GetOutputVariableByLocation")
   const SpvReflectInterfaceVariable*  GetOutputVariable(uint32_t location, SpvReflectResult*  p_result = nullptr) const {
     return GetOutputVariableByLocation(location, p_result);
   }
+  const SpvReflectInterfaceVariable*  GetOutputVariableBySemantic(const char* semantic, SpvReflectResult*  p_result = nullptr) const;
   const SpvReflectBlockVariable*      GetPushConstantBlock(uint32_t index, SpvReflectResult*  p_result = nullptr) const;
   SPV_REFLECT_DEPRECATED("Renamed to GetPushConstantBlock")
   const SpvReflectBlockVariable*      GetPushConstant(uint32_t index, SpvReflectResult*  p_result = nullptr) const {
@@ -1063,6 +1121,15 @@ inline const SpvReflectInterfaceVariable* ShaderModule::GetInputVariableByLocati
                                     location,
                                     p_result);
 }
+inline const SpvReflectInterfaceVariable* ShaderModule::GetInputVariableBySemantic(
+  const char*       semantic,
+  SpvReflectResult* p_result
+) const
+{
+  return spvReflectGetInputVariableBySemantic(&m_module,
+                                              semantic,
+                                              p_result);
+}
 
 
 /*! @fn GetOutputVariable
@@ -1080,6 +1147,15 @@ inline const SpvReflectInterfaceVariable* ShaderModule::GetOutputVariableByLocat
   return spvReflectGetOutputVariableByLocation(&m_module,
                                       location,
                                       p_result);
+}
+inline const SpvReflectInterfaceVariable* ShaderModule::GetOutputVariableBySemantic(
+  const char*       semantic,
+  SpvReflectResult* p_result
+) const
+{
+  return spvReflectGetOutputVariableBySemantic(&m_module,
+    semantic,
+    p_result);
 }
 
 
