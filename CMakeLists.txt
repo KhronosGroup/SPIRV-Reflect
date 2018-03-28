@@ -36,3 +36,5 @@ target_include_directories(spirv-reflect PRIVATE ${CMAKE_SOURCE_DIR})
 
 add_subdirectory(examples)
 add_subdirectory(util/stripper)
+
+install(TARGETS spirv-reflect RUNTIME DESTINATION bin)
