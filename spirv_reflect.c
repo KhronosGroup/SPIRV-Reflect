@@ -2279,10 +2279,9 @@ SpvReflectResult spvReflectEnumeratePushConstantBlocks(
 
   return SPV_REFLECT_RESULT_SUCCESS;
 }
-SpvReflectResult spvReflectEnumeratePushConstants(
-  const SpvReflectShaderModule* p_module,
-  uint32_t*                     p_count,
-  SpvReflectBlockVariable**     pp_blocks
+SpvReflectResult spvReflectEnumeratePushConstants(const SpvReflectShaderModule* p_module,
+                                                  uint32_t*                     p_count,
+                                                  SpvReflectBlockVariable**     pp_blocks
 )
 {
   return spvReflectEnumeratePushConstantBlocks(p_module, p_count, pp_blocks);
@@ -2340,6 +2339,10 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariableByLocation(const Sp
                                                                         uint32_t                      location,
                                                                         SpvReflectResult*             p_result)
 {
+  if (location == INVALID_VALUE) {
+    *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
+    return NULL;
+  }
   const SpvReflectInterfaceVariable* p_var = NULL;
   assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
@@ -2359,8 +2362,8 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariableByLocation(const Sp
   return p_var;
 }
 const SpvReflectInterfaceVariable* spvReflectGetInputVariable(const SpvReflectShaderModule* p_module,
-  uint32_t                      location,
-  SpvReflectResult*             p_result)
+                                                              uint32_t                      location,
+                                                              SpvReflectResult*             p_result)
 {
   return spvReflectGetInputVariableByLocation(p_module, location, p_result);
 }
@@ -2369,6 +2372,10 @@ const SpvReflectInterfaceVariable* spvReflectGetOutputVariableByLocation(const S
                                                                          uint32_t                       location,
                                                                          SpvReflectResult*              p_result)
 {
+  if (location == INVALID_VALUE) {
+    *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
+    return NULL;
+  }
   const SpvReflectInterfaceVariable* p_var = NULL;
   assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
@@ -2388,8 +2395,8 @@ const SpvReflectInterfaceVariable* spvReflectGetOutputVariableByLocation(const S
   return p_var;
 }
 const SpvReflectInterfaceVariable* spvReflectGetOutputVariable(const SpvReflectShaderModule*  p_module,
-  uint32_t                       location,
-  SpvReflectResult*              p_result)
+                                                               uint32_t                       location,
+                                                               SpvReflectResult*              p_result)
 {
   return spvReflectGetOutputVariableByLocation(p_module, location, p_result);
 }

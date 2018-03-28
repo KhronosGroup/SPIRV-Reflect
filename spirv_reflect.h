@@ -545,6 +545,8 @@ const SpvReflectDescriptorSet* spvReflectGetDescriptorSet(
 
  @param  p_module  Pointer to an instance of SpvReflectShaderModule.
  @param  location  The "location" value of the requested input variable.
+                   A location of 0xFFFFFFFF will always return NULL
+                   with *p_result == ELEMENT_NOT_FOUND.
  @param  p_result  If successful, SPV_REFLECT_RESULT_SUCCESS will be
                    written to *p_result. Otherwise, a error code
                    indicating the cause of the failure will be stored
@@ -576,6 +578,8 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariable(
 
  @param  p_module  Pointer to an instance of SpvReflectShaderModule.
  @param  location  The "location" value of the requested output variable.
+                   A location of 0xFFFFFFFF will always return NULL
+                   with *p_result == ELEMENT_NOT_FOUND.
  @param  p_result  If successful, SPV_REFLECT_RESULT_SUCCESS will be
                    written to *p_result. Otherwise, a error code
                    indicating the cause of the failure will be stored
