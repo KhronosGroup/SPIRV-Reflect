@@ -204,6 +204,10 @@ bool ArgParser::Parse(int argc, char** argv, std::ostream& os)
           i += 2;
         }
         break;
+
+        case OPTION_TYPE_UNDEFINED: {
+        }
+        break;
       }
     }
     else {

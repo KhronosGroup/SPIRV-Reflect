@@ -675,10 +675,11 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
   for (uint32_t i = 0; i < p_parser->node_count; ++i) {
     Node* p_node = &(p_parser->nodes[i]);
 
-    if ((p_node->op != SpvOpDecorate) && (p_node->op != SpvOpMemberDecorate) &&
-        (p_node->op != SpvReflectOpDecorateId) && 
-        (p_node->op != SpvReflectOpDecorateStringGOOGLE) && 
-        (p_node->op != SpvReflectOpMemberDecorateStringGOOGLE)) 
+    if (((uint32_t)p_node->op != (uint32_t)SpvOpDecorate) &&
+        ((uint32_t)p_node->op != (uint32_t)SpvOpMemberDecorate) &&
+        ((uint32_t)p_node->op != (uint32_t)SpvReflectOpDecorateId) &&
+        ((uint32_t)p_node->op != (uint32_t)SpvReflectOpDecorateStringGOOGLE) &&
+        ((uint32_t)p_node->op != (uint32_t)SpvReflectOpMemberDecorateStringGOOGLE))
     {
      continue;
     }
