@@ -27,7 +27,7 @@
 template <typename T>
 bool ReadFile(const char* filename, const char* mode, std::vector<T>* data) {
   const int buf_size = 1024;
-  const bool use_file = filename && strcmp("-", filename);
+  const bool use_file = filename && std::strcmp("-", filename);
   if (FILE* fp = (use_file ? fopen(filename, mode) : stdin)) {
     T buf[buf_size];
     while (size_t len = fread(buf, sizeof(T), buf_size, fp)) {
