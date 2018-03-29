@@ -45,18 +45,19 @@ if __name__ == "__main__":
   if not args.glslc:
     print("WARNING: glslc not found in PATH. This is a bad sign.")
   for shader in shaders:
+    src_path = shader['source']
+    base, ext = os.path.splitext(src_path)
+    spv_path = base + ".spv"
+    if ext.lower() == ".glsl" or (ext.lower() == ".hlsl" and not args.dxc):
+      compile_cmd_args = [args.glslc, "-fshader-stage=" + shader['stage'], "-fentry-point=" + shader['entry'], "-o", spv_path, src_path]
+    elif ext.lower() == ".hlsl":
+      compile_cmd_args = [args.dxc, "-spirv", "-fspv-reflect", "-O0", "-T", shader['profile'], "-E", shader['entry'], "-Fo", spv_path, src_path]
+
+    if args.verbose:
+      print(" ".join(compile_cmd_args))
+
     try:
-      src_path = shader['source']
-      base, ext = os.path.splitext(src_path)
-      spv_path = base + ".spv"
-      yaml_path = base + ".yaml"
-      if ext.lower() == ".glsl" or (ext.lower() == ".hlsl" and not args.dxc):
-        cmd_args = [args.glslc, "-fshader-stage=" + shader['stage'], "-fentry-point=" + shader['entry'], "-o", spv_path, src_path]
-      elif ext.lower() == ".hlsl":
-        cmd_args = [args.dxc, "-spirv", "-fspv-reflect", "-O0", "-T", shader['profile'], "-E", shader['entry'], "-Fo", spv_path, src_path]
-      if args.verbose:
-        print(" ".join(cmd_args))
-      cmd_output = subprocess.check_output(cmd_args, stderr = subprocess.STDOUT)
+      compile_cmd_output = subprocess.check_output(compile_cmd_args, stderr = subprocess.STDOUT)
       print("%s -> %s" % (src_path, spv_path))
     except subprocess.CalledProcessError as error:
       print("Compilation failed with error code %d:\n%s" % (error.returncode, error.output.decode('utf-8')))

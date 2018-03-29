@@ -1,0 +1,352 @@
+%YAML 1.0
+---
+all_type_descriptions:
+  - &td0
+    id: 22
+    op: 21
+    type_name: 
+    struct_member_name: "@count"
+    storage_class: 0 # UniformConstant
+    type_flags: 0x00000004
+    decoration_flags: 0x00000000
+    traits:
+      numeric:
+        scalar: { width: 32, signedness: 1 }
+        vector: { component_count: 0 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+  - &td1
+    id: 24
+    op: 30
+    type_name: "BufferIn@count"
+    struct_member_name: 
+    storage_class: -1 # INVALID_VALUE
+    type_flags: 0x10080000
+    decoration_flags: 0x00000002
+    traits:
+      numeric:
+        scalar: { width: 0, signedness: 0 }
+        vector: { component_count: 0 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 1
+    members:
+      - *td0
+  - &td2
+    id: 13
+    op: 21
+    type_name: 
+    struct_member_name: "rgba"
+    storage_class: 0 # UniformConstant
+    type_flags: 0x00000004
+    decoration_flags: 0x00000000
+    traits:
+      numeric:
+        scalar: { width: 32, signedness: 0 }
+        vector: { component_count: 0 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+  - &td3
+    id: 18
+    op: 29
+    type_name: 
+    struct_member_name: "@data"
+    storage_class: 0 # UniformConstant
+    type_flags: 0x10080000
+    decoration_flags: 0x00000000
+    traits:
+      numeric:
+        scalar: { width: 0, signedness: 0 }
+        vector: { component_count: 0 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 1
+    members:
+      - *td2
+  - &td4
+    id: 19
+    op: 30
+    type_name: "BufferIn"
+    struct_member_name: 
+    storage_class: -1 # INVALID_VALUE
+    type_flags: 0x10080000
+    decoration_flags: 0x00000002
+    traits:
+      numeric:
+        scalar: { width: 0, signedness: 0 }
+        vector: { component_count: 0 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 1
+    members:
+      - *td3
+  - &td5
+    id: 7
+    op: 23
+    type_name: 
+    struct_member_name: 
+    storage_class: -1 # INVALID_VALUE
+    type_flags: 0x00000108
+    decoration_flags: 0x00000000
+    traits:
+      numeric:
+        scalar: { width: 32, signedness: 0 }
+        vector: { component_count: 4 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+all_block_variables:
+  - &bv0
+    name: "@count"
+    offset: 0
+    size: 4
+    padded_size: 16
+    decorations: 0x00000000
+    numeric:
+      scalar: { width: 32, signedness: 1 }
+      vector: { component_count: 0 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+    type_description: *td0
+  - &bv1
+    name: "BufferIn@count"
+    offset: 0
+    size: 16
+    padded_size: 0
+    decorations: 0x00000000
+    numeric:
+      scalar: { width: 0, signedness: 0 }
+      vector: { component_count: 0 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 1
+    members:
+      - *bv0
+    type_description: *td1
+  - &bv2
+    name: "@data"
+    offset: 0
+    size: 0
+    padded_size: 0
+    decorations: 0x00000000
+    numeric:
+      scalar: { width: 0, signedness: 0 }
+      vector: { component_count: 0 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+    type_description: *td3
+  - &bv3
+    name: "BufferIn"
+    offset: 0
+    size: 0
+    padded_size: 0
+    decorations: 0x00000000
+    numeric:
+      scalar: { width: 0, signedness: 0 }
+      vector: { component_count: 0 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 1
+    members:
+      - *bv2
+    type_description: *td4
+  - &bv4
+    name: "@count"
+    offset: 0
+    size: 4
+    padded_size: 16
+    decorations: 0x00000000
+    numeric:
+      scalar: { width: 32, signedness: 1 }
+      vector: { component_count: 0 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+    type_description: *td0
+  - &bv5
+    name: "BufferIn@count"
+    offset: 0
+    size: 16
+    padded_size: 0
+    decorations: 0x00000000
+    numeric:
+      scalar: { width: 0, signedness: 0 }
+      vector: { component_count: 0 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 1
+    members:
+      - *bv4
+    type_description: *td1
+  - &bv6
+    name: "@data"
+    offset: 0
+    size: 0
+    padded_size: 0
+    decorations: 0x00000000
+    numeric:
+      scalar: { width: 0, signedness: 0 }
+      vector: { component_count: 0 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+    type_description: *td3
+  - &bv7
+    name: "BufferIn"
+    offset: 0
+    size: 0
+    padded_size: 0
+    decorations: 0x00000000
+    numeric:
+      scalar: { width: 0, signedness: 0 }
+      vector: { component_count: 0 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 1
+    members:
+      - *bv6
+    type_description: *td4
+all_descriptor_bindings:
+  - &db0
+    name: "BufferIn@count"
+    binding: 0
+    input_attachment_index: 0
+    set: 0
+    descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+    resource_type: 8 # UAV
+    image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+    block: *bv1 # "BufferIn@count"
+    array: { dims_count: 0, dims: [] }
+    uav_counter_binding:
+    type_description: *td1
+    word_offset: { binding: 165, set: 161 }
+  - &db1
+    name: "BufferIn"
+    binding: 0
+    input_attachment_index: 0
+    set: 1
+    descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+    resource_type: 8 # UAV
+    image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+    block: *bv3 # "BufferIn"
+    array: { dims_count: 0, dims: [] }
+    uav_counter_binding: *db0 # "BufferIn@count"
+    type_description: *td4
+    word_offset: { binding: 149, set: 145 }
+  - &db2
+    name: "BufferOut@count"
+    binding: 1
+    input_attachment_index: 0
+    set: 0
+    descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+    resource_type: 8 # UAV
+    image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+    block: *bv5 # "BufferIn@count"
+    array: { dims_count: 0, dims: [] }
+    uav_counter_binding:
+    type_description: *td1
+    word_offset: { binding: 181, set: 177 }
+  - &db3
+    name: "BufferOut"
+    binding: 1
+    input_attachment_index: 0
+    set: 2
+    descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+    resource_type: 8 # UAV
+    image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+    block: *bv7 # "BufferIn"
+    array: { dims_count: 0, dims: [] }
+    uav_counter_binding: *db2 # "BufferOut@count"
+    type_description: *td4
+    word_offset: { binding: 173, set: 169 }
+all_interface_variables:
+  - &iv0
+    name: "sv_pos"
+    location: 0
+    storage_class: 1 # Input
+    semantic_name: 
+    semantic_index: 0
+    decoration_flags: 0x00000000
+    built_in: -1
+    numeric:
+      scalar: { width: 32, signedness: 0 }
+      vector: { component_count: 4 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+    format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
+    type_description: *td5
+    word_offset: { location: 185 }
+  - &iv1
+    name: "@entryPointOutput"
+    location: 0
+    storage_class: 3 # Output
+    semantic_name: 
+    semantic_index: 0
+    decoration_flags: 0x00000000
+    built_in: -1
+    numeric:
+      scalar: { width: 32, signedness: 0 }
+      vector: { component_count: 4 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+    format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
+    type_description: *td5
+    word_offset: { location: 189 }
+module:
+  entry_point_name: "main"
+  entry_point_id: 4
+  source_language: 5 # HLSL
+  source_language_version: 500
+  spirv_execution_model: 4 # Fragment
+  vulkan_shader_stage: 0x00000010
+  descriptor_binding_count: 4
+  descriptor_bindings:
+    - *db0 # "BufferIn@count"
+    - *db1 # "BufferIn"
+    - *db2 # "BufferOut@count"
+    - *db3 # "BufferOut"
+  descriptor_set_count: 3
+  descriptor_sets:
+  - set: 0
+    binding_count: 2
+    bindings:
+      - *db0 # "BufferIn@count"
+      - *db2 # "BufferOut@count"
+  - set: 1
+    binding_count: 1
+    bindings:
+      - *db1 # "BufferIn"
+  - set: 2
+    binding_count: 1
+    bindings:
+      - *db3 # "BufferOut"
+  input_variable_count: 1,
+  input_variables:
+    - *iv0 # "sv_pos"
+  output_variable_count: 1,
+  output_variables:
+    - *iv1 # "@entryPointOutput"
+  push_constant_count: 0,
+  push_constants:
+...
