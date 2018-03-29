@@ -46,6 +46,12 @@ demonstrate various use cases:
 To build the included sample applications, use [CMake](https://cmake.org/) to generate the
 appropriate project files for your platform, then build them as usual.
 
+Note that you can set VulkanSDK directory as your preference. For example, on Linux:
+```
+VULKAN_SDK=$HOME/VulkanSDK/1.1.70.1/x86_64 cmake -G Ninja  ..
+```
+
+
 ## Usage
 
 SPIRV-Reflect's core C API should be familiar to Vulkan developers:
