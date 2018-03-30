@@ -56,7 +56,7 @@ VULKAN_SDK=$HOME/VulkanSDK/1.1.70.1/x86_64 cmake -G Ninja  ..
 
 SPIRV-Reflect's core C API should be familiar to Vulkan developers:
 
-```
+```c++
 #include "spirv_reflect.h"
 
 int SpirvReflectExample(const void* spirv_code, size_t spirv_nbytes)
