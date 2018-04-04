@@ -178,7 +178,7 @@ std::string ToStringBuiltIn(SpvBuiltIn value)
   return "";
 }
 
-std::string ToStringComponentType(const SpvReflectTypeDescription& type)
+std::string ToStringComponentType(const SpvReflectTypeDescription& type, uint32_t member_decoration_flags)
 {
   uint32_t masked_type = type.type_flags & 0xF;
   if (masked_type == 0) {
@@ -186,6 +186,16 @@ std::string ToStringComponentType(const SpvReflectTypeDescription& type)
   }
 
   std::stringstream ss;
+
+  if (type.type_flags & SPV_REFLECT_TYPE_FLAG_MATRIX) {
+    if (member_decoration_flags & SPV_REFLECT_DECORATION_COLUMN_MAJOR) {
+      ss << "column_major" << " ";
+    }
+    else if (member_decoration_flags & SPV_REFLECT_DECORATION_ROW_MAJOR) {
+      ss << "row_major" << " ";
+    }
+  }
+
   switch (masked_type) {
     default: assert(false && "unsupported component type"); break;
     case SPV_REFLECT_TYPE_FLAG_BOOL  : ss << "bool"; break;
@@ -248,7 +258,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
     else {
       TextLine tl = {};
       tl.indent = expanded_indent;
-      tl.type_name = ToStringComponentType(*member.type_description);
+      tl.type_name = ToStringComponentType(*member.type_description, member.decoration_flags);
       tl.name = member.name;
       tl.offset = member.offset;
       tl.absolute_offset = member.absolute_offset;
@@ -446,7 +456,7 @@ void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const
     os << obj.location;
   }
   os << "\n";
-  os << t << "type      : " << ToStringComponentType(*obj.type_description) << "\n";
+  os << t << "type      : " << ToStringComponentType(*obj.type_description, 0) << "\n";
   os << t << "semantic  : " << (obj.semantic != NULL ? obj.semantic : "") << "\n";
   os << t << "name      : " << (obj.name != NULL ? obj.name : "") << "\n";
   os << t << "qualifier : ";

@@ -573,6 +573,14 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
         CHECKED_READU32(p_parser, p_node->word_offset + 3, p_node->storage_class);
       }
       break;
+
+      case SpvOpLoad:
+      {
+        // Only load enough so OpDecorate can reference the node, skip the remaining operands.
+        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_type_id);
+        CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
+      }
+      break;
     }
 
     if (p_node->is_type) {
