@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cassert>
 
+#if defined(SPIRV_REFLECT_HAS_VULKAN_H)
+#include <vulkan/vulkan.h>
 // Returns the size in bytes of the provided VkFormat.
 // As this is only intended for vertex attribute formats, not all VkFormats are supported.
 static uint32_t FormatSize(VkFormat format)
@@ -140,7 +142,7 @@ static uint32_t FormatSize(VkFormat format)
   }
   return result;
 }
-
+#endif
 
 int main(int argn, char** argv)
 {
@@ -164,7 +166,8 @@ int main(int argn, char** argv)
   result = spvReflectEnumerateOutputVariables(&module, &count, output_vars.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
-  if (module.vulkan_shader_stage == VK_SHADER_STAGE_VERTEX_BIT) {
+#if defined(SPIRV_REFLECT_HAS_VULKAN_H)
+  if (module.shader_stage == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT) {
     // Demonstrates how to generate all necessary data structures to populate
     // a VkPipelineVertexInputStateCreateInfo structure, given the module's
     // expected input variables.
@@ -187,7 +190,7 @@ int main(int argn, char** argv)
       VkVertexInputAttributeDescription& attr_desc = attribute_descriptions[i_var];
       attr_desc.location = refl_var.location;
       attr_desc.binding = binding_description.binding;
-      attr_desc.format = refl_var.format;
+      attr_desc.format = static_cast<VkFormat>(refl_var.format);
       attr_desc.offset = 0;  // final offset computed below after sorting.
     }
     // Sort attributes by location
@@ -204,6 +207,7 @@ int main(int argn, char** argv)
     // in this sample. A real application would probably derive this information from its
     // mesh format(s); a similar mechanism could be used to ensure mesh/shader compatibility.
   }
+#endif
 
   // Log the interface variables to stdout
   const char* t  = "  ";

@@ -1131,8 +1131,8 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
     p_descriptor->binding = (uint32_t)INVALID_VALUE;
     p_descriptor->input_attachment_index = (uint32_t)INVALID_VALUE;
     p_descriptor->set = (uint32_t)INVALID_VALUE;
-    p_descriptor->descriptor_type = (VkDescriptorType)INVALID_VALUE;
-    p_descriptor->uav_counter_id = (VkDescriptorType)INVALID_VALUE;
+    p_descriptor->descriptor_type = (SpvReflectDescriptorType)INVALID_VALUE;
+    p_descriptor->uav_counter_id = (uint32_t)INVALID_VALUE;
   }
 
   size_t descriptor_index = 0;
@@ -1228,25 +1228,25 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
         if (p_descriptor->image.dim == SpvDimBuffer) {
           switch (p_descriptor->image.sampled) {
             default: assert(false && "unknown texel buffer sampled value"); break;
-            case IMAGE_SAMPLED: p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
-            case IMAGE_STORAGE: p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
+            case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
+            case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
           }
         }
         else if(p_descriptor->image.dim == SpvDimSubpassData) {
-          p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+          p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
         }
         else {
           switch (p_descriptor->image.sampled) {
             default: assert(false && "unknown image sampled value"); break;
-            case IMAGE_SAMPLED: p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE; break;
-            case IMAGE_STORAGE: p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE; break;
+            case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE; break;
+            case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE; break;
           }
         }
       }
       break;
 
       case SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLER: {
-        p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_SAMPLER;
+        p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER;
       }
       break;
 
@@ -1255,22 +1255,22 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
         if (p_descriptor->image.dim == SpvDimBuffer) {
           switch (p_descriptor->image.sampled) {
             default: assert(false && "unknown texel buffer sampled value"); break;
-            case IMAGE_SAMPLED: p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
-            case IMAGE_STORAGE: p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
+            case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
+            case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
           }
         }
         else {
-          p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+          p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         }
       }
       break;
 
       case SPV_REFLECT_TYPE_FLAG_EXTERNAL_BLOCK: {
         if (p_type->decoration_flags & SPV_REFLECT_DECORATION_BLOCK) {
-          p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+          p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         }
         else if (p_type->decoration_flags & SPV_REFLECT_DECORATION_BUFFER_BLOCK) {
-          p_descriptor->descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+          p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         }
         else {
           assert(false && "unknown struct");
@@ -1280,20 +1280,18 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
     }
 
     switch (p_descriptor->descriptor_type) {
-      case VK_DESCRIPTOR_TYPE_SAMPLER                : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SAMPLER; break;
-      case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : p_descriptor->resource_type = (SpvReflectResourceType)(SPV_REFLECT_RESOURCE_FLAG_SAMPLER | SPV_REFLECT_RESOURCE_FLAG_SRV); break;
-      case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV; break;
-      case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE          : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
-      case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV; break;
-      case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
-      case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_CBV; break;
-      case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_CBV; break;
-      case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER         : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
-      case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER                : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SAMPLER; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : p_descriptor->resource_type = (SpvReflectResourceType)(SPV_REFLECT_RESOURCE_FLAG_SAMPLER | SPV_REFLECT_RESOURCE_FLAG_SRV); break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE          : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_CBV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_CBV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER         : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
 
-      case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-      case VK_DESCRIPTOR_TYPE_RANGE_SIZE:
-      case VK_DESCRIPTOR_TYPE_MAX_ENUM:
+      case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
         break;
     }
   }
@@ -1309,7 +1307,7 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
   for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
 
-    if (p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+    if (p_descriptor->descriptor_type != SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
       continue;
     }
 
@@ -1318,7 +1316,7 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
     if (p_descriptor->uav_counter_id != UINT32_MAX) {
       for (uint32_t counter_descriptor_index = 0; counter_descriptor_index < p_module->descriptor_binding_count; ++counter_descriptor_index) {
         SpvReflectDescriptorBinding* p_test_counter_descriptor = &(p_module->descriptor_bindings[counter_descriptor_index]);
-        if (p_test_counter_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+        if (p_test_counter_descriptor->descriptor_type != SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
           continue;
         }
         if (p_descriptor->uav_counter_id == p_test_counter_descriptor->spirv_id) {
@@ -1341,7 +1339,7 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
 
       for (uint32_t counter_descriptor_index = 0; counter_descriptor_index < p_module->descriptor_binding_count; ++counter_descriptor_index) {
         SpvReflectDescriptorBinding* p_test_counter_descriptor = &(p_module->descriptor_bindings[counter_descriptor_index]);
-        if (p_test_counter_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+        if (p_test_counter_descriptor->descriptor_type != SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
           continue;
         }
         if (strcmp(name, p_test_counter_descriptor->name) == 0) {
@@ -1508,8 +1506,8 @@ static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShader
   for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
     SpvReflectTypeDescription* p_type = p_descriptor->type_description;
-    if ((p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) &&
-        (p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) )
+    if ((p_descriptor->descriptor_type != SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) &&
+        (p_descriptor->descriptor_type != SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) )
     {
       continue;
     }
@@ -1529,7 +1527,7 @@ static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShader
 
 static SpvReflectResult ParseFormat(
   const SpvReflectTypeDescription*  p_type,
-  VkFormat*                         p_format
+  SpvReflectFormat*                 p_format
 )
 {
   SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
@@ -1538,37 +1536,37 @@ static SpvReflectResult ParseFormat(
     uint32_t component_count = p_type->traits.numeric.vector.component_count;
     if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
       switch (component_count) {
-        case 2: *p_format = VK_FORMAT_R32G32_SFLOAT; break;
-        case 3: *p_format = VK_FORMAT_R32G32B32_SFLOAT; break;
-        case 4: *p_format = VK_FORMAT_R32G32B32A32_SFLOAT; break;
+        case 2: *p_format = SPV_REFLECT_FORMAT_R32G32_SFLOAT; break;
+        case 3: *p_format = SPV_REFLECT_FORMAT_R32G32B32_SFLOAT; break;
+        case 4: *p_format = SPV_REFLECT_FORMAT_R32G32B32A32_SFLOAT; break;
       }
       result = SPV_REFLECT_RESULT_SUCCESS;
     }
     else if (p_type->type_flags & (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_BOOL)) {
       switch (component_count) {
-        case 2: *p_format = signedness ? VK_FORMAT_R32G32_SINT : VK_FORMAT_R32G32_UINT; break;
-        case 3: *p_format = signedness ? VK_FORMAT_R32G32B32_SINT : VK_FORMAT_R32G32B32_UINT; break;
-        case 4: *p_format = signedness ? VK_FORMAT_R32G32B32A32_SINT : VK_FORMAT_R32G32B32A32_UINT; break;
+        case 2: *p_format = signedness ? SPV_REFLECT_FORMAT_R32G32_SINT : SPV_REFLECT_FORMAT_R32G32_UINT; break;
+        case 3: *p_format = signedness ? SPV_REFLECT_FORMAT_R32G32B32_SINT : SPV_REFLECT_FORMAT_R32G32B32_UINT; break;
+        case 4: *p_format = signedness ? SPV_REFLECT_FORMAT_R32G32B32A32_SINT : SPV_REFLECT_FORMAT_R32G32B32A32_UINT; break;
       }
       result = SPV_REFLECT_RESULT_SUCCESS;
     }
   }
   else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
-    *p_format = VK_FORMAT_R32_SFLOAT;
+    *p_format = SPV_REFLECT_FORMAT_R32_SFLOAT;
     result = SPV_REFLECT_RESULT_SUCCESS;
   }
   else if (p_type->type_flags & (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_BOOL)) {
     if (signedness) {
-      *p_format = VK_FORMAT_R32_SINT;
+      *p_format = SPV_REFLECT_FORMAT_R32_SINT;
       result = SPV_REFLECT_RESULT_SUCCESS;
     }
     else {
-      *p_format = VK_FORMAT_R32_UINT;
+      *p_format = SPV_REFLECT_FORMAT_R32_UINT;
       result = SPV_REFLECT_RESULT_SUCCESS;
     }
   }
   else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT) {
-    *p_format = VK_FORMAT_UNDEFINED;
+    *p_format = SPV_REFLECT_FORMAT_UNDEFINED;
     result = SPV_REFLECT_RESULT_SUCCESS;
   }
   return result;
@@ -1905,16 +1903,16 @@ static SpvReflectResult DisambiguateStorageBufferSrvUav(SpvReflectShaderModule* 
 
   for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
-    // Skip everything that isn't a VK_DESCRIPTOR_TYPE_STORAGE_BUFFER descriptor
-    if (p_descriptor->descriptor_type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+    // Skip everything that isn't a STORAGE_BUFFER descriptor
+    if (p_descriptor->descriptor_type != SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
       continue;
     }
 
     //
     // Vulkan doesn't disambiguate between SRVs and UAVs so they
-    // come back as VK_DESCRIPTOR_TYPE_STORAGE_BUFFER. The block
-    // parsing process will mark a block as non-writable should
-    // any member of the block or its descendants are non-writable.
+    // come back as STORAGE_BUFFER. The block parsing process will
+    // mark a block as non-writable should any member of the block
+    // or its descendants are non-writable.
     //
     if (p_descriptor->block.decoration_flags & SPV_REFLECT_DECORATION_NON_WRITABLE) {
       p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV;
@@ -2001,12 +1999,12 @@ SpvReflectResult spvReflectCreateShaderModule(
     p_module->spirv_execution_model = parser.spirv_execution_model;
     switch (p_module->spirv_execution_model) {
       default: break;
-      case SpvExecutionModelVertex                 : p_module->vulkan_shader_stage = VK_SHADER_STAGE_VERTEX_BIT; break;
-      case SpvExecutionModelTessellationControl    : p_module->vulkan_shader_stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT; break;
-      case SpvExecutionModelTessellationEvaluation : p_module->vulkan_shader_stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT; break;
-      case SpvExecutionModelGeometry               : p_module->vulkan_shader_stage = VK_SHADER_STAGE_GEOMETRY_BIT; break;
-      case SpvExecutionModelFragment               : p_module->vulkan_shader_stage = VK_SHADER_STAGE_FRAGMENT_BIT; break;
-      case SpvExecutionModelGLCompute              : p_module->vulkan_shader_stage = VK_SHADER_STAGE_COMPUTE_BIT; break;
+      case SpvExecutionModelVertex                 : p_module->shader_stage = SPV_REFLECT_SHADER_STAGE_VERTEX_BIT; break;
+      case SpvExecutionModelTessellationControl    : p_module->shader_stage = SPV_REFLECT_SHADER_STAGE_TESSELLATION_CONTROL_BIT; break;
+      case SpvExecutionModelTessellationEvaluation : p_module->shader_stage = SPV_REFLECT_SHADER_STAGE_TESSELLATION_EVALUATION_BIT; break;
+      case SpvExecutionModelGeometry               : p_module->shader_stage = SPV_REFLECT_SHADER_STAGE_GEOMETRY_BIT; break;
+      case SpvExecutionModelFragment               : p_module->shader_stage = SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT; break;
+      case SpvExecutionModelGLCompute              : p_module->shader_stage = SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT; break;
     }
 
     p_module->source_language = parser.source_language;

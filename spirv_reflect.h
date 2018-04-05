@@ -30,8 +30,7 @@ VERSION HISTORY
 #ifndef SPIRV_REFLECT_H
 #define SPIRV_REFLECT_H
 
-#include <vulkan/spirv.h>
-#include <vulkan/vulkan.h>
+#include <spirv.h>
 
 #include <stdint.h>
 #include <string.h>
@@ -121,6 +120,55 @@ typedef enum SpvReflectResourceType {
   SPV_REFLECT_RESOURCE_FLAG_UAV                 = 0x00000008,
 } SpvReflectResourceType;
 
+/*! @enum SpvReflectFormat
+
+*/
+typedef enum SpvReflectFormat {
+  SPV_REFLECT_FORMAT_UNDEFINED           =   0, // = VK_FORMAT_UNDEFINED
+  SPV_REFLECT_FORMAT_R32_UINT            =  98, // = VK_FORMAT_R32_UINT
+  SPV_REFLECT_FORMAT_R32_SINT            =  99, // = VK_FORMAT_R32_SINT
+  SPV_REFLECT_FORMAT_R32_SFLOAT          = 100, // = VK_FORMAT_R32_SFLOAT
+  SPV_REFLECT_FORMAT_R32G32_UINT         = 101, // = VK_FORMAT_R32G32_UINT
+  SPV_REFLECT_FORMAT_R32G32_SINT         = 102, // = VK_FORMAT_R32G32_SINT
+  SPV_REFLECT_FORMAT_R32G32_SFLOAT       = 103, // = VK_FORMAT_R32G32_SFLOAT
+  SPV_REFLECT_FORMAT_R32G32B32_UINT      = 104, // = VK_FORMAT_R32G32B32_UINT
+  SPV_REFLECT_FORMAT_R32G32B32_SINT      = 105, // = VK_FORMAT_R32G32B32_SINT
+  SPV_REFLECT_FORMAT_R32G32B32_SFLOAT    = 106, // = VK_FORMAT_R32G32B32_SFLOAT
+  SPV_REFLECT_FORMAT_R32G32B32A32_UINT   = 107, // = VK_FORMAT_R32G32B32A32_UINT
+  SPV_REFLECT_FORMAT_R32G32B32A32_SINT   = 108, // = VK_FORMAT_R32G32B32A32_SINT
+  SPV_REFLECT_FORMAT_R32G32B32A32_SFLOAT = 109, // = VK_FORMAT_R32G32B32A32_SFLOAT
+} SpvReflectFormat;
+
+/*! @enum SpvReflectDescriptorType
+
+*/
+typedef enum SpvReflectDescriptorType {
+  SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER                =  0, // = VK_DESCRIPTOR_TYPE_SAMPLER
+  SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER =  1, // = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+  SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE          =  2, // = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+  SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE          =  3, // = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+  SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   =  4, // = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+  SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   =  5, // = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+  SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER         =  6, // = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+  SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER         =  7, // = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+  SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC =  8, // = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+  SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC =  9, // = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
+  SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       = 10, // = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+} SpvReflectDescriptorType;
+
+/*! @enum SpvReflectShaderStageFlagBits
+
+*/
+typedef enum SpvReflectShaderStageFlagBits {
+  SPV_REFLECT_SHADER_STAGE_VERTEX_BIT                  = 0x00000001, // = VK_SHADER_STAGE_VERTEX_BIT
+  SPV_REFLECT_SHADER_STAGE_TESSELLATION_CONTROL_BIT    = 0x00000002, // = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT
+  SPV_REFLECT_SHADER_STAGE_TESSELLATION_EVALUATION_BIT = 0x00000004, // = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT
+  SPV_REFLECT_SHADER_STAGE_GEOMETRY_BIT                = 0x00000008, // = VK_SHADER_STAGE_GEOMETRY_BIT
+  SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT                = 0x00000010, // = VK_SHADER_STAGE_FRAGMENT_BIT
+  SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT                 = 0x00000020, // = VK_SHADER_STAGE_COMPUTE_BIT
+} SpvReflectShaderStageFlagBits;
+
+
 enum {
   SPV_REFLECT_MAX_ARRAY_DIMS                    = 32,
   SPV_REFLECT_MAX_DESCRIPTOR_SETS               = 64,
@@ -207,7 +255,7 @@ typedef struct SpvReflectInterfaceVariable {
   uint32_t                            member_count;
   struct SpvReflectInterfaceVariable* members;
 
-  VkFormat                            format;
+  SpvReflectFormat                    format;
 
   // NOTE: SPIR-V shares type references for variables
   //       that have the same underlying type. This means
@@ -247,7 +295,7 @@ typedef struct SpvReflectDescriptorBinding {
   uint32_t                            binding;
   uint32_t                            input_attachment_index;
   uint32_t                            set;
-  VkDescriptorType                    descriptor_type;
+  SpvReflectDescriptorType            descriptor_type;
   SpvReflectResourceType              resource_type;
   SpvReflectImageTraits               image;
   SpvReflectBlockVariable             block;
@@ -281,7 +329,7 @@ typedef struct SpvReflectShaderModule {
   SpvSourceLanguage                 source_language;
   uint32_t                          source_language_version;
   SpvExecutionModel                 spirv_execution_model;
-  VkShaderStageFlagBits             vulkan_shader_stage;
+  SpvReflectShaderStageFlagBits     shader_stage;
   uint32_t                          descriptor_binding_count;
   SpvReflectDescriptorBinding*      descriptor_bindings;
   uint32_t                          descriptor_set_count;
@@ -831,7 +879,11 @@ public:
   const uint32_t* GetCode() const;
 
   const char*           GetEntryPointName() const;
-  VkShaderStageFlagBits GetVulkanShaderStage() const;
+  SpvReflectShaderStageFlagBits GetShaderStage() const;
+  SPV_REFLECT_DEPRECATED("Renamed to GetShaderStage")
+  SpvReflectShaderStageFlagBits GetVulkanShaderStage() const {
+    return GetShaderStage();
+  }
 
   SpvReflectResult  EnumerateDescriptorBindings(uint32_t* p_count, SpvReflectDescriptorBinding** pp_bindings) const;
   SpvReflectResult  EnumerateDescriptorSets( uint32_t* p_count, SpvReflectDescriptorSet** pp_sets) const ;
@@ -966,8 +1018,8 @@ inline const char* ShaderModule::GetEntryPointName() const {
   @return Returns Vulkan shader stage
 
 */
-inline VkShaderStageFlagBits ShaderModule::GetVulkanShaderStage() const {
-  return m_module.vulkan_shader_stage;
+inline SpvReflectShaderStageFlagBits ShaderModule::GetShaderStage() const {
+  return m_module.shader_stage;
 }
 
 /*! @fn EnumerateDescriptorBindings

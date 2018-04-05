@@ -2,11 +2,14 @@
 #include "sample_spv.h"
 #include <cassert>
 
+#if defined(SPIRV_REFLECT_HAS_VULKAN_H)
+#include <vulkan/vulkan.h>
 struct DescriptorSetLayoutData {
   uint32_t set_number;
   VkDescriptorSetLayoutCreateInfo create_info;
   std::vector<VkDescriptorSetLayoutBinding> bindings;
 };
+#endif
 
 int main(int argn, char** argv)
 {
@@ -22,6 +25,7 @@ int main(int argn, char** argv)
   result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
+#if defined(SPIRV_REFLECT_HAS_VULKAN_H)
   // Demonstrates how to generate all necessary data structures to create a
   // VkDescriptorSetLayout for each descriptor set in this shader.
   std::vector<DescriptorSetLayoutData> set_layouts(sets.size(), DescriptorSetLayoutData{});
@@ -33,12 +37,12 @@ int main(int argn, char** argv)
       const SpvReflectDescriptorBinding& refl_binding = *(refl_set.bindings[i_binding]);
       VkDescriptorSetLayoutBinding& layout_binding = layout.bindings[i_binding];
       layout_binding.binding = refl_binding.binding;
-      layout_binding.descriptorType = refl_binding.descriptor_type;
+      layout_binding.descriptorType = static_cast<VkDescriptorType>(refl_binding.descriptor_type);
       layout_binding.descriptorCount = 1;
       for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
         layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
       }
-      layout_binding.stageFlags = module.vulkan_shader_stage;
+      layout_binding.stageFlags = static_cast<VkShaderStageFlagBits>(module.shader_stage);
     }
     layout.set_number = refl_set.set;
     layout.create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -48,6 +52,7 @@ int main(int argn, char** argv)
   // Nothing further is done with set_layouts in this sample; in a real application
   // they would be merged with similar structures from other shader stages and/or pipelines
   // to create a VkPipelineLayout.
+#endif
 
   // Log the descriptor set contents to stdout
   const char* t  = "  ";
