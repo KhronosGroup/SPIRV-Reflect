@@ -57,16 +57,16 @@ struct TextLine {
   std::string           formatted_padded_size;
 };
 
-const char* ToStringVulkanShaderStage(VkShaderStageFlagBits stage)
+const char* ToStringShaderStage(SpvReflectShaderStageFlagBits stage)
 {
   switch (stage) {
   default: break;
-    case VK_SHADER_STAGE_VERTEX_BIT                  : return "VS";
-    case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT    : return "HS";
-    case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT : return "DS";
-    case VK_SHADER_STAGE_GEOMETRY_BIT                : return "GS";
-    case VK_SHADER_STAGE_FRAGMENT_BIT                : return "PS";
-    case VK_SHADER_STAGE_COMPUTE_BIT                 : return "CS";
+    case SPV_REFLECT_SHADER_STAGE_VERTEX_BIT                  : return "VS";
+    case SPV_REFLECT_SHADER_STAGE_TESSELLATION_CONTROL_BIT    : return "HS";
+    case SPV_REFLECT_SHADER_STAGE_TESSELLATION_EVALUATION_BIT : return "DS";
+    case SPV_REFLECT_SHADER_STAGE_GEOMETRY_BIT                : return "GS";
+    case SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT                : return "PS";
+    case SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT                 : return "CS";
   }
   return "";
 }
@@ -83,23 +83,19 @@ const char* ToStringHlslResourceType(SpvReflectResourceType type)
   return "";
 }
 
-std::string ToStringVkDescriptorType(VkDescriptorType value) {
+std::string ToStringDescriptorType(SpvReflectDescriptorType value) {
   switch (value) {
-    case VK_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER";
-    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER";
-    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE";
-    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE          : return "VK_DESCRIPTOR_TYPE_STORAGE_IMAGE";
-    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER";
-    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER";
-    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER";
-    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER         : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER";
-    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC";
-    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC";
-    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       : return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT";
-
-    case VK_DESCRIPTOR_TYPE_RANGE_SIZE:
-    case VK_DESCRIPTOR_TYPE_MAX_ENUM:
-      break;
+    case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE          : return "VK_DESCRIPTOR_TYPE_STORAGE_IMAGE";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER         : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       : return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT";
   }
   return "";
 }
@@ -173,6 +169,7 @@ std::string ToStringBuiltIn(SpvBuiltIn value)
     case SpvBuiltInViewportMaskPerViewNV : return "ViewportMaskPerViewNV";
 
     case SpvBuiltInMax:
+    default:
       break;
   }
   return "";
@@ -405,7 +402,7 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
   if (write_set) {
     os << t << "set     : " << obj.set << "\n";
   }
-  os << t << "type    : " << ToStringVkDescriptorType(obj.descriptor_type);
+  os << t << "type    : " << ToStringDescriptorType(obj.descriptor_type);
   os << " " << "(" << ToStringHlslResourceType(obj.resource_type) << ")" << "\n";
   
   // array
@@ -433,7 +430,8 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
     os << " " << "(" << obj.type_description->type_name << ")";
   }
 
-  if (obj.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+  if (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+      obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
     std::vector<TextLine> text_lines;
     ParseBlockMembersToTextLines("    ", 1, 1, &obj.block, &text_lines);
     if (!text_lines.empty()) {
@@ -685,7 +683,7 @@ int main(int argn, char** argv)
         if (printed_count > 0) {
           std::cout << ";";
         }
-        std::cout << ToStringVulkanShaderStage(reflection.GetVulkanShaderStage());
+        std::cout << ToStringShaderStage(reflection.GetShaderStage());
       }
 
       std::cout << std::endl;
