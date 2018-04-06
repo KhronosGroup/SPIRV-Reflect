@@ -1096,6 +1096,12 @@ static int SortCompareDescriptorBinding(const void* a, const void* b)
   const SpvReflectDescriptorBinding* p_elem_a = (const SpvReflectDescriptorBinding*)a;
   const SpvReflectDescriptorBinding* p_elem_b = (const SpvReflectDescriptorBinding*)b;
   int value = (int)(p_elem_a->binding) - (int)(p_elem_b->binding);
+  if (value == 0) {
+    // use spirv-id as a tiebreaker to ensure a stable ordering, as they're guaranteed
+    // unique.
+    assert(p_elem_a->spirv_id != p_elem_b->spirv_id);
+    value = (int)(p_elem_a->spirv_id) - (int)(p_elem_b->spirv_id);
+  }
   return value;
 }
 
@@ -1824,6 +1830,9 @@ static int SortCompareDescriptorSet(const void* a, const void* b)
   const SpvReflectDescriptorSet* p_elem_a = (const SpvReflectDescriptorSet*)a;
   const SpvReflectDescriptorSet* p_elem_b = (const SpvReflectDescriptorSet*)b;
   int value = (int)(p_elem_a->set) - (int)(p_elem_b->set);
+  // We should never see duplicate descriptor set numbers in a shader; if so, a tiebreaker
+  // would be needed here.
+  assert(value != 0);
   return value;
 }
 
