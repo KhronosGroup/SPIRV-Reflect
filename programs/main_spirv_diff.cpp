@@ -14,6 +14,26 @@
  limitations under the License.
 */
 
+/*
+
+VERSION HISTORY
+
+  1.0   (2018-04-17) Initial implementation
+
+*/
+
+/*
+spirv-diff - diffs interface variables and bindings for two SPIR-V files.
+
+Return Code:
+ -1   Diff failure
+  0   SPIR-V input files A and B are the same
+  1   Shader I/O variables are different between A and B
+  2   Descriptors are different between A and B
+  3   Shader I/O variables and descriptor bindings are different between A and B
+
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <cstring>
