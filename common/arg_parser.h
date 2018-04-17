@@ -1,5 +1,5 @@
-#ifndef __VERIFLECT_ARG_PARSER_H__
-#define __VERIFLECT_ARG_PARSER_H__
+#ifndef __SPIRV_REFLECT_ARG_PARSER_H__
+#define __SPIRV_REFLECT_ARG_PARSER_H__
 
 #include <iostream>
 #include <string>
@@ -66,4 +66,4 @@ private:
   std::vector<std::string>       m_args;
 };
 
-#endif // __VERIFLECT_ARG_PARSER_H__
+#endif // __SPIRV_REFLECT_ARG_PARSER_H__

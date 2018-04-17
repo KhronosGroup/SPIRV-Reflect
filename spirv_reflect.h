@@ -648,6 +648,32 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariableBySemantic(
   SpvReflectResult*             p_result
 );
 
+/* @fn spvReflectGetInputVariableByBuiltIn
+
+ @param  p_module  Pointer to an instance of SpvReflectShaderModule.
+ @param  built_in  The "built_in" value of the requested input variable.
+                   A unrecognized built_in will return NULL with
+                   *p_result == ELEMENT_NOT_FOUND.
+ @param  p_result  If successful, SPV_REFLECT_RESULT_SUCCESS will be
+                   written to *p_result. Otherwise, a error code
+                   indicating the cause of the failure will be stored
+                   here.
+ @return           If the module contains an input interface variable
+                   with the provided built_in, a pointer to that
+                   variable is returned. The caller must not free this
+                   pointer.
+                   If no match can be found, or if an unrelated error
+                   occurs, the return value will be NULL. Detailed
+                   error results are written to *pResult.
+@note
+
+*/
+const SpvReflectInterfaceVariable* spvReflectGetInputVariableByBuiltIn(
+  const SpvReflectShaderModule* p_module,
+  SpvBuiltIn                    built_in,
+  SpvReflectResult*             p_result
+);
+
 /* @fn spvReflectGetOutputVariableByLocation
 
  @param  p_module  Pointer to an instance of SpvReflectShaderModule.
@@ -705,6 +731,32 @@ const SpvReflectInterfaceVariable* spvReflectGetOutputVariableBySemantic(
   const SpvReflectShaderModule*  p_module,
   const char*                    semantic,
   SpvReflectResult*              p_result
+);
+
+/* @fn spvReflectGetOutputVariableByBuiltIn
+
+ @param  p_module  Pointer to an instance of SpvReflectShaderModule.
+ @param  built_in  The "built_in" value of the requested output variable.
+                   A unrecognized built_in will return NULL with
+                   *p_result == ELEMENT_NOT_FOUND.
+ @param  p_result  If successful, SPV_REFLECT_RESULT_SUCCESS will be
+                   written to *p_result. Otherwise, a error code
+                   indicating the cause of the failure will be stored
+                   here.
+ @return           If the module contains an input interface variable
+                   with the provided built_in, a pointer to that
+                   variable is returned. The caller must not free this
+                   pointer.
+                   If no match can be found, or if an unrelated error
+                   occurs, the return value will be NULL. Detailed
+                   error results are written to *pResult.
+@note
+
+*/
+const SpvReflectInterfaceVariable* spvReflectGetOutputVariableByBuiltIn(
+  const SpvReflectShaderModule* p_module,
+  SpvBuiltIn                    built_in,
+  SpvReflectResult*             p_result
 );
 
 /*! @fn spvReflectGetPushConstantBlock
@@ -897,21 +949,23 @@ public:
 
   const SpvReflectDescriptorBinding*  GetDescriptorBinding(uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
   const SpvReflectDescriptorSet*      GetDescriptorSet(uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
-  const SpvReflectInterfaceVariable*  GetInputVariableByLocation(uint32_t location,  SpvReflectResult* p_result = nullptr) const;
+  const SpvReflectInterfaceVariable*  GetInputVariableByLocation(uint32_t location, SpvReflectResult* p_result = nullptr) const;
   SPV_REFLECT_DEPRECATED("Renamed to GetInputVariableByLocation")
   const SpvReflectInterfaceVariable*  GetInputVariable(uint32_t location,  SpvReflectResult* p_result = nullptr) const {
     return GetInputVariableByLocation(location, p_result);
   }
   const SpvReflectInterfaceVariable*  GetInputVariableBySemantic(const char* semantic,  SpvReflectResult* p_result = nullptr) const;
-  const SpvReflectInterfaceVariable*  GetOutputVariableByLocation(uint32_t location, SpvReflectResult*  p_result = nullptr) const;
+  const SpvReflectInterfaceVariable*  GetInputVariableByBuiltIn(SpvBuiltIn built_in, SpvReflectResult* p_result = nullptr) const;
+  const SpvReflectInterfaceVariable*  GetOutputVariableByLocation(uint32_t location, SpvReflectResult* p_result = nullptr) const;
   SPV_REFLECT_DEPRECATED("Renamed to GetOutputVariableByLocation")
   const SpvReflectInterfaceVariable*  GetOutputVariable(uint32_t location, SpvReflectResult*  p_result = nullptr) const {
     return GetOutputVariableByLocation(location, p_result);
   }
-  const SpvReflectInterfaceVariable*  GetOutputVariableBySemantic(const char* semantic, SpvReflectResult*  p_result = nullptr) const;
-  const SpvReflectBlockVariable*      GetPushConstantBlock(uint32_t index, SpvReflectResult*  p_result = nullptr) const;
+  const SpvReflectInterfaceVariable*  GetOutputVariableBySemantic(const char* semantic, SpvReflectResult* p_result = nullptr) const;
+  const SpvReflectInterfaceVariable*  GetOutputVariableByBuiltIn(SpvBuiltIn built_in, SpvReflectResult* p_result = nullptr) const;
+  const SpvReflectBlockVariable*      GetPushConstantBlock(uint32_t index, SpvReflectResult* p_result = nullptr) const;
   SPV_REFLECT_DEPRECATED("Renamed to GetPushConstantBlock")
-  const SpvReflectBlockVariable*      GetPushConstant(uint32_t index, SpvReflectResult*  p_result = nullptr) const {
+  const SpvReflectBlockVariable*      GetPushConstant(uint32_t index, SpvReflectResult* p_result = nullptr) const {
     return GetPushConstantBlock(index, p_result);
   }
 
@@ -1170,8 +1224,8 @@ inline const SpvReflectInterfaceVariable* ShaderModule::GetInputVariableByLocati
 ) const
 {
   return spvReflectGetInputVariableByLocation(&m_module,
-                                    location,
-                                    p_result);
+                                              location,
+                                              p_result);
 }
 inline const SpvReflectInterfaceVariable* ShaderModule::GetInputVariableBySemantic(
   const char*       semantic,
@@ -1181,6 +1235,15 @@ inline const SpvReflectInterfaceVariable* ShaderModule::GetInputVariableBySemant
   return spvReflectGetInputVariableBySemantic(&m_module,
                                               semantic,
                                               p_result);
+}
+inline const SpvReflectInterfaceVariable* ShaderModule::GetInputVariableByBuiltIn(
+  SpvBuiltIn        built_in,
+  SpvReflectResult* p_result
+) const
+{
+  return spvReflectGetInputVariableByBuiltIn(&m_module,
+                                             built_in,
+                                             p_result);
 }
 
 
@@ -1208,6 +1271,15 @@ inline const SpvReflectInterfaceVariable* ShaderModule::GetOutputVariableBySeman
   return spvReflectGetOutputVariableBySemantic(&m_module,
     semantic,
     p_result);
+}
+inline const SpvReflectInterfaceVariable* ShaderModule::GetOutputVariableByBuiltIn(
+  SpvBuiltIn        built_in,
+  SpvReflectResult* p_result
+) const
+{
+  return spvReflectGetOutputVariableByBuiltIn(&m_module,
+                                              built_in,
+                                              p_result);
 }
 
 

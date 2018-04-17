@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "spirv_reflect.h"
-#include "examples/common.h"
+#include "common.h"
 
 const char* ToStringHlslResourceType(SpvReflectResourceType type)
 {

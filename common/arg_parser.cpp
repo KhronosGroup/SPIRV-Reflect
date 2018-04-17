@@ -137,6 +137,10 @@ bool ArgParser::Parse(int argc, char** argv, std::ostream& os)
     opt.parsed = false;
   }
 
+  if (argc == 1) {
+    return false;
+  }
+
   int i = 1;
   while (i < argc) {
     std::string s = argv[i];
@@ -221,12 +225,13 @@ bool ArgParser::Parse(int argc, char** argv, std::ostream& os)
 
 size_t ArgParser::GetArgCount() const
 {
-  return m_args.size();
+  size_t count = m_args.size();
+  return count;
 }
 
 bool ArgParser::GetArg(size_t i, std::string* p_value) const
 {
-  if ((GetArgCount() == 0) && (i >= GetArgCount())) {
+  if ((GetArgCount() == 0) || (i >= GetArgCount())) {
     return false;
   }
 

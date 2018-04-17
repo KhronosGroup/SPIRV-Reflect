@@ -37,10 +37,12 @@ include_directories(${SPIRV_REFLECT_SPIRV_HEADERS_DIR})
 add_executable(spirv-reflect ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
                              ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h
                              ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.c
-                             ${CMAKE_CURRENT_SOURCE_DIR}/examples/arg_parser.h
-                             ${CMAKE_CURRENT_SOURCE_DIR}/examples/arg_parser.cpp
-                             ${CMAKE_CURRENT_SOURCE_DIR}/examples/common.h
-                             ${CMAKE_CURRENT_SOURCE_DIR}/examples/common.cpp)
+                             ${CMAKE_CURRENT_SOURCE_DIR}/common/arg_parser.h
+                             ${CMAKE_CURRENT_SOURCE_DIR}/common/arg_parser.cpp
+                             ${CMAKE_CURRENT_SOURCE_DIR}/common/common.h
+                             ${CMAKE_CURRENT_SOURCE_DIR}/common/common.cpp
+                             ${CMAKE_CURRENT_SOURCE_DIR}/common/to_string.h
+                             ${CMAKE_CURRENT_SOURCE_DIR}/common/to_string.cpp)
 target_compile_options(spirv-reflect PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
     $<$<CXX_COMPILER_ID:GNU>:-Wall -Werror>
@@ -49,6 +51,7 @@ target_compile_options(spirv-reflect PRIVATE
 target_include_directories(spirv-reflect PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(examples)
+add_subdirectory(programs)
 add_subdirectory(util/stripper)
 
 install(TARGETS spirv-reflect RUNTIME DESTINATION bin)
