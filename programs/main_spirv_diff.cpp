@@ -558,17 +558,21 @@ int Diff(
 { 
   int result = DIFF_RESULT_NO_DIFFERENCE;
   // Input/output variables
-  int result_diff = DiffIoVars(reflection_a, reflection_b, os);
-  if (result_diff == DIFF_FAILURE) {
-    return DIFF_FAILURE;
+  if (diff_options & DIFF_OPTIONS_IO_VARS) {
+    int result_diff = DiffIoVars(reflection_a, reflection_b, os);
+    if (result_diff == DIFF_FAILURE) {
+      return DIFF_FAILURE;
+    }
+    result |= (result_diff == DIFF_DIFFERENCE) ? DIFF_RESULT_IO_VARS : DIFF_RESULT_NO_DIFFERENCE;
   }
-  result |= (result_diff == DIFF_DIFFERENCE) ? DIFF_RESULT_IO_VARS : DIFF_RESULT_NO_DIFFERENCE;
   // Descriptors
-  result_diff = DiffDescriptors(reflection_a, reflection_b, os);
-  if (result_diff == DIFF_FAILURE) {
-    return DIFF_FAILURE;
+  if (diff_options & DIFF_OPTIONS_DESCRIPTORS) {
+    int result_diff = DiffDescriptors(reflection_a, reflection_b, os);
+    if (result_diff == DIFF_FAILURE) {
+      return DIFF_FAILURE;
+    }
+    result |= (result_diff == DIFF_DIFFERENCE) ? DIFF_RESULT_DESCRIPTORS : DIFF_RESULT_NO_DIFFERENCE;
   }
-  result |= (result_diff == DIFF_DIFFERENCE) ? DIFF_RESULT_DESCRIPTORS : DIFF_RESULT_NO_DIFFERENCE;  
   return result;
 }
 

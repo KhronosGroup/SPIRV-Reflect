@@ -692,6 +692,14 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
      continue;
     }
 
+    uint32_t member_offset = (p_node->op == SpvOpMemberDecorate) ? 1 : 0;
+    uint32_t decoration = (uint32_t)INVALID_VALUE;
+    CHECKED_READU32(p_parser, p_node->word_offset + member_offset + 2, decoration);
+    
+    if (decoration == SpvDecorationRelaxedPrecision) {
+      continue;
+    }
+
     uint32_t target_id = 0;
     CHECKED_READU32(p_parser, p_node->word_offset + 1, target_id);
     Node* p_target_node = FindNode(p_parser, target_id);
@@ -699,17 +707,12 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     }
     Decorations* p_target_decorations = &(p_target_node->decorations);
-
-    uint32_t member_offset = 0;
     if (p_node->op == SpvOpMemberDecorate) {
-      member_offset = 1;
       uint32_t member_index = (uint32_t)INVALID_VALUE;
       CHECKED_READU32(p_parser, p_node->word_offset + 2, member_index);
       p_target_decorations = &(p_target_node->member_decorations[member_index]);
     }
 
-    uint32_t decoration = (uint32_t)INVALID_VALUE;
-    CHECKED_READU32(p_parser, p_node->word_offset + member_offset + 2, decoration);
     switch (decoration) {
       default: break;
 
