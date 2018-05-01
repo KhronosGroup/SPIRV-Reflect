@@ -692,24 +692,65 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
      continue;
     }
 
+    // Need to adjust the read offset if this is a member decoration
+    uint32_t member_offset = 0;
+    if (p_node->op == SpvOpMemberDecorate) {
+      member_offset = 1;
+    }
+
+    // Get decoration
+    uint32_t decoration = (uint32_t)INVALID_VALUE;
+    CHECKED_READU32(p_parser, p_node->word_offset + member_offset + 2, decoration);
+
+    // Filter out the decoration that do not affect reflection, otherwise
+    // there will be random crashes because the nodes aren't found.
+    bool skip = false;
+    switch (decoration) {
+      default: {
+        skip = true;
+      }
+      break; 
+      case SpvDecorationBlock:
+      case SpvDecorationBufferBlock:
+      case SpvDecorationColMajor:
+      case SpvDecorationRowMajor:
+      case SpvDecorationArrayStride:
+      case SpvDecorationMatrixStride:
+      case SpvDecorationBuiltIn:
+      case SpvDecorationNoPerspective:
+      case SpvDecorationFlat:
+      case SpvDecorationNonWritable:
+      case SpvDecorationLocation:
+      case SpvDecorationBinding:
+      case SpvDecorationDescriptorSet:
+      case SpvDecorationOffset:
+      case SpvDecorationInputAttachmentIndex:
+      case SpvReflectDecorationHlslCounterBufferGOOGLE:
+      case SpvReflectDecorationHlslSemanticGOOGLE: {
+        skip = false;
+      }
+      break;    
+    }
+    if (skip) {
+      continue;
+    }  
+    
+    // Find target target node 
     uint32_t target_id = 0;
     CHECKED_READU32(p_parser, p_node->word_offset + 1, target_id);
     Node* p_target_node = FindNode(p_parser, target_id);
     if (IsNull(p_target_node)) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     }
+    // Get decorations
     Decorations* p_target_decorations = &(p_target_node->decorations);
-
-    uint32_t member_offset = 0;
+    // Update pointer if this is a member member decoration
     if (p_node->op == SpvOpMemberDecorate) {
-      member_offset = 1;
       uint32_t member_index = (uint32_t)INVALID_VALUE;
       CHECKED_READU32(p_parser, p_node->word_offset + 2, member_index);
       p_target_decorations = &(p_target_node->member_decorations[member_index]);
     }
 
-    uint32_t decoration = (uint32_t)INVALID_VALUE;
-    CHECKED_READU32(p_parser, p_node->word_offset + member_offset + 2, decoration);
     switch (decoration) {
       default: break;
 
