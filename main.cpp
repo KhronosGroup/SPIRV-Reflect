@@ -331,7 +331,7 @@ void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent
   }
 }
 
-void StreamWrite(std::ostream& os, const char* indent, const std::vector<TextLine>& text_lines)
+void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vector<TextLine>& text_lines)
 {
   std::vector<TextLine> formatted_lines;
   FormatTextLines(text_lines, indent, &formatted_lines);
@@ -395,13 +395,13 @@ void StreamWrite(std::ostream& os, const char* indent, const std::vector<TextLin
   }
 }
 
-void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, const char* indent = "")
+void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, const char* indent = "")
 {
   const char* t = indent;
-  os << t << "binding : " << obj.binding << "\n";
   if (write_set) {
     os << t << "set     : " << obj.set << "\n";
   }
+  os << t << "binding : " << obj.binding << "\n";
   os << t << "type    : " << ToStringDescriptorType(obj.descriptor_type);
   os << " " << "(" << ToStringHlslResourceType(obj.resource_type) << ")" << "\n";
   
@@ -436,13 +436,13 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
     ParseBlockMembersToTextLines("    ", 1, 1, &obj.block, &text_lines);
     if (!text_lines.empty()) {
       os << "\n";
-      StreamWrite(os, t, text_lines);
+      StreamWriteTextLines(os, t, text_lines);
       os << "\n";
     }
   }
 }
 
-void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const char* indent = "")
+void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVariable& obj, const char* indent = "")
 {
   const char* t = indent;
   os << t << "location  : ";
@@ -466,7 +466,7 @@ void StreamWrite(std::ostream& os, const SpvReflectInterfaceVariable& obj, const
   }
 }
 
-void StreamWrite(std::ostream& os, const SpvReflectShaderModule& obj, const char* /*indent*/ = "")
+void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj, const char* /*indent*/ = "")
 {
   os << "entry point     : " << obj.entry_point_name << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
@@ -475,7 +475,7 @@ void StreamWrite(std::ostream& os, const SpvReflectShaderModule& obj, const char
 
 std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorBinding& obj)
 {
-  StreamWrite(os, obj, true, "  ");
+  StreamWriteDescriptorBinding(os, obj, true, "  ");
   return os;
 }
 
@@ -484,8 +484,9 @@ std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorSet& obj)
   PrintDescriptorSet(os, obj, "  ");
   os << "\n";
   for (uint32_t i = 0; i < obj.binding_count; ++i) {
+    const auto p_binding = obj.bindings[i];
     os << "   " << i << ":"  << "\n";
-    StreamWrite(os, *obj.bindings[i], false, "    ");
+    StreamWriteDescriptorBinding(os, *p_binding, false, "    ");
     if (i < (obj.binding_count - 1)) {
       os << "\n";
     }
@@ -504,7 +505,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
   const char* tt    = "    ";
   const char* ttt   = "      ";
 
-  StreamWrite(os, obj.GetShaderModule(), "");
+  StreamWriteShaderModule(os, obj.GetShaderModule(), "");
 
   SpvReflectResult result = SPV_REFLECT_RESULT_NOT_READY;
   uint32_t count = 0;
@@ -521,12 +522,13 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
   if (count > 0) {
     os << "\n";
     os << "\n";
-    os << t << "input variables: " << count << "\n";
+    os << "\n";
+    os << t << "Input variables: " << count << "\n\n";
     for (size_t i = 0; i < variables.size(); ++i) {
       auto p_var = variables[i];
       assert(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
-      StreamWrite(os, *p_var, ttt);
+      StreamWriteInterfaceVariable(os, *p_var, ttt);
       if (i < (count - 1)) {
         os << "\n";
       }  
@@ -542,12 +544,13 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
   if (count > 0) {
     os << "\n";
     os << "\n";
-    os << t << "output variables: " << count << "\n";
+    os << "\n";
+    os << t << "Output variables: " << count << "\n\n";
     for (size_t i = 0; i < variables.size(); ++i) {
       auto p_var = variables[i];
       assert(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
-      StreamWrite(os, *p_var, ttt);
+      StreamWriteInterfaceVariable(os, *p_var, ttt);
       if (i < (count - 1)) {
         os << "\n";
       }  
@@ -563,18 +566,20 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
   if (count > 0) {
     os << "\n";
     os << "\n";
-    os << t << "Descriptor bindings: " << count << "\n";
+    os << "\n";
+    os << t << "Descriptor bindings: " << count << "\n\n";
     for (size_t i = 0; i < bindings.size(); ++i) {
       auto p_binding = bindings[i];
       assert(result == SPV_REFLECT_RESULT_SUCCESS);
-      os << tt << i << ":" << "\n";
-      StreamWrite(os, *p_binding, true, ttt);
+      os << tt << "Binding" << " " << p_binding->set << "." << p_binding->binding << "" << "\n";
+      StreamWriteDescriptorBinding(os, *p_binding, true, ttt);
       if (i < (count - 1)) {
-        os << "\n";
+        os << "\n\n";
       }  
     }
   }
 
+  /*
   count = 0;
   result = obj.EnumerateDescriptorSets(&count, nullptr);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
@@ -595,6 +600,7 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       }  
     }
   }
+  */
 
   return os;
 }
