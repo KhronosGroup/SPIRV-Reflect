@@ -20,10 +20,12 @@ enum Generator {
   GENERATOR_CLAY_CLAY_SHADER_COMPILER             = 19,
 };
 
-enum TextLineFlags {
-  TEXT_LINE_FLAGS_STRUCT_BEGIN  = 0x01,
-  TEXT_LINE_FLAGS_STRUCT_END    = 0x02,
-  TEXT_LINE_FLAGS_LINES         = 0x04,
+enum TextLineType {
+  TEXT_LINE_TYPE_BLOCK_BEGIN   = 0x01,
+  TEXT_LINE_TYPE_BLOCK_END     = 0x02,
+  TEXT_LINE_TYPE_STRUCT_BEGIN  = 0x04,
+  TEXT_LINE_TYPE_STRUCT_END    = 0x08,
+  TEXT_LINE_TYPE_LINES         = 0x10,
 };
 
 struct TextLine {
@@ -35,6 +37,7 @@ struct TextLine {
   uint32_t              absolute_offset;
   uint32_t              size;
   uint32_t              padded_size;
+  uint32_t              array_stride;
   uint32_t              flags;
   std::vector<TextLine> lines;
   std::string           formatted_line;
@@ -42,6 +45,7 @@ struct TextLine {
   std::string           formatted_absolute_offset;
   std::string           formatted_size;
   std::string           formatted_padded_size;
+  std::string           formatted_array_stride;
 };
 
 const char* ToStringGenerator(Generator generator)
@@ -227,7 +231,8 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
     std::string expanded_indent = ss_indent.str();
 
     const auto& member = p_members[member_index];
-    if (member.member_count > 0) {
+    bool is_struct = member.type_description->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT;
+    if (is_struct) {
       // Begin struct
       TextLine tl = {};
       tl.indent = expanded_indent;
@@ -236,24 +241,34 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       tl.absolute_offset = member.absolute_offset;
       tl.size = member.size;
       tl.padded_size = member.padded_size;
-      tl.flags = TEXT_LINE_FLAGS_STRUCT_BEGIN;
+      tl.array_stride = member.array.stride;
+      tl.flags = TEXT_LINE_TYPE_STRUCT_BEGIN;
       p_text_lines->push_back(tl);
 
       // Members
       tl = {};
       ParseBlockMembersToTextLines(t, indent_depth + 1, member.member_count, member.members, &tl.lines);
-      tl.flags = TEXT_LINE_FLAGS_LINES;
+      tl.flags = TEXT_LINE_TYPE_LINES;
       p_text_lines->push_back(tl);      
 
       // End struct
       tl = {};
       tl.indent = expanded_indent;
       tl.name = member.name;
+      if (member.array.dims_count > 0) {
+        std::stringstream ss_array;
+        for (uint32_t array_dim_index = 0; array_dim_index < member.array.dims_count; ++array_dim_index) {
+          uint32_t dim = member.array.dims[array_dim_index];
+          ss_array << "[" << dim << "]";
+        }
+        tl.name += ss_array.str();
+      }
       tl.offset = member.offset;
       tl.absolute_offset = member.absolute_offset;
       tl.size = member.size;
       tl.padded_size = member.padded_size;
-      tl.flags = TEXT_LINE_FLAGS_STRUCT_END;
+      tl.array_stride = member.array.stride;
+      tl.flags = TEXT_LINE_TYPE_STRUCT_END;
       p_text_lines->push_back(tl);      
     }
     else {
@@ -261,13 +276,55 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       tl.indent = expanded_indent;
       tl.type_name = ToStringComponentType(*member.type_description, member.decoration_flags);
       tl.name = member.name;
+      if (member.array.dims_count > 0) {
+        std::stringstream ss_array;
+        for (uint32_t array_dim_index = 0; array_dim_index < member.array.dims_count; ++array_dim_index) {
+          uint32_t dim = member.array.dims[array_dim_index];
+          ss_array << "[" << dim << "]";
+        }
+        tl.name += ss_array.str();
+      }
       tl.offset = member.offset;
       tl.absolute_offset = member.absolute_offset;
       tl.size = member.size;
+      tl.array_stride = member.array.stride;
       tl.padded_size = member.padded_size;
       p_text_lines->push_back(tl);      
     }
   }
+}
+
+void ParseBlockVariableToTextLines(const char* indent, const SpvReflectBlockVariable& block_var, std::vector<TextLine>* p_text_lines)
+{
+  (void)indent;
+  (void)block_var;
+  (void)p_text_lines;
+
+  // Begin struct
+  TextLine tl = {};
+  tl.indent = indent;
+  tl.type_name = block_var.type_description->type_name;
+  tl.size = block_var.size;
+  tl.padded_size = block_var.padded_size;
+  tl.flags = TEXT_LINE_TYPE_BLOCK_BEGIN;
+  p_text_lines->push_back(tl);
+
+  // Members
+  tl = {};
+  ParseBlockMembersToTextLines(indent, 2, block_var.member_count, block_var.members, &tl.lines);
+  tl.flags = TEXT_LINE_TYPE_LINES;
+  p_text_lines->push_back(tl);    
+
+  // End struct
+  tl = {};
+  tl.indent = indent;
+  tl.name = block_var.name;
+  tl.offset = 0;
+  tl.absolute_offset = 0;
+  tl.size = block_var.size;
+  tl.padded_size = block_var.padded_size;
+  tl.flags = TEXT_LINE_TYPE_BLOCK_END;
+  p_text_lines->push_back(tl);
 }
 
 void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent, std::vector<TextLine>* p_formatted_lines)
@@ -292,21 +349,21 @@ void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent
     auto& tl = text_lines[i];
 
     std::stringstream ss;
-    if (tl.flags & TEXT_LINE_FLAGS_STRUCT_BEGIN) {
+    if ((tl.flags == TEXT_LINE_TYPE_BLOCK_BEGIN) || (tl.flags == TEXT_LINE_TYPE_STRUCT_BEGIN)) {
       ss << indent;
       ss << tl.indent;
       ss << "struct ";
       ss << tl.type_name;
       ss << " {";
     }
-    else if (tl.flags & TEXT_LINE_FLAGS_STRUCT_END) {
+    else if ((tl.flags == TEXT_LINE_TYPE_BLOCK_END) || (tl.flags == TEXT_LINE_TYPE_STRUCT_END)) {
       ss << indent;
       ss << tl.indent;
       ss << "} ";
       ss << tl.name;
       ss << ";";
     }
-    else if (tl.flags & TEXT_LINE_FLAGS_LINES) {
+    else if (tl.flags == TEXT_LINE_TYPE_LINES) {
       FormatTextLines(tl.lines, indent, p_formatted_lines);
     }
     else {
@@ -325,11 +382,13 @@ void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent
     TextLine out_tl = {};
     out_tl.formatted_line = ss.str();
     if (out_tl.formatted_line.length() > 0) {
+     out_tl.array_stride = tl.array_stride;
       out_tl.flags = tl.flags;
       out_tl.formatted_offset = std::to_string(tl.offset);
       out_tl.formatted_absolute_offset = std::to_string(tl.absolute_offset);
       out_tl.formatted_size = std::to_string(tl.size);
       out_tl.formatted_padded_size = std::to_string(tl.padded_size);
+      out_tl.formatted_array_stride = std::to_string(tl.array_stride);
       p_formatted_lines->push_back(out_tl);
     }
   }
@@ -345,14 +404,19 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
   size_t absolute_offset_width = 0;
   size_t size_width = 0;
   size_t padded_size_width = 0;
+  size_t array_stride_width = 0;
 
   // Width
   for (auto& tl : formatted_lines) {
+    if (tl.flags != 0) {
+      continue;
+    }
     line_width = std::max<size_t>(line_width, tl.formatted_line.length());
     offset_width = std::max<size_t>(offset_width, tl.formatted_offset.length());
     absolute_offset_width = std::max<size_t>(absolute_offset_width, tl.formatted_absolute_offset.length());
     size_width = std::max<size_t>(size_width, tl.formatted_size.length());
     padded_size_width = std::max<size_t>(padded_size_width, tl.formatted_padded_size.length());
+    array_stride_width = std::max<size_t>(array_stride_width, tl.formatted_array_stride.length());
   }
 
   size_t n = formatted_lines.size();
@@ -360,7 +424,7 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
     auto& tl = formatted_lines[i];
 
 
-    if (tl.flags == TEXT_LINE_FLAGS_STRUCT_BEGIN) {
+    if (tl.flags == TEXT_LINE_TYPE_BLOCK_BEGIN) {
       if (i > 0) {
         os << "\n";
       }
@@ -369,8 +433,6 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
       if (pos != std::string::npos) {
         std::string s(pos, ' ');
         os << s << "//" << " ";
-        os << "offset = " << tl.formatted_offset << ", ";
-        os << "abs offset = " << tl.formatted_absolute_offset << ", ";
         os << "size = " << tl.formatted_size << ", ";
         os << "padded size = " << tl.formatted_padded_size;
         os << "\n";
@@ -378,7 +440,35 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
 
       os << std::setw(line_width) << std::left << tl.formatted_line;
     }
-    else if (tl.flags == TEXT_LINE_FLAGS_STRUCT_END) {
+    else if (tl.flags == TEXT_LINE_TYPE_BLOCK_END) {
+      os << std::setw(line_width) << std::left << tl.formatted_line;
+      if (i < (n - 1)) {
+        os << "\n";
+      }
+    }
+    else if (tl.flags == TEXT_LINE_TYPE_STRUCT_BEGIN) {
+      if (i > 0) {
+        os << "\n";
+      }
+
+      size_t pos = tl.formatted_line.find_first_not_of(' ');
+      if (pos != std::string::npos) {
+        std::string s(pos, ' ');
+        os << s << "//" << " ";
+        os << "rel offset = " << tl.formatted_offset << ", ";
+        os << "abs offset = " << tl.formatted_absolute_offset << ", ";
+        os << "size = " << tl.formatted_size << ", ";
+        os << "padded size = " << tl.formatted_padded_size;
+        if (tl.array_stride > 0) {
+          os << ", ";
+          os << "array stride = " << tl.formatted_array_stride;
+        }
+        os << "\n";
+      }
+
+      os << std::setw(line_width) << std::left << tl.formatted_line;
+    }
+    else if (tl.flags == TEXT_LINE_TYPE_STRUCT_END) {
       os << std::setw(line_width) << std::left << tl.formatted_line;
       if (i < (n - 1)) {
         os << "\n";
@@ -387,10 +477,14 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
     else {
       os << std::setw(line_width) << std::left << tl.formatted_line;
       os << " " << "//" << " ";
-      os << "offset = " << std::setw(offset_width) << std::right << tl.formatted_offset << ", ";
+      os << "rel offset = " << std::setw(offset_width) << std::right << tl.formatted_offset << ", ";
       os << "abs offset = " << std::setw(absolute_offset_width) << std::right << tl.formatted_absolute_offset << ", ";
       os << "size = " << std::setw(size_width) << std::right << tl.formatted_size << ", ";
       os << "padded size = " << std::setw(padded_size_width) << std::right << tl.formatted_padded_size;
+      if (tl.array_stride > 0) {
+        os << ", ";
+        os << "array stride = " << std::setw(array_stride_width) << tl.formatted_array_stride;
+      }
     }
 
     if (i < (n - 1)) {
@@ -437,7 +531,7 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
   if (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
       obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
     std::vector<TextLine> text_lines;
-    ParseBlockMembersToTextLines("    ", 1, 1, &obj.block, &text_lines);
+    ParseBlockVariableToTextLines("    ",  obj.block, &text_lines);
     if (!text_lines.empty()) {
       os << "\n";
       StreamWriteTextLines(os, t, text_lines);

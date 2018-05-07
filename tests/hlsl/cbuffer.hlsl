@@ -1,18 +1,41 @@
 
+struct OmniNormalStength {
+  float   Front;
+  float   Back;
+  float   Top;
+  float   Bottom;
+  float   Left;
+  float   Right;
+};
+
+struct ClothProperties {
+  float3            NormalAdjust;
+  OmniNormalStength Strengths;
+  uint              Type;
+};
+
+struct AuxData {
+  ClothProperties ClothProperties[8];
+  float3          ClothColors[8];
+  float           Scales[8];
+  int             EnableBitMask;
+};
 
 struct MaterialData {
   float3  Color;
   float   Specular;
   float   Diffuse;
+  AuxData AuxDatArray[10];
 };
 
 cbuffer MyCBuffer {
+  MaterialData  Material[2][2][3];  
   float4x4      ModelMatrix;
   float4x4      ProjectionMatrix;
   float         Time;
   float3        Scale;  
-  float2        UvOffset;
-  MaterialData  Material;
+  float2        UvOffsets[12];
+  //MaterialData  Material[12];
   bool          EnableTarget;
 };
 
