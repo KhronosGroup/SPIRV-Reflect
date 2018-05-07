@@ -496,7 +496,6 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
       case SpvOpTypeVector:
       case SpvOpTypeMatrix:
       case SpvOpTypeSampler:
-      case SpvOpTypeRuntimeArray:
       case SpvOpTypeStruct:
       case SpvOpTypeOpaque:
       case SpvOpTypeFunction:
@@ -535,6 +534,13 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_id);
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->array_traits.element_type_id);
         CHECKED_READU32(p_parser, p_node->word_offset + 3, p_node->array_traits.length_id);
+        p_node->is_type = true;
+      }
+      break;
+
+      case SpvOpTypeRuntimeArray:  {
+        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_id);
+        CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->array_traits.element_type_id);
         p_node->is_type = true;
       }
       break;
@@ -1420,8 +1426,8 @@ static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflec
     if (IsNull(p_type_node)) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     }
-    // Resolve to struct type if current type is array
-    while (p_type_node->op == SpvOpTypeArray) {
+    // Resolve to struct type if current type is array or runtime array
+    while ((p_type_node->op == SpvOpTypeArray) || (p_type_node->op == SpvOpTypeRuntimeArray)) {
       p_type_node = FindNode(p_parser, p_type_node->array_traits.element_type_id);
       if (IsNull(p_type_node)) {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
