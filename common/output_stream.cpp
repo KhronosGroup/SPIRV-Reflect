@@ -7,6 +7,19 @@
 #include <string>
 #include <vector>
 
+enum Generator {
+  GENERATOR_KHRONOS_LLVM_SPIRV_TRANSLATOR         = 6,
+  GENERATOR_KHRONOS_SPIRV_TOOLS_ASSEMBLER         = 7,
+  GENERATOR_KHRONOS_GLSLANG_REFERENCE_FRONT_END   = 8,
+  GENERATOR_GOOGLE_SHADERC_OVER_GLSLANG           = 13,
+  GENERATOR_GOOGLE_SPIREGG                        = 14,
+  GENERATOR_GOOGLE_RSPIRV                         = 15,
+  GENERATOR_X_LEGEND_MESA_MESAIR_SPIRV_TRANSLATOR = 16,
+  GENERATOR_KHRONOS_SPIRV_TOOLS_LINKER            = 17,
+  GENERATOR_WINE_VKD3D_SHADER_COMPILER            = 18,
+  GENERATOR_CLAY_CLAY_SHADER_COMPILER             = 19,
+};
+
 enum TextLineFlags {
   TEXT_LINE_FLAGS_STRUCT_BEGIN  = 0x01,
   TEXT_LINE_FLAGS_STRUCT_END    = 0x02,
@@ -30,6 +43,23 @@ struct TextLine {
   std::string           formatted_size;
   std::string           formatted_padded_size;
 };
+
+const char* ToStringGenerator(Generator generator)
+{
+  switch (generator) {
+    case GENERATOR_KHRONOS_LLVM_SPIRV_TRANSLATOR         : return "Khronos LLVM/SPIR-V Translator"; break;
+    case GENERATOR_KHRONOS_SPIRV_TOOLS_ASSEMBLER         : return "Khronos SPIR-V Tools Assembler"; break;
+    case GENERATOR_KHRONOS_GLSLANG_REFERENCE_FRONT_END   : return "Khronos Glslang Reference Front End"; break;
+    case GENERATOR_GOOGLE_SHADERC_OVER_GLSLANG           : return "Google Shaderc over Glslang"; break;
+    case GENERATOR_GOOGLE_SPIREGG                        : return "Google spiregg"; break;
+    case GENERATOR_GOOGLE_RSPIRV                         : return "Google rspirv"; break;
+    case GENERATOR_X_LEGEND_MESA_MESAIR_SPIRV_TRANSLATOR : return "X-LEGEND Mesa-IR/SPIR-V Translator"; break;
+    case GENERATOR_KHRONOS_SPIRV_TOOLS_LINKER            : return "Khronos SPIR-V Tools Linker"; break;
+    case GENERATOR_WINE_VKD3D_SHADER_COMPILER            : return "Wine VKD3D Shader Compiler"; break;
+    case GENERATOR_CLAY_CLAY_SHADER_COMPILER             : return "Clay Clay Shader Compiler"; break;
+  }
+  return "Unknown Generator";
+}
 
 const char* ToStringShaderStage(SpvReflectShaderStageFlagBits stage)
 {
@@ -442,6 +472,7 @@ void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVar
 
 void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj, const char* /*indent*/ = "")
 {
+  os << "generator       : " << ToStringGenerator(static_cast<Generator>(obj.generator)) << "\n";
   os << "entry point     : " << obj.entry_point_name << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
   os << "source lang ver : " << obj.source_language_version;

@@ -2029,6 +2029,13 @@ SpvReflectResult spvReflectCreateShaderModule(
   SpvReflectResult result = CreateParser(p_module->_internal->spirv_size,
                                          p_module->_internal->spirv_code,
                                          &parser);
+
+  // Generator
+  {
+    const uint32_t* p_ptr = (const uint32_t*)p_module->_internal->spirv_code;
+    p_module->generator = (*(p_ptr + 2) & 0xFFFF0000) >> 16;
+  }
+
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseNodes(&parser);
   }

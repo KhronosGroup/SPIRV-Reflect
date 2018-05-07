@@ -324,6 +324,7 @@ typedef struct SpvReflectDescriptorSet {
 
 */
 typedef struct SpvReflectShaderModule {
+  uint16_t                          generator;
   const char*                       entry_point_name;
   uint32_t                          entry_point_id;
   SpvSourceLanguage                 source_language;
