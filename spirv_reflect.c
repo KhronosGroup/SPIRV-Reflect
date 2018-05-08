@@ -2290,6 +2290,9 @@ SpvReflectResult spvReflectEnumerateDescriptorBindings(
   if (IsNull(p_module)) {
     return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
   }
+  if (IsNull(p_count)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
 
   if (IsNotNull(pp_bindings)) {
     if (*p_count != p_module->descriptor_binding_count) {
@@ -2315,6 +2318,9 @@ SpvReflectResult spvReflectEnumerateDescriptorSets(
 )
 {
   if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  if (IsNull(p_count)) {
     return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
   }
 
@@ -2344,6 +2350,9 @@ SpvReflectResult spvReflectEnumerateInputVariables(
   if (IsNull(p_module)) {
     return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
   }
+  if (IsNull(p_count)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
 
   if (IsNotNull(pp_variables)) {
     if (*p_count != p_module->input_variable_count) {
@@ -2371,6 +2380,9 @@ SpvReflectResult spvReflectEnumerateOutputVariables(
   if (IsNull(p_module)) {
     return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
   }
+  if (IsNull(p_count)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
 
   if (IsNotNull(pp_variables)) {
     if (*p_count != p_module->output_variable_count) {
@@ -2396,6 +2408,9 @@ SpvReflectResult spvReflectEnumeratePushConstantBlocks(
 )
 {
   if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  if (IsNull(p_count)) {
     return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
   }
 
@@ -2429,7 +2444,6 @@ const SpvReflectDescriptorBinding* spvReflectGetDescriptorBinding(const SpvRefle
                                                                   SpvReflectResult*             p_result)
 {
   const SpvReflectDescriptorBinding* p_descriptor = NULL;
-  assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
     for (uint32_t index = 0; index < p_module->descriptor_binding_count; ++index) {
       const SpvReflectDescriptorBinding* p_potential = &p_module->descriptor_bindings[index];
@@ -2453,7 +2467,6 @@ const SpvReflectDescriptorSet* spvReflectGetDescriptorSet(const SpvReflectShader
                                                           SpvReflectResult*             p_result)
 {
   const SpvReflectDescriptorSet* p_set = NULL;
-  assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
     for (uint32_t index = 0; index < p_module->descriptor_set_count; ++index) {
       const SpvReflectDescriptorSet* p_potential = &p_module->descriptor_sets[index];
@@ -2476,11 +2489,12 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariableByLocation(const Sp
                                                                         SpvReflectResult*             p_result)
 {
   if (location == INVALID_VALUE) {
-    *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
+    if (IsNotNull(p_result)) {
+      *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
+    }
     return NULL;
   }
   const SpvReflectInterfaceVariable* p_var = NULL;
-  assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
     for (uint32_t index = 0; index < p_module->input_variable_count; ++index) {
       const SpvReflectInterfaceVariable* p_potential = &p_module->input_variables[index];
@@ -2509,15 +2523,18 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariableBySemantic(const Sp
                                                                         SpvReflectResult*             p_result)
 {
   if (IsNull(semantic)) {
-    *p_result = SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+    if (IsNotNull(p_result)) {
+      *p_result = SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+    }
     return NULL;
   }
   if (semantic[0] == '\0') {
-    *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
+    if (IsNotNull(p_result)) {
+      *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
+    }
     return NULL;
   }
   const SpvReflectInterfaceVariable* p_var = NULL;
-  assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
     for (uint32_t index = 0; index < p_module->input_variable_count; ++index) {
       const SpvReflectInterfaceVariable* p_potential = &p_module->input_variables[index];
@@ -2540,11 +2557,12 @@ const SpvReflectInterfaceVariable* spvReflectGetOutputVariableByLocation(const S
                                                                          SpvReflectResult*              p_result)
 {
   if (location == INVALID_VALUE) {
-    *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
+    if (IsNotNull(p_result)) {
+      *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
+    }
     return NULL;
   }
   const SpvReflectInterfaceVariable* p_var = NULL;
-  assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
     for (uint32_t index = 0; index < p_module->output_variable_count; ++index) {
       const SpvReflectInterfaceVariable* p_potential = &p_module->output_variables[index];
@@ -2573,15 +2591,18 @@ const SpvReflectInterfaceVariable* spvReflectGetOutputVariableBySemantic(const S
                                                                          SpvReflectResult*              p_result)
 {
   if (IsNull(semantic)) {
-    *p_result = SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+    if (IsNotNull(p_result)) {
+      *p_result = SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+    }
     return NULL;
   }
   if (semantic[0] == '\0') {
-    *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
+    if (IsNotNull(p_result)) {
+      *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
+    }
     return NULL;
   }
   const SpvReflectInterfaceVariable* p_var = NULL;
-  assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
     for (uint32_t index = 0; index < p_module->output_variable_count; ++index) {
       const SpvReflectInterfaceVariable* p_potential = &p_module->output_variables[index];
@@ -2603,7 +2624,6 @@ const SpvReflectBlockVariable* spvReflectGetPushConstantBlock(const SpvReflectSh
                                                               SpvReflectResult*             p_result)
 {
   const SpvReflectBlockVariable* p_push_constant = NULL;
-  assert(IsNotNull(p_module));
   if (IsNotNull(p_module)) {
     if (index < p_module->push_constant_block_count) {
       p_push_constant = &p_module->push_constant_blocks[index];
@@ -2629,6 +2649,13 @@ SpvReflectResult spvReflectChangeDescriptorBindingNumbers(SpvReflectShaderModule
                                                           uint32_t                           new_binding_number,
                                                           uint32_t                           new_set_binding)
 {
+  if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  if (IsNull(p_binding)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+
   SpvReflectDescriptorBinding* p_target_descriptor = NULL;
   for (uint32_t index = 0; index < p_module->descriptor_binding_count; ++index) {
     if(&p_module->descriptor_bindings[index] == p_binding) {
@@ -2662,9 +2689,9 @@ SpvReflectResult spvReflectChangeDescriptorBindingNumbers(SpvReflectShaderModule
   return result;
 }
 SpvReflectResult spvReflectChangeDescriptorBindingNumber(SpvReflectShaderModule*            p_module,
-  const SpvReflectDescriptorBinding* p_descriptor_binding,
-  uint32_t                           new_binding_number,
-  uint32_t                           optional_new_set_number)
+                                                         const SpvReflectDescriptorBinding* p_descriptor_binding,
+                                                         uint32_t                           new_binding_number,
+                                                         uint32_t                           optional_new_set_number)
 {
   return spvReflectChangeDescriptorBindingNumbers(p_module,p_descriptor_binding, new_binding_number, optional_new_set_number);
 }
@@ -2673,6 +2700,12 @@ SpvReflectResult spvReflectChangeDescriptorSetNumber(SpvReflectShaderModule*    
                                                      const SpvReflectDescriptorSet* p_set,
                                                      uint32_t                       new_set_number)
 {
+  if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  if (IsNull(p_set)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
   SpvReflectDescriptorSet* p_target_set = NULL;
   for (uint32_t index = 0; index < SPV_REFLECT_MAX_DESCRIPTOR_SETS; ++index) {
     if (&p_module->descriptor_sets[index] == p_set) {
@@ -2717,6 +2750,12 @@ SpvReflectResult spvReflectChangeInputVariableLocation(SpvReflectShaderModule*  
                                                        const SpvReflectInterfaceVariable* p_input_variable,
                                                        uint32_t                           new_location)
 {
+  if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  if (IsNull(p_input_variable)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
   for (uint32_t index = 0; index < p_module->input_variable_count; ++index) {
     if(&p_module->input_variables[index] == p_input_variable) {
       return ChangeVariableLocation(p_module, &p_module->input_variables[index], new_location);
@@ -2729,6 +2768,12 @@ SpvReflectResult spvReflectChangeOutputVariableLocation(SpvReflectShaderModule* 
                                                         const SpvReflectInterfaceVariable*  p_output_variable,
                                                         uint32_t                            new_location)
 {
+  if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  if (IsNull(p_output_variable)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
   for (uint32_t index = 0; index < p_module->output_variable_count; ++index) {
     if(&p_module->output_variables[index] == p_output_variable) {
       return ChangeVariableLocation(p_module, &p_module->output_variables[index], new_location);
