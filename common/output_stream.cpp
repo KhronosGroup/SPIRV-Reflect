@@ -938,6 +938,13 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
   bindings.resize(count);
   result = obj.EnumerateDescriptorBindings(&count, bindings.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
+  std::sort(std::begin(bindings), std::end(bindings),
+            [](SpvReflectDescriptorBinding* a, SpvReflectDescriptorBinding* b) -> bool {
+              if (a->set != b->set) {
+                return a->set < b->set;
+              }
+              return a->binding < b->binding;
+            });
   if (count > 0) {
     os << "\n";
     os << "\n";
