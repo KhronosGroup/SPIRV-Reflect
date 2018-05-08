@@ -221,9 +221,29 @@ int main(int argn, char** argv)
     auto p_var = input_vars[index];
 
     // input variables can also be retrieved directly from the module, by location
+    // (unless the location is (uint32_t)-1, as is the case with built-in inputs)
     auto p_var2 = spvReflectGetInputVariableByLocation(&module, p_var->location, &result);
-    assert(result == SPV_REFLECT_RESULT_SUCCESS);
-    assert(p_var == p_var2);
+    if (p_var->location == UINT32_MAX) {
+      assert(result == SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
+      assert(p_var2 == nullptr);
+    } else {
+      assert(result == SPV_REFLECT_RESULT_SUCCESS);
+      assert(p_var == p_var2);
+    }
+    (void)p_var2;
+
+    // input variables can also be retrieved directly from the module, by semantic (if present)
+    p_var2 = spvReflectGetInputVariableBySemantic(&module, p_var->semantic, &result);
+    if (!p_var->semantic) {
+      assert(result == SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+      assert(p_var2 == nullptr);
+    } else if (p_var->semantic[0] != '\0') {
+      assert(result == SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
+      assert(p_var2 == nullptr);
+    } else {
+      assert(result == SPV_REFLECT_RESULT_SUCCESS);
+      assert(p_var == p_var2);
+    }
     (void)p_var2;
 
     std::cout << t << index << ":" << "\n";
@@ -236,9 +256,29 @@ int main(int argn, char** argv)
     auto p_var = output_vars[index];
 
     // output variables can also be retrieved directly from the module, by location
+    // (unless the location is (uint32_t)-1, as is the case with built-in outputs)
     auto p_var2 = spvReflectGetOutputVariableByLocation(&module, p_var->location, &result);
-    assert(result == SPV_REFLECT_RESULT_SUCCESS);
-    assert(p_var == p_var2);
+    if (p_var->location == UINT32_MAX) {
+      assert(result == SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
+      assert(p_var2 == nullptr);
+    } else {
+      assert(result == SPV_REFLECT_RESULT_SUCCESS);
+      assert(p_var == p_var2);
+    }
+    (void)p_var2;
+
+    // output variables can also be retrieved directly from the module, by semantic (if present)
+    p_var2 = spvReflectGetOutputVariableBySemantic(&module, p_var->semantic, &result);
+    if (!p_var->semantic) {
+      assert(result == SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+      assert(p_var2 == nullptr);
+    } else if (p_var->semantic[0] != '\0') {
+      assert(result == SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
+      assert(p_var2 == nullptr);
+    } else {
+      assert(result == SPV_REFLECT_RESULT_SUCCESS);
+      assert(p_var == p_var2);
+    }
     (void)p_var2;
 
     std::cout << t << index << ":" << "\n";
