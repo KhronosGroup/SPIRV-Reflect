@@ -27,7 +27,6 @@
 
 #include "spirv_reflect.h"
 #include "examples/arg_parser.h"
-#include "examples/common.h"
 #include "common/output_stream.h"
 
 

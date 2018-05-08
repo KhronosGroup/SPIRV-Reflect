@@ -10,6 +10,8 @@ list(APPEND SPIRV_REFLECT_FILES
 list(APPEND COMMON_FILES
   common.h
   common.cpp
+  ../common/output_stream.h
+  ../common/output_stream.cpp
   sample_spv.h
 )
 
