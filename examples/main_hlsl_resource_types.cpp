@@ -29,36 +29,7 @@
 
 #include "spirv_reflect.h"
 #include "examples/common.h"
-
-const char* ToStringHlslResourceType(SpvReflectResourceType type)
-{
-  switch (type) {
-    case SPV_REFLECT_RESOURCE_FLAG_UNDEFINED : return "UNDEFINED";
-    case SPV_REFLECT_RESOURCE_FLAG_SAMPLER   : return "SAMPLER";
-    case SPV_REFLECT_RESOURCE_FLAG_CBV       : return "CBV";
-    case SPV_REFLECT_RESOURCE_FLAG_SRV       : return "SRV";
-    case SPV_REFLECT_RESOURCE_FLAG_UAV       : return "UAV";
-  }
-  return "";
-}
-
-const char* ToStringDescriptorType(SpvReflectDescriptorType value) {
-  switch (value) {
-    default: return ""; break;
-    case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER"; break;
-    case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER"; break;
-    case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE"; break;
-    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE          : return "VK_DESCRIPTOR_TYPE_STORAGE_IMAGE"; break;
-    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER"; break;
-    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER"; break;
-    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER"; break;
-    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER         : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER"; break;
-    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC"; break;
-    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC"; break;
-    case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       : return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT"; break;
-  }
-  return "";
-}
+#include "../common/output_stream.h"
 
 void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, const char* indent = "")
 {
@@ -68,7 +39,7 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool 
   os << "\n";
   os << t;
   os << ToStringDescriptorType(obj.descriptor_type);
-  os << " " << "(" << ToStringHlslResourceType(obj.resource_type) << ")";
+  os << " " << "(" << ToStringResourceType(obj.resource_type) << ")";
   if ((obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
       (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) || (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
     os << "\n";
@@ -88,13 +59,13 @@ void StreamWrite(std::ostream& os, const SpvReflectShaderModule& obj, const char
   os << "source lang ver : " << obj.source_language_version;
 }
 
-std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorBinding& obj)
+void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj)
 {
   StreamWrite(os, obj, true, "  ");
-  return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
+// Specialized stream-writer that only includes descriptor bindings.
+void StreamWrite(std::ostream& os, const spv_reflect::ShaderModule& obj)
 {
   const char* t     = "  ";
   const char* tt    = "    ";
@@ -130,8 +101,6 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       }
     }
   }
-
-  return os;
 }
 
 // =================================================================================================
@@ -180,8 +149,8 @@ int main(int argn, char** argv)
       return EXIT_FAILURE;
     }
 
-    std::cout << reflection << std::endl;
-    std::cout << std::endl;
+    StreamWrite(std::cout, reflection);
+    std::cout << std::endl << std::endl;
   }
 
 

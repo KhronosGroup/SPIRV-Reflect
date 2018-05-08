@@ -2105,7 +2105,7 @@ SpvReflectResult spvReflectCreateShaderModule(
   // Generator
   {
     const uint32_t* p_ptr = (const uint32_t*)p_module->_internal->spirv_code;
-    p_module->generator = (*(p_ptr + 2) & 0xFFFF0000) >> 16;
+    p_module->generator = (SpvReflectGenerator)((*(p_ptr + 2) & 0xFFFF0000) >> 16);
   }
 
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
