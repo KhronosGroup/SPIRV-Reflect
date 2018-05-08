@@ -1426,14 +1426,28 @@ static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflec
     if (IsNull(p_type_node)) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     }
-    // Resolve to struct type if current type is array or runtime array
-    while ((p_type_node->op == SpvOpTypeArray) || (p_type_node->op == SpvOpTypeRuntimeArray)) {
-      p_type_node = FindNode(p_parser, p_type_node->array_traits.element_type_id);
+    // Resolve to element type if current type is array or run time array
+    if (p_type_node->op == SpvOpTypeArray) {
+      while (p_type_node->op == SpvOpTypeArray) {
+        p_type_node = FindNode(p_parser, p_type_node->array_traits.element_type_id);
+        if (IsNull(p_type_node)) {
+          return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+        }
+      }
+    }
+    else if(p_type_node->op == SpvOpTypeRuntimeArray) {
+      // Element type description
+      p_type = FindType(p_module, p_type_node->array_traits.element_type_id);
+      if (IsNull(p_type)) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+      }
+      // Element type node
+      p_type_node = FindNode(p_parser, p_type->id);
       if (IsNull(p_type_node)) {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
       }
     }
-
+    
     // Parse members
     for (uint32_t member_index = 0; member_index < p_type->member_count; ++member_index) {
       SpvReflectTypeDescription* p_member_type = &p_type->members[member_index];
@@ -1470,7 +1484,7 @@ static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflec
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvReflectShaderModule* p_module, bool is_parent_aos, SpvReflectBlockVariable* p_var)
+static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvReflectShaderModule* p_module, bool is_parent_aos, bool is_parent_rta, SpvReflectBlockVariable* p_var)
 {
   if (p_var->member_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;;
@@ -1514,7 +1528,7 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
         // If array of structs, parse members first...
         bool is_struct = (p_member_type->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT) == SPV_REFLECT_TYPE_FLAG_STRUCT;
         if (is_struct) {
-          SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, true, p_member_var);
+          SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, true, is_parent_rta, p_member_var);
           if (result != SPV_REFLECT_RESULT_SUCCESS) {
             return result;
           }
@@ -1528,8 +1542,19 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
       }
       break;
 
+      case SpvOpTypeRuntimeArray: {
+        bool is_struct = (p_member_type->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT) == SPV_REFLECT_TYPE_FLAG_STRUCT;
+        if (is_struct) {
+          SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, true, true, p_member_var);
+          if (result != SPV_REFLECT_RESULT_SUCCESS) {
+            return result;
+          }
+        }
+      }
+      break;
+
       case SpvOpTypeStruct: {
-        SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, is_parent_aos, p_member_var);
+        SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, is_parent_aos, is_parent_rta, p_member_var);
         if (result != SPV_REFLECT_RESULT_SUCCESS) {
           return result;
         }
@@ -1555,6 +1580,9 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
     if (p_member_var->size > p_member_var->padded_size) {
       p_member_var->size = p_member_var->padded_size;
     }
+    if (is_parent_rta) {
+      p_member_var->padded_size = p_member_var->size;
+    }
   }
   // ...last entry just gets rounded up to near multiple of SPIRV_DATA_ALIGNMENT, which is 16 and
   // subtract the offset.
@@ -1563,6 +1591,9 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
     p_member_var->padded_size = RoundUp(p_member_var->offset  + p_member_var->size, SPIRV_DATA_ALIGNMENT) - p_member_var->offset;
     if (p_member_var->size > p_member_var->padded_size) {
       p_member_var->size = p_member_var->padded_size;
+    }
+    if (is_parent_rta) {
+      p_member_var->padded_size = p_member_var->size;
     }
   }
 
@@ -1598,9 +1629,15 @@ static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShader
     // to use the descriptor name.
     p_descriptor->block.name = p_descriptor->name;
 
-    result = ParseDescriptorBlockVariableSizes(p_parser, p_module, false, &p_descriptor->block);
+    bool is_parent_rta = (p_descriptor->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    result = ParseDescriptorBlockVariableSizes(p_parser, p_module, false, is_parent_rta, &p_descriptor->block);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
+    }
+
+    if (is_parent_rta) {
+      p_descriptor->block.size = 0;
+      p_descriptor->block.padded_size = 0;
     }
   }
 
@@ -1888,7 +1925,7 @@ static SpvReflectResult ParsePushConstantBlocks(Parser* p_parser, SpvReflectShad
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
     }
-    result = ParseDescriptorBlockVariableSizes(p_parser, p_module, false, p_push_constant);
+    result = ParseDescriptorBlockVariableSizes(p_parser, p_module, false, false, p_push_constant);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
     }

@@ -254,7 +254,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       // End struct
       tl = {};
       tl.indent = expanded_indent;
-      tl.name = member.name;
+      tl.name = (member.name == nullptr ? "" : member.name);
       if (member.array.dims_count > 0) {
         std::stringstream ss_array;
         for (uint32_t array_dim_index = 0; array_dim_index < member.array.dims_count; ++array_dim_index) {
@@ -275,7 +275,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       TextLine tl = {};
       tl.indent = expanded_indent;
       tl.type_name = ToStringComponentType(*member.type_description, member.decoration_flags);
-      tl.name = member.name;
+      tl.name = (member.name == nullptr ? "" : member.name);
       if (member.array.dims_count > 0) {
         std::stringstream ss_array;
         for (uint32_t array_dim_index = 0; array_dim_index < member.array.dims_count; ++array_dim_index) {
@@ -529,7 +529,7 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
   }
 
   if (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-      obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+      obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
     std::vector<TextLine> text_lines;
     ParseBlockVariableToTextLines("    ",  obj.block, &text_lines);
     if (!text_lines.empty()) {
@@ -569,7 +569,8 @@ void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj
   os << "generator       : " << ToStringGenerator(static_cast<Generator>(obj.generator)) << "\n";
   os << "entry point     : " << obj.entry_point_name << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
-  os << "source lang ver : " << obj.source_language_version;
+  os << "source lang ver : " << obj.source_language_version << "\n";
+  os << "shader stage    : " << ToStringShaderStage(obj.shader_stage);
 }
 
 std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorBinding& obj)
