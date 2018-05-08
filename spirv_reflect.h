@@ -168,6 +168,21 @@ typedef enum SpvReflectShaderStageFlagBits {
   SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT                 = 0x00000020, // = VK_SHADER_STAGE_COMPUTE_BIT
 } SpvReflectShaderStageFlagBits;
 
+/*! @enum SpvReflectGenerator
+
+*/
+typedef enum SpvReflectGenerator {
+  SPV_REFLECT_GENERATOR_KHRONOS_LLVM_SPIRV_TRANSLATOR         = 6,
+  SPV_REFLECT_GENERATOR_KHRONOS_SPIRV_TOOLS_ASSEMBLER         = 7,
+  SPV_REFLECT_GENERATOR_KHRONOS_GLSLANG_REFERENCE_FRONT_END   = 8,
+  SPV_REFLECT_GENERATOR_GOOGLE_SHADERC_OVER_GLSLANG           = 13,
+  SPV_REFLECT_GENERATOR_GOOGLE_SPIREGG                        = 14,
+  SPV_REFLECT_GENERATOR_GOOGLE_RSPIRV                         = 15,
+  SPV_REFLECT_GENERATOR_X_LEGEND_MESA_MESAIR_SPIRV_TRANSLATOR = 16,
+  SPV_REFLECT_GENERATOR_KHRONOS_SPIRV_TOOLS_LINKER            = 17,
+  SPV_REFLECT_GENERATOR_WINE_VKD3D_SHADER_COMPILER            = 18,
+  SPV_REFLECT_GENERATOR_CLAY_CLAY_SHADER_COMPILER             = 19,
+} SpvReflectGenerator;
 
 enum {
   SPV_REFLECT_MAX_ARRAY_DIMS                    = 32,
@@ -324,7 +339,7 @@ typedef struct SpvReflectDescriptorSet {
 
 */
 typedef struct SpvReflectShaderModule {
-  uint16_t                          generator;
+  SpvReflectGenerator               generator;
   const char*                       entry_point_name;
   uint32_t                          entry_point_id;
   SpvSourceLanguage                 source_language;

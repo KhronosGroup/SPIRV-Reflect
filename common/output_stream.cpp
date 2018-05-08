@@ -566,7 +566,7 @@ void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVar
 
 void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj, const char* /*indent*/ = "")
 {
-  os << "generator       : " << ToStringGenerator(static_cast<Generator>(obj.generator)) << "\n";
+  os << "generator       : " << ToStringGenerator(obj.generator) << "\n";
   os << "entry point     : " << obj.entry_point_name << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
   os << "source lang ver : " << obj.source_language_version;
