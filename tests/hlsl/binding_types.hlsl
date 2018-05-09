@@ -54,7 +54,7 @@ ConsumeStructuredBuffer<float>  MyConsumeStructuredBuffer;
 ByteAddressBuffer               MyByteAddressBuffer;
 RWByteAddressBuffer             MyRWByteAddressBuffer;
 
-float4 main(float P : SV_POSITION) : SV_TARGET
+float4 main(float4 P : SV_POSITION) : SV_TARGET
 {
   return float4(0, 0, 0, 0);
 }
