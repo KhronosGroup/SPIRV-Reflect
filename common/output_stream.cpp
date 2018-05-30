@@ -20,16 +20,16 @@ struct TextLine {
   std::string           modifier;
   std::string           type_name;
   std::string           name;
-  uint32_t              offset;
   uint32_t              absolute_offset;
+  uint32_t              relative_offset;
   uint32_t              size;
   uint32_t              padded_size;
   uint32_t              array_stride;
   uint32_t              flags;
   std::vector<TextLine> lines;
   std::string           formatted_line;
-  std::string           formatted_offset;
   std::string           formatted_absolute_offset;
+  std::string           formatted_relative_offset;
   std::string           formatted_size;
   std::string           formatted_padded_size;
   std::string           formatted_array_stride;
@@ -517,7 +517,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       TextLine tl = {};
       tl.indent = expanded_indent;
       tl.type_name = member.type_description->type_name;
-      tl.offset = member.offset;
+      tl.relative_offset = member.offset;
       tl.absolute_offset = member.absolute_offset;
       tl.size = member.size;
       tl.padded_size = member.padded_size;
@@ -543,7 +543,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
         }
         tl.name += ss_array.str();
       }
-      tl.offset = member.offset;
+      tl.relative_offset = member.offset;
       tl.absolute_offset = member.absolute_offset;
       tl.size = member.size;
       tl.padded_size = member.padded_size;
@@ -564,7 +564,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
         }
         tl.name += ss_array.str();
       }
-      tl.offset = member.offset;
+      tl.relative_offset = member.offset;
       tl.absolute_offset = member.absolute_offset;
       tl.size = member.size;
       tl.array_stride = member.array.stride;
@@ -599,7 +599,7 @@ void ParseBlockVariableToTextLines(const char* indent, const SpvReflectBlockVari
   tl = {};
   tl.indent = indent;
   tl.name = block_var.name;
-  tl.offset = 0;
+  tl.relative_offset = 0;
   tl.absolute_offset = 0;
   tl.size = block_var.size;
   tl.padded_size = block_var.padded_size;
@@ -664,7 +664,7 @@ void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent
     if (out_tl.formatted_line.length() > 0) {
      out_tl.array_stride = tl.array_stride;
       out_tl.flags = tl.flags;
-      out_tl.formatted_offset = std::to_string(tl.offset);
+      out_tl.formatted_relative_offset = std::to_string(tl.relative_offset);
       out_tl.formatted_absolute_offset = std::to_string(tl.absolute_offset);
       out_tl.formatted_size = std::to_string(tl.size);
       out_tl.formatted_padded_size = std::to_string(tl.padded_size);
@@ -692,7 +692,7 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
       continue;
     }
     line_width = std::max<size_t>(line_width, tl.formatted_line.length());
-    offset_width = std::max<size_t>(offset_width, tl.formatted_offset.length());
+    offset_width = std::max<size_t>(offset_width, tl.formatted_relative_offset.length());
     absolute_offset_width = std::max<size_t>(absolute_offset_width, tl.formatted_absolute_offset.length());
     size_width = std::max<size_t>(size_width, tl.formatted_size.length());
     padded_size_width = std::max<size_t>(padded_size_width, tl.formatted_padded_size.length());
@@ -735,8 +735,8 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
       if (pos != std::string::npos) {
         std::string s(pos, ' ');
         os << s << "//" << " ";
-        os << "rel offset = " << tl.formatted_offset << ", ";
         os << "abs offset = " << tl.formatted_absolute_offset << ", ";
+        os << "rel offset = " << tl.formatted_relative_offset << ", ";
         os << "size = " << tl.formatted_size << ", ";
         os << "padded size = " << tl.formatted_padded_size;
         if (tl.array_stride > 0) {
@@ -757,8 +757,8 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
     else {
       os << std::setw(line_width) << std::left << tl.formatted_line;
       os << " " << "//" << " ";
-      os << "rel offset = " << std::setw(offset_width) << std::right << tl.formatted_offset << ", ";
       os << "abs offset = " << std::setw(absolute_offset_width) << std::right << tl.formatted_absolute_offset << ", ";
+      os << "rel offset = " << std::setw(offset_width) << std::right << tl.formatted_relative_offset << ", ";
       os << "size = " << std::setw(size_width) << std::right << tl.formatted_size << ", ";
       os << "padded size = " << std::setw(padded_size_width) << std::right << tl.formatted_padded_size;
       if (tl.array_stride > 0) {
@@ -776,16 +776,17 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
 void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, const char* indent = "")
 {
   const char* t = indent;
+  os << t << "spirv id : " << obj.spirv_id << "\n";
   if (write_set) {
-    os << t << "set     : " << obj.set << "\n";
+    os << t << "set      : " << obj.set << "\n";
   }
-  os << t << "binding : " << obj.binding << "\n";
-  os << t << "type    : " << ToStringDescriptorType(obj.descriptor_type);
+  os << t << "binding  : " << obj.binding << "\n";
+  os << t << "type     : " << ToStringDescriptorType(obj.descriptor_type);
   os << " " << "(" << ToStringResourceType(obj.resource_type) << ")" << "\n";
   
   // array
   if (obj.array.dims_count > 0) {  
-    os << t << "array   : ";
+    os << t << "array    : ";
     for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
       os << "[" << obj.array.dims[dim_index] << "]";
     }
@@ -794,7 +795,7 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
 
   // counter
   if (obj.uav_counter_binding != nullptr) {
-    os << t << "counter : ";
+    os << t << "counter  : ";
     os << "(";
     os << "set=" << obj.uav_counter_binding->set << ", ";
     os << "binding=" << obj.uav_counter_binding->binding << ", ";
@@ -803,7 +804,7 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
     os << "\n";
   }
 
-  os << t << "name    : " << obj.name;
+  os << t << "name     : " << obj.name;
   if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
     os << " " << "(" << obj.type_description->type_name << ")";
   }
@@ -823,6 +824,7 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
 void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVariable& obj, const char* indent = "")
 {
   const char* t = indent;
+  os << t << "spirv id  : " << obj.spirv_id << "\n";
   os << t << "location  : ";
   if (obj.decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
     os << "(built-in)" << " ";
