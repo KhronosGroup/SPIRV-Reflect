@@ -776,7 +776,9 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, bool flatten_cbu
       os << std::setw(line_width) << std::left << tl.formatted_line;
       os << " " << "//" << " ";
       os << "abs offset = " << std::setw(absolute_offset_width) << std::right << tl.formatted_absolute_offset << ", ";
-      os << "rel offset = " << std::setw(offset_width) << std::right << tl.formatted_relative_offset << ", ";
+      if (!flatten_cbuffers) {
+        os << "rel offset = " << std::setw(offset_width) << std::right << tl.formatted_relative_offset << ", ";
+      }
       os << "size = " << std::setw(size_width) << std::right << tl.formatted_size << ", ";
       os << "padded size = " << std::setw(padded_size_width) << std::right << tl.formatted_padded_size;
       if (tl.array_stride > 0) {
