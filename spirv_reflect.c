@@ -1484,10 +1484,21 @@ static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflec
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvReflectShaderModule* p_module, bool is_parent_aos, bool is_parent_rta, SpvReflectBlockVariable* p_var)
+static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvReflectShaderModule* p_module, bool is_parent_root, bool is_parent_aos, bool is_parent_rta, SpvReflectBlockVariable* p_var)
 {
   if (p_var->member_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;;
+  }
+
+  // Absolute offsets
+  for (uint32_t member_index = 0; member_index < p_var->member_count; ++member_index) {
+    SpvReflectBlockVariable* p_member_var = &p_var->members[member_index];
+    if (is_parent_root) {
+      p_member_var->absolute_offset = p_member_var->offset;
+    }
+    else {
+      p_member_var->absolute_offset = is_parent_aos ? 0 : p_member_var->offset + p_var->absolute_offset;
+    }
   }
 
   // Size
@@ -1528,7 +1539,7 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
         // If array of structs, parse members first...
         bool is_struct = (p_member_type->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT) == SPV_REFLECT_TYPE_FLAG_STRUCT;
         if (is_struct) {
-          SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, true, is_parent_rta, p_member_var);
+          SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, false, true, is_parent_rta, p_member_var);
           if (result != SPV_REFLECT_RESULT_SUCCESS) {
             return result;
           }
@@ -1545,7 +1556,7 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
       case SpvOpTypeRuntimeArray: {
         bool is_struct = (p_member_type->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT) == SPV_REFLECT_TYPE_FLAG_STRUCT;
         if (is_struct) {
-          SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, true, true, p_member_var);
+          SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, false, true, true, p_member_var);
           if (result != SPV_REFLECT_RESULT_SUCCESS) {
             return result;
           }
@@ -1554,7 +1565,7 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
       break;
 
       case SpvOpTypeStruct: {
-        SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, is_parent_aos, is_parent_rta, p_member_var);
+        SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, false, is_parent_aos, is_parent_rta, p_member_var);
         if (result != SPV_REFLECT_RESULT_SUCCESS) {
           return result;
         }
@@ -1564,12 +1575,6 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(Parser* p_parser, SpvR
       default:
         break;
     }
-  }
-
-  // Absolute offsets
-  for (uint32_t member_index = 0; member_index < p_var->member_count; ++member_index) {
-    SpvReflectBlockVariable* p_member_var = &p_var->members[member_index];
-    p_member_var->absolute_offset = is_parent_aos ? 0 : p_member_var->offset + p_var->offset;
   }
 
   // Parse padded size using offset difference for all member except for the last entry...
@@ -1630,7 +1635,7 @@ static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShader
     p_descriptor->block.name = p_descriptor->name;
 
     bool is_parent_rta = (p_descriptor->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    result = ParseDescriptorBlockVariableSizes(p_parser, p_module, false, is_parent_rta, &p_descriptor->block);
+    result = ParseDescriptorBlockVariableSizes(p_parser, p_module, true, false, is_parent_rta, &p_descriptor->block);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
     }
@@ -1925,7 +1930,7 @@ static SpvReflectResult ParsePushConstantBlocks(Parser* p_parser, SpvReflectShad
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
     }
-    result = ParseDescriptorBlockVariableSizes(p_parser, p_module, false, false, p_push_constant);
+    result = ParseDescriptorBlockVariableSizes(p_parser, p_module, true, false, false, p_push_constant);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
     }
