@@ -39,17 +39,18 @@ void PrintUsage()
     << "Usage: spirv-reflect [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
     << "Prints a summary of the reflection data extracted from SPIR-V bytecode." << std::endl
     << "Options:" << std::endl
-    << " --help         Display this message" << std::endl
-    << " -y,--yaml      Format output as YAML. [default: disabled]" << std::endl
-    << " -v VERBOSITY   Specify output verbosity (YAML output only):" << std::endl
-    << "                0: shader info, block variables, interface variables," << std::endl
-    << "                   descriptor bindings. No type descriptions. [default]" << std::endl
-    << "                1: Everything above, plus type descriptions." << std::endl
-    << "                2: Everything above, plus SPIR-V bytecode and all internal" << std::endl
-    << "                   type descriptions. If you're not working on SPIRV-Reflect" << std::endl
-    << "                   itself, you probably don't want this." << std::endl
-    << "-e,--entrypoint Prints the entry point found in shader module." << std::endl
-    << "-s,--stage      Prints the Vulkan shader stage found in shader module." << std::endl;
+    << " --help                   Display this message" << std::endl
+    << " -y,--yaml                Format output as YAML. [default: disabled]" << std::endl
+    << " -v VERBOSITY             Specify output verbosity (YAML output only):" << std::endl
+    << "                          0: shader info, block variables, interface variables," << std::endl
+    << "                             descriptor bindings. No type descriptions. [default]" << std::endl
+    << "                          1: Everything above, plus type descriptions." << std::endl
+    << "                          2: Everything above, plus SPIR-V bytecode and all internal" << std::endl
+    << "                             type descriptions. If you're not working on SPIRV-Reflect" << std::endl
+    << "                             itself, you probably don't want this." << std::endl
+    << "-e,--entrypoint           Prints the entry point found in shader module." << std::endl
+    << "-s,--stage                Prints the Vulkan shader stage found in shader module." << std::endl
+    << "-fcb,--flatten_cbuffers   Flatten cbuffers on output." << std::endl;
 }
 
 // =================================================================================================
@@ -63,6 +64,7 @@ int main(int argn, char** argv)
   arg_parser.AddOptionInt("v", "verbosity", "", 0);
   arg_parser.AddFlag("e", "entrypoint", "");
   arg_parser.AddFlag("s", "stage", "");
+  arg_parser.AddFlag("fcb", "flatten_cbuffers", "");
   if (!arg_parser.Parse(argn, argv, std::cerr)) {
     PrintUsage();
     return EXIT_FAILURE;
@@ -75,6 +77,7 @@ int main(int argn, char** argv)
 
 	bool print_entry_point = arg_parser.GetFlag("e", "entrypoint");
   bool print_shader_stage = arg_parser.GetFlag("s", "stage");
+  bool flatten_cbuffers = arg_parser.GetFlag("fcb", "flatten_cbuffers");
 
 	std::string input_spv_path;
 	if (!arg_parser.GetArg(0, &input_spv_path)) {
@@ -124,7 +127,8 @@ int main(int argn, char** argv)
 				SpvReflectToYaml yamlizer(reflection.GetShaderModule(), yaml_verbosity);
 				std::cout << yamlizer;
 			} else {
-				std::cout << reflection << std::endl;
+        WriteReflection(reflection, flatten_cbuffers, std::cout);
+        std::cout << std::endl;
 				std::cout << std::endl;
 			}
 		}

@@ -500,10 +500,11 @@ std::string ToStringComponentType(const SpvReflectTypeDescription& type, uint32_
   return ss.str();
 }
 
-void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t member_count, const SpvReflectBlockVariable* p_members, std::vector<TextLine>* p_text_lines)
+void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool flatten_cbuffers, const std::string& parent_name, uint32_t member_count, const SpvReflectBlockVariable* p_members, std::vector<TextLine>* p_text_lines)
 {
   const char* t = indent;
   for (uint32_t member_index = 0; member_index < member_count; ++member_index) {
+    indent_depth = flatten_cbuffers ? 2 : indent_depth;
     std::stringstream ss_indent;
     for (int indent_count = 0; indent_count < indent_depth; ++indent_count) {
       ss_indent << t;
@@ -513,6 +514,8 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
     const auto& member = p_members[member_index];
     bool is_struct = member.type_description->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT;
     if (is_struct) {
+      const std::string name = (member.name == nullptr ? "" : member.name);
+
       // Begin struct
       TextLine tl = {};
       tl.indent = expanded_indent;
@@ -523,18 +526,25 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       tl.padded_size = member.padded_size;
       tl.array_stride = member.array.stride;
       tl.flags = TEXT_LINE_TYPE_STRUCT_BEGIN;
-      p_text_lines->push_back(tl);
+      if (!flatten_cbuffers) {
+        p_text_lines->push_back(tl);
+      }
 
       // Members
       tl = {};
-      ParseBlockMembersToTextLines(t, indent_depth + 1, member.member_count, member.members, &tl.lines);
+      std::string current_parent_name;
+      if (flatten_cbuffers) {
+        current_parent_name = parent_name.empty() ? name : (parent_name + "." + name);
+      }
+      std::vector<TextLine>* p_target_text_line = flatten_cbuffers ? p_text_lines : &tl.lines;
+      ParseBlockMembersToTextLines(t, indent_depth + 1, flatten_cbuffers, current_parent_name, member.member_count, member.members, p_target_text_line);
       tl.flags = TEXT_LINE_TYPE_LINES;
       p_text_lines->push_back(tl);      
 
       // End struct
       tl = {};
       tl.indent = expanded_indent;
-      tl.name = (member.name == nullptr ? "" : member.name);
+      tl.name = name;
       if (member.array.dims_count > 0) {
         std::stringstream ss_array;
         for (uint32_t array_dim_index = 0; array_dim_index < member.array.dims_count; ++array_dim_index) {
@@ -549,13 +559,22 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
       tl.padded_size = member.padded_size;
       tl.array_stride = member.array.stride;
       tl.flags = TEXT_LINE_TYPE_STRUCT_END;
-      p_text_lines->push_back(tl);      
+      if (!flatten_cbuffers) {
+        p_text_lines->push_back(tl);
+      }
     }
     else {
+      std::string name = (member.name == nullptr ? "" : member.name);
+      if (flatten_cbuffers) {
+        if (!parent_name.empty()) {
+          name = parent_name + "." + name;
+        }
+      }
+
       TextLine tl = {};
       tl.indent = expanded_indent;
       tl.type_name = ToStringComponentType(*member.type_description, member.decoration_flags);
-      tl.name = (member.name == nullptr ? "" : member.name);
+      tl.name = name;
       if (member.array.dims_count > 0) {
         std::stringstream ss_array;
         for (uint32_t array_dim_index = 0; array_dim_index < member.array.dims_count; ++array_dim_index) {
@@ -574,13 +593,9 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, uint32_t
   }
 }
 
-void ParseBlockVariableToTextLines(const char* indent, const SpvReflectBlockVariable& block_var, std::vector<TextLine>* p_text_lines)
+void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers, const SpvReflectBlockVariable& block_var, std::vector<TextLine>* p_text_lines)
 {
-  (void)indent;
-  (void)block_var;
-  (void)p_text_lines;
-
-  // Begin struct
+  // Begin block
   TextLine tl = {};
   tl.indent = indent;
   tl.type_name = block_var.type_description->type_name;
@@ -591,11 +606,11 @@ void ParseBlockVariableToTextLines(const char* indent, const SpvReflectBlockVari
 
   // Members
   tl = {};
-  ParseBlockMembersToTextLines(indent, 2, block_var.member_count, block_var.members, &tl.lines);
+  ParseBlockMembersToTextLines(indent, 2, flatten_cbuffers, "", block_var.member_count, block_var.members, &tl.lines);
   tl.flags = TEXT_LINE_TYPE_LINES;
   p_text_lines->push_back(tl);    
 
-  // End struct
+  // End block
   tl = {};
   tl.indent = indent;
   tl.name = block_var.name;
@@ -627,11 +642,6 @@ void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent
   size_t n = text_lines.size();
   for (size_t i = 0; i < n; ++i) {
     auto& tl = text_lines[i];
-
-    if (tl.name == "d00") {
-      int stopMe = 1 ;
-      (void)stopMe;
-    }
 
     std::stringstream ss;
     if ((tl.flags == TEXT_LINE_TYPE_BLOCK_BEGIN) || (tl.flags == TEXT_LINE_TYPE_STRUCT_BEGIN)) {
@@ -679,7 +689,7 @@ void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent
   }
 }
 
-void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vector<TextLine>& text_lines)
+void StreamWriteTextLines(std::ostream& os, const char* indent, bool flatten_cbuffers, const std::vector<TextLine>& text_lines)
 {
   std::vector<TextLine> formatted_lines;
   FormatTextLines(text_lines, indent, &formatted_lines);
@@ -708,7 +718,6 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
   for (size_t i = 0; i < n; ++i) {
     auto& tl = formatted_lines[i];
 
-
     if (tl.flags == TEXT_LINE_TYPE_BLOCK_BEGIN) {
       if (i > 0) {
         os << "\n";
@@ -732,31 +741,35 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
       }
     }
     else if (tl.flags == TEXT_LINE_TYPE_STRUCT_BEGIN) {
-      if (i > 0) {
-        os << "\n";
-      }
-
-      size_t pos = tl.formatted_line.find_first_not_of(' ');
-      if (pos != std::string::npos) {
-        std::string s(pos, ' ');
-        os << s << "//" << " ";
-        os << "abs offset = " << tl.formatted_absolute_offset << ", ";
-        os << "rel offset = " << tl.formatted_relative_offset << ", ";
-        os << "size = " << tl.formatted_size << ", ";
-        os << "padded size = " << tl.formatted_padded_size;
-        if (tl.array_stride > 0) {
-          os << ", ";
-          os << "array stride = " << tl.formatted_array_stride;
+      if (!flatten_cbuffers) {
+        if (i > 0) {
+          os << "\n";
         }
-        os << "\n";
-      }
 
-      os << std::setw(line_width) << std::left << tl.formatted_line;
+        size_t pos = tl.formatted_line.find_first_not_of(' ');
+        if (pos != std::string::npos) {
+          std::string s(pos, ' ');
+          os << s << "//" << " ";
+          os << "abs offset = " << tl.formatted_absolute_offset << ", ";
+          os << "rel offset = " << tl.formatted_relative_offset << ", ";
+          os << "size = " << tl.formatted_size << ", ";
+          os << "padded size = " << tl.formatted_padded_size;
+          if (tl.array_stride > 0) {
+            os << ", ";
+            os << "array stride = " << tl.formatted_array_stride;
+          }
+          os << "\n";
+        }
+
+        os << std::setw(line_width) << std::left << tl.formatted_line;
+      }
     }
     else if (tl.flags == TEXT_LINE_TYPE_STRUCT_END) {
-      os << std::setw(line_width) << std::left << tl.formatted_line;
-      if (i < (n - 1)) {
-        os << "\n";
+      if (!flatten_cbuffers) {
+        os << std::setw(line_width) << std::left << tl.formatted_line;
+        if (i < (n - 1)) {
+          os << "\n";
+        }
       }
     }
     else {
@@ -778,7 +791,7 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, const std::vecto
   }
 }
 
-void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, const char* indent = "")
+void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, bool flatten_cbuffers, const char* indent)
 {
   const char* t = indent;
   os << t << "spirv id : " << obj.spirv_id << "\n";
@@ -817,16 +830,16 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
   if (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
       obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
     std::vector<TextLine> text_lines;
-    ParseBlockVariableToTextLines("    ",  obj.block, &text_lines);
+    ParseBlockVariableToTextLines("    ",  flatten_cbuffers, obj.block, &text_lines);
     if (!text_lines.empty()) {
       os << "\n";
-      StreamWriteTextLines(os, t, text_lines);
+      StreamWriteTextLines(os, t, flatten_cbuffers, text_lines);
       os << "\n";
     }
   }
 }
 
-void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVariable& obj, const char* indent = "")
+void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVariable& obj, const char* indent)
 {
   const char* t = indent;
   os << t << "spirv id  : " << obj.spirv_id << "\n";
@@ -851,8 +864,9 @@ void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVar
   }
 }
 
-void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj, const char* /*indent*/ = "")
+void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent)
 {
+  (void)indent;
   os << "generator       : " << ToStringGenerator(obj.generator) << "\n";
   os << "entry point     : " << obj.entry_point_name << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
@@ -860,28 +874,7 @@ void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj
   os << "shader stage    : " << ToStringShaderStage(obj.shader_stage);
 }
 
-std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorBinding& obj)
-{
-  StreamWriteDescriptorBinding(os, obj, true, "  ");
-  return os;
-}
-
-//std::ostream& operator<<(std::ostream& os, const SpvReflectDescriptorSet& obj)
-//{
-//  PrintDescriptorSet(os, obj, "  ");
-//  os << "\n";
-//  for (uint32_t i = 0; i < obj.binding_count; ++i) {
-//    const auto p_binding = obj.bindings[i];
-//    os << "   " << i << ":"  << "\n";
-//    StreamWriteDescriptorBinding(os, *p_binding, false, "    ");
-//    if (i < (obj.binding_count - 1)) {
-//      os << "\n";
-//    }
-//  }
-//  return os;
-//}
-
-std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
+void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers, std::ostream& os)
 {
   const char* t     = "  ";
   const char* tt    = "    ";
@@ -961,37 +954,12 @@ std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj)
       auto p_binding = bindings[i];
       assert(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << "Binding" << " " << p_binding->set << "." << p_binding->binding << "" << "\n";
-      StreamWriteDescriptorBinding(os, *p_binding, true, ttt);
+      StreamWriteDescriptorBinding(os, *p_binding, true, flatten_cbuffers, ttt);
       if (i < (count - 1)) {
         os << "\n\n";
       }  
     }
   }
-
-  /*
-  count = 0;
-  result = obj.EnumerateDescriptorSets(&count, nullptr);
-  assert(result == SPV_REFLECT_RESULT_SUCCESS);
-  sets.resize(count);
-  result = obj.EnumerateDescriptorSets(&count, sets.data());
-  assert(result == SPV_REFLECT_RESULT_SUCCESS);
-  if (count > 0) {
-    os << "\n";
-    os << "\n";
-    os << t << "Descriptor sets: " << count << "\n";
-    for (size_t i = 0; i < sets.size(); ++i) {
-      auto p_set = sets[i];
-      assert(result == SPV_REFLECT_RESULT_SUCCESS);
-      os << tt << i << ":" << "\n";
-      PrintDescriptorSet(os, *p_set, ttt);
-      if (i < (count - 1)) {
-        os << "\n";
-      }  
-    }
-  }
-  */
-
-  return os;
 }
 
 //////////////////////////////////

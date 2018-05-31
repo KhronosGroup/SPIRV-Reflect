@@ -24,7 +24,8 @@ std::string ToStringFormat(SpvReflectFormat fmt);
 std::string ToStringComponentType(const SpvReflectTypeDescription& type, uint32_t member_decoration_flags);
 std::string ToStringType(SpvSourceLanguage src_lang, const SpvReflectTypeDescription& type);
 
-std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj);
+//std::ostream& operator<<(std::ostream& os, const spv_reflect::ShaderModule& obj);
+void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers, std::ostream& os);
 
 class SpvReflectToYaml {
 public:
