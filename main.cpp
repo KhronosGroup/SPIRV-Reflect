@@ -50,7 +50,7 @@ void PrintUsage()
     << "                             itself, you probably don't want this." << std::endl
     << "-e,--entrypoint           Prints the entry point found in shader module." << std::endl
     << "-s,--stage                Prints the Vulkan shader stage found in shader module." << std::endl
-    << "-fcb,--flatten_cbuffers   Flatten cbuffers on output." << std::endl;
+    << "-fcb,--flatten_cbuffers   Flatten constant buffers on non-YAML output." << std::endl;
 }
 
 // =================================================================================================
