@@ -85,6 +85,17 @@ int SpirvReflectExample(const void* spirv_code, size_t spirv_nbytes)
 
 A C++ wrapper is also provided.
 
+## Building Self-Test Suite
+
+SPIRV-Reflect uses [googletest](https://github.com/google/googletest) for self-testing.
+This component is optional, and generally only of interest to developers modifying SPIRV-Reflect.
+To run the self-tests:
+
+- `git submodule init`
+- `git submodule update`
+- Enable `SPIRV_REFLECT_BUILD_TESTS` in CMake
+- Build and run the `test-spirv-reflect` project.
+
 ## License
 
 Copyright 2017-2018 Google Inc.
