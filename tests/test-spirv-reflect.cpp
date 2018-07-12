@@ -772,3 +772,376 @@ const std::vector<const char *> all_spirv_paths = {
 } // namespace
 INSTANTIATE_TEST_CASE_P(ForAllShaders, SpirvReflectTest,
                         ::testing::ValuesIn(all_spirv_paths));
+
+class SpirvReflectMultiEntryPointTest : public ::testing::TestWithParam<int> {
+protected:
+  void SetUp() override {
+    // called after constructor before each test
+    const std::string spirv_path = "../tests/multi_entrypoint/multi_entrypoint.spv";
+    std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
+    std::streampos spirv_file_nbytes = spirv_file.tellg();
+    spirv_file.seekg(0);
+    spirv_.resize(spirv_file_nbytes);
+    spirv_file.read(reinterpret_cast<char *>(spirv_.data()), spirv_.size());
+
+    SpvReflectResult result =
+        spvReflectCreateShaderModule(spirv_.size(), spirv_.data(), &module_);
+    ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result)
+        << "spvReflectCreateShaderModule() failed";
+  }
+
+  // optional:
+  void TearDown() override {
+    // called before destructor after all tests
+    spvReflectDestroyShaderModule(&module_);
+  }
+
+  const char* eps_[2] = {"entry_vert", "entry_frag"};
+  std::vector<uint8_t> spirv_;
+  SpvReflectShaderModule module_;
+};
+
+TEST_F(SpirvReflectMultiEntryPointTest, GetEntryPoint) {
+  ASSERT_EQ(&module_.entry_points[0],
+            spvReflectGetEntryPoint(&module_, eps_[0]));
+  ASSERT_EQ(&module_.entry_points[1],
+            spvReflectGetEntryPoint(&module_, eps_[1]));
+  ASSERT_EQ(NULL,
+            spvReflectGetEntryPoint(&module_, "entry_tess"));
+}
+
+TEST_F(SpirvReflectMultiEntryPointTest, GetDescriptorBindings0) {
+  uint32_t binding_count = 0;
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectEnumerateEntryPointDescriptorBindings(
+                &module_,
+                eps_[0],
+                &binding_count,
+                NULL));
+  ASSERT_EQ(binding_count, 1);
+  SpvReflectDescriptorBinding* binding;
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectEnumerateEntryPointDescriptorBindings(
+                &module_,
+                eps_[0],
+                &binding_count,
+                &binding));
+  ASSERT_EQ(binding->set, 0);
+  ASSERT_EQ(binding->binding, 1);
+  ASSERT_EQ(strcmp(binding->name, "ubo"), 0);
+  ASSERT_EQ(binding->descriptor_type, SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+  SpvReflectResult result;
+  ASSERT_EQ(binding,
+            spvReflectGetEntryPointDescriptorBinding(
+                &module_,
+                eps_[0],
+                binding->binding,
+                binding->set,
+                &result));
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
+}
+
+TEST_F(SpirvReflectMultiEntryPointTest, GetDescriptorBindings1) {
+  uint32_t binding_count = 0;
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectEnumerateEntryPointDescriptorBindings(
+                &module_,
+                eps_[1],
+                &binding_count,
+                NULL));
+  ASSERT_EQ(binding_count, 2);
+  SpvReflectDescriptorBinding* bindings[2];
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectEnumerateEntryPointDescriptorBindings(
+                &module_,
+                eps_[1],
+                &binding_count,
+                bindings));
+  ASSERT_EQ(bindings[0]->set, 0);
+  ASSERT_EQ(bindings[0]->binding, 0);
+  ASSERT_EQ(strcmp(bindings[0]->name, "tex"), 0);
+  ASSERT_EQ(bindings[0]->descriptor_type, SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+  ASSERT_EQ(bindings[1]->set, 0);
+  ASSERT_EQ(bindings[1]->binding, 1);
+  ASSERT_EQ(strcmp(bindings[1]->name, "ubo"), 0);
+  ASSERT_EQ(bindings[1]->descriptor_type, SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+  for (size_t i = 0; i < 2; ++i) {
+    SpvReflectResult result;
+    ASSERT_EQ(bindings[i],
+              spvReflectGetEntryPointDescriptorBinding(
+                  &module_,
+                  eps_[1],
+                  bindings[i]->binding,
+                  bindings[i]->set,
+                  &result));
+    ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
+  }
+}
+
+TEST_F(SpirvReflectMultiEntryPointTest, GetDescriptorBindingsShared) {
+  uint32_t vert_count = 1;
+  SpvReflectDescriptorBinding* vert_binding;
+
+  uint32_t frag_count = 2;
+  SpvReflectDescriptorBinding* frag_binding[2];
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectEnumerateEntryPointDescriptorBindings(
+                &module_,
+                eps_[0],
+                &vert_count,
+                &vert_binding));
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectEnumerateEntryPointDescriptorBindings(
+                &module_,
+                eps_[1],
+                &frag_count,
+                frag_binding));
+  ASSERT_EQ(vert_binding, frag_binding[1]);
+}
+
+TEST_F(SpirvReflectMultiEntryPointTest, GetDescriptorSets0) {
+  uint32_t set_count;
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectEnumerateEntryPointDescriptorSets(
+                &module_,
+                eps_[0],
+                &set_count,
+                NULL));
+  ASSERT_EQ(set_count, 1);
+  SpvReflectDescriptorSet *set;
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectEnumerateEntryPointDescriptorSets(
+                &module_,
+                eps_[0],
+                &set_count,
+                &set));
+  ASSERT_EQ(set->set, 0);
+  ASSERT_EQ(set->binding_count, 1);
+  ASSERT_EQ(set, &module_.entry_points[0].descriptor_sets[0]);
+
+  SpvReflectResult result;
+  ASSERT_EQ(set,
+            spvReflectGetEntryPointDescriptorSet(
+                &module_,
+                eps_[0],
+                set->set,
+                &result));
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
+}
+
+TEST_F(SpirvReflectMultiEntryPointTest, GetDescriptorSets1) {
+  uint32_t set_count;
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectEnumerateEntryPointDescriptorSets(
+                &module_,
+                eps_[1],
+                &set_count,
+                NULL));
+  ASSERT_EQ(set_count, 1);
+  SpvReflectDescriptorSet *set;
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectEnumerateEntryPointDescriptorSets(
+                &module_,
+                eps_[1],
+                &set_count,
+                &set));
+  ASSERT_EQ(set->set, 0);
+  ASSERT_EQ(set->binding_count, 2);
+  ASSERT_EQ(set, &module_.entry_points[1].descriptor_sets[0]);
+
+  SpvReflectResult result;
+  ASSERT_EQ(set,
+            spvReflectGetEntryPointDescriptorSet(
+                &module_,
+                eps_[1],
+                set->set,
+                &result));
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
+}
+
+TEST_F(SpirvReflectMultiEntryPointTest, GetInputVariables) {
+  const uint32_t counts[2] = {2, 1};
+  const char* names[2][2] = {{"iUV", "pos"}, {"iUV", NULL}};
+  for (size_t i = 0; i < 2; ++i) {
+    uint32_t count = 0;
+    ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+              spvReflectEnumerateEntryPointInputVariables(
+                  &module_,
+                  eps_[i],
+                  &count,
+                  NULL));
+    ASSERT_EQ(count, counts[i]);
+
+    // 2 is the max count
+    SpvReflectInterfaceVariable* vars[2];
+    ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+              spvReflectEnumerateEntryPointInputVariables(
+                  &module_,
+                  eps_[i],
+                  &count,
+                  vars));
+    for (size_t j = 0; j < counts[i]; ++j) {
+      if (vars[j]->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
+        // built-ins don't have reasonable locations
+        continue;
+      }
+      SpvReflectResult result;
+      const SpvReflectInterfaceVariable* var =
+          spvReflectGetEntryPointInputVariableByLocation(
+              &module_,
+              eps_[i],
+              vars[j]->location,
+              &result);
+      ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
+      ASSERT_EQ(var, vars[j]);
+      ASSERT_EQ(strcmp(var->name, names[i][var->location]), 0);
+    }
+  }
+}
+
+TEST_F(SpirvReflectMultiEntryPointTest, GetOutputVariables) {
+  const uint32_t counts[2] = {2, 1};
+  // One of the outputs from the first entry point is a builtin so it has no
+  // position.
+  const char* names[2][1] = {{"oUV"}, {"colour"}};
+  for (size_t i = 0; i < 2; ++i) {
+    uint32_t count = 0;
+    ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+              spvReflectEnumerateEntryPointOutputVariables(
+                  &module_,
+                  eps_[i],
+                  &count,
+                  NULL));
+    ASSERT_EQ(count, counts[i]);
+
+    // 2 is the max count
+    SpvReflectInterfaceVariable* vars[2];
+    ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+              spvReflectEnumerateEntryPointOutputVariables(
+                  &module_,
+                  eps_[i],
+                  &count,
+                  vars));
+    for (size_t j = 0; j < counts[i]; ++j) {
+      if (vars[j]->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
+        // built-ins don't have reasonable locations
+        continue;
+      }
+      SpvReflectResult result;
+      const SpvReflectInterfaceVariable* var =
+          spvReflectGetEntryPointOutputVariableByLocation(
+              &module_,
+              eps_[i],
+              vars[j]->location,
+              &result);
+      ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
+      ASSERT_EQ(var, vars[j]);
+      ASSERT_EQ(strcmp(var->name, names[i][var->location]), 0);
+    }
+  }
+}
+
+TEST_F(SpirvReflectMultiEntryPointTest, GetPushConstants) {
+  for (size_t i = 0; i < 2; ++i) {
+    SpvReflectBlockVariable* var;
+    uint32_t count = 0;
+    ASSERT_EQ(SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH,
+              spvReflectEnumerateEntryPointPushConstantBlocks(
+                  &module_,
+                  eps_[i],
+                  &count,
+                  &var));
+    ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+              spvReflectEnumerateEntryPointPushConstantBlocks(
+                  &module_,
+                  eps_[i],
+                  &count,
+                  NULL));
+    ASSERT_EQ(count, 1);
+    ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+              spvReflectEnumerateEntryPointPushConstantBlocks(
+                  &module_,
+                  eps_[i],
+                  &count,
+                  &var));
+    SpvReflectResult result;
+    ASSERT_EQ(var,
+              spvReflectGetEntryPointPushConstantBlock(
+                  &module_,
+                  eps_[i],
+                  &result));
+    ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
+  }
+}
+
+TEST_F(SpirvReflectMultiEntryPointTest, ChangeDescriptorBindingNumber) {
+  const SpvReflectDescriptorBinding* binding = spvReflectGetEntryPointDescriptorBinding(
+      &module_,
+      eps_[0],
+      1,
+      0,
+      NULL);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectChangeDescriptorBindingNumbers(&module_,
+                                                     binding,
+                                                     2,
+                                                     1));
+  // Change descriptor binding numbers doesn't currently resort so it won't
+  // invalidate binding, but if that changes this test will need to be fixed.
+  ASSERT_EQ(binding->set, 1);
+  ASSERT_EQ(binding->binding, 2);
+
+  SpvReflectResult result;
+  const SpvReflectDescriptorSet* set0 = spvReflectGetEntryPointDescriptorSet(
+      &module_,
+      eps_[0],
+      1,
+      &result);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
+  ASSERT_EQ(set0->binding_count, 1);
+  const SpvReflectDescriptorSet* set1 = spvReflectGetEntryPointDescriptorSet(
+      &module_,
+      eps_[1],
+      1,
+      &result);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
+  ASSERT_EQ(set1->binding_count, 1);
+
+  ASSERT_EQ(set0->bindings[0], set1->bindings[0]);
+}
+
+TEST_F(SpirvReflectMultiEntryPointTest, ChangeDescriptorSetNumber) {
+  const SpvReflectDescriptorSet* set = spvReflectGetDescriptorSet(
+      &module_,
+      0,
+      NULL);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
+            spvReflectChangeDescriptorSetNumber(&module_,
+                                                set,
+                                                1));
+  // Change descriptor binding numbers doesn't currently resort so it won't
+  // invalidate binding, but if that changes this test will need to be fixed.
+  ASSERT_EQ(set->set, 1);
+
+  SpvReflectResult result;
+  const SpvReflectDescriptorSet* set0 = spvReflectGetEntryPointDescriptorSet(
+      &module_,
+      eps_[0],
+      1,
+      &result);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
+  ASSERT_EQ(set0->binding_count, 1);
+  const SpvReflectDescriptorSet* set1 = spvReflectGetEntryPointDescriptorSet(
+      &module_,
+      eps_[1],
+      1,
+      &result);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
+  ASSERT_EQ(set1->binding_count, 2);
+
+  ASSERT_EQ(set0->bindings[0], set1->bindings[1]);
+  ASSERT_EQ(set0->bindings[0]->set, 1);
+}
