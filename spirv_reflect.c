@@ -2224,6 +2224,23 @@ static void SafeFreeBlockVariables(SpvReflectBlockVariable* p_block)
   }
 }
 
+static void SafeFreeInterfaceVariable(SpvReflectInterfaceVariable* p_interface)
+{
+  if (IsNull(p_interface)) {
+    return;
+  }
+
+  if (IsNotNull(p_interface->members)) {
+    for (size_t i = 0; i < p_interface->member_count; ++i) {
+      SpvReflectInterfaceVariable* p_member = &p_interface->members[i];
+      SafeFreeInterfaceVariable(p_member);
+    }
+
+    SafeFree(p_interface->members);
+    p_interface->members = NULL;
+  }
+}
+
 void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
 {
   if (IsNull(p_module->_internal)) {
@@ -2244,9 +2261,15 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
   SafeFree(p_module->descriptor_bindings);
 
   // Input variables
+  for (size_t i = 0; i < p_module->input_variable_count; ++i) {
+    SafeFreeInterfaceVariable(&p_module->input_variables[i]);
+  }
   SafeFree(p_module->input_variables);
 
   // Output variables
+  for (size_t i = 0; i < p_module->output_variable_count; ++i) {
+    SafeFreeInterfaceVariable(&p_module->output_variables[i]);
+  }
   SafeFree(p_module->output_variables);
 
   // Push constants

@@ -184,9 +184,10 @@ TEST_P(SpirvReflectTest, EnumerateDescriptorBindings_Errors) {
   EXPECT_EQ(
     spvReflectEnumerateDescriptorBindings(&module_, &binding_count, nullptr),
     SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectDescriptorBinding*> bindings(binding_count+1);
+  uint32_t bad_binding_count = binding_count+1;
+  std::vector<SpvReflectDescriptorBinding*> bindings(bad_binding_count);
   EXPECT_EQ(
-    spvReflectEnumerateDescriptorBindings(&module_, &binding_count+1, bindings.data()),
+    spvReflectEnumerateDescriptorBindings(&module_, &bad_binding_count, bindings.data()),
     SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
 }
 TEST_P(SpirvReflectTest, GetDescriptorBinding_Errors) {
@@ -235,9 +236,10 @@ TEST_P(SpirvReflectTest, EnumerateDescriptorSets_Errors) {
   EXPECT_EQ(
     spvReflectEnumerateDescriptorSets(&module_, &set_count, nullptr),
     SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectDescriptorSet*> sets(set_count+1);
+  uint32_t bad_set_count = set_count+1;
+  std::vector<SpvReflectDescriptorSet*> sets(bad_set_count);
   EXPECT_EQ(
-    spvReflectEnumerateDescriptorSets(&module_, &set_count+1, sets.data()),
+    spvReflectEnumerateDescriptorSets(&module_, &bad_set_count, sets.data()),
     SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
 }
 TEST_P(SpirvReflectTest, GetDescriptorSet_Errors) {
@@ -288,9 +290,10 @@ TEST_P(SpirvReflectTest, EnumerateInputVariables_Errors) {
   EXPECT_EQ(
     spvReflectEnumerateInputVariables(&module_, &var_count, nullptr),
     SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectInterfaceVariable*> vars(var_count+1);
+  uint32_t bad_var_count = var_count+1;
+  std::vector<SpvReflectInterfaceVariable*> vars(bad_var_count);
   EXPECT_EQ(
-    spvReflectEnumerateInputVariables(&module_, &var_count+1, vars.data()),
+    spvReflectEnumerateInputVariables(&module_, &bad_var_count, vars.data()),
     SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
 }
 TEST_P(SpirvReflectTest, GetInputVariableByLocation_Errors) {
@@ -392,9 +395,10 @@ TEST_P(SpirvReflectTest, EnumerateOutputVariables_Errors) {
   EXPECT_EQ(
     spvReflectEnumerateOutputVariables(&module_, &var_count, nullptr),
     SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectInterfaceVariable*> vars(var_count+1);
+  uint32_t bad_var_count = var_count+1;
+  std::vector<SpvReflectInterfaceVariable*> vars(bad_var_count);
   EXPECT_EQ(
-    spvReflectEnumerateOutputVariables(&module_, &var_count+1, vars.data()),
+    spvReflectEnumerateOutputVariables(&module_, &bad_var_count, vars.data()),
     SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
 }
 TEST_P(SpirvReflectTest, GetOutputVariableByLocation_Errors) {
@@ -493,9 +497,10 @@ TEST_P(SpirvReflectTest, EnumeratePushConstantBlocks_Errors) {
   EXPECT_EQ(
     spvReflectEnumeratePushConstantBlocks(&module_, &block_count, nullptr),
     SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectBlockVariable*> blocks(block_count+1);
+  uint32_t bad_block_count = block_count+1;
+  std::vector<SpvReflectBlockVariable*> blocks(bad_block_count);
   EXPECT_EQ(
-    spvReflectEnumeratePushConstantBlocks(&module_, &block_count+1, blocks.data()),
+    spvReflectEnumeratePushConstantBlocks(&module_, &bad_block_count, blocks.data()),
     SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
 }
 TEST_P(SpirvReflectTest, GetPushConstantBlock_Errors) {
