@@ -70,6 +70,11 @@ int main(int argn, char** argv)
     return EXIT_FAILURE;
   }
 
+  if (arg_parser.GetFlag("h", "help")) {
+    PrintUsage();
+    return EXIT_SUCCESS;
+  }
+
   bool output_as_yaml = arg_parser.GetFlag("y", "yaml");
 
   int yaml_verbosity = 0;
