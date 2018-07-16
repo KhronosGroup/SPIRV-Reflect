@@ -258,7 +258,7 @@ static SpvReflectResult IntersectSortedUint32(const uint32_t* arr0, size_t arr0_
 
   *res = NULL;
   if (*res_size > 0) {
-    *res = (uint32_t*)calloc(*res_size, sizeof(*res));
+    *res = (uint32_t*)calloc(*res_size, sizeof(**res));
     if (IsNull(*res)) {
       return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
     }
