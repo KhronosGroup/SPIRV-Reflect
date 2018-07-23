@@ -1437,7 +1437,7 @@ inline uint32_t ShaderModule::GetEntryPointCount() const {
   @return
 */
 inline const char* ShaderModule::GetEntryPointName(uint32_t index) const {
-  return m_module.entry_points[0].name;
+  return m_module.entry_points[index].name;
 }
 
 /*! @fn GetShaderStage
@@ -1453,7 +1453,7 @@ inline SpvReflectShaderStageFlagBits ShaderModule::GetShaderStage() const {
 
   @param  count
   @param  p_binding_numbers
-  @param  p_set_numbers
+  @param  pp_bindings
   @return
 
 */
@@ -1472,8 +1472,7 @@ inline SpvReflectResult ShaderModule::EnumerateDescriptorBindings(
 
   @param  entry_point
   @param  count
-  @param  p_binding_numbers
-  @param  p_set_numbers
+  @param  pp_bindings
   @return
 
 */
@@ -1495,7 +1494,7 @@ inline SpvReflectResult ShaderModule::EnumerateEntryPointDescriptorBindings(
 /*! @fn EnumerateDescriptorSets
 
   @param  count
-  @param  p_set_numbers
+  @param  pp_sets
   @return
 
 */
@@ -1514,7 +1513,7 @@ inline SpvReflectResult ShaderModule::EnumerateDescriptorSets(
 
   @param  entry_point
   @param  count
-  @param  p_set_numbers
+  @param  pp_sets
   @return
 
 */
@@ -1536,7 +1535,7 @@ inline SpvReflectResult ShaderModule::EnumerateEntryPointDescriptorSets(
 /*! @fn EnumerateInputVariables
 
   @param  count
-  @param  p_locations
+  @param  pp_variables
   @return
 
 */
@@ -1555,7 +1554,7 @@ inline SpvReflectResult ShaderModule::EnumerateInputVariables(
 
   @param  entry_point
   @param  count
-  @param  p_locations
+  @param  pp_variables
   @return
 
 */
@@ -1577,7 +1576,7 @@ inline SpvReflectResult ShaderModule::EnumerateEntryPointInputVariables(
 /*! @fn EnumerateOutputVariables
 
   @param  count
-  @param  p_locations
+  @param  pp_variables
   @return
 
 */
@@ -1596,7 +1595,7 @@ inline SpvReflectResult ShaderModule::EnumerateOutputVariables(
 
   @param  entry_point
   @param  count
-  @param  p_locations
+  @param  pp_variables
   @return
 
 */
@@ -1618,7 +1617,7 @@ inline SpvReflectResult ShaderModule::EnumerateEntryPointOutputVariables(
 /*! @fn EnumeratePushConstantBlocks
 
   @param  count
-  @param  p_locations
+  @param  pp_blocks
   @return
 
 */
@@ -1637,7 +1636,7 @@ inline SpvReflectResult ShaderModule::EnumeratePushConstantBlocks(
 
   @param  entry_point
   @param  count
-  @param  p_locations
+  @param  pp_blocks
   @return
 
 */
