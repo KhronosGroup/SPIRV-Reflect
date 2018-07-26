@@ -569,6 +569,10 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
       }
       break;
 
+      case SpvOpTypeStruct:
+      {
+        p_node->member_count = p_node->word_count - 2;
+      } // fallthrough
       case SpvOpTypeVoid:
       case SpvOpTypeBool:
       case SpvOpTypeInt:
@@ -576,7 +580,6 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
       case SpvOpTypeVector:
       case SpvOpTypeMatrix:
       case SpvOpTypeSampler:
-      case SpvOpTypeStruct:
       case SpvOpTypeOpaque:
       case SpvOpTypeFunction:
       case SpvOpTypeEvent:
