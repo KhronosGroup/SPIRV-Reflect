@@ -68,6 +68,7 @@ typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_SET_NUMBER_OVERFLOW,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_STORAGE_CLASS,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_RECURSION,
 } SpvReflectResult;
 
 /*! @enum SpvReflectTypeFlagBits
@@ -287,6 +288,7 @@ typedef struct SpvReflectInterfaceVariable {
 
 */
 typedef struct SpvReflectBlockVariable {
+  uint32_t                          spirv_id;
   const char*                       name;
   uint32_t                          offset;           // Measured in bytes
   uint32_t                          absolute_offset;  // Measured in bytes
@@ -335,6 +337,30 @@ typedef struct SpvReflectDescriptorSet {
   SpvReflectDescriptorBinding**     bindings;
 } SpvReflectDescriptorSet;
 
+/*! @struct SpvReflectEntryPoint
+
+ */
+typedef struct SpvReflectEntryPoint {
+  const char*                       name;
+  uint32_t                          id;
+
+  SpvExecutionModel                 spirv_execution_model;
+  SpvReflectShaderStageFlagBits     shader_stage;
+
+  uint32_t                          input_variable_count;
+  SpvReflectInterfaceVariable*      input_variables;
+  uint32_t                          output_variable_count;
+  SpvReflectInterfaceVariable*      output_variables;
+
+  uint32_t                          descriptor_set_count;
+  SpvReflectDescriptorSet*          descriptor_sets;
+
+  uint32_t                          used_uniform_count;
+  uint32_t*                         used_uniforms;
+  uint32_t                          used_push_constant_count;
+  uint32_t*                         used_push_constants;
+} SpvReflectEntryPoint;
+
 /*! @struct SpvReflectShaderModule
 
 */
@@ -342,6 +368,8 @@ typedef struct SpvReflectShaderModule {
   SpvReflectGenerator               generator;
   const char*                       entry_point_name;
   uint32_t                          entry_point_id;
+  uint32_t                          entry_point_count;
+  SpvReflectEntryPoint*             entry_points;
   SpvSourceLanguage                 source_language;
   uint32_t                          source_language_version;
   SpvExecutionModel                 spirv_execution_model;
@@ -419,6 +447,17 @@ uint32_t spvReflectGetCodeSize(const SpvReflectShaderModule* p_module);
 */
 const uint32_t* spvReflectGetCode(const SpvReflectShaderModule* p_module);
 
+/*! @fn spvReflectGetEntryPoint
+
+ @param  p_module     Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point  Name of the requested entry point.
+ @return              Returns a const pointer to the requested entry point,
+                      or NULL if it's not found.
+*/
+const SpvReflectEntryPoint* spvReflectGetEntryPoint(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point
+);
 
 /*! @fn spvReflectEnumerateDescriptorBindings
 
@@ -444,6 +483,32 @@ SpvReflectResult spvReflectEnumerateDescriptorBindings(
   SpvReflectDescriptorBinding**  pp_bindings
 );
 
+/*! @fn spvReflectEnumerateEntryPointDescriptorBindings
+ @brief  Creates a listing of all descriptor bindings that are used in the
+         static call tree of the given entry point.
+ @param  p_module     Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point  The name of the entry point to get the descriptor bindings for.
+ @param  p_count      If pp_bindings is NULL, the entry point's descriptor binding
+                      count (across all descriptor sets) will be stored here.
+                      If pp_bindings is not NULL, *p_count must contain the
+                      entry points's descriptor binding count.
+ @param  pp_bindings  If NULL, the entry point's total descriptor binding count
+                      will be written to *p_count.
+                      If non-NULL, pp_bindings must point to an array with
+                      *p_count entries, where pointers to the entry point's
+                      descriptor bindings will be written. The caller must not
+                      free the binding pointers written to this array.
+ @return              If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                      Otherwise, the error code indicates the cause of the
+                      failure.
+
+*/
+SpvReflectResult spvReflectEnumerateEntryPointDescriptorBindings(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point,
+  uint32_t*                     p_count,
+  SpvReflectDescriptorBinding** pp_bindings
+);
 
 /*! @fn spvReflectEnumerateDescriptorSets
 
@@ -469,9 +534,37 @@ SpvReflectResult spvReflectEnumerateDescriptorSets(
   SpvReflectDescriptorSet**     pp_sets
 );
 
+/*! @fn spvReflectEnumerateEntryPointDescriptorSets
+ @brief  Creates a listing of all descriptor sets and their bindings that are
+         used in the static call tree of a given entry point.
+ @param  p_module    Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point The name of the entry point to get the descriptor bindings for.
+ @param  p_count     If pp_sets is NULL, the module's descriptor set
+                     count will be stored here.
+                     If pp_sets is not NULL, *p_count must contain the
+                     module's descriptor set count.
+ @param  pp_sets     If NULL, the module's total descriptor set count
+                     will be written to *p_count.
+                     If non-NULL, pp_sets must point to an array with
+                     *p_count entries, where pointers to the module's
+                     descriptor sets will be written. The caller must not
+                     free the descriptor set pointers written to this array.
+ @return             If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                     Otherwise, the error code indicates the cause of the
+                     failure.
+
+*/
+SpvReflectResult spvReflectEnumerateEntryPointDescriptorSets(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point,
+  uint32_t*                     p_count,
+  SpvReflectDescriptorSet**     pp_sets
+);
+
 
 /*! @fn spvReflectEnumerateInputVariables
-
+ @brief  If the module contains multiple entry points, this will only get
+         the input variables for the first one.
  @param  p_module      Pointer to an instance of SpvReflectShaderModule.
  @param  p_count       If pp_variables is NULL, the module's input variable
                        count will be stored here.
@@ -494,9 +587,36 @@ SpvReflectResult spvReflectEnumerateInputVariables(
   SpvReflectInterfaceVariable** pp_variables
 );
 
+/*! @fn spvReflectEnumerateEntryPointInputVariables
+ @brief  Enumerate the input variables for a given entry point.
+ @param  entry_point The name of the entry point to get the input variables for.
+ @param  p_module      Pointer to an instance of SpvReflectShaderModule.
+ @param  p_count       If pp_variables is NULL, the entry point's input variable
+                       count will be stored here.
+                       If pp_variables is not NULL, *p_count must contain
+                       the entry point's input variable count.
+ @param  pp_variables  If NULL, the entry point's input variable count will be
+                       written to *p_count.
+                       If non-NULL, pp_variables must point to an array with
+                       *p_count entries, where pointers to the entry point's
+                       input variables will be written. The caller must not
+                       free the interface variables written to this array.
+ @return               If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                       Otherwise, the error code indicates the cause of the
+                       failure.
+
+*/
+SpvReflectResult spvReflectEnumerateEntryPointInputVariables(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point,
+  uint32_t*                     p_count,
+  SpvReflectInterfaceVariable** pp_variables
+);
+
 
 /*! @fn spvReflectEnumerateOutputVariables
-
+ @brief  Note: If the module contains multiple entry points, this will only get
+         the output variables for the first one.
  @param  p_module      Pointer to an instance of SpvReflectShaderModule.
  @param  p_count       If pp_variables is NULL, the module's output variable
                        count will be stored here.
@@ -519,9 +639,36 @@ SpvReflectResult spvReflectEnumerateOutputVariables(
   SpvReflectInterfaceVariable** pp_variables
 );
 
+/*! @fn spvReflectEnumerateEntryPointOutputVariables
+ @brief  Enumerate the output variables for a given entry point.
+ @param  p_module      Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point   The name of the entry point to get the output variables for.
+ @param  p_count       If pp_variables is NULL, the entry point's output variable
+                       count will be stored here.
+                       If pp_variables is not NULL, *p_count must contain
+                       the entry point's output variable count.
+ @param  pp_variables  If NULL, the entry point's output variable count will be
+                       written to *p_count.
+                       If non-NULL, pp_variables must point to an array with
+                       *p_count entries, where pointers to the entry point's
+                       output variables will be written. The caller must not
+                       free the interface variables written to this array.
+ @return               If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                       Otherwise, the error code indicates the cause of the
+                       failure.
+
+*/
+SpvReflectResult spvReflectEnumerateEntryPointOutputVariables(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point,
+  uint32_t*                     p_count,
+  SpvReflectInterfaceVariable** pp_variables
+);
+
 
 /*! @fn spvReflectEnumeratePushConstantBlocks
-
+ @brief  Note: If the module contains multiple entry points, this will only get
+         the push constant blocks for the first one.
  @param  p_module   Pointer to an instance of SpvReflectShaderModule.
  @param  p_count    If pp_blocks is NULL, the module's push constant
                     block count will be stored here.
@@ -547,6 +694,33 @@ SpvReflectResult spvReflectEnumeratePushConstantBlocks(
 SPV_REFLECT_DEPRECATED("renamed to spvReflectEnumeratePushConstantBlocks")
 SpvReflectResult spvReflectEnumeratePushConstants(
   const SpvReflectShaderModule* p_module,
+  uint32_t*                     p_count,
+  SpvReflectBlockVariable**     pp_blocks
+);
+
+/*! @fn spvReflectEnumerateEntryPointPushConstantBlocks
+ @brief  Enumerate the push constant blocks used in the static call tree of a
+         given entry point.
+ @param  p_module   Pointer to an instance of SpvReflectShaderModule.
+ @param  p_count    If pp_blocks is NULL, the entry point's push constant
+                    block count will be stored here.
+                    If pp_blocks is not NULL, *p_count must
+                    contain the entry point's push constant block count.
+ @param  pp_blocks  If NULL, the entry point's push constant block count
+                    will be written to *p_count.
+                    If non-NULL, pp_blocks must point to an
+                    array with *p_count entries, where pointers to
+                    the entry point's push constant blocks will be written.
+                    The caller must not free the block variables written
+                    to this array.
+ @return            If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                    Otherwise, the error code indicates the cause of the
+                    failure.
+
+*/
+SpvReflectResult spvReflectEnumerateEntryPointPushConstantBlocks(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point,
   uint32_t*                     p_count,
   SpvReflectBlockVariable**     pp_blocks
 );
@@ -581,6 +755,39 @@ const SpvReflectDescriptorBinding* spvReflectGetDescriptorBinding(
   SpvReflectResult*             p_result
 );
 
+/*! @fn spvReflectGetEntryPointDescriptorBinding
+ @brief  Get the descriptor binding with the given binding number and set
+         number that is used in the static call tree of a certain entry
+         point.
+ @param  p_module        Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point     The entry point to get the binding from.
+ @param  binding_number  The "binding" value of the requested descriptor
+                         binding.
+ @param  set_number      The "set" value of the requested descriptor binding.
+ @param  p_result        If successful, SPV_REFLECT_RESULT_SUCCESS will be
+                         written to *p_result. Otherwise, a error code
+                         indicating the cause of the failure will be stored
+                         here.
+ @return                 If the entry point contains a descriptor binding that
+                         matches the provided [binding_number, set_number]
+                         values, a pointer to that binding is returned. The
+                         caller must not free this pointer.
+                         If no match can be found, or if an unrelated error
+                         occurs, the return value will be NULL. Detailed
+                         error results are written to *pResult.
+@note                    If the entry point contains multiple desriptor bindings
+                         with the same set and binding numbers, there are
+                         no guarantees about which binding will be returned.
+
+*/
+const SpvReflectDescriptorBinding* spvReflectGetEntryPointDescriptorBinding(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point,
+  uint32_t                      binding_number,
+  uint32_t                      set_number,
+  SpvReflectResult*             p_result
+);
+
 
 /*! @fn spvReflectGetDescriptorSet
 
@@ -600,6 +807,30 @@ const SpvReflectDescriptorBinding* spvReflectGetDescriptorBinding(
 */
 const SpvReflectDescriptorSet* spvReflectGetDescriptorSet(
   const SpvReflectShaderModule* p_module,
+  uint32_t                      set_number,
+  SpvReflectResult*             p_result
+);
+
+/*! @fn spvReflectGetEntryPointDescriptorSet
+
+ @param  p_module    Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point The entry point to get the descriptor set from.
+ @param  set_number  The "set" value of the requested descriptor set.
+ @param  p_result    If successful, SPV_REFLECT_RESULT_SUCCESS will be
+                     written to *p_result. Otherwise, a error code
+                     indicating the cause of the failure will be stored
+                     here.
+ @return             If the entry point contains a descriptor set with the
+                     provided set_number, a pointer to that set is
+                     returned. The caller must not free this pointer.
+                     If no match can be found, or if an unrelated error
+                     occurs, the return value will be NULL. Detailed
+                     error results are written to *pResult.
+
+*/
+const SpvReflectDescriptorSet* spvReflectGetEntryPointDescriptorSet(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point,
   uint32_t                      set_number,
   SpvReflectResult*             p_result
 );
@@ -637,6 +868,34 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariable(
   SpvReflectResult*             p_result
 );
 
+/* @fn spvReflectGetEntryPointInputVariableByLocation
+
+ @param  p_module    Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point The entry point to get the input variable from.
+ @param  location    The "location" value of the requested input variable.
+                     A location of 0xFFFFFFFF will always return NULL
+                     with *p_result == ELEMENT_NOT_FOUND.
+ @param  p_result    If successful, SPV_REFLECT_RESULT_SUCCESS will be
+                     written to *p_result. Otherwise, a error code
+                     indicating the cause of the failure will be stored
+                     here.
+ @return             If the entry point contains an input interface variable
+                     with the provided location value, a pointer to that
+                     variable is returned. The caller must not free this
+                     pointer.
+                     If no match can be found, or if an unrelated error
+                     occurs, the return value will be NULL. Detailed
+                     error results are written to *pResult.
+@note
+
+*/
+const SpvReflectInterfaceVariable* spvReflectGetEntryPointInputVariableByLocation(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point,
+  uint32_t                      location,
+  SpvReflectResult*             p_result
+);
+
 /* @fn spvReflectGetInputVariableBySemantic
 
  @param  p_module  Pointer to an instance of SpvReflectShaderModule.
@@ -660,6 +919,35 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariable(
 */
 const SpvReflectInterfaceVariable* spvReflectGetInputVariableBySemantic(
   const SpvReflectShaderModule* p_module,
+  const char*                   semantic,
+  SpvReflectResult*             p_result
+);
+
+/* @fn spvReflectGetEntryPointInputVariableBySemantic
+
+ @param  p_module  Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point The entry point to get the input variable from.
+ @param  semantic  The "semantic" value of the requested input variable.
+                   A semantic of NULL will return NULL.
+                   A semantic of "" will always return NULL with
+                   *p_result == ELEMENT_NOT_FOUND.
+ @param  p_result  If successful, SPV_REFLECT_RESULT_SUCCESS will be
+                   written to *p_result. Otherwise, a error code
+                   indicating the cause of the failure will be stored
+                   here.
+ @return           If the entry point contains an input interface variable
+                   with the provided semantic, a pointer to that
+                   variable is returned. The caller must not free this
+                   pointer.
+                   If no match can be found, or if an unrelated error
+                   occurs, the return value will be NULL. Detailed
+                   error results are written to *pResult.
+@note
+
+*/
+const SpvReflectInterfaceVariable* spvReflectGetEntryPointInputVariableBySemantic(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point,
   const char*                   semantic,
   SpvReflectResult*             p_result
 );
@@ -696,6 +984,34 @@ const SpvReflectInterfaceVariable* spvReflectGetOutputVariable(
   SpvReflectResult*              p_result
 );
 
+/* @fn spvReflectGetEntryPointOutputVariableByLocation
+
+ @param  p_module     Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point  The entry point to get the output variable from.
+ @param  location     The "location" value of the requested output variable.
+                      A location of 0xFFFFFFFF will always return NULL
+                      with *p_result == ELEMENT_NOT_FOUND.
+ @param  p_result     If successful, SPV_REFLECT_RESULT_SUCCESS will be
+                      written to *p_result. Otherwise, a error code
+                      indicating the cause of the failure will be stored
+                      here.
+ @return              If the entry point contains an output interface variable
+                      with the provided location value, a pointer to that
+                      variable is returned. The caller must not free this
+                      pointer.
+                      If no match can be found, or if an unrelated error
+                      occurs, the return value will be NULL. Detailed
+                      error results are written to *pResult.
+@note
+
+*/
+const SpvReflectInterfaceVariable* spvReflectGetEntryPointOutputVariableByLocation(
+  const SpvReflectShaderModule*  p_module,
+  const char*                    entry_point,
+  uint32_t                       location,
+  SpvReflectResult*              p_result
+);
+
 /* @fn spvReflectGetOutputVariableBySemantic
 
  @param  p_module  Pointer to an instance of SpvReflectShaderModule.
@@ -719,6 +1035,35 @@ const SpvReflectInterfaceVariable* spvReflectGetOutputVariable(
 */
 const SpvReflectInterfaceVariable* spvReflectGetOutputVariableBySemantic(
   const SpvReflectShaderModule*  p_module,
+  const char*                    semantic,
+  SpvReflectResult*              p_result
+);
+
+/* @fn spvReflectGetEntryPointOutputVariableBySemantic
+
+ @param  p_module  Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point  The entry point to get the output variable from.
+ @param  semantic  The "semantic" value of the requested output variable.
+                   A semantic of NULL will return NULL.
+                   A semantic of "" will always return NULL with
+                   *p_result == ELEMENT_NOT_FOUND.
+ @param  p_result  If successful, SPV_REFLECT_RESULT_SUCCESS will be
+                   written to *p_result. Otherwise, a error code
+                   indicating the cause of the failure will be stored
+                   here.
+ @return           If the entry point contains an output interface variable
+                   with the provided semantic, a pointer to that
+                   variable is returned. The caller must not free this
+                   pointer.
+                   If no match can be found, or if an unrelated error
+                   occurs, the return value will be NULL. Detailed
+                   error results are written to *pResult.
+@note
+
+*/
+const SpvReflectInterfaceVariable* spvReflectGetEntryPointOutputVariableBySemantic(
+  const SpvReflectShaderModule*  p_module,
+  const char*                    entry_point,
   const char*                    semantic,
   SpvReflectResult*              p_result
 );
@@ -752,12 +1097,38 @@ const SpvReflectBlockVariable* spvReflectGetPushConstant(
   SpvReflectResult*              p_result
 );
 
+/*! @fn spvReflectGetEntryPointPushConstantBlock
+ @brief  Get the push constant block corresponding to the given entry point.
+         As by the Vulkan specification there can be no more than one push
+         constant block used by a given entry point, so if there is one it will
+         be returned, otherwise NULL will be returned.
+ @param  p_module     Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point  The entry point to get the push constant block from.
+ @param  p_result     If successful, SPV_REFLECT_RESULT_SUCCESS will be
+                      written to *p_result. Otherwise, a error code
+                      indicating the cause of the failure will be stored
+                      here.
+ @return              If the provided index is within range, a pointer to
+                      the corresponding push constant block is returned.
+                      The caller must not free this pointer.
+                      If no match can be found, or if an unrelated error
+                      occurs, the return value will be NULL. Detailed
+                      error results are written to *pResult.
+
+*/
+const SpvReflectBlockVariable* spvReflectGetEntryPointPushConstantBlock(
+  const SpvReflectShaderModule*  p_module,
+  const char*                    entry_point,
+  SpvReflectResult*              p_result
+);
+
 
 /*! @fn spvReflectChangeDescriptorBindingNumbers
  @brief  Assign new set and/or binding numbers to a descriptor binding.
          In addition to updating the reflection data, this function modifies
          the underlying SPIR-V bytecode. The updated code can be retrieved
-         with spvReflectGetCode().
+         with spvReflectGetCode().  If the binding is used in multiple
+         entry points within the module, it will be changed in all of them.
  @param  p_module            Pointer to an instance of SpvReflectShaderModule.
  @param  p_binding           Pointer to the descriptor binding to modify.
  @param  new_binding_number  The new binding number to assign to the
@@ -794,7 +1165,9 @@ SpvReflectResult spvReflectChangeDescriptorBindingNumber(
          all descriptor bindings in that set).
          In addition to updating the reflection data, this function modifies
          the underlying SPIR-V bytecode. The updated code can be retrieved
-         with spvReflectGetCode().
+         with spvReflectGetCode().  If the descriptor set is used in
+         multiple entry points within the module, it will be modified in all
+         of them.
  @param  p_module        Pointer to an instance of SpvReflectShaderModule.
  @param  p_set           Pointer to the descriptor binding to modify.
  @param  new_set_number  The new set number to assign to the
@@ -821,7 +1194,9 @@ SpvReflectResult spvReflectChangeDescriptorSetNumber(
          the underlying SPIR-V bytecode. The updated code can be retrieved
          with spvReflectGetCode().
          It is the caller's responsibility to avoid assigning the same
-         location to multiple input variables.
+         location to multiple input variables.  If the input variable is used
+         by multiple entry points in the module, it will be changed in all of
+         them.
  @param  p_module          Pointer to an instance of SpvReflectShaderModule.
  @param  p_input_variable  Pointer to the input variable to update.
  @param  new_location      The new location to assign to p_input_variable.
@@ -843,7 +1218,9 @@ SpvReflectResult spvReflectChangeInputVariableLocation(
          the underlying SPIR-V bytecode. The updated code can be retrieved
          with spvReflectGetCode().
          It is the caller's responsibility to avoid assigning the same
-         location to multiple output variables.
+         location to multiple output variables.  If the output variable is used
+         by multiple entry points in the module, it will be changed in all of
+         them.
  @param  p_module          Pointer to an instance of SpvReflectShaderModule.
  @param  p_output_variable  Pointer to the output variable to update.
  @param  new_location      The new location to assign to p_output_variable.
@@ -895,6 +1272,10 @@ public:
   const uint32_t* GetCode() const;
 
   const char*           GetEntryPointName() const;
+
+  uint32_t              GetEntryPointCount() const;
+  const char*           GetEntryPointName(uint32_t index) const;
+
   SpvReflectShaderStageFlagBits GetShaderStage() const;
   SPV_REFLECT_DEPRECATED("Renamed to GetShaderStage")
   SpvReflectShaderStageFlagBits GetVulkanShaderStage() const {
@@ -902,34 +1283,46 @@ public:
   }
 
   SpvReflectResult  EnumerateDescriptorBindings(uint32_t* p_count, SpvReflectDescriptorBinding** pp_bindings) const;
+  SpvReflectResult  EnumerateEntryPointDescriptorBindings(const char* entry_point, uint32_t* p_count, SpvReflectDescriptorBinding** pp_bindings) const;
   SpvReflectResult  EnumerateDescriptorSets( uint32_t* p_count, SpvReflectDescriptorSet** pp_sets) const ;
+  SpvReflectResult  EnumerateEntryPointDescriptorSets(const char* entry_point, uint32_t* p_count, SpvReflectDescriptorSet** pp_sets) const ;
   SpvReflectResult  EnumerateInputVariables(uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
+  SpvReflectResult  EnumerateEntryPointInputVariables(const char* entry_point, uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
   SpvReflectResult  EnumerateOutputVariables(uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
+  SpvReflectResult  EnumerateEntryPointOutputVariables(const char* entry_point, uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
   SpvReflectResult  EnumeratePushConstantBlocks(uint32_t* p_count, SpvReflectBlockVariable** pp_blocks) const;
+  SpvReflectResult  EnumerateEntryPointPushConstantBlocks(const char* entry_point, uint32_t* p_count, SpvReflectBlockVariable** pp_blocks) const;
   SPV_REFLECT_DEPRECATED("Renamed to EnumeratePushConstantBlocks")
   SpvReflectResult  EnumeratePushConstants(uint32_t* p_count, SpvReflectBlockVariable** pp_blocks) const {
     return EnumeratePushConstantBlocks(p_count, pp_blocks);
   }
 
   const SpvReflectDescriptorBinding*  GetDescriptorBinding(uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
+  const SpvReflectDescriptorBinding*  GetEntryPointDescriptorBinding(const char* entry_point, uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
   const SpvReflectDescriptorSet*      GetDescriptorSet(uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
+  const SpvReflectDescriptorSet*      GetEntryPointDescriptorSet(const char* entry_point, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
   const SpvReflectInterfaceVariable*  GetInputVariableByLocation(uint32_t location,  SpvReflectResult* p_result = nullptr) const;
   SPV_REFLECT_DEPRECATED("Renamed to GetInputVariableByLocation")
   const SpvReflectInterfaceVariable*  GetInputVariable(uint32_t location,  SpvReflectResult* p_result = nullptr) const {
     return GetInputVariableByLocation(location, p_result);
   }
+  const SpvReflectInterfaceVariable*  GetEntryPointInputVariableByLocation(const char* entry_point, uint32_t location,  SpvReflectResult* p_result = nullptr) const;
   const SpvReflectInterfaceVariable*  GetInputVariableBySemantic(const char* semantic,  SpvReflectResult* p_result = nullptr) const;
+  const SpvReflectInterfaceVariable*  GetEntryPointInputVariableBySemantic(const char* entry_point, const char* semantic,  SpvReflectResult* p_result = nullptr) const;
   const SpvReflectInterfaceVariable*  GetOutputVariableByLocation(uint32_t location, SpvReflectResult*  p_result = nullptr) const;
   SPV_REFLECT_DEPRECATED("Renamed to GetOutputVariableByLocation")
   const SpvReflectInterfaceVariable*  GetOutputVariable(uint32_t location, SpvReflectResult*  p_result = nullptr) const {
     return GetOutputVariableByLocation(location, p_result);
   }
+  const SpvReflectInterfaceVariable*  GetEntryPointOutputVariableByLocation(const char* entry_point, uint32_t location, SpvReflectResult*  p_result = nullptr) const;
   const SpvReflectInterfaceVariable*  GetOutputVariableBySemantic(const char* semantic, SpvReflectResult*  p_result = nullptr) const;
+  const SpvReflectInterfaceVariable*  GetEntryPointOutputVariableBySemantic(const char* entry_point, const char* semantic, SpvReflectResult*  p_result = nullptr) const;
   const SpvReflectBlockVariable*      GetPushConstantBlock(uint32_t index, SpvReflectResult*  p_result = nullptr) const;
   SPV_REFLECT_DEPRECATED("Renamed to GetPushConstantBlock")
   const SpvReflectBlockVariable*      GetPushConstant(uint32_t index, SpvReflectResult*  p_result = nullptr) const {
     return GetPushConstantBlock(index, p_result);
   }
+  const SpvReflectBlockVariable*      GetEntryPointPushConstantBlock(const char* entry_point, SpvReflectResult*  p_result = nullptr) const;
 
   SpvReflectResult ChangeDescriptorBindingNumbers(const SpvReflectDescriptorBinding* p_binding,
       uint32_t new_binding_number = SPV_REFLECT_BINDING_NUMBER_DONT_CHANGE,
@@ -1026,7 +1419,25 @@ inline const uint32_t* ShaderModule::GetCode() const {
 
 */
 inline const char* ShaderModule::GetEntryPointName() const {
-  return m_module.entry_point_name;
+  return this->GetEntryPointName(0);
+}
+
+/*! @fn GetEntryPointCount
+
+  @param
+  @return
+*/
+inline uint32_t ShaderModule::GetEntryPointCount() const {
+  return m_module.entry_point_count;
+}
+
+/*! @fn GetEntryPointName
+
+  @param index
+  @return
+*/
+inline const char* ShaderModule::GetEntryPointName(uint32_t index) const {
+  return m_module.entry_points[index].name;
 }
 
 /*! @fn GetShaderStage
@@ -1042,7 +1453,7 @@ inline SpvReflectShaderStageFlagBits ShaderModule::GetShaderStage() const {
 
   @param  count
   @param  p_binding_numbers
-  @param  p_set_numbers
+  @param  pp_bindings
   @return
 
 */
@@ -1057,11 +1468,33 @@ inline SpvReflectResult ShaderModule::EnumerateDescriptorBindings(
   return m_result;
 }
 
+/*! @fn EnumerateEntryPointDescriptorBindings
+
+  @param  entry_point
+  @param  count
+  @param  pp_bindings
+  @return
+
+*/
+inline SpvReflectResult ShaderModule::EnumerateEntryPointDescriptorBindings(
+  const char*                   entry_point,
+  uint32_t*                     p_count,
+  SpvReflectDescriptorBinding** pp_bindings
+) const
+{
+  m_result = spvReflectEnumerateEntryPointDescriptorBindings(
+      &m_module,
+      entry_point,
+      p_count,
+      pp_bindings);
+  return m_result;
+}
+
 
 /*! @fn EnumerateDescriptorSets
 
   @param  count
-  @param  p_set_numbers
+  @param  pp_sets
   @return
 
 */
@@ -1076,11 +1509,33 @@ inline SpvReflectResult ShaderModule::EnumerateDescriptorSets(
   return m_result;
 }
 
+/*! @fn EnumerateEntryPointDescriptorSets
+
+  @param  entry_point
+  @param  count
+  @param  pp_sets
+  @return
+
+*/
+inline SpvReflectResult ShaderModule::EnumerateEntryPointDescriptorSets(
+  const char*               entry_point,
+  uint32_t*                 p_count,
+  SpvReflectDescriptorSet** pp_sets
+) const
+{
+  m_result = spvReflectEnumerateEntryPointDescriptorSets(
+      &m_module,
+      entry_point,
+      p_count,
+      pp_sets);
+  return m_result;
+}
+
 
 /*! @fn EnumerateInputVariables
 
   @param  count
-  @param  p_locations
+  @param  pp_variables
   @return
 
 */
@@ -1095,11 +1550,33 @@ inline SpvReflectResult ShaderModule::EnumerateInputVariables(
   return m_result;
 }
 
+/*! @fn EnumerateEntryPointInputVariables
+
+  @param  entry_point
+  @param  count
+  @param  pp_variables
+  @return
+
+*/
+inline SpvReflectResult ShaderModule::EnumerateEntryPointInputVariables(
+  const char*                   entry_point,
+  uint32_t*                     p_count,
+  SpvReflectInterfaceVariable** pp_variables
+) const
+{
+  m_result = spvReflectEnumerateEntryPointInputVariables(
+      &m_module,
+      entry_point,
+      p_count,
+      pp_variables);
+  return m_result;
+}
+
 
 /*! @fn EnumerateOutputVariables
 
   @param  count
-  @param  p_locations
+  @param  pp_variables
   @return
 
 */
@@ -1114,11 +1591,33 @@ inline SpvReflectResult ShaderModule::EnumerateOutputVariables(
   return m_result;
 }
 
+/*! @fn EnumerateEntryPointOutputVariables
 
-/*! @fn EnumerateOutputVariables
+  @param  entry_point
+  @param  count
+  @param  pp_variables
+  @return
+
+*/
+inline SpvReflectResult ShaderModule::EnumerateEntryPointOutputVariables(
+  const char*                   entry_point,
+  uint32_t*                     p_count,
+  SpvReflectInterfaceVariable** pp_variables
+) const
+{
+  m_result = spvReflectEnumerateEntryPointOutputVariables(
+      &m_module,
+      entry_point,
+      p_count,
+      pp_variables);
+  return m_result;
+}
+
+
+/*! @fn EnumeratePushConstantBlocks
 
   @param  count
-  @param  p_locations
+  @param  pp_blocks
   @return
 
 */
@@ -1130,6 +1629,28 @@ inline SpvReflectResult ShaderModule::EnumeratePushConstantBlocks(
   m_result = spvReflectEnumeratePushConstantBlocks(&m_module,
                                               p_count,
                                               pp_blocks);
+  return m_result;
+}
+
+/*! @fn EnumerateEntryPointPushConstantBlocks
+
+  @param  entry_point
+  @param  count
+  @param  pp_blocks
+  @return
+
+*/
+inline SpvReflectResult ShaderModule::EnumerateEntryPointPushConstantBlocks(
+  const char*               entry_point,
+  uint32_t*                 p_count,
+  SpvReflectBlockVariable** pp_blocks
+) const
+{
+  m_result = spvReflectEnumerateEntryPointPushConstantBlocks(
+      &m_module,
+      entry_point,
+      p_count,
+      pp_blocks);
   return m_result;
 }
 
@@ -1154,6 +1675,29 @@ inline const SpvReflectDescriptorBinding* ShaderModule::GetDescriptorBinding(
                                         p_result);
 }
 
+/*! @fn GetEntryPointDescriptorBinding
+
+  @param  entry_point
+  @param  binding_number
+  @param  set_number
+  @param  p_result
+  @return
+
+*/
+inline const SpvReflectDescriptorBinding* ShaderModule::GetEntryPointDescriptorBinding(
+  const char*       entry_point,
+  uint32_t          binding_number,
+  uint32_t          set_number,
+  SpvReflectResult* p_result
+) const
+{
+  return spvReflectGetEntryPointDescriptorBinding(&m_module,
+                                        entry_point,
+                                        binding_number,
+                                        set_number,
+                                        p_result);
+}
+
 
 /*! @fn GetDescriptorSet
 
@@ -1170,6 +1714,26 @@ inline const SpvReflectDescriptorSet* ShaderModule::GetDescriptorSet(
   return spvReflectGetDescriptorSet(&m_module,
                                     set_number,
                                     p_result);
+}
+
+/*! @fn GetEntryPointDescriptorSet
+
+  @param  entry_point
+  @param  set_number
+  @param  p_result
+  @return
+
+*/
+inline const SpvReflectDescriptorSet* ShaderModule::GetEntryPointDescriptorSet(
+  const char*       entry_point,
+  uint32_t          set_number,
+  SpvReflectResult* p_result
+) const
+{
+  return spvReflectGetEntryPointDescriptorSet(&m_module,
+                                              entry_point,
+                                              set_number,
+                                              p_result);
 }
 
 
@@ -1199,6 +1763,37 @@ inline const SpvReflectInterfaceVariable* ShaderModule::GetInputVariableBySemant
                                               p_result);
 }
 
+/*! @fn GetEntryPointInputVariable
+
+  @param  entry_point
+  @param  location
+  @param  p_result
+  @return
+
+*/
+inline const SpvReflectInterfaceVariable* ShaderModule::GetEntryPointInputVariableByLocation(
+  const char*       entry_point,
+  uint32_t          location,
+  SpvReflectResult* p_result
+) const
+{
+  return spvReflectGetEntryPointInputVariableByLocation(&m_module,
+                                                        entry_point,
+                                                        location,
+                                                        p_result);
+}
+inline const SpvReflectInterfaceVariable* ShaderModule::GetEntryPointInputVariableBySemantic(
+  const char*       entry_point,
+  const char*       semantic,
+  SpvReflectResult* p_result
+) const
+{
+  return spvReflectGetEntryPointInputVariableBySemantic(&m_module,
+                                                        entry_point,
+                                                        semantic,
+                                                        p_result);
+}
+
 
 /*! @fn GetOutputVariable
 
@@ -1226,6 +1821,39 @@ inline const SpvReflectInterfaceVariable* ShaderModule::GetOutputVariableBySeman
     p_result);
 }
 
+/*! @fn GetEntryPointOutputVariable
+
+  @param  entry_point
+  @param  location
+  @param  p_result
+  @return
+
+*/
+inline const SpvReflectInterfaceVariable* ShaderModule::GetEntryPointOutputVariableByLocation(
+  const char*        entry_point,
+  uint32_t           location,
+  SpvReflectResult*  p_result
+) const
+{
+  return spvReflectGetEntryPointOutputVariableByLocation(
+      &m_module,
+      entry_point,
+      location,
+      p_result);
+}
+inline const SpvReflectInterfaceVariable* ShaderModule::GetEntryPointOutputVariableBySemantic(
+  const char*       entry_point,
+  const char*       semantic,
+  SpvReflectResult* p_result
+) const
+{
+  return spvReflectGetEntryPointOutputVariableBySemantic(
+      &m_module,
+      entry_point,
+      semantic,
+      p_result);
+}
+
 
 /*! @fn GetPushConstant
 
@@ -1242,6 +1870,25 @@ inline const SpvReflectBlockVariable* ShaderModule::GetPushConstantBlock(
   return spvReflectGetPushConstantBlock(&m_module,
                                     index,
                                     p_result);
+}
+
+/*! @fn GetEntryPointPushConstant
+
+  @param  entry_point
+  @param  index
+  @param  p_result
+  @return
+
+*/
+inline const SpvReflectBlockVariable* ShaderModule::GetEntryPointPushConstantBlock(
+  const char*        entry_point,
+  SpvReflectResult*  p_result
+) const
+{
+  return spvReflectGetEntryPointPushConstantBlock(
+      &m_module,
+      entry_point,
+      p_result);
 }
 
 
