@@ -126,10 +126,10 @@ typedef struct Node {
 
 typedef struct Function {
   uint32_t          id;
-  size_t            callee_count;
+  uint32_t          callee_count;
   uint32_t*         callees;
   struct Function** callee_ptrs;
-  size_t            accessed_ptr_count;
+  uint32_t          accessed_ptr_count;
   uint32_t*         accessed_ptrs;
 } Function;
 
@@ -140,13 +140,13 @@ typedef struct Parser {
   uint32_t              source_language_version;
   size_t                node_count;
   Node*                 nodes;
-  size_t                entry_point_count;
-  size_t                function_count;
+  uint32_t              entry_point_count;
+  uint32_t              function_count;
   Function*             functions;
 
-  size_t                type_count;
-  size_t                descriptor_count;
-  size_t                push_constant_count;
+  uint32_t              type_count;
+  uint32_t              descriptor_count;
+  uint32_t              push_constant_count;
 } Parser;
 
 //static uint32_t Min(uint32_t a, uint32_t b)
@@ -199,9 +199,13 @@ static int SortCompareUint32(const void* a, const void* b)
   return (int)*p_a - (int)*p_b;
 }
 
-// Deduplicates a sorted array and returns the new size.  Note: The array
-// doesn't actually need to be sorted, just arranged into "runs" so that all the
-// entries with one value are adjacent.
+//
+// De-duplicates a sorted array and returns the new size.
+//
+// Note: The array doesn't actually need to be sorted, just
+// arranged into "runs" so that all the entries with one
+// value are adjacent.
+//
 static size_t DedupSortedUint32(uint32_t* arr, size_t size)
 {
   if (size == 0) {
@@ -818,15 +822,15 @@ static SpvReflectResult ParseFunction(Parser* p_parser, Node* p_func_node,
     qsort(p_func->callees, p_func->callee_count,
           sizeof(*(p_func->callees)), SortCompareUint32);
   }
-  p_func->callee_count = DedupSortedUint32(p_func->callees,
-                                           p_func->callee_count);
+  p_func->callee_count = (uint32_t)DedupSortedUint32(p_func->callees,
+                                                     p_func->callee_count);
 
   if (p_func->accessed_ptr_count > 0) {
     qsort(p_func->accessed_ptrs, p_func->accessed_ptr_count,
           sizeof(*(p_func->accessed_ptrs)), SortCompareUint32);
   }
-  p_func->accessed_ptr_count = DedupSortedUint32(p_func->accessed_ptrs,
-                                                 p_func->accessed_ptr_count);
+  p_func->accessed_ptr_count = (uint32_t)DedupSortedUint32(p_func->accessed_ptrs,
+                                                           p_func->accessed_ptr_count);
 
   return SPV_REFLECT_RESULT_SUCCESS;
 }
@@ -2348,7 +2352,8 @@ static SpvReflectResult ParseStaticallyUsedResources(Parser* p_parser,
     qsort(used_variables, used_variable_count, sizeof(*used_variables),
           SortCompareUint32);
   }
-  used_variable_count = DedupSortedUint32(used_variables, used_variable_count);
+  used_variable_count = (uint32_t)DedupSortedUint32(used_variables, 
+                                                    used_variable_count);
 
   // Do set intersection to find the used uniform and push constants
   size_t used_uniform_count = 0, used_push_constant_count = 0;
@@ -2368,8 +2373,8 @@ static SpvReflectResult ParseStaticallyUsedResources(Parser* p_parser,
     return result1;
   }
 
-  p_entry->used_uniform_count = used_uniform_count;
-  p_entry->used_push_constant_count = used_push_constant_count;
+  p_entry->used_uniform_count = (uint32_t)used_uniform_count;
+  p_entry->used_push_constant_count = (uint32_t)used_push_constant_count;
 
   return SPV_REFLECT_RESULT_SUCCESS;
 }
