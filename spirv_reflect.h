@@ -36,17 +36,17 @@ VERSION HISTORY
 #include <string.h>
 
 #ifdef _MSC_VER
-#define SPV_REFLECT_DEPRECATED(msg_str) __declspec(deprecated("This symbol is deprecated. Details: " msg_str))
+  #define SPV_REFLECT_DEPRECATED(msg_str) __declspec(deprecated("This symbol is deprecated. Details: " msg_str))
 #elif defined(__clang__)
-#define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
+  #define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
 #elif defined(__GNUC__)
-#if GCC_VERSION >= 40500
-#define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
+  #if GCC_VERSION >= 40500
+    #define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
+  #else
+    #define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated))
+  #endif
 #else
-#define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated))
-#endif
-#else
-#define SPV_REFLECT_DEPRECATED(msg_str)
+  #define SPV_REFLECT_DEPRECATED(msg_str)
 #endif
 
 /*! @enum SpvReflectResult
@@ -1262,6 +1262,8 @@ class ShaderModule {
 public:
   ShaderModule();
   ShaderModule(size_t size, const void* p_code);
+  ShaderModule(const std::vector<uint8_t>& code);
+  ShaderModule(const std::vector<uint32_t>& code);
   ~ShaderModule();
 
   SpvReflectResult GetResult() const;
@@ -1360,10 +1362,31 @@ inline ShaderModule::ShaderModule() {}
 */
 inline ShaderModule::ShaderModule(size_t size, const void* p_code) {
   m_result = spvReflectCreateShaderModule(size,
-                                        p_code,
-                                        &m_module);
+                                          p_code,
+                                          &m_module);
 }
 
+/*! @fn ShaderModule
+
+  @param  code
+  
+*/
+inline ShaderModule::ShaderModule(const std::vector<uint8_t>& code) {
+  m_result = spvReflectCreateShaderModule(code.size(),
+                                          code.data(),
+                                          &m_module);
+}
+
+/*! @fn ShaderModule
+
+  @param  code
+  
+*/
+inline ShaderModule::ShaderModule(const std::vector<uint32_t>& code) {
+  m_result = spvReflectCreateShaderModule(code.size() * sizeof(uint32_t),
+                                          code.data(),
+                                          &m_module);
+}
 
 /*! @fn  ~ShaderModule
 
