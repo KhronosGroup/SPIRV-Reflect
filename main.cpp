@@ -50,6 +50,7 @@ void PrintUsage()
     << "                             itself, you probably don't want this." << std::endl
     << "-e,--entrypoint           Prints the entry point found in shader module." << std::endl
     << "-s,--stage                Prints the Vulkan shader stage found in shader module." << std::endl
+    << "-f,--file                 Prints the source file found in shader module." << std::endl
     << "-fcb,--flatten_cbuffers   Flatten constant buffers on non-YAML output." << std::endl;
 }
 
@@ -64,6 +65,7 @@ int main(int argn, char** argv)
   arg_parser.AddOptionInt("v", "verbosity", "", 0);
   arg_parser.AddFlag("e", "entrypoint", "");
   arg_parser.AddFlag("s", "stage", "");
+  arg_parser.AddFlag("f", "file", "");
   arg_parser.AddFlag("fcb", "flatten_cbuffers", "");
   if (!arg_parser.Parse(argn, argv, std::cerr)) {
     PrintUsage();
@@ -82,6 +84,7 @@ int main(int argn, char** argv)
 
 	bool print_entry_point = arg_parser.GetFlag("e", "entrypoint");
   bool print_shader_stage = arg_parser.GetFlag("s", "stage");
+  bool print_source_file = arg_parser.GetFlag("f", "file");
   bool flatten_cbuffers = arg_parser.GetFlag("fcb", "flatten_cbuffers");
 
 	std::string input_spv_path;
@@ -111,10 +114,10 @@ int main(int argn, char** argv)
       return EXIT_FAILURE;
     }
 
-		if (print_entry_point || print_shader_stage) {
+		if (print_entry_point || print_shader_stage || print_source_file) {
       size_t printed_count = 0;
       if (print_entry_point) {
-        std::cout<< reflection.GetEntryPointName();
+        std::cout << reflection.GetEntryPointName();
         ++printed_count;
       }
 
@@ -123,6 +126,13 @@ int main(int argn, char** argv)
           std::cout << ";";
         }
         std::cout << ToStringShaderStage(reflection.GetShaderStage());
+      }
+
+      if (print_source_file) {
+        if (printed_count > 0) {
+          std::cout << ";";
+        }
+        std::cout << reflection.GetSourceFile();
       }
 
       std::cout << std::endl;

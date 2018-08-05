@@ -372,6 +372,8 @@ typedef struct SpvReflectShaderModule {
   SpvReflectEntryPoint*             entry_points;
   SpvSourceLanguage                 source_language;
   uint32_t                          source_language_version;
+  const char*                       source_file;
+  const char*                       source_source;
   SpvExecutionModel                 spirv_execution_model;
   SpvReflectShaderStageFlagBits     shader_stage;
   uint32_t                          descriptor_binding_count;
@@ -1275,6 +1277,8 @@ public:
 
   const char*           GetEntryPointName() const;
 
+  const char*           GetSourceFile() const;
+
   uint32_t              GetEntryPointCount() const;
   const char*           GetEntryPointName(uint32_t index) const;
 
@@ -1443,6 +1447,15 @@ inline const uint32_t* ShaderModule::GetCode() const {
 */
 inline const char* ShaderModule::GetEntryPointName() const {
   return this->GetEntryPointName(0);
+}
+
+/*! @fn GetEntryPoint
+
+  @return Returns entry point
+
+*/
+inline const char* ShaderModule::GetSourceFile() const {
+  return m_module.source_file;
 }
 
 /*! @fn GetEntryPointCount

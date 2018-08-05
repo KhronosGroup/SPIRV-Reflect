@@ -124,20 +124,29 @@ typedef struct Node {
   Decorations*          member_decorations;
 } Node;
 
+typedef struct String {
+  uint32_t              result_id;
+  const char*           string;
+} String;
+
 typedef struct Function {
-  uint32_t          id;
-  uint32_t          callee_count;
-  uint32_t*         callees;
-  struct Function** callee_ptrs;
-  uint32_t          accessed_ptr_count;
-  uint32_t*         accessed_ptrs;
+  uint32_t              id;
+  uint32_t              callee_count;
+  uint32_t*             callees;
+  struct Function**     callee_ptrs;
+  uint32_t              accessed_ptr_count;
+  uint32_t*             accessed_ptrs;
 } Function;
 
 typedef struct Parser {
   size_t                spirv_word_count;
   uint32_t*             spirv_code;
+  uint32_t              string_count;
+  String*               strings;
   SpvSourceLanguage     source_language;
   uint32_t              source_language_version;
+  uint32_t              source_file_id;
+  String                source_embedded;
   size_t                node_count;
   Node*                 nodes;
   uint32_t              entry_point_count;
@@ -307,39 +316,39 @@ static SpvReflectResult ReadU32(Parser* p_parser, uint32_t word_offset, uint32_t
   return result;
 }
 
-#define CHECKED_READU32(parser, word_offset, value)                       \
-  {                                                                       \
-    SpvReflectResult checked_readu32_result = ReadU32(parser,             \
+#define CHECKED_READU32(parser, word_offset, value)                                      \
+  {                                                                                      \
+    SpvReflectResult checked_readu32_result = ReadU32(parser,                            \
                                                       word_offset, (uint32_t*)&(value)); \
-    if (checked_readu32_result != SPV_REFLECT_RESULT_SUCCESS) {           \
-      return checked_readu32_result;                                      \
-    }                                                                     \
+    if (checked_readu32_result != SPV_REFLECT_RESULT_SUCCESS) {                          \
+      return checked_readu32_result;                                                     \
+    }                                                                                    \
   }
 
-#define CHECKED_READU32_CAST(parser, word_offset, cast_to_type, value)    \
-  {                                                                       \
-    uint32_t checked_readu32_cast_u32 = UINT32_MAX;                       \
-    SpvReflectResult checked_readu32_cast_result = ReadU32(parser,        \
-                                      word_offset,                        \
+#define CHECKED_READU32_CAST(parser, word_offset, cast_to_type, value)         \
+  {                                                                            \
+    uint32_t checked_readu32_cast_u32 = UINT32_MAX;                            \
+    SpvReflectResult checked_readu32_cast_result = ReadU32(parser,             \
+                                      word_offset,                             \
                                       (uint32_t*)&(checked_readu32_cast_u32)); \
-    if (checked_readu32_cast_result != SPV_REFLECT_RESULT_SUCCESS) {      \
-      return checked_readu32_cast_result;                                 \
-    }                                                                     \
-    value = (cast_to_type)checked_readu32_cast_u32;                       \
+    if (checked_readu32_cast_result != SPV_REFLECT_RESULT_SUCCESS) {           \
+      return checked_readu32_cast_result;                                      \
+    }                                                                          \
+    value = (cast_to_type)checked_readu32_cast_u32;                            \
   }
 
-#define IF_READU32(result, parser, word_offset, value)      \
-  if ((result) == SPV_REFLECT_RESULT_SUCCESS) {               \
+#define IF_READU32(result, parser, word_offset, value)          \
+  if ((result) == SPV_REFLECT_RESULT_SUCCESS) {                 \
     result = ReadU32(parser, word_offset, (uint32_t*)&(value)); \
   }
 
 #define IF_READU32_CAST(result, parser, word_offset, cast_to_type, value) \
-  if ((result) == SPV_REFLECT_RESULT_SUCCESS) {             \
-    uint32_t if_readu32_cast_u32 = UINT32_MAX;              \
-    result = ReadU32(parser, word_offset, &if_readu32_cast_u32); \
-    if ((result) == SPV_REFLECT_RESULT_SUCCESS) {           \
-      value = (cast_to_type)if_readu32_cast_u32;            \
-    }                                                       \
+  if ((result) == SPV_REFLECT_RESULT_SUCCESS) {                           \
+    uint32_t if_readu32_cast_u32 = UINT32_MAX;                            \
+    result = ReadU32(parser, word_offset, &if_readu32_cast_u32);          \
+    if ((result) == SPV_REFLECT_RESULT_SUCCESS) {                         \
+      value = (cast_to_type)if_readu32_cast_u32;                          \
+    }                                                                     \
   }
 
 static SpvReflectResult ReadStr(Parser* p_parser, uint32_t word_offset, uint32_t word_index, uint32_t word_count, uint32_t* p_buf_size, char *p_buf)
@@ -474,6 +483,7 @@ static SpvReflectResult CreateParser(size_t size, void* p_code, Parser* p_parser
 static void DestroyParser(Parser* p_parser)
 {
   if (!IsNull(p_parser->nodes)) {
+    // Free nodes
     for (size_t i = 0; i < p_parser->node_count; ++i) {
       Node* p_node = &(p_parser->nodes[i]);
       if (IsNotNull(p_node->member_names)) {
@@ -484,6 +494,7 @@ static void DestroyParser(Parser* p_parser)
       }
     }
 
+    // Free functions
     for (size_t i = 0; i < p_parser->function_count; ++i) {
       SafeFree(p_parser->functions[i].callees);
       SafeFree(p_parser->functions[i].callee_ptrs);
@@ -491,6 +502,7 @@ static void DestroyParser(Parser* p_parser)
     }
 
     SafeFree(p_parser->nodes);
+    SafeFree(p_parser->strings);
     SafeFree(p_parser->functions);
     p_parser->node_count = 0;
   }
@@ -534,6 +546,8 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
     p_parser->nodes[i].decorations.uav_counter_buffer.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.built_in = (SpvBuiltIn)INVALID_VALUE;
   }
+  // Mark source file id node
+  p_parser->source_file_id = (uint32_t)INVALID_VALUE;
 
   uint32_t function_node = (uint32_t)INVALID_VALUE;
 
@@ -553,9 +567,17 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
     switch (p_node->op) {
       default: break;
 
+      case SpvOpString: {
+        ++(p_parser->string_count);
+      }
+      break;
+
       case SpvOpSource: {
         CHECKED_READU32_CAST(p_parser, p_node->word_offset + 1, SpvSourceLanguage, p_parser->source_language);
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_parser->source_language_version);
+        if (p_node->word_count >= 4) {
+          CHECKED_READU32(p_parser, p_node->word_offset + 3, p_parser->source_file_id);
+        }
       }
       break;
 
@@ -576,7 +598,7 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
       case SpvOpTypeStruct:
       {
         p_node->member_count = p_node->word_count - 2;
-      } // fallthrough
+      } // Fall through
       case SpvOpTypeVoid:
       case SpvOpTypeBool:
       case SpvOpTypeInt:
@@ -693,7 +715,7 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
           CHECKED_READU32(p_parser, p_func_node->word_offset + 2, p_func_node->result_id);
           ++(p_parser->function_count);
         }
-      } // fallthrough
+      } // Fall through
 
       case SpvOpFunctionEnd:
       {
@@ -713,8 +735,72 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseFunction(Parser* p_parser, Node* p_func_node,
-                                      Function* p_func, size_t first_label_index)
+static SpvReflectResult ParseStrings(Parser* p_parser)
+{
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->spirv_code));
+  assert(IsNotNull(p_parser->nodes));
+
+  // Early out
+  if (p_parser->string_count == 0) {
+    return SPV_REFLECT_RESULT_SUCCESS;
+  }
+
+  if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && IsNotNull(p_parser->nodes)) {
+    // Allocate string storage
+    p_parser->strings = (String*)calloc(p_parser->string_count, sizeof(*(p_parser->strings)));  
+
+    uint32_t string_index = 0;
+    for (size_t i = 0; i < p_parser->node_count; ++i) {
+      Node* p_node = &(p_parser->nodes[i]);
+      if (p_node->op != SpvOpString) {
+        continue;
+      }
+
+      // Paranoid check against string count
+      assert(string_index < p_parser->string_count);
+      if (string_index >= p_parser->string_count) {
+        return SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH;
+      }
+
+      // Result id
+      String* p_string = &(p_parser->strings[string_index]);
+      CHECKED_READU32(p_parser, p_node->word_offset + 1, p_string->result_id);
+
+      // String
+      uint32_t string_start = p_node->word_offset + 2;
+      p_string->string = (const char*)(p_parser->spirv_code + string_start);
+
+      // Increment string index
+      ++string_index;
+    }
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
+static SpvReflectResult ParseSource(Parser* p_parser, SpvReflectShaderModule* p_module)
+{
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->spirv_code));
+
+  if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code)) {
+    // Source file
+    if (IsNotNull(p_parser->strings)) {
+      for (uint32_t i = 0; i < p_parser->string_count; ++i) {
+        String* p_string = &(p_parser->strings[i]);
+        if (p_string->result_id == p_parser->source_file_id) {
+          p_module->source_file = p_string->string;
+          break;
+        }
+      }
+    }
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
+static SpvReflectResult ParseFunction(Parser* p_parser, Node* p_func_node, Function* p_func, size_t first_label_index)
 {
   p_func->id = p_func_node->result_id;
 
@@ -2787,6 +2873,12 @@ SpvReflectResult spvReflectCreateShaderModule(
 
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseNodes(&parser);
+  }
+  if (result == SPV_REFLECT_RESULT_SUCCESS) {
+    result = ParseStrings(&parser);
+  }
+  if (result == SPV_REFLECT_RESULT_SUCCESS) {
+    result = ParseSource(&parser, p_module);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseFunctions(&parser);

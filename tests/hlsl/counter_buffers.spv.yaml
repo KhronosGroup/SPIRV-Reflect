@@ -2,7 +2,7 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 3
+    id: 4
     op: 21
     type_name: 
     struct_member_name: 
@@ -19,7 +19,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td1
-    id: 9
+    id: 10
     op: 30
     type_name: "type.ACSBuffer.counter"
     struct_member_name: 
@@ -37,7 +37,7 @@ all_type_descriptions:
     members:
       - *td0
   - &td2
-    id: 2
+    id: 3
     op: 23
     type_name: 
     struct_member_name: "f4"
@@ -54,7 +54,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td3
-    id: 3
+    id: 4
     op: 21
     type_name: 
     struct_member_name: "i"
@@ -71,7 +71,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td4
-    id: 5
+    id: 6
     op: 29
     type_name: "Data"
     struct_member_name: 
@@ -90,7 +90,7 @@ all_type_descriptions:
       - *td2
       - *td3
   - &td5
-    id: 6
+    id: 7
     op: 30
     type_name: "type.ConsumeStructuredBuffer.Data"
     struct_member_name: 
@@ -108,7 +108,112 @@ all_type_descriptions:
     members:
       - *td4
   - &td6
-    id: 2
+    id: 3
+    op: 23
+    type_name: 
+    struct_member_name: "f4"
+    storage_class: 0 # UniformConstant
+    type_flags: 0x00000108 # VECTOR FLOAT 
+    decoration_flags: 0x00000000 # NONE
+    traits:
+      numeric:
+        scalar: { width: 32, signedness: 0 }
+        vector: { component_count: 4 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+  - &td7
+    id: 4
+    op: 21
+    type_name: 
+    struct_member_name: "i"
+    storage_class: 0 # UniformConstant
+    type_flags: 0x00000004 # INT 
+    decoration_flags: 0x00000000 # NONE
+    traits:
+      numeric:
+        scalar: { width: 32, signedness: 1 }
+        vector: { component_count: 0 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+  - &td8
+    id: 3
+    op: 23
+    type_name: 
+    struct_member_name: "f4"
+    storage_class: 0 # UniformConstant
+    type_flags: 0x00000108 # VECTOR FLOAT 
+    decoration_flags: 0x00000000 # NONE
+    traits:
+      numeric:
+        scalar: { width: 32, signedness: 0 }
+        vector: { component_count: 4 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+  - &td9
+    id: 4
+    op: 21
+    type_name: 
+    struct_member_name: "i"
+    storage_class: 0 # UniformConstant
+    type_flags: 0x00000004 # INT 
+    decoration_flags: 0x00000000 # NONE
+    traits:
+      numeric:
+        scalar: { width: 32, signedness: 1 }
+        vector: { component_count: 0 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+  - &td10
+    id: 6
+    op: 29
+    type_name: "Data"
+    struct_member_name: 
+    storage_class: 0 # UniformConstant
+    type_flags: 0x10080000 # STRUCT EXTERNAL_BLOCK 
+    decoration_flags: 0x00000000 # NONE
+    traits:
+      numeric:
+        scalar: { width: 0, signedness: 0 }
+        vector: { component_count: 0 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 2
+    members:
+      - *td8
+      - *td9
+  - &td11
+    id: 13
+    op: 30
+    type_name: "type.AppendStructuredBuffer.Data"
+    struct_member_name: 
+    storage_class: -1 # NOT APPLICABLE
+    type_flags: 0x10080000 # STRUCT EXTERNAL_BLOCK 
+    decoration_flags: 0x00000002 # BUFFER_BLOCK 
+    traits:
+      numeric:
+        scalar: { width: 0, signedness: 0 }
+        vector: { component_count: 0 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 1
+    members:
+      - *td10
+  - &td12
+    id: 3
     op: 23
     type_name: 
     struct_member_name: 
@@ -130,7 +235,7 @@ all_block_variables:
     offset: 0
     absolute_offset: 0
     size: 4
-    padded_size: 16
+    padded_size: 4
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 1 }
@@ -144,8 +249,8 @@ all_block_variables:
     name: "counter.var.MyBufferIn"
     offset: 0
     absolute_offset: 0
-    size: 16
-    padded_size: 16
+    size: 0
+    padded_size: 0
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
@@ -161,7 +266,7 @@ all_block_variables:
     offset: 0
     absolute_offset: 0
     size: 4
-    padded_size: 16
+    padded_size: 4
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 1 }
@@ -175,8 +280,8 @@ all_block_variables:
     name: "counter.var.MyBufferOut"
     offset: 0
     absolute_offset: 0
-    size: 16
-    padded_size: 16
+    size: 0
+    padded_size: 0
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
@@ -191,8 +296,8 @@ all_block_variables:
     name: "f4"
     offset: 0
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 16
+    padded_size: 16
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -201,13 +306,13 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td2
+    type_description: *td6
   - &bv5
     name: "i"
     offset: 16
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 4
+    padded_size: 4
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 1 }
@@ -216,13 +321,13 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td3
+    type_description: *td7
   - &bv6
     name: 
     offset: 0
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 20
+    padded_size: 20
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
@@ -254,8 +359,8 @@ all_block_variables:
     name: "f4"
     offset: 0
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 16
+    padded_size: 16
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -264,13 +369,13 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td2
+    type_description: *td6
   - &bv9
     name: "i"
     offset: 16
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 4
+    padded_size: 4
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 1 }
@@ -279,13 +384,13 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td3
+    type_description: *td7
   - &bv10
     name: 
     offset: 0
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 20
+    padded_size: 20
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
@@ -296,7 +401,7 @@ all_block_variables:
     members:
       - *bv8
       - *bv9
-    type_description: *td4
+    type_description: *td10
   - &bv11
     name: "MyBufferOut"
     offset: 0
@@ -312,10 +417,10 @@ all_block_variables:
     member_count: 1
     members:
       - *bv10
-    type_description: *td5
+    type_description: *td11
 all_descriptor_bindings:
   - &db0
-    spirv_id: 11
+    spirv_id: 12
     name: "counter.var.MyBufferIn"
     binding: 0
     input_attachment_index: 0
@@ -328,9 +433,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
-    word_offset: { binding: 224, set: 220 }
+    word_offset: { binding: 333, set: 329 }
   - &db1
-    spirv_id: 13
+    spirv_id: 16
     name: "counter.var.MyBufferOut"
     binding: 1
     input_attachment_index: 0
@@ -343,9 +448,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
-    word_offset: { binding: 232, set: 228 }
+    word_offset: { binding: 341, set: 337 }
   - &db2
-    spirv_id: 8
+    spirv_id: 9
     name: "MyBufferIn"
     binding: 3
     input_attachment_index: 0
@@ -355,12 +460,12 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv7 # "MyBufferIn"
     array: { dims_count: 0, dims: [] }
-    uav_counter_id: 11
+    uav_counter_id: 12
     uav_counter_binding: *db0 # "counter.var.MyBufferIn"
     type_description: *td5
-    word_offset: { binding: 208, set: 204 }
+    word_offset: { binding: 317, set: 313 }
   - &db3
-    spirv_id: 12
+    spirv_id: 15
     name: "MyBufferOut"
     binding: 4
     input_attachment_index: 0
@@ -370,13 +475,13 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv11 # "MyBufferOut"
     array: { dims_count: 0, dims: [] }
-    uav_counter_id: 13
+    uav_counter_id: 16
     uav_counter_binding: *db1 # "counter.var.MyBufferOut"
-    type_description: *td5
-    word_offset: { binding: 216, set: 212 }
+    type_description: *td11
+    word_offset: { binding: 325, set: 321 }
 all_interface_variables:
   - &iv0
-    spirv_id: 22
+    spirv_id: 25
     name: 
     location: 4294967295
     storage_class: 1 # Input
@@ -391,10 +496,10 @@ all_interface_variables:
     member_count: 0
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
-    type_description: *td6
+    type_description: *td12
     word_offset: { location: 0 }
   - &iv1
-    spirv_id: 26
+    spirv_id: 29
     name: "out.var.SV_TARGET0"
     location: 0
     storage_class: 3 # Output
@@ -409,12 +514,12 @@ all_interface_variables:
     member_count: 0
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
-    type_description: *td6
-    word_offset: { location: 200 }
+    type_description: *td12
+    word_offset: { location: 309 }
 module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
-  entry_point_id: 17
+  entry_point_id: 20
   source_language: 5 # HLSL
   source_language_version: 600
   spirv_execution_model: 4 # Fragment

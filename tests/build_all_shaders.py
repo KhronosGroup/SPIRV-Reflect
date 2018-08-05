@@ -26,7 +26,7 @@ shaders = [
   {'source':"glsl/texel_buffer.glsl", 'entry':"main", 'stage':'vert'},
 
   {'source':"hlsl/append_consume.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
-  {'source':"hlsl/binding_array.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
+#  {'source':"hlsl/binding_array.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/binding_types.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/cbuffer.hlsl", 'entry':"main", 'profile':'vs_6_0', 'stage':'vert'},
   {'source':"hlsl/counter_buffers.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
@@ -51,13 +51,15 @@ if __name__ == "__main__":
     if ext.lower() == ".glsl" or (ext.lower() == ".hlsl" and not args.dxc):
       compile_cmd_args = [args.glslc, "-fshader-stage=" + shader['stage'], "-fentry-point=" + shader['entry'], "-o", spv_path, src_path]
     elif ext.lower() == ".hlsl":
-      compile_cmd_args = [args.dxc, "-spirv", "-fspv-reflect", "-O0", "-T", shader['profile'], "-E", shader['entry'], "-Fo", spv_path, src_path]
+      compile_cmd_args = [args.dxc, "-spirv", "-Zi", "-fspv-reflect", "-O0", "-T", shader['profile'], "-E", shader['entry'], "-Fo", spv_path, src_path]
 
+    print("%s -> %s" % (src_path, spv_path))
     if args.verbose:
       print(" ".join(compile_cmd_args))
 
     try:
       compile_cmd_output = subprocess.check_output(compile_cmd_args, stderr = subprocess.STDOUT)
-      print("%s -> %s" % (src_path, spv_path))
     except subprocess.CalledProcessError as error:
-      print("Compilation failed with error code %d:\n%s" % (error.returncode, error.output.decode('utf-8')))
+      print("Compilation failed for %s with error code %d:\n%s" % (src_path, error.returncode, error.output.decode('utf-8')))
+
+    print("")      
