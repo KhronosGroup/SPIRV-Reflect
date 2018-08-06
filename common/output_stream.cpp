@@ -803,7 +803,10 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
   os << t << "binding  : " << obj.binding << "\n";
   os << t << "type     : " << ToStringDescriptorType(obj.descriptor_type);
   os << " " << "(" << ToStringResourceType(obj.resource_type) << ")" << "\n";
-  
+
+  // count
+  os << t << "count    : " << obj.count << "\n";
+
   // array
   if (obj.array.dims_count > 0) {  
     os << t << "array    : ";
@@ -855,6 +858,16 @@ void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVar
   }
   os << "\n";
   os << t << "type      : " << ToStringComponentType(*obj.type_description, 0) << "\n";
+
+  // array
+  if (obj.array.dims_count > 0) {  
+    os << t << "array     : ";
+    for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
+      os << "[" << obj.array.dims[dim_index] << "]";
+    }
+    os << "\n";
+  }
+
   os << t << "semantic  : " << (obj.semantic != NULL ? obj.semantic : "") << "\n";
   os << t << "name      : " << (obj.name != NULL ? obj.name : "") << "\n";
   os << t << "qualifier : ";

@@ -1653,6 +1653,7 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
     p_descriptor->binding = p_node->decorations.binding.value;
     p_descriptor->input_attachment_index = p_node->decorations.input_attachment_index.value;
     p_descriptor->set = p_node->decorations.set.value;
+    p_descriptor->count = 1;
     p_descriptor->uav_counter_id = p_node->decorations.uav_counter_buffer.value;
     p_descriptor->type_description = p_type;
 
@@ -1673,9 +1674,14 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
     if (p_type->traits.array.dims_count > 0) {
       p_descriptor->array.dims_count = p_type->traits.array.dims_count;
       for (uint32_t dim_index = 0; dim_index < p_type->traits.array.dims_count; ++dim_index) {
-        p_descriptor->array.dims[dim_index] = p_type->traits.array.dims[dim_index];
+        uint32_t dim_value = p_type->traits.array.dims[dim_index];
+        p_descriptor->array.dims[dim_index] = dim_value;
+        p_descriptor->count *= dim_value;
       }
     }
+
+    // Count
+
 
     p_descriptor->word_offset.binding = p_node->decorations.binding.word_offset;
     p_descriptor->word_offset.set = p_node->decorations.set.word_offset;
@@ -2174,9 +2180,13 @@ static SpvReflectResult ParseInterfaceVariable(Parser*                      p_pa
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseInterfaceVariables(Parser* p_parser, SpvReflectShaderModule* p_module,
-                                                SpvReflectEntryPoint* p_entry, size_t io_var_count,
-                                                uint32_t* io_vars)
+static SpvReflectResult ParseInterfaceVariables(
+  Parser*                 p_parser,
+  SpvReflectShaderModule* p_module,
+  SpvReflectEntryPoint*   p_entry,
+  size_t                  io_var_count,
+  uint32_t*               io_vars
+)
 {
   if (io_var_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
