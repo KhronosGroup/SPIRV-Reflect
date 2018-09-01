@@ -8,6 +8,11 @@ int SpvStripReflect(uint32_t *data, size_t len) {
   const uint32_t kHeaderLength = 5;
   const uint32_t kMagicNumber = 0x07230203u;
   const uint32_t kExtensionOpcode = 10;
+  const uint32_t kSourceContinuedOpcode = 2;
+  const uint32_t kSourceOpcode = 3;
+  const uint32_t kStringOpcode = 7;
+  const uint32_t kLineOpcode = 8;
+  const uint32_t kModuleProcessedOpcode = 330;
   const uint32_t kDecorateIdOpcode = 332;
   const uint32_t kDecorateStringOpcode = 5632;
   const uint32_t kMemberDecorateStringOpcode = 5633;
@@ -29,7 +34,12 @@ int SpvStripReflect(uint32_t *data, size_t len) {
 
     bool skip = false;
     if (opcode == kDecorateStringOpcode ||
-        opcode == kMemberDecorateStringOpcode) {
+        opcode == kMemberDecorateStringOpcode ||
+        opcode == kSourceContinuedOpcode ||
+        opcode == kSourceOpcode ||
+        opcode == kStringOpcode ||
+        opcode == kLineOpcode ||
+        opcode == kModuleProcessedOpcode) {
       skip = true;
     } else if (opcode == kDecorateIdOpcode) {
       if (pos + 2 >= len)
