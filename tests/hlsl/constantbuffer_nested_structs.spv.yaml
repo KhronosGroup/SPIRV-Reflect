@@ -6612,6 +6612,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv190 # "MyConstants"
     array: { dims_count: 0, dims: [] }
+    accessed: 1
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td190

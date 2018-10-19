@@ -1331,6 +1331,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv1 # "MyCBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
@@ -1346,6 +1347,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv3 # "MyConstantBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td3
@@ -1361,6 +1363,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv4 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td4
@@ -1376,6 +1379,7 @@ all_descriptor_bindings:
     image: { dim: 1, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
     block: *bv5 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td5
@@ -1391,6 +1395,7 @@ all_descriptor_bindings:
     image: { dim: 2, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=3D image_format=Unknown
     block: *bv6 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td6
@@ -1406,6 +1411,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 2, arrayed: 1, ms: 0, sampled: 1, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv7 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td7
@@ -1421,6 +1427,7 @@ all_descriptor_bindings:
     image: { dim: 1, depth: 2, arrayed: 1, ms: 0, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
     block: *bv8 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td8
@@ -1436,6 +1443,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 1 } # dim=1D image_format=Rgba32f
     block: *bv9 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td9
@@ -1451,6 +1459,7 @@ all_descriptor_bindings:
     image: { dim: 1, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 1 } # dim=2D image_format=Rgba32f
     block: *bv10 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td10
@@ -1466,6 +1475,7 @@ all_descriptor_bindings:
     image: { dim: 2, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 1 } # dim=3D image_format=Rgba32f
     block: *bv11 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td11
@@ -1481,6 +1491,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 2, arrayed: 1, ms: 0, sampled: 2, image_format: 1 } # dim=1D image_format=Rgba32f
     block: *bv12 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td12
@@ -1496,6 +1507,7 @@ all_descriptor_bindings:
     image: { dim: 1, depth: 2, arrayed: 1, ms: 0, sampled: 2, image_format: 1 } # dim=2D image_format=Rgba32f
     block: *bv13 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td13
@@ -1511,6 +1523,7 @@ all_descriptor_bindings:
     image: { dim: 1, depth: 2, arrayed: 0, ms: 1, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
     block: *bv14 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td14
@@ -1526,6 +1539,7 @@ all_descriptor_bindings:
     image: { dim: 1, depth: 2, arrayed: 1, ms: 1, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
     block: *bv15 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td15
@@ -1541,6 +1555,7 @@ all_descriptor_bindings:
     image: { dim: 3, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=Cube image_format=Unknown
     block: *bv16 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td16
@@ -1556,6 +1571,7 @@ all_descriptor_bindings:
     image: { dim: 3, depth: 2, arrayed: 1, ms: 0, sampled: 1, image_format: 0 } # dim=Cube image_format=Unknown
     block: *bv17 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td17
@@ -1571,6 +1587,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv19 # "MyTBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td19
@@ -1586,6 +1603,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv21 # "MyTextureBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td21
@@ -1601,6 +1619,7 @@ all_descriptor_bindings:
     image: { dim: 5, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 1 } # dim=Buffer image_format=Rgba32f
     block: *bv22 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td22
@@ -1616,6 +1635,7 @@ all_descriptor_bindings:
     image: { dim: 5, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 1 } # dim=Buffer image_format=Rgba32f
     block: *bv23 # 
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td23
@@ -1631,6 +1651,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv25 # "MyStructuredBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td25
@@ -1646,6 +1667,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv29 # "counter.var.MyRWStructuredBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td29
@@ -1661,6 +1683,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv27 # "MyRWStructuredBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 74
     uav_counter_binding: *db21 # "counter.var.MyRWStructuredBuffer"
     type_description: *td27
@@ -1677,6 +1700,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv33 # "counter.var.MyAppendStructuredBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td29
@@ -1692,6 +1716,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv31 # "MyAppendStructuredBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 78
     uav_counter_binding: *db23 # "counter.var.MyAppendStructuredBuffer"
     type_description: *td31
@@ -1708,6 +1733,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv37 # "counter.var.MyConsumeStructuredBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td29
@@ -1723,6 +1749,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv35 # "MyConsumeStructuredBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 82
     uav_counter_binding: *db25 # "counter.var.MyConsumeStructuredBuffer"
     type_description: *td33
@@ -1739,6 +1766,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv39 # "MyByteAddressBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td35
@@ -1754,6 +1782,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv41 # "MyRWByteAddressBuffer"
     array: { dims_count: 0, dims: [] }
+    accessed: 0
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td37
