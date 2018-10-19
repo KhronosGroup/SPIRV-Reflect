@@ -318,6 +318,7 @@ typedef struct SpvReflectDescriptorBinding {
   SpvReflectBlockVariable             block;
   SpvReflectBindingArrayTraits        array;
   uint32_t                            count;
+  uint32_t                            accessed;
   uint32_t                            uav_counter_id;
   struct SpvReflectDescriptorBinding* uav_counter_binding;
 

@@ -2359,6 +2359,7 @@ static SpvReflectResult TraverseCallGraph(Parser* p_parser,
 }
 
 static SpvReflectResult ParseStaticallyUsedResources(Parser* p_parser,
+                                                     SpvReflectShaderModule *p_module,
                                                      SpvReflectEntryPoint *p_entry,
                                                      size_t uniform_count,
                                                      uint32_t* uniforms,
@@ -2461,6 +2462,16 @@ static SpvReflectResult ParseStaticallyUsedResources(Parser* p_parser,
                                                    push_constants, push_constant_count,
                                                    &p_entry->used_push_constants,
                                                    &used_push_constant_count);
+
+  for (uint32_t j = 0; j < p_module->descriptor_binding_count; ++j) {
+    SpvReflectDescriptorBinding* p_binding = &p_module->descriptor_bindings[j];
+    if (SearchSortedUint32(used_variables,
+                           used_variable_count,
+                           p_binding->spirv_id)) {
+      p_binding->accessed = 1;
+    }
+  }
+
   SafeFree(used_variables);
   if (result0 != SPV_REFLECT_RESULT_SUCCESS) {
     return result0;
@@ -2562,6 +2573,7 @@ static SpvReflectResult ParseEntryPoints(Parser* p_parser, SpvReflectShaderModul
     SafeFree(interface_variables);
 
     result = ParseStaticallyUsedResources(p_parser,
+                                          p_module,
                                           p_entry_point,
                                           uniform_count,
                                           uniforms,

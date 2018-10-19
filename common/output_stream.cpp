@@ -827,6 +827,9 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
     os << "\n";
   }
 
+  // accessed
+  os << t << "accessed : " << (obj.accessed? "true" : "false") << "\n";
+
   os << t << "name     : " << obj.name;
   if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
     os << " " << "(" << obj.type_description->type_name << ")";
@@ -1265,6 +1268,9 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
   }
   // } SpvReflectBindingArrayTraits;
   os << "] }" << std::endl;
+
+  //   uint32_t                            accessed;
+  os << t1 << "accessed: " << db.accessed << std::endl;
 
   //   uint32_t                            uav_counter_id;
   os << t1 << "uav_counter_id: " << db.uav_counter_id << std::endl;
