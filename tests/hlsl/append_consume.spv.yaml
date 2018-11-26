@@ -345,6 +345,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv6 # "counter.var.BufferIn"
     array: { dims_count: 0, dims: [] }
+    accessed: 1
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td5
@@ -360,6 +361,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv2 # "BufferIn"
     array: { dims_count: 0, dims: [] }
+    accessed: 1
     uav_counter_id: 11
     uav_counter_binding: *db0 # "counter.var.BufferIn"
     type_description: *td2
@@ -375,6 +377,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv4 # "counter.var.BufferOut"
     array: { dims_count: 0, dims: [] }
+    accessed: 1
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td5
@@ -391,6 +394,7 @@ all_descriptor_bindings:
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
     block: *bv9 # "BufferOut"
     array: { dims_count: 0, dims: [] }
+    accessed: 1
     uav_counter_id: 15
     uav_counter_binding: *db2 # "counter.var.BufferOut"
     type_description: *td8
