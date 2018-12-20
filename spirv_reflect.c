@@ -1815,7 +1815,7 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
     }
     // ...otherwise use old @count convention.
     else {
-      const size_t descriptor_name_length = strlen(p_descriptor->name);
+      const size_t descriptor_name_length = p_descriptor->name? strlen(p_descriptor->name): 0;
 
       memset(name, 0, MAX_NODE_NAME_LENGTH);    
       memcpy(name, p_descriptor->name, descriptor_name_length);
@@ -1830,7 +1830,7 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
         if (p_test_counter_descriptor->descriptor_type != SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
           continue;
         }
-        if (strcmp(name, p_test_counter_descriptor->name) == 0) {
+        if (p_test_counter_descriptor->name && strcmp(name, p_test_counter_descriptor->name) == 0) {
           p_counter_descriptor = p_test_counter_descriptor;
           break;
         }
