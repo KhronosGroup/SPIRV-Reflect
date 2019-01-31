@@ -681,6 +681,16 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
       }
       break;
 
+      case SpvOpSpecConstantTrue:
+      case SpvOpSpecConstantFalse:
+      case SpvOpSpecConstant:
+      case SpvOpSpecConstantComposite:
+      case SpvOpSpecConstantOp: {
+        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_type_id);
+        CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
+      }
+      break;
+
       case SpvOpVariable:
       {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->type_id);
@@ -1428,20 +1438,25 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
           // Get length for current dimension
           Node* p_length_node = FindNode(p_parser, length_id);
           if (IsNotNull(p_length_node)) {
-            uint32_t length = 0;
-            IF_READU32(result, p_parser, p_length_node->word_offset + 3, length);
-            if (result == SPV_REFLECT_RESULT_SUCCESS) {
-              // Write the array dim and increment the count and offset
-              p_type->traits.array.dims[p_type->traits.array.dims_count] = length;
+            if (p_length_node->op == SpvOpSpecConstant ||
+                p_length_node->op == SpvOpSpecConstantOp) {
+              p_type->traits.array.dims[p_type->traits.array.dims_count] = 0xFFFFFFFF;
               p_type->traits.array.dims_count += 1;
-              // Parse next dimension or element type
-              Node* p_next_node = FindNode(p_parser, element_type_id);
-              if (IsNotNull(p_next_node)) {
-                result = ParseType(p_parser, p_next_node, NULL, p_module, p_type);
+            } else {
+              uint32_t length = 0;
+              IF_READU32(result, p_parser, p_length_node->word_offset + 3, length);
+              if (result == SPV_REFLECT_RESULT_SUCCESS) {
+                // Write the array dim and increment the count and offset
+                p_type->traits.array.dims[p_type->traits.array.dims_count] = length;
+                p_type->traits.array.dims_count += 1;
+              } else {
+                result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
               }
             }
-            else {
-              result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+            // Parse next dimension or element type
+            Node* p_next_node = FindNode(p_parser, element_type_id);
+            if (IsNotNull(p_next_node)) {
+              result = ParseType(p_parser, p_next_node, NULL, p_module, p_type);
             }
           }
           else {
