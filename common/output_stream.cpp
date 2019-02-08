@@ -598,7 +598,7 @@ void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers, co
   // Begin block
   TextLine tl = {};
   tl.indent = indent;
-  tl.type_name = block_var.type_description->type_name;
+  tl.type_name = (block_var.type_description->type_name != nullptr) ? block_var.type_description->type_name : "<unnamed>";
   tl.size = block_var.size;
   tl.padded_size = block_var.padded_size;
   tl.flags = TEXT_LINE_TYPE_BLOCK_BEGIN;
@@ -613,7 +613,7 @@ void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers, co
   // End block
   tl = {};
   tl.indent = indent;
-  tl.name = block_var.name;
+  tl.name = (block_var.name != nullptr) ? block_var.name : "<unnamed>";
   tl.absolute_offset = 0;
   tl.relative_offset = 0;
   tl.size = block_var.size;
@@ -830,7 +830,7 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
   // accessed
   os << t << "accessed : " << (obj.accessed? "true" : "false") << "\n";
 
-  os << t << "name     : " << obj.name;
+  os << t << "name     : " << ((obj.name != nullptr) ? obj.name : "<unnamed>");
   if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
     os << " " << "(" << obj.type_description->type_name << ")";
   }
