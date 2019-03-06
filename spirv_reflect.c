@@ -521,6 +521,9 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
   while (spirv_word_index < p_parser->spirv_word_count) {
     uint32_t word = p_spirv[spirv_word_index];
     uint32_t node_word_count = (word >> 16) & 0xFFFF;
+    if (node_word_count == 0) {
+      return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+    }
     spirv_word_index += node_word_count;
     ++node_count;
   }
