@@ -49,6 +49,16 @@ VERSION HISTORY
   #define SPV_REFLECT_DEPRECATED(msg_str)
 #endif
 
+typedef void* (* PFN_spvAllocationFunction)(void* pUserData, size_t size);
+
+typedef void (* PFN_spvFreeFunction)(void* pUserData, void* pMemory);
+
+typedef struct SpvAllocationCallbacks {
+	void* pUserData;
+	PFN_spvAllocationFunction                pfnAllocation;
+	PFN_spvFreeFunction                      pfnFree;
+} SpvAllocationCallbacks;
+
 /*! @enum SpvReflectResult
 
 */
@@ -416,6 +426,22 @@ SpvReflectResult spvReflectCreateShaderModule(
   size_t                   size,
   const void*              p_code,
   SpvReflectShaderModule*  p_module
+);
+
+/*! @fn spvReflectCreateShaderModule
+
+ @param  size        Size in bytes of SPIR-V code.
+ @param  p_code      Pointer to SPIR-V code.
+ @param  p_module    Pointer to an instance of SpvReflectShaderModule.
+ @param  p_allocator Pointer to an instance of SpvAllocationCallbacks.
+ @return             SPV_REFLECT_RESULT_SUCCESS on success.
+
+*/
+SpvReflectResult spvReflectCreateShaderModuleEx(
+	size_t                   size,
+	const void* p_code,
+	SpvReflectShaderModule* p_module,
+	const SpvAllocationCallbacks* p_allocator
 );
 
 SPV_REFLECT_DEPRECATED("renamed to spvReflectCreateShaderModule")
@@ -1156,6 +1182,40 @@ SpvReflectResult spvReflectChangeDescriptorBindingNumbers(
   uint32_t                           new_binding_number,
   uint32_t                           new_set_number
 );
+
+/*! @fn spvReflectChangeDescriptorBindingNumbersEx
+ @brief  Assign new set and/or binding numbers to a descriptor binding.
+		 In addition to updating the reflection data, this function modifies
+		 the underlying SPIR-V bytecode. The updated code can be retrieved
+		 with spvReflectGetCode().  If the binding is used in multiple
+		 entry points within the module, it will be changed in all of them.
+ @param  p_module            Pointer to an instance of SpvReflectShaderModule.
+ @param  p_binding           Pointer to the descriptor binding to modify.
+ @param  new_binding_number  The new binding number to assign to the
+							 provided descriptor binding.
+							 To leave the binding number unchanged, pass
+							 SPV_REFLECT_BINDING_NUMBER_DONT_CHANGE.
+ @param  new_set_number      The new set number to assign to the
+							 provided descriptor binding. Successfully changing
+							 a descriptor binding's set number invalidates all
+							 existing SpvReflectDescriptorBinding and
+							 SpvReflectDescriptorSet pointers from this module.
+							 To leave the set number unchanged, pass
+							 SPV_REFLECT_SET_NUMBER_DONT_CHANGE.
+@param  p_allocator          Pointer to an instance of SpvAllocationCallbacks.
+ @return                     If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+							 Otherwise, the error code indicates the cause of
+							 the failure.
+*/
+SpvReflectResult spvReflectChangeDescriptorBindingNumbersEx(
+	SpvReflectShaderModule*            p_module,
+	const SpvReflectDescriptorBinding* p_binding,
+	uint32_t                           new_binding_number,
+	uint32_t                           new_set_number,
+	const SpvAllocationCallbacks*      p_allocator
+);
+
+
 SPV_REFLECT_DEPRECATED("Renamed to spvReflectChangeDescriptorBindingNumbers")
 SpvReflectResult spvReflectChangeDescriptorBindingNumber(
   SpvReflectShaderModule*            p_module,
@@ -1190,6 +1250,36 @@ SpvReflectResult spvReflectChangeDescriptorSetNumber(
   SpvReflectShaderModule*        p_module,
   const SpvReflectDescriptorSet* p_set,
   uint32_t                       new_set_number
+);
+
+/*! @fn spvReflectChangeDescriptorSetNumberEx
+ @brief  Assign a new set number to an entire descriptor set (including
+		 all descriptor bindings in that set).
+		 In addition to updating the reflection data, this function modifies
+		 the underlying SPIR-V bytecode. The updated code can be retrieved
+		 with spvReflectGetCode().  If the descriptor set is used in
+		 multiple entry points within the module, it will be modified in all
+		 of them.
+ @param  p_module        Pointer to an instance of SpvReflectShaderModule.
+ @param  p_set           Pointer to the descriptor binding to modify.
+ @param  new_set_number  The new set number to assign to the
+						 provided descriptor set, and all its descriptor
+						 bindings. Successfully changing a descriptor
+						 binding's set number invalidates all existing
+						 SpvReflectDescriptorBinding and
+						 SpvReflectDescriptorSet pointers from this module.
+						 To leave the set number unchanged, pass
+						 SPV_REFLECT_SET_NUMBER_DONT_CHANGE.
+ @param  p_allocator     Pointer to an instance of SpvAllocationCallbacks.
+ @return                 If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+						 Otherwise, the error code indicates the cause of
+						 the failure.
+*/
+SpvReflectResult spvReflectChangeDescriptorSetNumberEx(
+	SpvReflectShaderModule*        p_module,
+	const SpvReflectDescriptorSet* p_set,
+	uint32_t                       new_set_number,
+	const SpvAllocationCallbacks*  p_allocator
 );
 
 /*! @fn spvReflectChangeInputVariableLocation
