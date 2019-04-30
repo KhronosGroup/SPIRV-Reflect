@@ -260,7 +260,8 @@ static SpvReflectResult IntersectSortedUint32(const uint32_t* arr0, size_t arr0_
                                               const uint32_t* arr1, size_t arr1_size,
                                               uint32_t** res,
                                               size_t* res_size,
-                                              const SpvAllocationCallbacks* p_allocator) {
+                                              const SpvAllocationCallbacks* p_allocator)
+{
   *res_size = 0;
   const uint32_t* arr0_end = arr0 + arr0_size;
   const uint32_t* arr1_end = arr1 + arr1_size;
@@ -1286,8 +1287,7 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
 
 static SpvReflectResult EnumerateAllUniforms(SpvReflectShaderModule* p_module,
                                              size_t* p_uniform_count, uint32_t** p_uniforms,
-	                                         const SpvAllocationCallbacks* p_allocator
-)
+	                                         const SpvAllocationCallbacks* p_allocator)
 {
   *p_uniform_count = p_module->descriptor_binding_count;
   if (*p_uniform_count == 0) {
@@ -2195,13 +2195,12 @@ static SpvReflectResult ParseInterfaceVariable(Parser*                       p_p
 }
 
 static SpvReflectResult ParseInterfaceVariables(
-  Parser*                 p_parser,
-  SpvReflectShaderModule* p_module,
-  SpvReflectEntryPoint*   p_entry,
-  size_t                  io_var_count,
-  uint32_t*               io_vars,
-  const SpvAllocationCallbacks* p_allocator
-)
+  Parser*                       p_parser,
+  SpvReflectShaderModule*       p_module,
+  SpvReflectEntryPoint*         p_entry,
+  size_t                        io_var_count,
+  uint32_t*                     io_vars,
+  const SpvAllocationCallbacks* p_allocator)
 {
   if (io_var_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
@@ -2328,8 +2327,7 @@ static SpvReflectResult ParseInterfaceVariables(
 static SpvReflectResult EnumerateAllPushConstants(SpvReflectShaderModule* p_module,
                                                   size_t* p_push_constant_count,
                                                   uint32_t** p_push_constants,
-                                                  const SpvAllocationCallbacks* p_allocator
-)
+                                                  const SpvAllocationCallbacks* p_allocator)
 {
   *p_push_constant_count = p_module->push_constant_block_count;
   if (*p_push_constant_count == 0) {
@@ -2890,8 +2888,7 @@ SpvReflectResult spvReflectCreateShaderModuleEx(
   size_t                   size,
   const void*              p_code,
   SpvReflectShaderModule*  p_module,
-  const SpvAllocationCallbacks* p_allocator
-)
+  const SpvAllocationCallbacks* p_allocator)
 {
   // Initialize all module fields to zero
   memset(p_module, 0, sizeof(*p_module));
