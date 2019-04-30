@@ -201,12 +201,16 @@ static uint32_t RoundUp(uint32_t value, uint32_t multiple)
 #define IsNotNull(ptr) \
   (ptr != NULL)
 
-#define SafeFree(ptr)    \
-  {                      \
-     if (ptr != NULL) {  \
-       free((void*)ptr); \
-       ptr = NULL;       \
-     }                   \
+#define SafeFree(ptr_allocator, ptr)                                   \
+  {                                                                    \
+     if (ptr != NULL) {                                                \
+       if (ptr_allocator != NULL) {                                    \
+         ptr_allocator->pfnFree(ptr_allocator->pUserData, (void*)ptr); \
+       } else {                                                        \
+         free((void*)ptr);                                             \
+       }                                                               \
+       ptr = NULL;                                                     \
+     }                                                                 \
   }
 
 static int SortCompareUint32(const void* a, const void* b)
@@ -491,30 +495,30 @@ static SpvReflectResult CreateParser(size_t size, void* p_code, Parser* p_parser
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static void DestroyParser(Parser* p_parser)
+static void DestroyParser(Parser* p_parser, const SpvAllocationCallbacks* p_allocator)
 {
   if (!IsNull(p_parser->nodes)) {
     // Free nodes
     for (size_t i = 0; i < p_parser->node_count; ++i) {
       Node* p_node = &(p_parser->nodes[i]);
       if (IsNotNull(p_node->member_names)) {
-        SafeFree(p_node->member_names);
+        SafeFree(p_allocator, p_node->member_names);
       }
       if (IsNotNull(p_node->member_decorations)) {
-        SafeFree(p_node->member_decorations);
+        SafeFree(p_allocator, p_node->member_decorations);
       }
     }
 
     // Free functions
     for (size_t i = 0; i < p_parser->function_count; ++i) {
-      SafeFree(p_parser->functions[i].callees);
-      SafeFree(p_parser->functions[i].callee_ptrs);
-      SafeFree(p_parser->functions[i].accessed_ptrs);
+      SafeFree(p_allocator, p_parser->functions[i].callees);
+      SafeFree(p_allocator, p_parser->functions[i].callee_ptrs);
+      SafeFree(p_allocator, p_parser->functions[i].accessed_ptrs);
     }
 
-    SafeFree(p_parser->nodes);
-    SafeFree(p_parser->strings);
-    SafeFree(p_parser->functions);
+    SafeFree(p_allocator, p_parser->nodes);
+    SafeFree(p_allocator, p_parser->strings);
+    SafeFree(p_allocator, p_parser->functions);
     p_parser->node_count = 0;
   }
 }
@@ -2445,7 +2449,7 @@ static SpvReflectResult ParseStaticallyUsedResources(Parser* p_parser,
     used_variables = (uint32_t*)spv_calloc(p_allocator, used_variable_count,
                                        sizeof(*used_variables));
     if (IsNull(used_variables)) {
-      SafeFree(called_functions);
+      SafeFree(p_allocator, called_functions);
       return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
     }
   }
@@ -2460,7 +2464,7 @@ static SpvReflectResult ParseStaticallyUsedResources(Parser* p_parser,
            p_parser->functions[j].accessed_ptr_count * sizeof(*used_variables));
     used_variable_count += p_parser->functions[j].accessed_ptr_count;
   }
-  SafeFree(called_functions);
+  SafeFree(p_allocator, called_functions);
 
   if (used_variable_count > 0) {
     qsort(used_variables, used_variable_count, sizeof(*used_variables),
@@ -2491,7 +2495,7 @@ static SpvReflectResult ParseStaticallyUsedResources(Parser* p_parser,
     }
   }
 
-  SafeFree(used_variables);
+  SafeFree(p_allocator, used_variables);
   if (result0 != SPV_REFLECT_RESULT_SUCCESS) {
     return result0;
   }
@@ -2590,7 +2594,7 @@ static SpvReflectResult ParseEntryPoints(Parser* p_parser, SpvReflectShaderModul
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
     }
-    SafeFree(interface_variables);
+    SafeFree(p_allocator, interface_variables);
 
     result = ParseStaticallyUsedResources(p_parser,
                                           p_module,
@@ -2605,8 +2609,8 @@ static SpvReflectResult ParseEntryPoints(Parser* p_parser, SpvReflectShaderModul
     }
   }
 
-  SafeFree(uniforms);
-  SafeFree(push_constants);
+  SafeFree(p_allocator, uniforms);
+  SafeFree(p_allocator, push_constants);
 
   return SPV_REFLECT_RESULT_SUCCESS;
 }
@@ -2694,9 +2698,9 @@ static SpvReflectResult ParseEntrypointDescriptorSets(SpvReflectShaderModule* p_
   for (uint32_t i = 0; i < p_module->entry_point_count; ++i) {
     SpvReflectEntryPoint* p_entry = &p_module->entry_points[i];
     for (uint32_t j = 0; j < p_entry->descriptor_set_count; ++j) {
-      SafeFree(p_entry->descriptor_sets[j].bindings);
+      SafeFree(p_allocator, p_entry->descriptor_sets[j].bindings);
     }
-    SafeFree(p_entry->descriptor_sets);
+    SafeFree(p_allocator, p_entry->descriptor_sets);
     p_entry->descriptor_set_count = 0;
     for (uint32_t j = 0; j < p_module->descriptor_set_count; ++j) {
       const SpvReflectDescriptorSet* p_set = &p_module->descriptor_sets[j];
@@ -2855,7 +2859,7 @@ static SpvReflectResult SynchronizeDescriptorSets(SpvReflectShaderModule* p_modu
   // Free and reset all descriptor set numbers
   for (uint32_t i = 0; i < SPV_REFLECT_MAX_DESCRIPTOR_SETS; ++i) {
     SpvReflectDescriptorSet* p_set = &p_module->descriptor_sets[i];
-    SafeFree(p_set->bindings);
+    SafeFree(p_allocator, p_set->bindings);
     p_set->binding_count = 0;
     p_set->set = (uint32_t)INVALID_VALUE;
   }
@@ -2907,7 +2911,7 @@ SpvReflectResult spvReflectCreateShaderModuleEx(
   p_module->_internal->spirv_code = (uint32_t*)spv_calloc(p_allocator, 1, p_module->_internal->spirv_size);
   p_module->_internal->spirv_word_count = (uint32_t)(size / SPIRV_WORD_SIZE);
   if (IsNull(p_module->_internal->spirv_code)) {
-    SafeFree(p_module->_internal);
+    SafeFree(p_allocator, p_module->_internal);
     return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
   }
   memcpy(p_module->_internal->spirv_code, p_code, size);
@@ -2999,15 +3003,15 @@ SpvReflectResult spvReflectCreateShaderModuleEx(
 
   // Destroy module if parse was not successful
   if (result != SPV_REFLECT_RESULT_SUCCESS) {
-    spvReflectDestroyShaderModule(p_module);
+    spvReflectDestroyShaderModuleEx(p_module, p_allocator);
   }
 
-  DestroyParser(&parser);
+  DestroyParser(&parser, p_allocator);
 
   return result;
 }
 
-static void SafeFreeTypes(SpvReflectTypeDescription* p_type)
+static void SafeFreeTypes(SpvReflectTypeDescription* p_type, const SpvAllocationCallbacks* p_allocator)
 {
   if (IsNull(p_type)) {
     return;
@@ -3016,15 +3020,15 @@ static void SafeFreeTypes(SpvReflectTypeDescription* p_type)
   if (IsNotNull(p_type->members)) {
     for (size_t i = 0; i < p_type->member_count; ++i) {
       SpvReflectTypeDescription* p_member = &p_type->members[i];
-      SafeFreeTypes(p_member);
+      SafeFreeTypes(p_member, p_allocator);
     }
 
-    SafeFree(p_type->members);
+    SafeFree(p_allocator, p_type->members);
     p_type->members = NULL;
   }
 }
 
-static void SafeFreeBlockVariables(SpvReflectBlockVariable* p_block)
+static void SafeFreeBlockVariables(SpvReflectBlockVariable* p_block, const SpvAllocationCallbacks* p_allocator)
 {
   if (IsNull(p_block)) {
     return;
@@ -3033,15 +3037,15 @@ static void SafeFreeBlockVariables(SpvReflectBlockVariable* p_block)
   if (IsNotNull(p_block->members)) {
     for (size_t i = 0; i < p_block->member_count; ++i) {
       SpvReflectBlockVariable* p_member = &p_block->members[i];
-      SafeFreeBlockVariables(p_member);
+      SafeFreeBlockVariables(p_member, p_allocator);
     }
 
-    SafeFree(p_block->members);
+    SafeFree(p_allocator, p_block->members);
     p_block->members = NULL;
   }
 }
 
-static void SafeFreeInterfaceVariable(SpvReflectInterfaceVariable* p_interface)
+static void SafeFreeInterfaceVariable(SpvReflectInterfaceVariable* p_interface, const SpvAllocationCallbacks* p_allocator)
 {
   if (IsNull(p_interface)) {
     return;
@@ -3050,15 +3054,20 @@ static void SafeFreeInterfaceVariable(SpvReflectInterfaceVariable* p_interface)
   if (IsNotNull(p_interface->members)) {
     for (size_t i = 0; i < p_interface->member_count; ++i) {
       SpvReflectInterfaceVariable* p_member = &p_interface->members[i];
-      SafeFreeInterfaceVariable(p_member);
+      SafeFreeInterfaceVariable(p_member, p_allocator);
     }
 
-    SafeFree(p_interface->members);
+    SafeFree(p_allocator, p_interface->members);
     p_interface->members = NULL;
   }
 }
 
 void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
+{
+	spvReflectDestroyShaderModuleEx(p_module, NULL);
+}
+
+void spvReflectDestroyShaderModuleEx(SpvReflectShaderModule* p_module, const SpvAllocationCallbacks* p_allocator)
 {
   if (IsNull(p_module->_internal)) {
     return;
@@ -3073,50 +3082,50 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
   // Descriptor binding blocks
   for (size_t i = 0; i < p_module->descriptor_binding_count; ++i) {
     SpvReflectDescriptorBinding* p_descriptor = &p_module->descriptor_bindings[i];
-    SafeFreeBlockVariables(&p_descriptor->block);
+    SafeFreeBlockVariables(&p_descriptor->block, p_allocator);
   }
-  SafeFree(p_module->descriptor_bindings);
+  SafeFree(p_allocator, p_module->descriptor_bindings);
 
   // Entry points
   for (size_t i = 0; i < p_module->entry_point_count; ++i) {
     SpvReflectEntryPoint* p_entry = &p_module->entry_points[i];
     for (size_t j = 0; j < p_entry->input_variable_count; j++) {
-      SafeFreeInterfaceVariable(&p_entry->input_variables[j]);
+      SafeFreeInterfaceVariable(&p_entry->input_variables[j], p_allocator);
     }
     for (size_t j = 0; j < p_entry->output_variable_count; j++) {
-      SafeFreeInterfaceVariable(&p_entry->output_variables[j]);
+      SafeFreeInterfaceVariable(&p_entry->output_variables[j], p_allocator);
     }
     for (uint32_t j = 0; j < p_entry->descriptor_set_count; ++j) {
-      SafeFree(p_entry->descriptor_sets[j].bindings);
+      SafeFree(p_allocator, p_entry->descriptor_sets[j].bindings);
     }
-    SafeFree(p_entry->descriptor_sets);
-    SafeFree(p_entry->input_variables);
-    SafeFree(p_entry->output_variables);
-    SafeFree(p_entry->used_uniforms);
-    SafeFree(p_entry->used_push_constants);
+    SafeFree(p_allocator, p_entry->descriptor_sets);
+    SafeFree(p_allocator, p_entry->input_variables);
+    SafeFree(p_allocator, p_entry->output_variables);
+    SafeFree(p_allocator, p_entry->used_uniforms);
+    SafeFree(p_allocator, p_entry->used_push_constants);
   }
-  SafeFree(p_module->entry_points);
+  SafeFree(p_allocator, p_module->entry_points);
 
   // Push constants
   for (size_t i = 0; i < p_module->push_constant_block_count; ++i) {
-    SafeFreeBlockVariables(&p_module->push_constant_blocks[i]);
+    SafeFreeBlockVariables(&p_module->push_constant_blocks[i], p_allocator);
   }
-  SafeFree(p_module->push_constant_blocks);
+  SafeFree(p_allocator, p_module->push_constant_blocks);
 
   // Type infos
   for (size_t i = 0; i < p_module->_internal->type_description_count; ++i) {
     SpvReflectTypeDescription* p_type = &p_module->_internal->type_descriptions[i];
     if (IsNotNull(p_type->members)) {
-      SafeFreeTypes(p_type);
+      SafeFreeTypes(p_type, p_allocator);
     }
-    SafeFree(p_type->members);
+    SafeFree(p_allocator, p_type->members);
   }
-  SafeFree(p_module->_internal->type_descriptions);
+  SafeFree(p_allocator, p_module->_internal->type_descriptions);
 
   // Free SPIR-V code
-  SafeFree(p_module->_internal->spirv_code);
+  SafeFree(p_allocator, p_module->_internal->spirv_code);
   // Free internal
-  SafeFree(p_module->_internal);
+  SafeFree(p_allocator, p_module->_internal);
 }
 
 uint32_t spvReflectGetCodeSize(const SpvReflectShaderModule* p_module)

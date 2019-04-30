@@ -459,6 +459,13 @@ SpvReflectResult spvReflectGetShaderModule(
 */
 void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module);
 
+/*! @fn spvReflectDestroyShaderModuleEx
+
+ @param  p_module  Pointer to an instance of SpvReflectShaderModule.
+ @param  p_allocator Pointer to an instance of SpvAllocationCallbacks.
+
+*/
+void spvReflectDestroyShaderModuleEx(SpvReflectShaderModule* p_module, const SpvAllocationCallbacks* p_allocator);
 
 /*! @fn spvReflectGetCodeSize
 
