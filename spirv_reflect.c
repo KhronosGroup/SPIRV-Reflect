@@ -3076,7 +3076,7 @@ void spvReflectDestroyShaderModuleEx(SpvReflectShaderModule* p_module, const Spv
   // Descriptor set bindings
   for (size_t i = 0; i < p_module->descriptor_set_count; ++i) {
     SpvReflectDescriptorSet* p_set = &p_module->descriptor_sets[i];
-    free(p_set->bindings);
+	SafeFree(p_allocator, p_set->bindings);
   }
 
   // Descriptor binding blocks
