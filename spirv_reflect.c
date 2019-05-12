@@ -28,6 +28,7 @@
 #endif
 
 // Temporary enums until these make it into SPIR-V/Vulkan
+// clang-format off
 enum {
   SpvReflectOpDecorateId                      = 332,
   SpvReflectOpDecorateStringGOOGLE            = 5632,
@@ -35,7 +36,9 @@ enum {
   SpvReflectDecorationHlslCounterBufferGOOGLE = 5634,
   SpvReflectDecorationHlslSemanticGOOGLE      = 5635
 };
+// clang-format on
 
+// clang-format off
 enum {
   SPIRV_STARTING_WORD_INDEX = 5,
   SPIRV_WORD_SIZE           = sizeof(uint32_t),
@@ -43,25 +46,35 @@ enum {
   SPIRV_MINIMUM_FILE_SIZE   = SPIRV_STARTING_WORD_INDEX * SPIRV_WORD_SIZE,
   SPIRV_DATA_ALIGNMENT      = 4 * SPIRV_WORD_SIZE, // 16
 };
+// clang-format on
 
+// clang-format off
 enum {
   INVALID_VALUE  = 0xFFFFFFFF,
 };
+// clang-format on
 
+// clang-format off
 enum {
   MAX_NODE_NAME_LENGTH  = 1024,
 };
+// clang-format on
 
+// clang-format off
 enum {
   IMAGE_SAMPLED = 1,
   IMAGE_STORAGE = 2
 };
+// clang-format on
 
+// clang-format off
 typedef struct ArrayTraits {
   uint32_t              element_type_id;
   uint32_t              length_id;
 } ArrayTraits;
+// clang-format on
 
+// clang-format off
 typedef struct ImageTraits {
   uint32_t              sampled_type_id;
   SpvDim                dim;
@@ -71,17 +84,23 @@ typedef struct ImageTraits {
   uint32_t              sampled;
   SpvImageFormat        image_format;
 } ImageTraits;
+// clang-format on
 
+// clang-format off
 typedef struct NumberDecoration {
   uint32_t              word_offset;
   uint32_t              value;
 } NumberDecoration;
+// clang-format on
 
+// clang-format off
 typedef struct StringDecoration {
   uint32_t              word_offset;
   const char*           value;
 } StringDecoration;
+// clang-format on
 
+// clang-format off
 typedef struct Decorations {
   bool                  is_block;
   bool                  is_buffer_block;
@@ -102,7 +121,9 @@ typedef struct Decorations {
   uint32_t              matrix_stride;
   SpvBuiltIn            built_in;
 } Decorations;
+// clang-format on
 
+// clang-format off
 typedef struct Node {
   uint32_t              result_id;
   SpvOp                 op;
@@ -123,12 +144,16 @@ typedef struct Node {
   const char**          member_names;
   Decorations*          member_decorations;
 } Node;
+// clang-format on
 
+// clang-format off
 typedef struct String {
   uint32_t              result_id;
   const char*           string;
 } String;
+// clang-format on
 
+// clang-format off
 typedef struct Function {
   uint32_t              id;
   uint32_t              callee_count;
@@ -137,7 +162,9 @@ typedef struct Function {
   uint32_t              accessed_ptr_count;
   uint32_t*             accessed_ptrs;
 } Function;
+// clang-format on
 
+// clang-format off
 typedef struct Parser {
   size_t                spirv_word_count;
   uint32_t*             spirv_code;
@@ -157,11 +184,7 @@ typedef struct Parser {
   uint32_t              descriptor_count;
   uint32_t              push_constant_count;
 } Parser;
-
-//static uint32_t Min(uint32_t a, uint32_t b)
-//{
-//  return a < b ? a : b;
-//}
+// clang-format on
 
 static uint32_t Max(uint32_t a, uint32_t b)
 {
@@ -174,20 +197,8 @@ static uint32_t RoundUp(uint32_t value, uint32_t multiple)
   return (value + multiple - 1) & ~(multiple - 1);
 }
 
-//static bool IsNull(const void* p)
-//{
-//  bool is_null = (p == NULL);
-//  return is_null;
-//}
-
 #define IsNull(ptr) \
   (ptr == NULL)
-
-//static bool IsNotNull(const void* p)
-//{
-//  bool is_not_null = (p != NULL);
-//  return is_not_null;
-//}
 
 #define IsNotNull(ptr) \
   (ptr != NULL)
@@ -1884,7 +1895,12 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseDescriptorBlockVariable(Parser* p_parser, SpvReflectShaderModule* p_module, SpvReflectTypeDescription* p_type, SpvReflectBlockVariable* p_var)
+static SpvReflectResult ParseDescriptorBlockVariable(
+  Parser*                     p_parser, 
+  SpvReflectShaderModule*     p_module, 
+  SpvReflectTypeDescription*  p_type, 
+  SpvReflectBlockVariable*    p_var
+)
 {
   bool has_non_writable = false;
 
@@ -1967,7 +1983,7 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(
 )
 {
   if (p_var->member_count == 0) {
-    return SPV_REFLECT_RESULT_SUCCESS;;
+    return SPV_REFLECT_RESULT_SUCCESS;
   }
 
   // Absolute offsets
@@ -2512,6 +2528,7 @@ static SpvReflectResult ParseStaticallyUsedResources(
 
   // Do set intersection to find the used uniform and push constants
   size_t used_uniform_count = 0;
+  //
   SpvReflectResult result0 = IntersectSortedUint32(
     used_variables,
     used_variable_count,
@@ -2521,6 +2538,7 @@ static SpvReflectResult ParseStaticallyUsedResources(
     &used_uniform_count);
 
   size_t used_push_constant_count = 0;
+  //
   SpvReflectResult result1 = IntersectSortedUint32(
     used_variables, 
     used_variable_count,
@@ -2750,9 +2768,11 @@ static SpvReflectResult ParseEntrypointDescriptorSets(SpvReflectShaderModule* p_
     for (uint32_t j = 0; j < p_module->descriptor_set_count; ++j) {
       const SpvReflectDescriptorSet* p_set = &p_module->descriptor_sets[j];
       for (uint32_t k = 0; k < p_set->binding_count; ++k) {
-        if (SearchSortedUint32(p_entry->used_uniforms,
-                               p_entry->used_uniform_count,
-                               p_set->bindings[k]->spirv_id)) {
+        bool found = SearchSortedUint32(
+          p_entry->used_uniforms,
+          p_entry->used_uniform_count,
+          p_set->bindings[k]->spirv_id);
+        if (found) {
           ++p_entry->descriptor_set_count;
           break;
         }
@@ -2772,9 +2792,11 @@ static SpvReflectResult ParseEntrypointDescriptorSets(SpvReflectShaderModule* p_
       const SpvReflectDescriptorSet* p_set = &p_module->descriptor_sets[j];
       uint32_t count = 0;
       for (uint32_t k = 0; k < p_set->binding_count; ++k) {
-        if (SearchSortedUint32(p_entry->used_uniforms,
-                               p_entry->used_uniform_count,
-                               p_set->bindings[k]->spirv_id)) {
+        bool found = SearchSortedUint32(
+          p_entry->used_uniforms,
+          p_entry->used_uniform_count,
+          p_set->bindings[k]->spirv_id);
+        if (found) {
           ++count;
         }
       }
@@ -2790,9 +2812,11 @@ static SpvReflectResult ParseEntrypointDescriptorSets(SpvReflectShaderModule* p_
         return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
       }
       for (uint32_t k = 0; k < p_set->binding_count; ++k) {
-        if (SearchSortedUint32(p_entry->used_uniforms,
-                               p_entry->used_uniform_count,
-                               p_set->bindings[k]->spirv_id)) {
+        bool found = SearchSortedUint32(
+          p_entry->used_uniforms,
+          p_entry->used_uniform_count,
+          p_set->bindings[k]->spirv_id);
+        if (found) {
           p_entry_set->bindings[p_entry_set->binding_count++] = p_set->bindings[k];
         }
       }
