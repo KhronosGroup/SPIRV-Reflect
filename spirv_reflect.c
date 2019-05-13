@@ -44,7 +44,7 @@ enum {
   SPIRV_WORD_SIZE           = sizeof(uint32_t),
   SPIRV_BYTE_WIDTH          = 8,
   SPIRV_MINIMUM_FILE_SIZE   = SPIRV_STARTING_WORD_INDEX * SPIRV_WORD_SIZE,
-  SPIRV_DATA_ALIGNMENT      = 4 * SPIRV_WORD_SIZE, // 16
+  SPIRV_DATA_ALIGNMENT      = 4 * SPIRV_WORD_SIZE, // 16 
 };
 // clang-format on
 
@@ -56,7 +56,8 @@ enum {
 
 // clang-format off
 enum {
-  MAX_NODE_NAME_LENGTH  = 1024,
+  MAX_NODE_NAME_LENGTH      = 1024,
+  MAX_ACCESS_CHAIN_ENTRIES  = 1024,
 };
 // clang-format on
 
@@ -165,6 +166,17 @@ typedef struct Function {
 // clang-format on
 
 // clang-format off
+typedef struct AccessChain {
+  uint32_t              result_id;
+  uint32_t              result_type_id;
+  uint32_t              base_id;
+  uint32_t              element_value;
+  uint32_t              index_count;
+  uint32_t*             indexes;
+} AccessChain;
+// clang-format on
+
+// clang-format off
 typedef struct Parser {
   size_t                spirv_word_count;
   uint32_t*             spirv_code;
@@ -179,6 +191,8 @@ typedef struct Parser {
   uint32_t              entry_point_count;
   uint32_t              function_count;
   Function*             functions;
+  uint32_t              access_chain_count;
+  AccessChain*          access_chains;
 
   uint32_t              type_count;
   uint32_t              descriptor_count;
@@ -524,9 +538,15 @@ static void DestroyParser(Parser* p_parser)
       SafeFree(p_parser->functions[i].accessed_ptrs);
     }
 
+    // Free access chains
+    for (uint32_t i = 0; i < p_parser->access_chain_count; ++i) {
+      SafeFree(p_parser->access_chains[i].indexes);
+    }
+
     SafeFree(p_parser->nodes);
     SafeFree(p_parser->strings);
     SafeFree(p_parser->functions);
+    SafeFree(p_parser->access_chains);
     p_parser->node_count = 0;
   }
 }
@@ -543,9 +563,13 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
   uint32_t node_count = 0;
   while (spirv_word_index < p_parser->spirv_word_count) {
     uint32_t word = p_spirv[spirv_word_index];
+    SpvOp op = (SpvOp)(word & 0xFFFF);
     uint32_t node_word_count = (word >> 16) & 0xFFFF;
     if (node_word_count == 0) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+    }
+    if (op == SpvOpAccessChain) {
+      ++(p_parser->access_chain_count);
     }
     spirv_word_index += node_word_count;
     ++node_count;
@@ -575,10 +599,20 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
   // Mark source file id node
   p_parser->source_file_id = (uint32_t)INVALID_VALUE;
 
+  // Function node
   uint32_t function_node = (uint32_t)INVALID_VALUE;
+
+  // Allocate access chain
+  if (p_parser->access_chain_count > 0) {
+    p_parser->access_chains = (AccessChain*)calloc(p_parser->access_chain_count, sizeof(*(p_parser->access_chains)));
+    if (IsNull(p_parser->access_chains)) {
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
+  }
 
   // Parse nodes
   uint32_t node_index = 0;
+  uint32_t access_chain_index = 0;
   spirv_word_index = SPIRV_STARTING_WORD_INDEX;
   while (spirv_word_index < p_parser->spirv_word_count) {
     uint32_t word = p_spirv[spirv_word_index];
@@ -730,6 +764,53 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
         // Only load enough so OpDecorate can reference the node, skip the remaining operands.
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_type_id);
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
+      }
+      break;
+
+      case SpvOpAccessChain:
+      {
+        AccessChain* p_access_chain = &(p_parser->access_chains[access_chain_index]);
+        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_access_chain->result_type_id);
+        CHECKED_READU32(p_parser, p_node->word_offset + 2, p_access_chain->result_id);
+        CHECKED_READU32(p_parser, p_node->word_offset + 3, p_access_chain->base_id);
+        // Parse the element value since that's how access chains are resolved
+        uint32_t element_id = UINT32_MAX;
+        CHECKED_READU32(p_parser, p_node->word_offset + 4, element_id);
+        assert(element_id != UINT32_MAX);
+        // Find OpConstant node that contains the element value. 
+        // The function FindNode is safe to call since OpConstant
+        // can't be forward declared
+        Node* p_node_element = FindNode(p_parser, element_id);
+        if ((p_node_element != NULL) && (p_node_element->op == SpvOpConstant)) {
+          // Read element value
+          CHECKED_READU32(p_parser, p_node_element->word_offset + 3, p_access_chain->element_value);
+        }
+        // 5 is the number of words up until the first index:
+        //   [Node, Result Type Id, Result Id, Base Id, Element Id]
+        p_access_chain->index_count = (node_word_count - 5);
+        if (p_access_chain->index_count > 0) {
+          p_access_chain->indexes = (uint32_t*)calloc(p_access_chain->index_count, sizeof(*(p_access_chain->indexes)));
+          if (IsNull( p_access_chain->indexes)) {
+            return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+          }
+          // Parse any index values for access chain
+          for (uint32_t index_index = 0; index_index < p_access_chain->index_count; ++index_index) {
+            // Read index id
+            uint32_t index_id = 0;
+            CHECKED_READU32(p_parser, p_node->word_offset + 5 + index_index, index_id);
+            // Find OpConstant node that contains index value
+            Node* p_index_value_node = FindNode(p_parser, index_id);
+            if ((p_index_value_node != NULL) && (p_index_value_node->op == SpvOpConstant)) {
+              // Read index value
+              uint32_t index_value = UINT32_MAX;
+              CHECKED_READU32(p_parser, p_index_value_node->word_offset + 3, index_value);
+              assert(index_value != UINT32_MAX);
+              // Write index value to array
+              p_access_chain->indexes[index_index] = index_value;
+            }
+          }
+        }
+        ++access_chain_index;
       }
       break;
 
@@ -1952,6 +2033,7 @@ static SpvReflectResult ParseDescriptorBlockVariable(
       p_member_var->name = p_type_node->member_names[member_index];
       p_member_var->offset = p_type_node->member_decorations[member_index].offset.value;
       p_member_var->decoration_flags = ApplyDecorations(&p_type_node->member_decorations[member_index]);
+      p_member_var->flags |= SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
       if (!has_non_writable && (p_member_var->decoration_flags & SPV_REFLECT_DECORATION_NON_WRITABLE)) {
         has_non_writable = true;
       }
@@ -2106,11 +2188,111 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+static SpvReflectResult ParseDescriptorBlockVariableFlags(
+  Parser*                  p_parser, 
+  uint32_t                 access_chain_entry_count, 
+  uint32_t*                p_access_chain_entries,
+  bool*                    p_has_used,
+  SpvReflectBlockVariable* p_var)
+{
+  // Increment the access chain entry count here because
+  //   - incrementing it inside the loop is wrong and will
+  //     likely result in a crash
+  //   - the checking code below is expecting the entry count
+  //     to account for the member's index as well
+  if (p_var->member_count > 0) {
+    ++access_chain_entry_count;
+  }
+  uint32_t access_chain_entry_index = (access_chain_entry_count - 1);
+
+  // Descend through members and parse flags, only UNUSED for now
+  for (uint32_t member_index = 0; member_index < p_var->member_count; ++member_index) {
+    SpvReflectBlockVariable* p_member_var = &p_var->members[member_index];
+
+    // Next access chain entry
+    p_access_chain_entries[access_chain_entry_index] = member_index;
+
+    // Process members
+    if (p_member_var->member_count > 0) {
+      bool has_used = false;
+      SpvReflectResult result = ParseDescriptorBlockVariableFlags(
+        p_parser, 
+        access_chain_entry_count, 
+        p_access_chain_entries,
+        &has_used,
+        p_member_var);
+      if (result != SPV_REFLECT_RESULT_SUCCESS) {
+        return result;
+      }
+      // Clear UNUSED flag
+      if (has_used) {        
+        p_member_var->flags &= ~SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
+        *p_has_used = has_used;
+      }
+    }
+    // Check access chain
+    else {
+      // Assume variable is unused
+      bool is_used = false;
+      // Walk the access chain to determine if it's used
+      uint32_t base_id = p_access_chain_entries[0];
+      uint32_t element_value = p_access_chain_entries[1];
+      for (uint32_t access_chain_index = 0; access_chain_index < p_parser->access_chain_count; ++access_chain_index) {
+        AccessChain* p_access_chain = &(p_parser->access_chains[access_chain_index]);
+        bool has_base_id = (p_access_chain->base_id == base_id);
+        bool has_element_value = (p_access_chain->element_value == element_value);
+        // Skip if base_id or element_id isn't present
+        if (!(has_base_id && has_element_value)) {
+          continue;
+        }
+        // 2 is the number of entries for [Base Id, Element Id].
+        uint32_t remaining_entry_count = (access_chain_entry_count - 2);
+        // If p_access_chain->index_count and remaining_entry_count are
+        // both zero, it means that the access chain is complete and
+        // the member variable is used...
+        if ((p_access_chain->index_count == 0) && (remaining_entry_count == 0)) {
+          is_used = true;
+        }
+        // ...otherwise check remaining indexes if there are any
+        else if ((p_access_chain->index_count > 0) && (p_access_chain->index_count == remaining_entry_count)) {
+          // Change assumption to variable is used
+          is_used =true;
+          // If any remaining entry doesn't match then variable is not used
+          for (uint32_t index_index = 0; index_index < p_access_chain->index_count; ++index_index) {
+            uint32_t op_value = p_access_chain->indexes[index_index];
+            uint32_t entry_value = p_access_chain_entries[2 + index_index];
+            bool match = (op_value == entry_value);
+            if (!match) {
+              is_used = false;
+              break;
+            }
+          }
+        }
+        // Break out of the loop if variable is determined to be used
+        if (is_used) {
+          break;
+        }
+      }
+      // Clear UNUSED flag if variable is used
+      if (is_used) {         
+        p_member_var->flags &= ~SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
+        // Update p_has_used state
+        *p_has_used = is_used;
+      }
+    }
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
 static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShaderModule* p_module)
 {
   if (p_module->descriptor_binding_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
   }
+
+  // Access chain data
+  uint32_t access_chain_entries[MAX_ACCESS_CHAIN_ENTRIES];
 
   for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
@@ -2121,9 +2303,33 @@ static SpvReflectResult ParseDescriptorBlocks(Parser* p_parser, SpvReflectShader
       continue;
     }
 
+    // Mark UNUSED
+    p_descriptor->block.flags |= SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
+    // Parse descriptor block 
     SpvReflectResult result = ParseDescriptorBlockVariable(p_parser, p_module, p_type, &p_descriptor->block);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
+    }
+
+    // Reset access chain entry vars before parsing flags
+    memset(access_chain_entries, 0, sizeof(access_chain_entries));
+    // Initial values for access chain entries
+    uint32_t access_chain_entry_count = 1;
+    access_chain_entries[0] = p_descriptor->spirv_id;
+    // Parse flags
+    bool has_used = false;
+    result = ParseDescriptorBlockVariableFlags(
+      p_parser,
+      access_chain_entry_count,
+      access_chain_entries,
+      &has_used,
+      &p_descriptor->block);
+    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+      return result;
+    }
+    // Clear UNUSED flag if block is used
+    if (has_used) {
+      p_descriptor->block.flags &= ~SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
     }
 
     // Since this is the top level block variable, it needs 
