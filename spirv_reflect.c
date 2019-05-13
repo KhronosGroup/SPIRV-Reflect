@@ -1335,8 +1335,11 @@ static SpvReflectResult ParseType(Parser* p_parser, Node* p_node, Decorations* p
     if (p_type->id == INVALID_VALUE) {
       p_type->id = p_node->result_id;
       p_type->op = p_node->op;
-      p_type->decoration_flags = ApplyDecorations(&p_node->decorations);
+      p_type->decoration_flags = 0;
     }
+    // Top level types need to pick up decorations from all types below it.
+    // Issue and fix here: https://github.com/chaoticbob/SPIRV-Reflect/issues/64
+    p_type->decoration_flags = ApplyDecorations(&p_node->decorations);
 
     switch (p_node->op) {
       default: break;
