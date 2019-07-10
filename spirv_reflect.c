@@ -27,16 +27,30 @@
   #include <stdlib.h>
 #endif
 
-// Temporary enums until these make it into SPIR-V/Vulkan
-// clang-format off
-enum {
-  SpvReflectOpDecorateId                      = 332,
-  SpvReflectOpDecorateStringGOOGLE            = 5632,
-  SpvReflectOpMemberDecorateStringGOOGLE      = 5633,
-  SpvReflectDecorationHlslCounterBufferGOOGLE = 5634,
-  SpvReflectDecorationHlslSemanticGOOGLE      = 5635
-};
-// clang-format on
+#define HLSL_INPUT_APPENDSTRUCTUREDBUFFER  "appendstructuredbuffer"
+#define HLSL_INPUT_BUFFER                  "buffer"
+#define HLSL_INPUT_BYTEADDRESSBUFFER       "byteaddressbuffer"
+#define HLSL_INPUT_CBUFFER                 "cbuffer"
+#define HLSL_INPUT_CONSUMESTRUCTUREDBUFFER "consumestructuredbuffer"
+#define HLSL_INPUT_RWBUFFER                "rwbuffer"
+#define HLSL_INPUT_RWBYTEADDRESSBUFFER     "rwbyteaddressbuffer"
+#define HLSL_INPUT_RWSTRUCTUREDBUFFER      "rwstructuredbuffer"
+#define HLSL_INPUT_RWTEXTURE1D             "rwtexture1d"
+#define HLSL_INPUT_RWTEXTURE1DARRAY        "rwtexture1darray"
+#define HLSL_INPUT_RWTEXTURE2D             "rwtexture2d"
+#define HLSL_INPUT_RWTEXTURE2DARRAY        "rwtexture2darray"
+#define HLSL_INPUT_RWTEXTURE3D             "rwtexture3d"
+#define HLSL_INPUT_STRUCTUREDBUFFER        "structuredbuffer"
+#define HLSL_INPUT_TBUFFER                 "tbuffer"
+#define HLSL_INPUT_TEXTURE1D               "texture1d"
+#define HLSL_INPUT_TEXTURE1DARRAY          "texture1darray"
+#define HLSL_INPUT_TEXTURE2D               "texture2d"
+#define HLSL_INPUT_TEXTURE2DARRAY          "texture2darray"
+#define HLSL_INPUT_TEXTURE2DMS             "texture2dms"
+#define HLSL_INPUT_TEXTURE2DMSARRAY        "texture2dmsarray"
+#define HLSL_INPUT_TEXTURE3D               "texture3d"
+#define HLSL_INPUT_TEXTURECUBE             "texturecube"
+#define HLSL_INPUT_TEXTURECUBEARRAY        "texturecubearray"
 
 // clang-format off
 enum {
@@ -118,6 +132,7 @@ typedef struct Decorations {
   NumberDecoration      offset;
   NumberDecoration      uav_counter_buffer;
   StringDecoration      semantic;
+  StringDecoration      user_type;
   uint32_t              array_stride;
   uint32_t              matrix_stride;
   SpvBuiltIn            built_in;
@@ -1212,9 +1227,9 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
 
     if (((uint32_t)p_node->op != (uint32_t)SpvOpDecorate) &&
         ((uint32_t)p_node->op != (uint32_t)SpvOpMemberDecorate) &&
-        ((uint32_t)p_node->op != (uint32_t)SpvReflectOpDecorateId) &&
-        ((uint32_t)p_node->op != (uint32_t)SpvReflectOpDecorateStringGOOGLE) &&
-        ((uint32_t)p_node->op != (uint32_t)SpvReflectOpMemberDecorateStringGOOGLE))
+        ((uint32_t)p_node->op != (uint32_t)SpvOpDecorateId) &&
+        ((uint32_t)p_node->op != (uint32_t)SpvOpDecorateStringGOOGLE) &&
+        ((uint32_t)p_node->op != (uint32_t)SpvOpMemberDecorateStringGOOGLE))
     {
      continue;
     }
@@ -1252,8 +1267,9 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
       case SpvDecorationDescriptorSet:
       case SpvDecorationOffset:
       case SpvDecorationInputAttachmentIndex:
-      case SpvReflectDecorationHlslCounterBufferGOOGLE:
-      case SpvReflectDecorationHlslSemanticGOOGLE: {
+      case SpvDecorationHlslCounterBufferGOOGLE:
+      case SpvDecorationHlslSemanticGOOGLE: 
+      case SpvDecorationUserTypeGOOGLE:{
         skip = false;
       }
       break;    
@@ -1370,17 +1386,24 @@ static SpvReflectResult ParseDecorations(Parser* p_parser)
       }
       break;
 
-      case SpvReflectDecorationHlslCounterBufferGOOGLE: {
+      case SpvDecorationHlslCounterBufferGOOGLE: {
         uint32_t word_offset = p_node->word_offset + member_offset+ 3;
         CHECKED_READU32(p_parser, word_offset, p_target_decorations->uav_counter_buffer.value);
         p_target_decorations->uav_counter_buffer.word_offset = word_offset;
       }
       break;
 
-      case SpvReflectDecorationHlslSemanticGOOGLE: {
+      case SpvDecorationHlslSemanticGOOGLE: {
         uint32_t word_offset = p_node->word_offset + member_offset + 3;
         p_target_decorations->semantic.value = (const char*)(p_parser->spirv_code + word_offset);
         p_target_decorations->semantic.word_offset = word_offset;
+      }
+      break;
+
+      case SpvDecorationUserTypeGOOGLE: {
+        uint32_t word_offset = p_node->word_offset + member_offset + 3;
+        p_target_decorations->user_type.value = (const char*)(p_parser->spirv_code + word_offset);
+        p_target_decorations->user_type.word_offset = word_offset;
       }
       break;
     }
@@ -1811,9 +1834,9 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
       }
     }
 
-    // Count
+    // Parse HLSL input type
 
-
+    // Set and binding number
     p_descriptor->word_offset.binding = p_node->decorations.binding.word_offset;
     p_descriptor->word_offset.set = p_node->decorations.set.word_offset;
 
@@ -1840,6 +1863,7 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
     SpvReflectTypeDescription* p_type = p_descriptor->type_description;
 
+    // Descriptor type
     switch (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK) {
       default: assert(false && "unknown type flag"); break;
 
@@ -1897,7 +1921,8 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
       }
       break;
     }
-
+    
+    // Resource type
     switch (p_descriptor->descriptor_type) {
       case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER                : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SAMPLER; break;
       case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : p_descriptor->resource_type = (SpvReflectResourceType)(SPV_REFLECT_RESOURCE_FLAG_SAMPLER | SPV_REFLECT_RESOURCE_FLAG_SRV); break;
@@ -1912,6 +1937,103 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
 
       case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
         break;
+    }
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
+static SpvReflectResult ParseHlslInputType(Parser* p_parser, SpvReflectShaderModule* p_module)
+{
+  if (p_module->descriptor_binding_count == 0) {
+    return SPV_REFLECT_RESULT_SUCCESS;
+  }
+
+  for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
+    SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
+
+    // Set HLSL input type to UNDEFINED
+    p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_UNDEFINED;
+
+    // Find node
+    Node* p_node = FindNode(p_parser, p_descriptor->spirv_id);
+
+    // Skip if user type decoration is null
+    if (p_node->decorations.user_type.value == NULL) {
+      continue;
+    }
+
+    const char* user_type = p_node->decorations.user_type.value;
+    if (strncmp(user_type, HLSL_INPUT_APPENDSTRUCTUREDBUFFER, sizeof(HLSL_INPUT_APPENDSTRUCTUREDBUFFER)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_APPENDSTRUCTUREDBUFFER;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_BUFFER, sizeof(HLSL_INPUT_BUFFER)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_BUFFER;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_BYTEADDRESSBUFFER, sizeof(HLSL_INPUT_BYTEADDRESSBUFFER)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_BYTEADDRESSBUFFER;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_CBUFFER, sizeof(HLSL_INPUT_CBUFFER)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_CBUFFER;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_CONSUMESTRUCTUREDBUFFER, sizeof(HLSL_INPUT_CONSUMESTRUCTUREDBUFFER)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_CONSUMESTRUCTUREDBUFFER;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_RWBUFFER, sizeof(HLSL_INPUT_RWBUFFER)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_RWBUFFER;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_RWBYTEADDRESSBUFFER, sizeof(HLSL_INPUT_RWBYTEADDRESSBUFFER)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_RWBYTEADDRESSBUFFER;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_RWSTRUCTUREDBUFFER, sizeof(HLSL_INPUT_RWSTRUCTUREDBUFFER)) == 0) {
+    }
+    else if (strncmp(user_type, HLSL_INPUT_RWTEXTURE1D, sizeof(HLSL_INPUT_RWTEXTURE1D)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE1D;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_RWTEXTURE1DARRAY, sizeof(HLSL_INPUT_RWTEXTURE1DARRAY)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE1DARRAY;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_RWTEXTURE2D, sizeof(HLSL_INPUT_RWTEXTURE2D)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE2D;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_RWTEXTURE2DARRAY, sizeof(HLSL_INPUT_RWTEXTURE2DARRAY)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE2DARRAY;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_RWTEXTURE3D, sizeof(HLSL_INPUT_RWTEXTURE3D)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE3D;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_STRUCTUREDBUFFER, sizeof(HLSL_INPUT_STRUCTUREDBUFFER)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_STRUCTUREDBUFFER;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_TBUFFER, sizeof(HLSL_INPUT_TBUFFER)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_TBUFFER;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_TEXTURE1D, sizeof(HLSL_INPUT_TEXTURE1D)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE1D;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_TEXTURE1DARRAY, sizeof(HLSL_INPUT_TEXTURE1DARRAY)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE1DARRAY;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_TEXTURE2D, sizeof(HLSL_INPUT_TEXTURE2D)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2D;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_TEXTURE2DARRAY, sizeof(HLSL_INPUT_TEXTURE2DARRAY)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2DARRAY;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_TEXTURE2DMS, sizeof(HLSL_INPUT_TEXTURE2DMS)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2DMS;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_TEXTURE2DMSARRAY, sizeof(HLSL_INPUT_TEXTURE2DMSARRAY)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2DMSARRAY;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_TEXTURE3D, sizeof(HLSL_INPUT_TEXTURE3D)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE3D;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_TEXTURECUBE, sizeof(HLSL_INPUT_TEXTURECUBE)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURECUBE;
+    }
+    else if (strncmp(user_type, HLSL_INPUT_TEXTURECUBEARRAY, sizeof(HLSL_INPUT_TEXTURECUBEARRAY)) == 0) {
+      p_descriptor->hlsl_input_type = SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURECUBEARRAY;
     }
   }
 
@@ -3221,6 +3343,9 @@ SpvReflectResult spvReflectCreateShaderModule(
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseDescriptorType(p_module);
+  }
+  if (result == SPV_REFLECT_RESULT_SUCCESS) {
+    result = ParseHlslInputType(&parser, p_module);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseUAVCounterBindings(p_module);

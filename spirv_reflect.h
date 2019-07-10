@@ -170,6 +170,37 @@ typedef enum SpvReflectDescriptorType {
   SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       = 10, // = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
 } SpvReflectDescriptorType;
 
+/*! @enum SpvReflectHlslResourceType
+
+*/
+typedef enum SpvReflectHlslInputType {
+  SPV_REFLECT_HLSL_INPUT_TYPE_UNDEFINED               =  0,
+  SPV_REFLECT_HLSL_INPUT_TYPE_APPENDSTRUCTUREDBUFFER  =  1,
+  SPV_REFLECT_HLSL_INPUT_TYPE_BUFFER                  =  2,
+  SPV_REFLECT_HLSL_INPUT_TYPE_BYTEADDRESSBUFFER       =  3,
+  SPV_REFLECT_HLSL_INPUT_TYPE_CBUFFER                 =  4,
+  SPV_REFLECT_HLSL_INPUT_TYPE_CONSUMESTRUCTUREDBUFFER =  5,
+  SPV_REFLECT_HLSL_INPUT_TYPE_RWBUFFER                =  6,
+  SPV_REFLECT_HLSL_INPUT_TYPE_RWBYTEADDRESSBUFFER     =  7,
+  SPV_REFLECT_HLSL_INPUT_TYPE_RWSTRUCTUREDBUFFER      =  8,
+  SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE1D             =  9,
+  SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE1DARRAY        = 10,
+  SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE2D             = 11,
+  SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE2DARRAY        = 12,
+  SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE3D             = 13,
+  SPV_REFLECT_HLSL_INPUT_TYPE_STRUCTUREDBUFFER        = 14,
+  SPV_REFLECT_HLSL_INPUT_TYPE_TBUFFER                 = 15,
+  SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE1D               = 16,
+  SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE1DARRAY          = 17,
+  SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2D               = 18,
+  SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2DARRAY          = 19,
+  SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2DMS             = 20,
+  SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2DMSARRAY        = 21,
+  SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE3D               = 22,
+  SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURECUBE             = 23,
+  SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURECUBEARRAY        = 24,
+} SpvReflectHlslInputType;
+
 /*! @enum SpvReflectShaderStageFlagBits
 
 */
@@ -330,6 +361,7 @@ typedef struct SpvReflectDescriptorBinding {
   uint32_t                            set;
   SpvReflectDescriptorType            descriptor_type;
   SpvReflectResourceType              resource_type;
+  SpvReflectHlslInputType             hlsl_input_type;
   SpvReflectImageTraits               image;
   SpvReflectBlockVariable             block;
   SpvReflectBindingArrayTraits        array;

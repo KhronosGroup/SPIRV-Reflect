@@ -189,6 +189,37 @@ std::string ToStringDescriptorType(SpvReflectDescriptorType value) {
   return "VK_DESCRIPTOR_TYPE_???";
 }
 
+std::string ToStringHlslInputType(SpvReflectHlslInputType value)
+{
+  switch (value) {
+    case SPV_REFLECT_HLSL_INPUT_TYPE_APPENDSTRUCTUREDBUFFER  : return "AppendStructuredBuffer";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_BUFFER                  : return "Buffer";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_BYTEADDRESSBUFFER       : return "ByteAddressBuffer";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_CBUFFER                 : return "cbuffer";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_CONSUMESTRUCTUREDBUFFER : return "ConsumeStructuredBuffer";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_RWBUFFER                : return "RWBuffer";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_RWBYTEADDRESSBUFFER     : return "RWByteAddressBuffer";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_RWSTRUCTUREDBUFFER      : return "RWStructuredBuffer";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE1D             : return "RWTexture1D";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE1DARRAY        : return "RWTexture1DArray";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE2D             : return "RWTexture2D";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE2DARRAY        : return "RWTexture2DArray";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_RWTEXTURE3D             : return "RWTexture3D";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_STRUCTUREDBUFFER        : return "StructuredBuffer";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_TBUFFER                 : return "tbuffer";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE1D               : return "Texture1D";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE1DARRAY          : return "Texture1DArray";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2D               : return "Texture2D";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2DARRAY          : return "Texture2DArray";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2DMS             : return "Texture2DMS";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE2DMSARRAY        : return "Texture2DMSArray";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURE3D               : return "Texture3D";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURECUBE             : return "TextureCube";
+    case SPV_REFLECT_HLSL_INPUT_TYPE_TEXTURECUBEARRAY        : return "TextureCubeArray";
+  }
+  return "SPV_REFLECT_HLSL_INPUT_TYPE_???";
+}
+
 std::string ToStringSpvBuiltIn(SpvBuiltIn built_in) {
   switch (built_in) {
     case SpvBuiltInPosition                    : return "Position";
@@ -825,6 +856,11 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
   os << t << "binding  : " << obj.binding << "\n";
   os << t << "type     : " << ToStringDescriptorType(obj.descriptor_type);
   os << " " << "(" << ToStringResourceType(obj.resource_type) << ")" << "\n";
+
+  // HLSL
+  if (obj.hlsl_input_type != SPV_REFLECT_HLSL_INPUT_TYPE_UNDEFINED) {
+    os << t << "hlsl     : " << ToStringHlslInputType(obj.hlsl_input_type) << "\n";
+  }
 
   // count
   os << t << "count    : " << obj.count << "\n";
