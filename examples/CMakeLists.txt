@@ -56,3 +56,12 @@ endif()
 if(WIN32)
     set_target_properties(hlsl_resource_types PROPERTIES FOLDER "examples")
 endif()
+
+################################################################################
+# find_pipelines
+################################################################################
+add_executable(find_pipelines ${CMAKE_CURRENT_SOURCE_DIR}/find_pipelines.cpp ${COMMON_FILES} ${SPIRV_REFLECT_FILES} arg_parser.cpp)
+target_include_directories(find_pipelines PRIVATE ${CMAKE_SOURCE_DIR})
+if(WIN32)
+    set_target_properties(find_pipelines PROPERTIES FOLDER "examples")
+endif()

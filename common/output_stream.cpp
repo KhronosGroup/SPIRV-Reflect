@@ -899,6 +899,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
   StreamWriteShaderModule(os, obj.GetShaderModule(), "");
 
   SpvReflectResult result = SPV_REFLECT_RESULT_NOT_READY;
+  (void)result; // silence compiler warning about unread variable.
   uint32_t count = 0;
   std::vector<SpvReflectInterfaceVariable*> variables;
   std::vector<SpvReflectDescriptorBinding*> bindings;
