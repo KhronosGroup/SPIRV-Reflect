@@ -36,6 +36,7 @@ shaders = [
   {'source':"hlsl/counter_buffers.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/semantics.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/structuredbuffer.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
+  {'source':"cbuffer_unused/cbuffer_unused_001.hlsl", 'entry':"main", 'profile':'vs_6_0', 'stage':'vert'},
 ]
 
 if __name__ == "__main__":

@@ -772,6 +772,7 @@ const std::vector<const char *> all_spirv_paths = {
     "../tests/hlsl/counter_buffers.spv",
     "../tests/hlsl/semantics.spv",
     "../tests/hlsl/structuredbuffer.spv",
+    "../tests/cbuffer_unused/cbuffer_unused_001.spv",
     // clang-format on
 };
 } // namespace
