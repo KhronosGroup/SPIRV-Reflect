@@ -2,7 +2,7 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "var00"
@@ -19,7 +19,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td1
-    id: 13
+    id: 12
     op: 23
     type_name: 
     struct_member_name: "var01"
@@ -36,7 +36,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td2
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b00"
@@ -53,7 +53,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td3
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b01"
@@ -70,7 +70,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td4
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b02"
@@ -87,7 +87,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td5
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b03"
@@ -104,7 +104,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td6
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b04"
@@ -121,7 +121,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td7
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b05"
@@ -138,7 +138,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td8
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b06"
@@ -155,7 +155,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td9
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b07"
@@ -172,7 +172,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td10
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b08"
@@ -189,7 +189,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td11
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b09"
@@ -206,7 +206,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td12
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c00"
@@ -223,7 +223,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td13
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c01"
@@ -240,7 +240,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td14
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c02"
@@ -257,7 +257,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td15
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c03"
@@ -274,7 +274,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td16
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c04"
@@ -291,7 +291,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td17
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d00"
@@ -308,7 +308,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td18
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d01"
@@ -325,7 +325,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td19
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d02"
@@ -342,7 +342,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td20
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d03"
@@ -359,7 +359,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td21
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d04"
@@ -376,7 +376,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td22
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d05"
@@ -393,7 +393,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td23
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d06"
@@ -410,7 +410,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td24
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d07"
@@ -427,7 +427,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td25
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d08"
@@ -444,7 +444,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td26
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d09"
@@ -461,7 +461,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td27
-    id: 4
+    id: 17
     op: 30
     type_name: "Nested5"
     struct_member_name: "nested5_00"
@@ -488,7 +488,7 @@ all_type_descriptions:
       - *td25
       - *td26
   - &td28
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c05"
@@ -505,7 +505,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td29
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c06"
@@ -522,7 +522,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td30
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c07"
@@ -539,7 +539,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td31
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c08"
@@ -556,7 +556,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td32
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c09"
@@ -573,7 +573,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td33
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d00"
@@ -590,7 +590,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td34
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d01"
@@ -607,7 +607,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td35
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d02"
@@ -624,7 +624,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td36
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d03"
@@ -641,7 +641,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td37
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d04"
@@ -658,7 +658,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td38
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d05"
@@ -675,7 +675,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td39
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d06"
@@ -692,7 +692,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td40
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d07"
@@ -709,7 +709,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td41
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d08"
@@ -726,7 +726,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td42
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d09"
@@ -743,7 +743,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td43
-    id: 4
+    id: 17
     op: 30
     type_name: "Nested5"
     struct_member_name: "nested5_01"
@@ -770,7 +770,7 @@ all_type_descriptions:
       - *td41
       - *td42
   - &td44
-    id: 5
+    id: 16
     op: 30
     type_name: "Nested4"
     struct_member_name: "nested4_00"
@@ -799,7 +799,7 @@ all_type_descriptions:
       - *td32
       - *td43
   - &td45
-    id: 6
+    id: 15
     op: 30
     type_name: "Nested3"
     struct_member_name: "nested3_00"
@@ -827,7 +827,7 @@ all_type_descriptions:
       - *td11
       - *td44
   - &td46
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a00"
@@ -844,7 +844,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td47
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a01"
@@ -861,7 +861,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td48
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a02"
@@ -878,7 +878,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td49
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a03"
@@ -895,7 +895,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td50
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a04"
@@ -912,7 +912,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td51
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a05"
@@ -929,7 +929,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td52
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a06"
@@ -946,7 +946,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td53
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a07"
@@ -963,7 +963,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td54
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a08"
@@ -980,7 +980,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td55
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a09"
@@ -997,7 +997,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td56
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c00"
@@ -1014,7 +1014,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td57
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c01"
@@ -1031,7 +1031,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td58
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c02"
@@ -1048,7 +1048,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td59
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c03"
@@ -1065,7 +1065,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td60
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c04"
@@ -1082,7 +1082,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td61
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d00"
@@ -1099,7 +1099,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td62
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d01"
@@ -1116,7 +1116,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td63
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d02"
@@ -1133,7 +1133,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td64
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d03"
@@ -1150,7 +1150,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td65
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d04"
@@ -1167,7 +1167,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td66
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d05"
@@ -1184,7 +1184,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td67
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d06"
@@ -1201,7 +1201,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td68
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d07"
@@ -1218,7 +1218,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td69
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d08"
@@ -1235,7 +1235,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td70
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d09"
@@ -1252,7 +1252,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td71
-    id: 4
+    id: 17
     op: 30
     type_name: "Nested5"
     struct_member_name: "nested5_00"
@@ -1279,7 +1279,7 @@ all_type_descriptions:
       - *td69
       - *td70
   - &td72
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c05"
@@ -1296,7 +1296,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td73
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c06"
@@ -1313,7 +1313,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td74
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c07"
@@ -1330,7 +1330,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td75
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c08"
@@ -1347,7 +1347,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td76
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c09"
@@ -1364,7 +1364,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td77
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d00"
@@ -1381,7 +1381,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td78
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d01"
@@ -1398,7 +1398,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td79
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d02"
@@ -1415,7 +1415,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td80
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d03"
@@ -1432,7 +1432,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td81
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d04"
@@ -1449,7 +1449,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td82
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d05"
@@ -1466,7 +1466,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td83
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d06"
@@ -1483,7 +1483,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td84
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d07"
@@ -1500,7 +1500,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td85
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d08"
@@ -1517,7 +1517,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td86
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d09"
@@ -1534,7 +1534,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td87
-    id: 4
+    id: 17
     op: 30
     type_name: "Nested5"
     struct_member_name: "nested5_01"
@@ -1561,7 +1561,7 @@ all_type_descriptions:
       - *td85
       - *td86
   - &td88
-    id: 5
+    id: 16
     op: 30
     type_name: "Nested4"
     struct_member_name: "nested4_00"
@@ -1590,7 +1590,7 @@ all_type_descriptions:
       - *td76
       - *td87
   - &td89
-    id: 7
+    id: 14
     op: 30
     type_name: "Nested2"
     struct_member_name: "nested2_00"
@@ -1619,7 +1619,7 @@ all_type_descriptions:
       - *td55
       - *td88
   - &td90
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "word00"
@@ -1636,7 +1636,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td91
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "word01"
@@ -1653,7 +1653,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td92
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "word02"
@@ -1670,7 +1670,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td93
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "word03"
@@ -1687,7 +1687,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td94
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "word04"
@@ -1704,7 +1704,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td95
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "word05"
@@ -1721,7 +1721,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td96
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "word06"
@@ -1738,7 +1738,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td97
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "word07"
@@ -1755,7 +1755,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td98
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "word08"
@@ -1772,7 +1772,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td99
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "word09"
@@ -1789,7 +1789,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td100
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b00"
@@ -1806,7 +1806,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td101
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b01"
@@ -1823,7 +1823,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td102
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b02"
@@ -1840,7 +1840,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td103
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b03"
@@ -1857,7 +1857,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td104
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b04"
@@ -1874,7 +1874,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td105
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b05"
@@ -1891,7 +1891,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td106
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b06"
@@ -1908,7 +1908,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td107
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b07"
@@ -1925,7 +1925,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td108
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b08"
@@ -1942,7 +1942,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td109
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "b09"
@@ -1959,7 +1959,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td110
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c00"
@@ -1976,7 +1976,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td111
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c01"
@@ -1993,7 +1993,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td112
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c02"
@@ -2010,7 +2010,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td113
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c03"
@@ -2027,7 +2027,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td114
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c04"
@@ -2044,7 +2044,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td115
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d00"
@@ -2061,7 +2061,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td116
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d01"
@@ -2078,7 +2078,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td117
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d02"
@@ -2095,7 +2095,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td118
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d03"
@@ -2112,7 +2112,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td119
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d04"
@@ -2129,7 +2129,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td120
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d05"
@@ -2146,7 +2146,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td121
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d06"
@@ -2163,7 +2163,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td122
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d07"
@@ -2180,7 +2180,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td123
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d08"
@@ -2197,7 +2197,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td124
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d09"
@@ -2214,7 +2214,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td125
-    id: 4
+    id: 17
     op: 30
     type_name: "Nested5"
     struct_member_name: "nested5_00"
@@ -2241,7 +2241,7 @@ all_type_descriptions:
       - *td123
       - *td124
   - &td126
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c05"
@@ -2258,7 +2258,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td127
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c06"
@@ -2275,7 +2275,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td128
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c07"
@@ -2292,7 +2292,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td129
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c08"
@@ -2309,7 +2309,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td130
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c09"
@@ -2326,7 +2326,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td131
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d00"
@@ -2343,7 +2343,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td132
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d01"
@@ -2360,7 +2360,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td133
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d02"
@@ -2377,7 +2377,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td134
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d03"
@@ -2394,7 +2394,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td135
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d04"
@@ -2411,7 +2411,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td136
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d05"
@@ -2428,7 +2428,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td137
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d06"
@@ -2445,7 +2445,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td138
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d07"
@@ -2462,7 +2462,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td139
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d08"
@@ -2479,7 +2479,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td140
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d09"
@@ -2496,7 +2496,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td141
-    id: 4
+    id: 17
     op: 30
     type_name: "Nested5"
     struct_member_name: "nested5_01"
@@ -2523,7 +2523,7 @@ all_type_descriptions:
       - *td139
       - *td140
   - &td142
-    id: 5
+    id: 16
     op: 30
     type_name: "Nested4"
     struct_member_name: "nested4_00"
@@ -2552,7 +2552,7 @@ all_type_descriptions:
       - *td130
       - *td141
   - &td143
-    id: 6
+    id: 15
     op: 30
     type_name: "Nested3"
     struct_member_name: "nested3_00"
@@ -2580,7 +2580,7 @@ all_type_descriptions:
       - *td109
       - *td142
   - &td144
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a00"
@@ -2597,7 +2597,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td145
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a01"
@@ -2614,7 +2614,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td146
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a02"
@@ -2631,7 +2631,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td147
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a03"
@@ -2648,7 +2648,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td148
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a04"
@@ -2665,7 +2665,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td149
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a05"
@@ -2682,7 +2682,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td150
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a06"
@@ -2699,7 +2699,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td151
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a07"
@@ -2716,7 +2716,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td152
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a08"
@@ -2733,7 +2733,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td153
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "a09"
@@ -2750,7 +2750,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td154
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c00"
@@ -2767,7 +2767,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td155
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c01"
@@ -2784,7 +2784,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td156
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c02"
@@ -2801,7 +2801,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td157
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c03"
@@ -2818,7 +2818,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td158
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c04"
@@ -2835,7 +2835,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td159
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d00"
@@ -2852,7 +2852,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td160
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d01"
@@ -2869,7 +2869,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td161
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d02"
@@ -2886,7 +2886,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td162
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d03"
@@ -2903,7 +2903,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td163
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d04"
@@ -2920,7 +2920,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td164
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d05"
@@ -2937,7 +2937,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td165
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d06"
@@ -2954,7 +2954,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td166
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d07"
@@ -2971,7 +2971,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td167
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d08"
@@ -2988,7 +2988,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td168
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d09"
@@ -3005,7 +3005,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td169
-    id: 4
+    id: 17
     op: 30
     type_name: "Nested5"
     struct_member_name: "nested5_00"
@@ -3032,7 +3032,7 @@ all_type_descriptions:
       - *td167
       - *td168
   - &td170
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c05"
@@ -3049,7 +3049,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td171
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c06"
@@ -3066,7 +3066,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td172
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c07"
@@ -3083,7 +3083,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td173
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c08"
@@ -3100,7 +3100,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td174
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "c09"
@@ -3117,7 +3117,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td175
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d00"
@@ -3134,7 +3134,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td176
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d01"
@@ -3151,7 +3151,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td177
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d02"
@@ -3168,7 +3168,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td178
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d03"
@@ -3185,7 +3185,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td179
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d04"
@@ -3202,7 +3202,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td180
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d05"
@@ -3219,7 +3219,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td181
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d06"
@@ -3236,7 +3236,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td182
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d07"
@@ -3253,7 +3253,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td183
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d08"
@@ -3270,7 +3270,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td184
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "d09"
@@ -3287,7 +3287,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td185
-    id: 4
+    id: 17
     op: 30
     type_name: "Nested5"
     struct_member_name: "nested5_01"
@@ -3314,7 +3314,7 @@ all_type_descriptions:
       - *td183
       - *td184
   - &td186
-    id: 5
+    id: 16
     op: 30
     type_name: "Nested4"
     struct_member_name: "nested4_00"
@@ -3343,7 +3343,7 @@ all_type_descriptions:
       - *td174
       - *td185
   - &td187
-    id: 7
+    id: 14
     op: 30
     type_name: "Nested2"
     struct_member_name: "nested2_01"
@@ -3372,7 +3372,7 @@ all_type_descriptions:
       - *td153
       - *td186
   - &td188
-    id: 8
+    id: 13
     op: 30
     type_name: "Nested1"
     struct_member_name: "nested1"
@@ -3401,7 +3401,7 @@ all_type_descriptions:
       - *td99
       - *td187
   - &td189
-    id: 12
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Time"
@@ -3418,7 +3418,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td190
-    id: 9
+    id: 11
     op: 30
     type_name: "type.ConstantBuffer.Constants"
     struct_member_name: 
@@ -3439,7 +3439,7 @@ all_type_descriptions:
       - *td188
       - *td189
   - &td191
-    id: 17
+    id: 19
     op: 23
     type_name: 
     struct_member_name: 
@@ -3455,95 +3455,6 @@ all_type_descriptions:
       array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-  - &td192
-    id: 17
-    op: 23
-    type_name: 
-    struct_member_name: 
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000108 # VECTOR FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 4 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td193
-    id: 12
-    op: 22
-    type_name: 
-    struct_member_name: 
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000008 # FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td194
-    id: 20
-    op: 28
-    type_name: 
-    struct_member_name: 
-    storage_class: 0 # UniformConstant
-    type_flags: 0x20000008 # ARRAY FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [1,], stride: 0 }
-    member_count: 0
-    members:
-  - &td195
-    id: 20
-    op: 28
-    type_name: 
-    struct_member_name: 
-    storage_class: 0 # UniformConstant
-    type_flags: 0x20000008 # ARRAY FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [1,], stride: 0 }
-    member_count: 0
-    members:
-  - &td196
-    id: 11
-    op: 30
-    type_name: "type.gl_PerVertex"
-    struct_member_name: 
-    storage_class: -1 # NOT APPLICABLE
-    type_flags: 0x10080000 # STRUCT EXTERNAL_BLOCK 
-    decoration_flags: 0x00000001 # BLOCK 
-    traits:
-      numeric:
-        scalar: { width: 0, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 4
-    members:
-      - *td192
-      - *td193
-      - *td194
-      - *td195
 all_block_variables:
   - &bv0
     name: "var00"
@@ -6602,7 +6513,7 @@ all_block_variables:
     type_description: *td190
 all_descriptor_bindings:
   - &db0
-    spirv_id: 10
+    spirv_id: 5
     name: "MyConstants"
     binding: 0
     input_attachment_index: 0
@@ -6616,14 +6527,14 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td190
-    word_offset: { binding: 692, set: 688 }
+    word_offset: { binding: 720, set: 716 }
 all_interface_variables:
   - &iv0
-    spirv_id: 3
+    spirv_id: 2
     name: "in.var.POSITION"
     location: 0
     storage_class: 1 # Input
-    semantic: 
+    semantic: "POSITION"
     decoration_flags: 0x00000000 # NONE
     built_in: -1 # ???
     numeric:
@@ -6635,13 +6546,13 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td191
-    word_offset: { location: 684 }
+    word_offset: { location: 712 }
   - &iv1
-    spirv_id: 0
+    spirv_id: 3
     name: 
-    location: 0
-    storage_class: 0 # UniformConstant
-    semantic: 
+    location: 4294967295
+    storage_class: 3 # Output
+    semantic: "SV_Position"
     decoration_flags: 0x00000010 # BUILT_IN 
     built_in: 0 # Position
     numeric:
@@ -6652,83 +6563,7 @@ all_interface_variables:
     member_count: 0
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
-    type_description: *td192
-    word_offset: { location: 0 }
-  - &iv2
-    spirv_id: 0
-    name: 
-    location: 0
-    storage_class: 0 # UniformConstant
-    semantic: 
-    decoration_flags: 0x00000010 # BUILT_IN 
-    built_in: 1 # PointSize
-    numeric:
-      scalar: { width: 32, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-    format: 100 # VK_FORMAT_R32_SFLOAT
-    type_description: *td193
-    word_offset: { location: 0 }
-  - &iv3
-    spirv_id: 0
-    name: 
-    location: 0
-    storage_class: 0 # UniformConstant
-    semantic: 
-    decoration_flags: 0x00000010 # BUILT_IN 
-    built_in: 3 # ClipDistance
-    numeric:
-      scalar: { width: 32, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 1, dims: [1,], stride: 0 }
-    member_count: 0
-    members:
-    format: 100 # VK_FORMAT_R32_SFLOAT
-    type_description: *td194
-    word_offset: { location: 0 }
-  - &iv4
-    spirv_id: 0
-    name: 
-    location: 0
-    storage_class: 0 # UniformConstant
-    semantic: 
-    decoration_flags: 0x00000010 # BUILT_IN 
-    built_in: 4 # CullDistance
-    numeric:
-      scalar: { width: 32, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 1, dims: [1,], stride: 0 }
-    member_count: 0
-    members:
-    format: 100 # VK_FORMAT_R32_SFLOAT
-    type_description: *td195
-    word_offset: { location: 0 }
-  - &iv5
-    spirv_id: 2
-    name: "gl_PerVertexOut"
-    location: 4294967295
-    storage_class: 3 # Output
-    semantic: 
-    decoration_flags: 0x00000011 # BUILT_IN BLOCK 
-    built_in: -1 # ???
-    numeric:
-      scalar: { width: 0, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 4
-    members:
-      - *iv1 # 
-      - *iv2 # 
-      - *iv3 # 
-      - *iv4 # 
-    format: 0 # VK_FORMAT_UNDEFINED
-    type_description: *td196
+    type_description: *td191
     word_offset: { location: 0 }
 module:
   generator: 14 # Google spiregg
@@ -6752,7 +6587,7 @@ module:
     - *iv0 # "in.var.POSITION"
   output_variable_count: 1,
   output_variables:
-    - *iv5 # "gl_PerVertexOut"
+    - *iv1 # 
   push_constant_count: 0,
   push_constants:
 ...

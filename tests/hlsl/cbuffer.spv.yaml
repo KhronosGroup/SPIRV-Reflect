@@ -2,7 +2,7 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 3
+    id: 19
     op: 23
     type_name: 
     struct_member_name: "Color"
@@ -19,7 +19,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td1
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Specular"
@@ -36,7 +36,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td2
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Diffuse"
@@ -53,7 +53,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td3
-    id: 3
+    id: 19
     op: 23
     type_name: 
     struct_member_name: "NormalAdjust"
@@ -70,7 +70,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td4
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Front"
@@ -87,7 +87,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td5
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Back"
@@ -104,7 +104,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td6
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Top"
@@ -121,7 +121,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td7
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Bottom"
@@ -138,7 +138,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td8
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Left"
@@ -155,7 +155,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td9
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Right"
@@ -172,7 +172,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td10
-    id: 4
+    id: 26
     op: 30
     type_name: "OmniNormalStength"
     struct_member_name: "Strengths"
@@ -195,7 +195,7 @@ all_type_descriptions:
       - *td8
       - *td9
   - &td11
-    id: 5
+    id: 13
     op: 21
     type_name: 
     struct_member_name: "Type"
@@ -212,7 +212,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td12
-    id: 8
+    id: 23
     op: 28
     type_name: "ClothProperties"
     struct_member_name: "ClothProperties"
@@ -232,7 +232,7 @@ all_type_descriptions:
       - *td10
       - *td11
   - &td13
-    id: 9
+    id: 27
     op: 28
     type_name: 
     struct_member_name: "ClothColors"
@@ -249,7 +249,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td14
-    id: 10
+    id: 28
     op: 28
     type_name: 
     struct_member_name: "Scales"
@@ -266,7 +266,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td15
-    id: 11
+    id: 6
     op: 21
     type_name: 
     struct_member_name: "EnableBitMask"
@@ -283,7 +283,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td16
-    id: 14
+    id: 20
     op: 28
     type_name: "AuxData"
     struct_member_name: "AuxDatArray"
@@ -304,7 +304,7 @@ all_type_descriptions:
       - *td14
       - *td15
   - &td17
-    id: 20
+    id: 12
     op: 28
     type_name: "MaterialData"
     struct_member_name: "Material"
@@ -325,7 +325,7 @@ all_type_descriptions:
       - *td2
       - *td16
   - &td18
-    id: 22
+    id: 29
     op: 24
     type_name: 
     struct_member_name: "ModelMatrix"
@@ -342,7 +342,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td19
-    id: 22
+    id: 29
     op: 24
     type_name: 
     struct_member_name: "ProjectionMatrix"
@@ -359,7 +359,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td20
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Time"
@@ -376,7 +376,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td21
-    id: 3
+    id: 19
     op: 23
     type_name: 
     struct_member_name: "Scale"
@@ -393,7 +393,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td22
-    id: 25
+    id: 31
     op: 28
     type_name: 
     struct_member_name: "UvOffsets"
@@ -410,7 +410,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td23
-    id: 5
+    id: 13
     op: 21
     type_name: 
     struct_member_name: "EnableTarget"
@@ -427,7 +427,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td24
-    id: 26
+    id: 11
     op: 30
     type_name: "type.MyCBuffer"
     struct_member_name: 
@@ -451,7 +451,7 @@ all_type_descriptions:
       - *td22
       - *td23
   - &td25
-    id: 21
+    id: 30
     op: 23
     type_name: 
     struct_member_name: 
@@ -869,7 +869,7 @@ all_block_variables:
     type_description: *td24
 all_descriptor_bindings:
   - &db0
-    spirv_id: 28
+    spirv_id: 5
     name: "MyCBuffer"
     binding: 0
     input_attachment_index: 0
@@ -883,10 +883,10 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td24
-    word_offset: { binding: 623, set: 619 }
+    word_offset: { binding: 457, set: 453 }
 all_interface_variables:
   - &iv0
-    spirv_id: 37
+    spirv_id: 2
     name: "in.var.POSITION"
     location: 0
     storage_class: 1 # Input
@@ -902,9 +902,9 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td25
-    word_offset: { location: 615 }
+    word_offset: { location: 449 }
   - &iv1
-    spirv_id: 41
+    spirv_id: 3
     name: 
     location: 4294967295
     storage_class: 3 # Output
@@ -924,7 +924,7 @@ all_interface_variables:
 module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
-  entry_point_id: 32
+  entry_point_id: 1
   source_language: 5 # HLSL
   source_language_version: 600
   spirv_execution_model: 0 # Vertex

@@ -1001,6 +1001,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
       }  
     }
   }
+  (void)result;
 }
 
 //////////////////////////////////

@@ -24,13 +24,18 @@ shaders = [
   {'source':"glsl/built_in_format.glsl", 'entry':"main", 'stage':'vert'},
   {'source':"glsl/input_attachment.glsl", 'entry':"main", 'stage':'frag'},
   {'source':"glsl/texel_buffer.glsl", 'entry':"main", 'stage':'vert'},
+  {'source':"glsl/io_vars_vs.glsl", 'entry':"main", 'stage':'vert'},
 
   {'source':"hlsl/append_consume.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
+# {'source':"hlsl/array_of_structured_buffer.hlsl", 'entry':"main", 'profile':'cs_6_0', 'stage':'compute'},
   {'source':"hlsl/binding_array.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/binding_types.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/cbuffer.hlsl", 'entry':"main", 'profile':'vs_6_0', 'stage':'vert'},
+  {'source':"hlsl/constantbuffer.hlsl", 'entry':"main", 'profile':'vs_6_0', 'stage':'vert'},
+  {'source':"hlsl/constantbuffer_nested_structs.hlsl", 'entry':"main", 'profile':'vs_6_0', 'stage':'vert'},
   {'source':"hlsl/counter_buffers.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/semantics.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
+  {'source':"hlsl/structuredbuffer.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
 ]
 
 if __name__ == "__main__":

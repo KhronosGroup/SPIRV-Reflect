@@ -2,7 +2,7 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 5
+    id: 16
     op: 28
     type_name: "type.sampler"
     struct_member_name: 
@@ -19,7 +19,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td1
-    id: 11
+    id: 21
     op: 28
     type_name: "type.2d.image"
     struct_member_name: 
@@ -36,7 +36,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td2
-    id: 19
+    id: 25
     op: 23
     type_name: 
     struct_member_name: 
@@ -85,7 +85,7 @@ all_block_variables:
     type_description:
 all_descriptor_bindings:
   - &db0
-    spirv_id: 7
+    spirv_id: 5
     name: "MySampler"
     binding: 0
     input_attachment_index: 0
@@ -99,9 +99,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td0
-    word_offset: { binding: 219, set: 215 }
+    word_offset: { binding: 226, set: 222 }
   - &db1
-    spirv_id: 13
+    spirv_id: 6
     name: "MyTexture"
     binding: 8
     input_attachment_index: 0
@@ -115,10 +115,10 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
-    word_offset: { binding: 227, set: 223 }
+    word_offset: { binding: 234, set: 230 }
 all_interface_variables:
   - &iv0
-    spirv_id: 23
+    spirv_id: 2
     name: 
     location: 4294967295
     storage_class: 1 # Input
@@ -136,7 +136,7 @@ all_interface_variables:
     type_description: *td2
     word_offset: { location: 0 }
   - &iv1
-    spirv_id: 27
+    spirv_id: 3
     name: "out.var.SV_TARGET"
     location: 0
     storage_class: 3 # Output
@@ -152,11 +152,11 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td2
-    word_offset: { location: 211 }
+    word_offset: { location: 218 }
 module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
-  entry_point_id: 17
+  entry_point_id: 1
   source_language: 5 # HLSL
   source_language_version: 600
   spirv_execution_model: 4 # Fragment

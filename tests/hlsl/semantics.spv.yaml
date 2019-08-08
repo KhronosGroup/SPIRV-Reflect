@@ -2,7 +2,7 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 4
+    id: 35
     op: 24
     type_name: 
     struct_member_name: "XformMatrix"
@@ -19,7 +19,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td1
-    id: 5
+    id: 37
     op: 23
     type_name: 
     struct_member_name: "Scale"
@@ -36,7 +36,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td2
-    id: 2
+    id: 24
     op: 22
     type_name: 
     struct_member_name: "t"
@@ -53,7 +53,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td3
-    id: 6
+    id: 38
     op: 23
     type_name: 
     struct_member_name: "uv"
@@ -70,7 +70,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td4
-    id: 7
+    id: 34
     op: 30
     type_name: "type.ConstantBuffer.UBO"
     struct_member_name: 
@@ -91,7 +91,7 @@ all_type_descriptions:
       - *td2
       - *td3
   - &td5
-    id: 3
+    id: 36
     op: 23
     type_name: 
     struct_member_name: 
@@ -108,7 +108,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td6
-    id: 5
+    id: 37
     op: 23
     type_name: 
     struct_member_name: 
@@ -125,7 +125,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td7
-    id: 2
+    id: 24
     op: 22
     type_name: 
     struct_member_name: 
@@ -142,7 +142,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td8
-    id: 6
+    id: 38
     op: 23
     type_name: 
     struct_member_name: 
@@ -159,7 +159,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td9
-    id: 39
+    id: 44
     op: 21
     type_name: 
     struct_member_name: 
@@ -257,7 +257,7 @@ all_block_variables:
     type_description: *td4
 all_descriptor_bindings:
   - &db0
-    spirv_id: 9
+    spirv_id: 20
     name: "MyConstants"
     binding: 2
     input_attachment_index: 0
@@ -271,10 +271,10 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td4
-    word_offset: { binding: 838, set: 834 }
+    word_offset: { binding: 813, set: 809 }
 all_interface_variables:
   - &iv0
-    spirv_id: 19
+    spirv_id: 2
     name: 
     location: 4294967295
     storage_class: 1 # Input
@@ -292,7 +292,7 @@ all_interface_variables:
     type_description: *td5
     word_offset: { location: 0 }
   - &iv1
-    spirv_id: 22
+    spirv_id: 3
     name: "in.var.NORMAL"
     location: 0
     storage_class: 1 # Input
@@ -308,9 +308,9 @@ all_interface_variables:
     members:
     format: 106 # VK_FORMAT_R32G32B32_SFLOAT
     type_description: *td6
-    word_offset: { location: 774 }
+    word_offset: { location: 749 }
   - &iv2
-    spirv_id: 24
+    spirv_id: 4
     name: "in.var.COLOR_1"
     location: 1
     storage_class: 1 # Input
@@ -326,9 +326,9 @@ all_interface_variables:
     members:
     format: 106 # VK_FORMAT_R32G32B32_SFLOAT
     type_description: *td6
-    word_offset: { location: 778 }
+    word_offset: { location: 753 }
   - &iv3
-    spirv_id: 27
+    spirv_id: 5
     name: "in.var.OPACITY_512"
     location: 2
     storage_class: 1 # Input
@@ -344,9 +344,9 @@ all_interface_variables:
     members:
     format: 100 # VK_FORMAT_R32_SFLOAT
     type_description: *td7
-    word_offset: { location: 782 }
+    word_offset: { location: 757 }
   - &iv4
-    spirv_id: 29
+    spirv_id: 6
     name: "in.var.SCALE_987654321"
     location: 3
     storage_class: 1 # Input
@@ -362,9 +362,9 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td5
-    word_offset: { location: 786 }
+    word_offset: { location: 761 }
   - &iv5
-    spirv_id: 32
+    spirv_id: 7
     name: "in.var.TEXCOORD0"
     location: 4
     storage_class: 1 # Input
@@ -380,9 +380,9 @@ all_interface_variables:
     members:
     format: 103 # VK_FORMAT_R32G32_SFLOAT
     type_description: *td8
-    word_offset: { location: 790 }
+    word_offset: { location: 765 }
   - &iv6
-    spirv_id: 34
+    spirv_id: 8
     name: "in.var.TEXCOORD1"
     location: 5
     storage_class: 1 # Input
@@ -398,9 +398,9 @@ all_interface_variables:
     members:
     format: 103 # VK_FORMAT_R32G32_SFLOAT
     type_description: *td8
-    word_offset: { location: 794 }
+    word_offset: { location: 769 }
   - &iv7
-    spirv_id: 36
+    spirv_id: 9
     name: "in.var.TEXCOORD2"
     location: 6
     storage_class: 1 # Input
@@ -416,9 +416,9 @@ all_interface_variables:
     members:
     format: 103 # VK_FORMAT_R32G32_SFLOAT
     type_description: *td8
-    word_offset: { location: 798 }
+    word_offset: { location: 773 }
   - &iv8
-    spirv_id: 43
+    spirv_id: 10
     name: 
     location: 4294967295
     storage_class: 1 # Input
@@ -436,7 +436,7 @@ all_interface_variables:
     type_description: *td9
     word_offset: { location: 0 }
   - &iv9
-    spirv_id: 49
+    spirv_id: 11
     name: "out.var.SV_TARGET0"
     location: 0
     storage_class: 3 # Output
@@ -452,9 +452,9 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td5
-    word_offset: { location: 802 }
+    word_offset: { location: 777 }
   - &iv10
-    spirv_id: 51
+    spirv_id: 12
     name: "out.var.SV_TARGET1"
     location: 1
     storage_class: 3 # Output
@@ -470,9 +470,9 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td5
-    word_offset: { location: 806 }
+    word_offset: { location: 781 }
   - &iv11
-    spirv_id: 53
+    spirv_id: 13
     name: "out.var.SV_TARGET2"
     location: 2
     storage_class: 3 # Output
@@ -488,9 +488,9 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td5
-    word_offset: { location: 810 }
+    word_offset: { location: 785 }
   - &iv12
-    spirv_id: 55
+    spirv_id: 14
     name: "out.var.SV_TARGET3"
     location: 3
     storage_class: 3 # Output
@@ -506,9 +506,9 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td5
-    word_offset: { location: 814 }
+    word_offset: { location: 789 }
   - &iv13
-    spirv_id: 57
+    spirv_id: 15
     name: "out.var.SV_TARGET4"
     location: 4
     storage_class: 3 # Output
@@ -524,9 +524,9 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td5
-    word_offset: { location: 818 }
+    word_offset: { location: 793 }
   - &iv14
-    spirv_id: 59
+    spirv_id: 16
     name: "out.var.SV_TARGET5"
     location: 5
     storage_class: 3 # Output
@@ -542,9 +542,9 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td5
-    word_offset: { location: 822 }
+    word_offset: { location: 797 }
   - &iv15
-    spirv_id: 61
+    spirv_id: 17
     name: "out.var.SV_TARGET6"
     location: 6
     storage_class: 3 # Output
@@ -560,9 +560,9 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td5
-    word_offset: { location: 826 }
+    word_offset: { location: 801 }
   - &iv16
-    spirv_id: 63
+    spirv_id: 18
     name: "out.var.SV_TARGET7"
     location: 7
     storage_class: 3 # Output
@@ -578,11 +578,11 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td5
-    word_offset: { location: 830 }
+    word_offset: { location: 805 }
 module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
-  entry_point_id: 13
+  entry_point_id: 1
   source_language: 5 # HLSL
   source_language_version: 600
   spirv_execution_model: 4 # Fragment

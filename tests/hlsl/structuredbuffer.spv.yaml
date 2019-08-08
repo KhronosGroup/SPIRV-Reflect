@@ -2,7 +2,7 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 14
+    id: 15
     op: 23
     type_name: 
     struct_member_name: "Position"
@@ -19,7 +19,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td1
-    id: 13
+    id: 9
     op: 22
     type_name: 
     struct_member_name: "x"
@@ -36,7 +36,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td2
-    id: 13
+    id: 9
     op: 22
     type_name: 
     struct_member_name: "y"
@@ -53,7 +53,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td3
-    id: 13
+    id: 9
     op: 22
     type_name: 
     struct_member_name: "z"
@@ -70,7 +70,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td4
-    id: 3
+    id: 16
     op: 30
     type_name: "SepNormal"
     struct_member_name: "Normal"
@@ -90,7 +90,7 @@ all_type_descriptions:
       - *td2
       - *td3
   - &td5
-    id: 9
+    id: 20
     op: 28
     type_name: 
     struct_member_name: "r"
@@ -107,7 +107,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td6
-    id: 9
+    id: 20
     op: 28
     type_name: 
     struct_member_name: "g"
@@ -124,7 +124,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td7
-    id: 9
+    id: 20
     op: 28
     type_name: 
     struct_member_name: "b"
@@ -141,7 +141,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td8
-    id: 10
+    id: 17
     op: 28
     type_name: "Rgb"
     struct_member_name: "Colors"
@@ -161,7 +161,7 @@ all_type_descriptions:
       - *td6
       - *td7
   - &td9
-    id: 13
+    id: 9
     op: 22
     type_name: 
     struct_member_name: "u"
@@ -178,7 +178,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td10
-    id: 13
+    id: 9
     op: 22
     type_name: 
     struct_member_name: "v"
@@ -195,7 +195,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td11
-    id: 5
+    id: 22
     op: 30
     type_name: "Uv"
     struct_member_name: "TexCoords"
@@ -214,7 +214,7 @@ all_type_descriptions:
       - *td9
       - *td10
   - &td12
-    id: 11
+    id: 23
     op: 28
     type_name: 
     struct_member_name: "Scales"
@@ -231,7 +231,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td13
-    id: 15
+    id: 7
     op: 21
     type_name: 
     struct_member_name: "Id"
@@ -248,7 +248,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td14
-    id: 12
+    id: 13
     op: 29
     type_name: "Data"
     struct_member_name: 
@@ -271,7 +271,7 @@ all_type_descriptions:
       - *td12
       - *td13
   - &td15
-    id: 7
+    id: 12
     op: 30
     type_name: "type.StructuredBuffer.Data"
     struct_member_name: 
@@ -289,7 +289,7 @@ all_type_descriptions:
     members:
       - *td14
   - &td16
-    id: 14
+    id: 15
     op: 23
     type_name: 
     struct_member_name: "Position"
@@ -306,7 +306,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td17
-    id: 13
+    id: 9
     op: 22
     type_name: 
     struct_member_name: "x"
@@ -323,7 +323,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td18
-    id: 13
+    id: 9
     op: 22
     type_name: 
     struct_member_name: "y"
@@ -340,7 +340,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td19
-    id: 13
+    id: 9
     op: 22
     type_name: 
     struct_member_name: "z"
@@ -357,7 +357,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td20
-    id: 3
+    id: 16
     op: 30
     type_name: "SepNormal"
     struct_member_name: "Normal"
@@ -377,7 +377,7 @@ all_type_descriptions:
       - *td18
       - *td19
   - &td21
-    id: 9
+    id: 20
     op: 28
     type_name: 
     struct_member_name: "r"
@@ -394,7 +394,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td22
-    id: 9
+    id: 20
     op: 28
     type_name: 
     struct_member_name: "g"
@@ -411,7 +411,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td23
-    id: 9
+    id: 20
     op: 28
     type_name: 
     struct_member_name: "b"
@@ -428,7 +428,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td24
-    id: 10
+    id: 17
     op: 28
     type_name: "Rgb"
     struct_member_name: "Colors"
@@ -448,7 +448,7 @@ all_type_descriptions:
       - *td22
       - *td23
   - &td25
-    id: 13
+    id: 9
     op: 22
     type_name: 
     struct_member_name: "u"
@@ -465,7 +465,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td26
-    id: 13
+    id: 9
     op: 22
     type_name: 
     struct_member_name: "v"
@@ -482,7 +482,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td27
-    id: 5
+    id: 22
     op: 30
     type_name: "Uv"
     struct_member_name: "TexCoords"
@@ -501,7 +501,7 @@ all_type_descriptions:
       - *td25
       - *td26
   - &td28
-    id: 11
+    id: 23
     op: 28
     type_name: 
     struct_member_name: "Scales"
@@ -518,7 +518,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td29
-    id: 15
+    id: 7
     op: 21
     type_name: 
     struct_member_name: "Id"
@@ -535,7 +535,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td30
-    id: 21
+    id: 25
     op: 23
     type_name: 
     struct_member_name: 
@@ -809,7 +809,7 @@ all_block_variables:
     type_description: *td15
 all_descriptor_bindings:
   - &db0
-    spirv_id: 8
+    spirv_id: 4
     name: "MyData"
     binding: 0
     input_attachment_index: 0
@@ -823,14 +823,14 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td15
-    word_offset: { binding: 233, set: 229 }
+    word_offset: { binding: 285, set: 281 }
 all_interface_variables:
   - &iv0
     spirv_id: 2
     name: "out.var.SV_Target"
     location: 0
     storage_class: 3 # Output
-    semantic: 
+    semantic: "SV_Target"
     decoration_flags: 0x00000000 # NONE
     built_in: -1 # ???
     numeric:
@@ -842,7 +842,7 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td30
-    word_offset: { location: 225 }
+    word_offset: { location: 277 }
 module:
   generator: 14 # Google spiregg
   entry_point_name: "main"

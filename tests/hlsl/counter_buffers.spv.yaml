@@ -2,10 +2,10 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 4
+    id: 11
     op: 21
     type_name: 
-    struct_member_name: 
+    struct_member_name: "counter"
     storage_class: 0 # UniformConstant
     type_flags: 0x00000004 # INT 
     decoration_flags: 0x00000000 # NONE
@@ -19,7 +19,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td1
-    id: 10
+    id: 21
     op: 30
     type_name: "type.ACSBuffer.counter"
     struct_member_name: 
@@ -37,7 +37,7 @@ all_type_descriptions:
     members:
       - *td0
   - &td2
-    id: 3
+    id: 18
     op: 23
     type_name: 
     struct_member_name: "f4"
@@ -54,7 +54,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td3
-    id: 4
+    id: 11
     op: 21
     type_name: 
     struct_member_name: "i"
@@ -71,7 +71,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td4
-    id: 6
+    id: 16
     op: 29
     type_name: "Data"
     struct_member_name: 
@@ -90,7 +90,7 @@ all_type_descriptions:
       - *td2
       - *td3
   - &td5
-    id: 7
+    id: 15
     op: 30
     type_name: "type.ConsumeStructuredBuffer.Data"
     struct_member_name: 
@@ -108,7 +108,7 @@ all_type_descriptions:
     members:
       - *td4
   - &td6
-    id: 3
+    id: 18
     op: 23
     type_name: 
     struct_member_name: "f4"
@@ -125,7 +125,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td7
-    id: 4
+    id: 11
     op: 21
     type_name: 
     struct_member_name: "i"
@@ -142,7 +142,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td8
-    id: 3
+    id: 18
     op: 23
     type_name: 
     struct_member_name: "f4"
@@ -159,7 +159,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td9
-    id: 4
+    id: 11
     op: 21
     type_name: 
     struct_member_name: "i"
@@ -176,7 +176,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td10
-    id: 6
+    id: 16
     op: 29
     type_name: "Data"
     struct_member_name: 
@@ -195,7 +195,7 @@ all_type_descriptions:
       - *td8
       - *td9
   - &td11
-    id: 13
+    id: 23
     op: 30
     type_name: "type.AppendStructuredBuffer.Data"
     struct_member_name: 
@@ -213,7 +213,7 @@ all_type_descriptions:
     members:
       - *td10
   - &td12
-    id: 3
+    id: 18
     op: 23
     type_name: 
     struct_member_name: 
@@ -231,7 +231,7 @@ all_type_descriptions:
     members:
 all_block_variables:
   - &bv0
-    name: 
+    name: "counter"
     offset: 0
     absolute_offset: 0
     size: 4
@@ -262,7 +262,7 @@ all_block_variables:
       - *bv0
     type_description: *td1
   - &bv2
-    name: 
+    name: "counter"
     offset: 0
     absolute_offset: 0
     size: 4
@@ -420,7 +420,7 @@ all_block_variables:
     type_description: *td11
 all_descriptor_bindings:
   - &db0
-    spirv_id: 12
+    spirv_id: 6
     name: "counter.var.MyBufferIn"
     binding: 0
     input_attachment_index: 0
@@ -434,9 +434,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
-    word_offset: { binding: 333, set: 329 }
+    word_offset: { binding: 307, set: 303 }
   - &db1
-    spirv_id: 16
+    spirv_id: 8
     name: "counter.var.MyBufferOut"
     binding: 1
     input_attachment_index: 0
@@ -450,9 +450,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
-    word_offset: { binding: 341, set: 337 }
+    word_offset: { binding: 315, set: 311 }
   - &db2
-    spirv_id: 9
+    spirv_id: 5
     name: "MyBufferIn"
     binding: 3
     input_attachment_index: 0
@@ -463,12 +463,12 @@ all_descriptor_bindings:
     block: *bv7 # "MyBufferIn"
     array: { dims_count: 0, dims: [] }
     accessed: 1
-    uav_counter_id: 12
+    uav_counter_id: 6
     uav_counter_binding: *db0 # "counter.var.MyBufferIn"
     type_description: *td5
-    word_offset: { binding: 317, set: 313 }
+    word_offset: { binding: 291, set: 287 }
   - &db3
-    spirv_id: 15
+    spirv_id: 7
     name: "MyBufferOut"
     binding: 4
     input_attachment_index: 0
@@ -479,13 +479,13 @@ all_descriptor_bindings:
     block: *bv11 # "MyBufferOut"
     array: { dims_count: 0, dims: [] }
     accessed: 1
-    uav_counter_id: 16
+    uav_counter_id: 8
     uav_counter_binding: *db1 # "counter.var.MyBufferOut"
     type_description: *td11
-    word_offset: { binding: 325, set: 321 }
+    word_offset: { binding: 299, set: 295 }
 all_interface_variables:
   - &iv0
-    spirv_id: 25
+    spirv_id: 2
     name: 
     location: 4294967295
     storage_class: 1 # Input
@@ -503,7 +503,7 @@ all_interface_variables:
     type_description: *td12
     word_offset: { location: 0 }
   - &iv1
-    spirv_id: 29
+    spirv_id: 3
     name: "out.var.SV_TARGET0"
     location: 0
     storage_class: 3 # Output
@@ -519,11 +519,11 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td12
-    word_offset: { location: 309 }
+    word_offset: { location: 283 }
 module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
-  entry_point_id: 20
+  entry_point_id: 1
   source_language: 5 # HLSL
   source_language_version: 600
   spirv_execution_model: 4 # Fragment

@@ -48,7 +48,8 @@ reflection code or the test shaders.
       yaml_cmd_args = [spirv_reflect_exe, "-y", "-v", "1", spv_path]
       if args.verbose:
         print(" ".join(yaml_cmd_args))
-      subprocess.call(yaml_cmd_args, stdout=file(yaml_path, "w"))
+      with open(yaml_path, "w") as f:
+      	subprocess.call(yaml_cmd_args, stdout=f)
       print("%s -> %s" % (spv_path, yaml_path))
     except NameError:
       print("spirv-reflect application not found; did you build it first?")

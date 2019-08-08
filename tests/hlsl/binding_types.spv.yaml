@@ -2,7 +2,7 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 2
+    id: 34
     op: 22
     type_name: 
     struct_member_name: "x"
@@ -19,7 +19,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td1
-    id: 3
+    id: 39
     op: 30
     type_name: "type.MyCBuffer"
     struct_member_name: 
@@ -37,7 +37,7 @@ all_type_descriptions:
     members:
       - *td0
   - &td2
-    id: 2
+    id: 34
     op: 22
     type_name: 
     struct_member_name: "x"
@@ -54,7 +54,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td3
-    id: 6
+    id: 41
     op: 30
     type_name: "type.ConstantBuffer.Data"
     struct_member_name: 
@@ -72,7 +72,7 @@ all_type_descriptions:
     members:
       - *td2
   - &td4
-    id: 9
+    id: 43
     op: 25
     type_name: "type.1d.image"
     struct_member_name: 
@@ -89,7 +89,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td5
-    id: 12
+    id: 45
     op: 25
     type_name: "type.2d.image"
     struct_member_name: 
@@ -106,7 +106,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td6
-    id: 15
+    id: 47
     op: 25
     type_name: "type.3d.image"
     struct_member_name: 
@@ -123,7 +123,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td7
-    id: 18
+    id: 49
     op: 25
     type_name: "type.1d.image.array"
     struct_member_name: 
@@ -140,7 +140,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td8
-    id: 21
+    id: 51
     op: 25
     type_name: "type.2d.image.array"
     struct_member_name: 
@@ -157,7 +157,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td9
-    id: 24
+    id: 53
     op: 25
     type_name: "type.1d.image"
     struct_member_name: 
@@ -174,7 +174,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td10
-    id: 27
+    id: 55
     op: 25
     type_name: "type.2d.image"
     struct_member_name: 
@@ -191,7 +191,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td11
-    id: 30
+    id: 57
     op: 25
     type_name: "type.3d.image"
     struct_member_name: 
@@ -208,7 +208,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td12
-    id: 33
+    id: 59
     op: 25
     type_name: "type.1d.image.array"
     struct_member_name: 
@@ -225,7 +225,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td13
-    id: 36
+    id: 61
     op: 25
     type_name: "type.2d.image.array"
     struct_member_name: 
@@ -242,7 +242,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td14
-    id: 39
+    id: 63
     op: 25
     type_name: "type.2d.image"
     struct_member_name: 
@@ -259,7 +259,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td15
-    id: 42
+    id: 65
     op: 25
     type_name: "type.2d.image.array"
     struct_member_name: 
@@ -276,7 +276,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td16
-    id: 45
+    id: 67
     op: 25
     type_name: "type.cube.image"
     struct_member_name: 
@@ -293,7 +293,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td17
-    id: 48
+    id: 69
     op: 25
     type_name: "type.cube.image.array"
     struct_member_name: 
@@ -310,7 +310,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td18
-    id: 2
+    id: 34
     op: 22
     type_name: 
     struct_member_name: "q"
@@ -327,7 +327,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td19
-    id: 51
+    id: 71
     op: 30
     type_name: "type.MyTBuffer"
     struct_member_name: 
@@ -345,7 +345,7 @@ all_type_descriptions:
     members:
       - *td18
   - &td20
-    id: 54
+    id: 36
     op: 23
     type_name: 
     struct_member_name: "x"
@@ -362,7 +362,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td21
-    id: 55
+    id: 73
     op: 30
     type_name: "type.TextureBuffer.Data2"
     struct_member_name: 
@@ -380,7 +380,7 @@ all_type_descriptions:
     members:
       - *td20
   - &td22
-    id: 58
+    id: 75
     op: 25
     type_name: "type.buffer.image"
     struct_member_name: 
@@ -397,7 +397,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td23
-    id: 61
+    id: 77
     op: 25
     type_name: "type.buffer.image"
     struct_member_name: 
@@ -414,7 +414,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td24
-    id: 64
+    id: 80
     op: 29
     type_name: 
     struct_member_name: 
@@ -431,7 +431,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td25
-    id: 65
+    id: 79
     op: 30
     type_name: "type.StructuredBuffer.float"
     struct_member_name: 
@@ -449,7 +449,7 @@ all_type_descriptions:
     members:
       - *td24
   - &td26
-    id: 64
+    id: 80
     op: 29
     type_name: 
     struct_member_name: 
@@ -466,7 +466,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td27
-    id: 68
+    id: 82
     op: 30
     type_name: "type.RWStructuredBuffer.float"
     struct_member_name: 
@@ -484,10 +484,10 @@ all_type_descriptions:
     members:
       - *td26
   - &td28
-    id: 71
+    id: 85
     op: 21
     type_name: 
-    struct_member_name: 
+    struct_member_name: "counter"
     storage_class: 0 # UniformConstant
     type_flags: 0x00000004 # INT 
     decoration_flags: 0x00000000 # NONE
@@ -501,7 +501,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td29
-    id: 72
+    id: 84
     op: 30
     type_name: "type.ACSBuffer.counter"
     struct_member_name: 
@@ -519,7 +519,7 @@ all_type_descriptions:
     members:
       - *td28
   - &td30
-    id: 64
+    id: 80
     op: 29
     type_name: 
     struct_member_name: 
@@ -536,7 +536,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td31
-    id: 75
+    id: 87
     op: 30
     type_name: "type.AppendStructuredBuffer.float"
     struct_member_name: 
@@ -554,7 +554,7 @@ all_type_descriptions:
     members:
       - *td30
   - &td32
-    id: 64
+    id: 80
     op: 29
     type_name: 
     struct_member_name: 
@@ -571,7 +571,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td33
-    id: 79
+    id: 89
     op: 30
     type_name: "type.ConsumeStructuredBuffer.float"
     struct_member_name: 
@@ -589,7 +589,7 @@ all_type_descriptions:
     members:
       - *td32
   - &td34
-    id: 84
+    id: 92
     op: 29
     type_name: 
     struct_member_name: 
@@ -606,7 +606,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td35
-    id: 85
+    id: 91
     op: 30
     type_name: "type.ByteAddressBuffer"
     struct_member_name: 
@@ -624,7 +624,7 @@ all_type_descriptions:
     members:
       - *td34
   - &td36
-    id: 84
+    id: 92
     op: 29
     type_name: 
     struct_member_name: 
@@ -641,7 +641,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td37
-    id: 88
+    id: 95
     op: 30
     type_name: "type.RWByteAddressBuffer"
     struct_member_name: 
@@ -659,7 +659,7 @@ all_type_descriptions:
     members:
       - *td36
   - &td38
-    id: 54
+    id: 36
     op: 23
     type_name: 
     struct_member_name: 
@@ -1103,7 +1103,7 @@ all_block_variables:
       - *bv26
     type_description: *td27
   - &bv28
-    name: 
+    name: "counter"
     offset: 0
     absolute_offset: 0
     size: 4
@@ -1165,7 +1165,7 @@ all_block_variables:
       - *bv30
     type_description: *td31
   - &bv32
-    name: 
+    name: "counter"
     offset: 0
     absolute_offset: 0
     size: 4
@@ -1227,7 +1227,7 @@ all_block_variables:
       - *bv34
     type_description: *td33
   - &bv36
-    name: 
+    name: "counter"
     offset: 0
     absolute_offset: 0
     size: 4
@@ -1321,7 +1321,7 @@ all_block_variables:
     type_description: *td37
 all_descriptor_bindings:
   - &db0
-    spirv_id: 5
+    spirv_id: 11
     name: "MyCBuffer"
     binding: 0
     input_attachment_index: 0
@@ -1335,9 +1335,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
-    word_offset: { binding: 940, set: 936 }
+    word_offset: { binding: 842, set: 838 }
   - &db1
-    spirv_id: 8
+    spirv_id: 12
     name: "MyConstantBuffer"
     binding: 1
     input_attachment_index: 0
@@ -1351,9 +1351,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td3
-    word_offset: { binding: 948, set: 944 }
+    word_offset: { binding: 850, set: 846 }
   - &db2
-    spirv_id: 11
+    spirv_id: 13
     name: "MyTexture1D"
     binding: 2
     input_attachment_index: 0
@@ -1367,7 +1367,7 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td4
-    word_offset: { binding: 956, set: 952 }
+    word_offset: { binding: 858, set: 854 }
   - &db3
     spirv_id: 14
     name: "MyTexture2D"
@@ -1383,9 +1383,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td5
-    word_offset: { binding: 964, set: 960 }
+    word_offset: { binding: 866, set: 862 }
   - &db4
-    spirv_id: 17
+    spirv_id: 15
     name: "MyTexture3D"
     binding: 4
     input_attachment_index: 0
@@ -1399,9 +1399,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td6
-    word_offset: { binding: 972, set: 968 }
+    word_offset: { binding: 874, set: 870 }
   - &db5
-    spirv_id: 20
+    spirv_id: 16
     name: "MyTexture1DArray"
     binding: 5
     input_attachment_index: 0
@@ -1415,9 +1415,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td7
-    word_offset: { binding: 980, set: 976 }
+    word_offset: { binding: 882, set: 878 }
   - &db6
-    spirv_id: 23
+    spirv_id: 17
     name: "MyTexture2DArray"
     binding: 6
     input_attachment_index: 0
@@ -1431,9 +1431,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td8
-    word_offset: { binding: 988, set: 984 }
+    word_offset: { binding: 890, set: 886 }
   - &db7
-    spirv_id: 26
+    spirv_id: 18
     name: "MyRWTexture1D"
     binding: 7
     input_attachment_index: 0
@@ -1447,9 +1447,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td9
-    word_offset: { binding: 996, set: 992 }
+    word_offset: { binding: 898, set: 894 }
   - &db8
-    spirv_id: 29
+    spirv_id: 19
     name: "MyRWTexture2D"
     binding: 8
     input_attachment_index: 0
@@ -1463,9 +1463,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td10
-    word_offset: { binding: 1004, set: 1000 }
+    word_offset: { binding: 906, set: 902 }
   - &db9
-    spirv_id: 32
+    spirv_id: 20
     name: "MyRWTexture3D"
     binding: 9
     input_attachment_index: 0
@@ -1479,9 +1479,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td11
-    word_offset: { binding: 1012, set: 1008 }
+    word_offset: { binding: 914, set: 910 }
   - &db10
-    spirv_id: 35
+    spirv_id: 21
     name: "MyRWTexture1DArray"
     binding: 10
     input_attachment_index: 0
@@ -1495,9 +1495,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td12
-    word_offset: { binding: 1020, set: 1016 }
+    word_offset: { binding: 922, set: 918 }
   - &db11
-    spirv_id: 38
+    spirv_id: 22
     name: "MyRWTexture2DArray"
     binding: 11
     input_attachment_index: 0
@@ -1511,9 +1511,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td13
-    word_offset: { binding: 1028, set: 1024 }
+    word_offset: { binding: 930, set: 926 }
   - &db12
-    spirv_id: 41
+    spirv_id: 23
     name: "MyTexture2DMS"
     binding: 12
     input_attachment_index: 0
@@ -1527,9 +1527,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td14
-    word_offset: { binding: 1036, set: 1032 }
+    word_offset: { binding: 938, set: 934 }
   - &db13
-    spirv_id: 44
+    spirv_id: 24
     name: "MyTexture2DMSArray"
     binding: 13
     input_attachment_index: 0
@@ -1543,9 +1543,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td15
-    word_offset: { binding: 1044, set: 1040 }
+    word_offset: { binding: 946, set: 942 }
   - &db14
-    spirv_id: 47
+    spirv_id: 25
     name: "MyTextureCube"
     binding: 14
     input_attachment_index: 0
@@ -1559,9 +1559,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td16
-    word_offset: { binding: 1052, set: 1048 }
+    word_offset: { binding: 954, set: 950 }
   - &db15
-    spirv_id: 50
+    spirv_id: 26
     name: "MyTextureCubeArray"
     binding: 15
     input_attachment_index: 0
@@ -1575,9 +1575,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td17
-    word_offset: { binding: 1060, set: 1056 }
+    word_offset: { binding: 962, set: 958 }
   - &db16
-    spirv_id: 53
+    spirv_id: 27
     name: "MyTBuffer"
     binding: 16
     input_attachment_index: 0
@@ -1591,9 +1591,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td19
-    word_offset: { binding: 1068, set: 1064 }
+    word_offset: { binding: 970, set: 966 }
   - &db17
-    spirv_id: 57
+    spirv_id: 28
     name: "MyTextureBuffer"
     binding: 17
     input_attachment_index: 0
@@ -1607,9 +1607,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td21
-    word_offset: { binding: 1076, set: 1072 }
+    word_offset: { binding: 978, set: 974 }
   - &db18
-    spirv_id: 60
+    spirv_id: 29
     name: "MyBuffer"
     binding: 18
     input_attachment_index: 0
@@ -1623,9 +1623,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td22
-    word_offset: { binding: 1084, set: 1080 }
+    word_offset: { binding: 986, set: 982 }
   - &db19
-    spirv_id: 63
+    spirv_id: 30
     name: "MyRWBuffer"
     binding: 19
     input_attachment_index: 0
@@ -1639,9 +1639,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td23
-    word_offset: { binding: 1092, set: 1088 }
+    word_offset: { binding: 994, set: 990 }
   - &db20
-    spirv_id: 67
+    spirv_id: 31
     name: "MyStructuredBuffer"
     binding: 20
     input_attachment_index: 0
@@ -1655,9 +1655,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td25
-    word_offset: { binding: 1100, set: 1096 }
+    word_offset: { binding: 1002, set: 998 }
   - &db21
-    spirv_id: 74
+    spirv_id: 6
     name: "counter.var.MyRWStructuredBuffer"
     binding: 22
     input_attachment_index: 0
@@ -1671,9 +1671,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td29
-    word_offset: { binding: 1116, set: 1112 }
+    word_offset: { binding: 1018, set: 1014 }
   - &db22
-    spirv_id: 70
+    spirv_id: 5
     name: "MyRWStructuredBuffer"
     binding: 21
     input_attachment_index: 0
@@ -1684,13 +1684,13 @@ all_descriptor_bindings:
     block: *bv27 # "MyRWStructuredBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
-    uav_counter_id: 74
+    uav_counter_id: 6
     uav_counter_binding: *db21 # "counter.var.MyRWStructuredBuffer"
     type_description: *td27
-    word_offset: { binding: 1108, set: 1104 }
+    word_offset: { binding: 1010, set: 1006 }
   - *db21
   - &db23
-    spirv_id: 78
+    spirv_id: 8
     name: "counter.var.MyAppendStructuredBuffer"
     binding: 24
     input_attachment_index: 0
@@ -1704,9 +1704,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td29
-    word_offset: { binding: 1132, set: 1128 }
+    word_offset: { binding: 1034, set: 1030 }
   - &db24
-    spirv_id: 77
+    spirv_id: 7
     name: "MyAppendStructuredBuffer"
     binding: 23
     input_attachment_index: 0
@@ -1717,13 +1717,13 @@ all_descriptor_bindings:
     block: *bv31 # "MyAppendStructuredBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
-    uav_counter_id: 78
+    uav_counter_id: 8
     uav_counter_binding: *db23 # "counter.var.MyAppendStructuredBuffer"
     type_description: *td31
-    word_offset: { binding: 1124, set: 1120 }
+    word_offset: { binding: 1026, set: 1022 }
   - *db23
   - &db25
-    spirv_id: 82
+    spirv_id: 10
     name: "counter.var.MyConsumeStructuredBuffer"
     binding: 26
     input_attachment_index: 0
@@ -1737,9 +1737,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td29
-    word_offset: { binding: 1148, set: 1144 }
+    word_offset: { binding: 1050, set: 1046 }
   - &db26
-    spirv_id: 81
+    spirv_id: 9
     name: "MyConsumeStructuredBuffer"
     binding: 25
     input_attachment_index: 0
@@ -1750,13 +1750,13 @@ all_descriptor_bindings:
     block: *bv35 # "MyConsumeStructuredBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
-    uav_counter_id: 82
+    uav_counter_id: 10
     uav_counter_binding: *db25 # "counter.var.MyConsumeStructuredBuffer"
     type_description: *td33
-    word_offset: { binding: 1140, set: 1136 }
+    word_offset: { binding: 1042, set: 1038 }
   - *db25
   - &db27
-    spirv_id: 87
+    spirv_id: 32
     name: "MyByteAddressBuffer"
     binding: 27
     input_attachment_index: 0
@@ -1770,9 +1770,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td35
-    word_offset: { binding: 1156, set: 1152 }
+    word_offset: { binding: 1058, set: 1054 }
   - &db28
-    spirv_id: 90
+    spirv_id: 33
     name: "MyRWByteAddressBuffer"
     binding: 28
     input_attachment_index: 0
@@ -1786,10 +1786,10 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td37
-    word_offset: { binding: 1164, set: 1160 }
+    word_offset: { binding: 1066, set: 1062 }
 all_interface_variables:
   - &iv0
-    spirv_id: 99
+    spirv_id: 2
     name: 
     location: 4294967295
     storage_class: 1 # Input
@@ -1807,7 +1807,7 @@ all_interface_variables:
     type_description: *td38
     word_offset: { location: 0 }
   - &iv1
-    spirv_id: 103
+    spirv_id: 3
     name: "out.var.SV_TARGET"
     location: 0
     storage_class: 3 # Output
@@ -1823,11 +1823,11 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td38
-    word_offset: { location: 932 }
+    word_offset: { location: 834 }
 module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
-  entry_point_id: 94
+  entry_point_id: 1
   source_language: 5 # HLSL
   source_language_version: 600
   spirv_execution_model: 4 # Fragment
