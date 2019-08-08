@@ -225,7 +225,7 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [8,], stride: 64 }
+      array: { dims_count: 1, dims: [8,], stride: 48 }
     member_count: 3
     members:
       - *td3
@@ -296,7 +296,7 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [10,], stride: 784 }
+      array: { dims_count: 1, dims: [10,], stride: 640 }
     member_count: 4
     members:
       - *td12
@@ -317,7 +317,7 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 3, dims: [2,2,3,], stride: 7872 }
+      array: { dims_count: 3, dims: [2,2,3,], stride: 6432 }
     member_count: 4
     members:
       - *td0
@@ -622,8 +622,8 @@ all_block_variables:
     name: "Strengths"
     offset: 16
     absolute_offset: 0
-    size: 32
-    padded_size: 32
+    size: 24
+    padded_size: 24
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
@@ -641,10 +641,10 @@ all_block_variables:
     type_description: *td10
   - &bv11
     name: "Type"
-    offset: 48
+    offset: 40
     absolute_offset: 0
     size: 4
-    padded_size: 16
+    padded_size: 8
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -658,14 +658,14 @@ all_block_variables:
     name: "ClothProperties"
     offset: 0
     absolute_offset: 0
-    size: 512
-    padded_size: 512
+    size: 384
+    padded_size: 384
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 1, dims: [8,], stride: 64 }
+    array: { dims_count: 1, dims: [8,], stride: 48 }
     member_count: 3
     members:
       - *bv3
@@ -674,7 +674,7 @@ all_block_variables:
     type_description: *td12
   - &bv13
     name: "ClothColors"
-    offset: 512
+    offset: 384
     absolute_offset: 0
     size: 128
     padded_size: 128
@@ -689,10 +689,10 @@ all_block_variables:
     type_description: *td13
   - &bv14
     name: "Scales"
-    offset: 640
+    offset: 512
     absolute_offset: 0
-    size: 128
-    padded_size: 128
+    size: 116
+    padded_size: 116
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -704,10 +704,10 @@ all_block_variables:
     type_description: *td14
   - &bv15
     name: "EnableBitMask"
-    offset: 768
+    offset: 628
     absolute_offset: 0
     size: 4
-    padded_size: 16
+    padded_size: 12
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 1 }
@@ -721,14 +721,14 @@ all_block_variables:
     name: "AuxDatArray"
     offset: 32
     absolute_offset: 0
-    size: 7840
-    padded_size: 7840
+    size: 6400
+    padded_size: 6400
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 1, dims: [10,], stride: 784 }
+    array: { dims_count: 1, dims: [10,], stride: 640 }
     member_count: 4
     members:
       - *bv12
@@ -740,14 +740,14 @@ all_block_variables:
     name: "Material"
     offset: 0
     absolute_offset: 0
-    size: 94464
-    padded_size: 94464
+    size: 77184
+    padded_size: 77184
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 3, dims: [2,2,3,], stride: 7872 }
+    array: { dims_count: 3, dims: [2,2,3,], stride: 6432 }
     member_count: 4
     members:
       - *bv0
@@ -757,8 +757,8 @@ all_block_variables:
     type_description: *td17
   - &bv18
     name: "ModelMatrix"
-    offset: 94464
-    absolute_offset: 94464
+    offset: 77184
+    absolute_offset: 77184
     size: 64
     padded_size: 64
     decorations: 0x00000004 # ROW_MAJOR 
@@ -772,8 +772,8 @@ all_block_variables:
     type_description: *td18
   - &bv19
     name: "ProjectionMatrix"
-    offset: 94528
-    absolute_offset: 94528
+    offset: 77248
+    absolute_offset: 77248
     size: 64
     padded_size: 64
     decorations: 0x00000004 # ROW_MAJOR 
@@ -787,8 +787,8 @@ all_block_variables:
     type_description: *td19
   - &bv20
     name: "Time"
-    offset: 94592
-    absolute_offset: 94592
+    offset: 77312
+    absolute_offset: 77312
     size: 4
     padded_size: 4
     decorations: 0x00000000 # NONE
@@ -802,8 +802,8 @@ all_block_variables:
     type_description: *td20
   - &bv21
     name: "Scale"
-    offset: 94596
-    absolute_offset: 94596
+    offset: 77316
+    absolute_offset: 77316
     size: 12
     padded_size: 12
     decorations: 0x00000000 # NONE
@@ -817,10 +817,10 @@ all_block_variables:
     type_description: *td21
   - &bv22
     name: "UvOffsets"
-    offset: 94608
-    absolute_offset: 94608
-    size: 192
-    padded_size: 192
+    offset: 77328
+    absolute_offset: 77328
+    size: 184
+    padded_size: 184
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -832,10 +832,10 @@ all_block_variables:
     type_description: *td22
   - &bv23
     name: "EnableTarget"
-    offset: 94800
-    absolute_offset: 94800
+    offset: 77512
+    absolute_offset: 77512
     size: 4
-    padded_size: 16
+    padded_size: 8
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -849,8 +849,8 @@ all_block_variables:
     name: "MyConstants"
     offset: 0
     absolute_offset: 0
-    size: 94816
-    padded_size: 94816
+    size: 77520
+    padded_size: 77520
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
