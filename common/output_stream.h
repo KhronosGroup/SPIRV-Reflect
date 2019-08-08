@@ -19,6 +19,7 @@ std::string ToStringResourceType(SpvReflectResourceType type);
 std::string ToStringDescriptorType(SpvReflectDescriptorType value);
 std::string ToStringTypeFlags(SpvReflectTypeFlags type_flags);
 std::string ToStringDecorationFlags(SpvReflectDecorationFlags decoration_flags);
+std::string ToStringVariableFlags(SpvReflectVariableFlags variable_flags);
 std::string ToStringDescriptorType(SpvReflectDescriptorType value);
 std::string ToStringFormat(SpvReflectFormat fmt);
 std::string ToStringComponentType(const SpvReflectTypeDescription& type, uint32_t member_decoration_flags);
