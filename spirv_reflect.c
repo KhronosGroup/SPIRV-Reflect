@@ -625,7 +625,7 @@ static SpvReflectResult ParseNodes(Parser* p_parser, const SpvAllocationCallback
 
   // Allocate access chain
   if (p_parser->access_chain_count > 0) {
-    p_parser->access_chains = (AccessChain*)calloc(p_parser->access_chain_count, sizeof(*(p_parser->access_chains)));
+    p_parser->access_chains = (AccessChain*)spv_calloc(p_allocator, p_parser->access_chain_count, sizeof(*(p_parser->access_chains)));
     if (IsNull(p_parser->access_chains)) {
       return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
     }
@@ -800,7 +800,7 @@ static SpvReflectResult ParseNodes(Parser* p_parser, const SpvAllocationCallback
         //
         p_access_chain->index_count = (node_word_count - SPIRV_ACCESS_CHAIN_INDEX_OFFSET);
         if (p_access_chain->index_count > 0) {
-          p_access_chain->indexes = (uint32_t*)calloc(p_access_chain->index_count, sizeof(*(p_access_chain->indexes)));
+          p_access_chain->indexes = (uint32_t*)spv_calloc(p_allocator, p_access_chain->index_count, sizeof(*(p_access_chain->indexes)));
           if (IsNull( p_access_chain->indexes)) {
             return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
           }
