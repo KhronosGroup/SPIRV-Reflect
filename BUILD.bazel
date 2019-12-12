@@ -14,6 +14,17 @@ exports_files([
     "LICENSE",
 ])
 
+COMMON_COPTS = [
+    "-ffunction-sections",
+    "-fdata-sections",
+]
+
+COMMON_CPPOPTS = COMMON_COPTS + [
+    "-std=c++14",
+]
+
+COMMON_LINKOPTS = ["-Wl,--gc-sections"]
+
 cc_library(
     name = "libspirv_reflect",
     srcs = ["spirv_reflect.c"],
@@ -21,6 +32,7 @@ cc_library(
         "include/spirv/unified1/spirv.h",
         "spirv_reflect.h",
     ],
+    copts = COMMON_COPTS,
     visibility = ["//visibility:public"],
 )
 
@@ -28,7 +40,7 @@ cc_library(
     name = "libcommon",
     srcs = ["common/output_stream.cpp"],
     hdrs = ["common/output_stream.h"],
-    copts = ["-std=c++14"],
+    copts = COMMON_CPPOPTS,
     includes = ["common"],
     deps = [
         ":libspirv_reflect",
@@ -45,7 +57,7 @@ cc_library(
         "examples/arg_parser.h",
         "examples/common.h",
     ],
-    copts = ["-std=c++14"],
+    copts = COMMON_CPPOPTS,
     includes = ["examples"],
     deps = [
         ":libcommon",
@@ -58,8 +70,9 @@ cc_binary(
     srcs = [
         "examples/main_hlsl_resource_types.cpp",
     ],
-    copts = ["-std=c++14"],
+    copts = COMMON_CPPOPTS,
     includes = ["examples"],
+    linkopts = COMMON_LINKOPTS,
     deps = [
         ":libcommon",
         ":libexample",
@@ -75,8 +88,9 @@ cc_binary(
         "util/stripper/stripper.cpp",
         "util/stripper/stripper.h",
     ],
-    copts = ["-std=c++14"],
+    copts = COMMON_CPPOPTS,
     includes = ["util/stripper"],
+    linkopts = COMMON_LINKOPTS,
 )
 
 cc_binary(
@@ -85,8 +99,9 @@ cc_binary(
         "examples/main_io_variables.cpp",
         "examples/sample_spv.h",
     ],
-    copts = ["-std=c++14"],
+    copts = COMMON_CPPOPTS,
     includes = ["examples"],
+    linkopts = COMMON_LINKOPTS,
     deps = [
         ":libcommon",
         ":libexample",
@@ -100,8 +115,9 @@ cc_binary(
         "examples/main_descriptors.cpp",
         "examples/sample_spv.h",
     ],
-    copts = ["-std=c++14"],
+    copts = COMMON_CPPOPTS,
     includes = ["examples"],
+    linkopts = COMMON_LINKOPTS,
     deps = [
         ":libcommon",
         ":libexample",
@@ -114,7 +130,8 @@ cc_binary(
     srcs = [
         "main.cpp",
     ],
-    copts = ["-std=c++14"],
+    copts = COMMON_CPPOPTS,
+    linkopts = COMMON_LINKOPTS,
     deps = [
         ":libcommon",
         ":libexample",
