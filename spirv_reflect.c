@@ -889,7 +889,7 @@ static SpvReflectResult ParseStrings(Parser* p_parser)
       ++string_index;
     }
   }
-
+  
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
@@ -2869,6 +2869,102 @@ static SpvReflectResult ParseEntryPoints(Parser* p_parser, SpvReflectShaderModul
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+static SpvReflectResult ParseExecutionModes(Parser* p_parser, SpvReflectShaderModule* p_module)
+{
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->nodes));
+  assert(IsNotNull(p_module));
+
+  if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && IsNotNull(p_parser->nodes)) {
+    for (size_t node_idx = 0; node_idx < p_parser->node_count; ++node_idx) {
+      Node* p_node = &(p_parser->nodes[node_idx]);
+      if (p_node->op != SpvOpExecutionMode) {
+        continue;
+      }
+
+      // Read entry point id
+      uint32_t entry_point_id = 0;
+      CHECKED_READU32(p_parser, p_node->word_offset + 1, entry_point_id);
+      
+      // Find entry point 
+      SpvReflectEntryPoint* p_entry_point = NULL;
+      for (size_t entry_point_idx = 0; entry_point_idx < p_module->entry_point_count; ++entry_point_idx) {
+        if (p_module->entry_points[entry_point_idx].id == entry_point_id) {
+          p_entry_point = &p_module->entry_points[entry_point_idx];
+          break;
+        }
+      }
+      // Bail if entry point is null
+      if (IsNull(p_entry_point)) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ENTRY_POINT;
+      }
+      
+      // Read execution mode
+      uint32_t execution_mode = (uint32_t)INVALID_VALUE;
+      CHECKED_READU32(p_parser, p_node->word_offset + 2, execution_mode);
+
+      // Parse execution mode
+      switch (execution_mode) {
+        default: {
+          return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_EXECUTION_MODE;
+        }
+        break;
+
+        case SpvExecutionModeInvocations:
+        case SpvExecutionModeSpacingEqual:
+        case SpvExecutionModeSpacingFractionalEven:
+        case SpvExecutionModeSpacingFractionalOdd:
+        case SpvExecutionModeVertexOrderCw:
+        case SpvExecutionModeVertexOrderCcw:
+        case SpvExecutionModePixelCenterInteger:
+        case SpvExecutionModeOriginUpperLeft:
+        case SpvExecutionModeOriginLowerLeft:
+        case SpvExecutionModeEarlyFragmentTests:
+        case SpvExecutionModePointMode:
+        case SpvExecutionModeXfb:
+        case SpvExecutionModeDepthReplacing:
+        case SpvExecutionModeDepthGreater:
+        case SpvExecutionModeDepthLess:
+        case SpvExecutionModeDepthUnchanged:
+          break;
+
+        case SpvExecutionModeLocalSize: {
+          CHECKED_READU32(p_parser, p_node->word_offset + 3, p_entry_point->local_size.x);
+          CHECKED_READU32(p_parser, p_node->word_offset + 4, p_entry_point->local_size.y);
+          CHECKED_READU32(p_parser, p_node->word_offset + 5, p_entry_point->local_size.z);
+        }
+        break;                                        
+
+        case SpvExecutionModeLocalSizeHint:
+        case SpvExecutionModeInputPoints:
+        case SpvExecutionModeInputLines:
+        case SpvExecutionModeInputLinesAdjacency:
+        case SpvExecutionModeTriangles:
+        case SpvExecutionModeInputTrianglesAdjacency:
+        case SpvExecutionModeQuads:
+        case SpvExecutionModeIsolines:
+        case SpvExecutionModeOutputVertices:
+        case SpvExecutionModeOutputPoints:
+        case SpvExecutionModeOutputLineStrip:
+        case SpvExecutionModeOutputTriangleStrip:
+        case SpvExecutionModeVecTypeHint:
+        case SpvExecutionModeContractionOff:
+        case SpvExecutionModeInitializer:
+        case SpvExecutionModeFinalizer:
+        case SpvExecutionModeSubgroupSize:
+        case SpvExecutionModeSubgroupsPerWorkgroup:
+        case SpvExecutionModeSubgroupsPerWorkgroupId:
+        case SpvExecutionModeLocalSizeId:
+        case SpvExecutionModeLocalSizeHintId:
+        case SpvExecutionModePostDepthCoverage:
+        case SpvExecutionModeStencilRefReplacingEXT:
+          break;
+      }
+    }
+  }
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
 static SpvReflectResult ParsePushConstantBlocks(Parser* p_parser, SpvReflectShaderModule* p_module)
 {
   for (size_t i = 0; i < p_parser->node_count; ++i) {
@@ -3250,6 +3346,9 @@ SpvReflectResult spvReflectCreateShaderModule(
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = SynchronizeDescriptorSets(p_module);
+  }
+  if (result == SPV_REFLECT_RESULT_SUCCESS) {
+    result = ParseExecutionModes(&parser, p_module);
   }
 
   // Destroy module if parse was not successful

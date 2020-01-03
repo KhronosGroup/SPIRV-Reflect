@@ -72,6 +72,8 @@ typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION,
   SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_BLOCK_DATA,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_BLOCK_MEMBER_REFERENCE,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ENTRY_POINT,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_EXECUTION_MODE,
 } SpvReflectResult;
 
 /*! @enum SpvReflectTypeFlagBits
@@ -377,6 +379,12 @@ typedef struct SpvReflectEntryPoint {
   uint32_t*                         used_uniforms;
   uint32_t                          used_push_constant_count;
   uint32_t*                         used_push_constants;
+
+  struct LocalSize {
+    uint32_t                        x;
+    uint32_t                        y;
+    uint32_t                        z;
+  } local_size;
 } SpvReflectEntryPoint;
 
 /*! @struct SpvReflectShaderModule
