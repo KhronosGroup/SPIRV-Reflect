@@ -4396,13 +4396,13 @@ SpvReflectResult spvReflectChangeDescriptorBindingNumbers(
       return SPV_REFLECT_RESULT_ERROR_RANGE_EXCEEDED;
     }
     // Binding number
-    if (new_binding_number != SPV_REFLECT_BINDING_NUMBER_DONT_CHANGE) {
+    if (new_binding_number != (uint32_t)SPV_REFLECT_BINDING_NUMBER_DONT_CHANGE) {
       uint32_t* p_code = p_module->_internal->spirv_code + p_target_descriptor->word_offset.binding;
       *p_code = new_binding_number;
       p_target_descriptor->binding = new_binding_number;
     }
     // Set number
-    if (new_set_binding != SPV_REFLECT_SET_NUMBER_DONT_CHANGE) {
+    if (new_set_binding != (uint32_t)SPV_REFLECT_SET_NUMBER_DONT_CHANGE) {
       uint32_t* p_code = p_module->_internal->spirv_code + p_target_descriptor->word_offset.set;
       *p_code = new_set_binding;
       p_target_descriptor->set = new_set_binding;
@@ -4410,7 +4410,7 @@ SpvReflectResult spvReflectChangeDescriptorBindingNumbers(
   }
 
   SpvReflectResult result = SPV_REFLECT_RESULT_SUCCESS;
-  if (new_set_binding != SPV_REFLECT_SET_NUMBER_DONT_CHANGE) {
+  if (new_set_binding != (uint32_t)SPV_REFLECT_SET_NUMBER_DONT_CHANGE) {
     result = SynchronizeDescriptorSets(p_module);
   }
   return result;
@@ -4451,7 +4451,7 @@ SpvReflectResult spvReflectChangeDescriptorSetNumber(
   }
 
   SpvReflectResult result = SPV_REFLECT_RESULT_SUCCESS;
-  if (IsNotNull(p_target_set) && new_set_number != SPV_REFLECT_SET_NUMBER_DONT_CHANGE) {
+  if (IsNotNull(p_target_set) && new_set_number != (uint32_t)SPV_REFLECT_SET_NUMBER_DONT_CHANGE) {
     for (uint32_t index = 0; index < p_target_set->binding_count; ++index) {
       SpvReflectDescriptorBinding* p_descriptor = p_target_set->bindings[index];
       if (p_descriptor->word_offset.set > (p_module->_internal->spirv_word_count - 1)) {
