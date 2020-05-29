@@ -70,9 +70,9 @@ int SpirvReflectExample(const void* spirv_code, size_t spirv_nbytes)
   uint32_t var_count = 0;
   result = spvReflectEnumerateInputVariables(&module, &var_count, NULL);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
-  SpvReflectInterfaceVariable* input_vars =
-    (SpvReflectInterfaceVariable*)malloc(var_count * sizeof(SpvReflectInterfaceVariable));
-  result = spvReflectEnumerateInputVariables(&module, &var_count, &input_vars);
+  SpvReflectInterfaceVariable** input_vars =
+    (SpvReflectInterfaceVariable**)malloc(var_count * sizeof(SpvReflectInterfaceVariable*));
+  result = spvReflectEnumerateInputVariables(&module, &var_count, input_vars);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   // Output variables, descriptor bindings, descriptor sets, and push constants
