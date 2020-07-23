@@ -2,7 +2,7 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 3
+    id: 19
     op: 23
     type_name: 
     struct_member_name: "Color"
@@ -19,7 +19,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td1
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Specular"
@@ -36,7 +36,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td2
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Diffuse"
@@ -53,7 +53,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td3
-    id: 3
+    id: 19
     op: 23
     type_name: 
     struct_member_name: "NormalAdjust"
@@ -70,7 +70,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td4
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Front"
@@ -87,7 +87,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td5
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Back"
@@ -104,7 +104,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td6
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Top"
@@ -121,7 +121,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td7
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Bottom"
@@ -138,7 +138,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td8
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Left"
@@ -155,7 +155,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td9
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Right"
@@ -172,7 +172,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td10
-    id: 4
+    id: 26
     op: 30
     type_name: "OmniNormalStength"
     struct_member_name: "Strengths"
@@ -195,7 +195,7 @@ all_type_descriptions:
       - *td8
       - *td9
   - &td11
-    id: 5
+    id: 13
     op: 21
     type_name: 
     struct_member_name: "Type"
@@ -212,7 +212,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td12
-    id: 8
+    id: 23
     op: 28
     type_name: "ClothProperties"
     struct_member_name: "ClothProperties"
@@ -225,14 +225,14 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [8,], stride: 64 }
+      array: { dims_count: 1, dims: [8,], stride: 48 }
     member_count: 3
     members:
       - *td3
       - *td10
       - *td11
   - &td13
-    id: 9
+    id: 27
     op: 28
     type_name: 
     struct_member_name: "ClothColors"
@@ -249,7 +249,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td14
-    id: 10
+    id: 28
     op: 28
     type_name: 
     struct_member_name: "Scales"
@@ -266,7 +266,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td15
-    id: 11
+    id: 6
     op: 21
     type_name: 
     struct_member_name: "EnableBitMask"
@@ -283,7 +283,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td16
-    id: 14
+    id: 20
     op: 28
     type_name: "AuxData"
     struct_member_name: "AuxDatArray"
@@ -296,7 +296,7 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [10,], stride: 784 }
+      array: { dims_count: 1, dims: [10,], stride: 640 }
     member_count: 4
     members:
       - *td12
@@ -304,7 +304,7 @@ all_type_descriptions:
       - *td14
       - *td15
   - &td17
-    id: 20
+    id: 12
     op: 28
     type_name: "MaterialData"
     struct_member_name: "Material"
@@ -317,7 +317,7 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 3, dims: [2,2,3,], stride: 7872 }
+      array: { dims_count: 3, dims: [2,2,3,], stride: 6432 }
     member_count: 4
     members:
       - *td0
@@ -325,7 +325,7 @@ all_type_descriptions:
       - *td2
       - *td16
   - &td18
-    id: 22
+    id: 29
     op: 24
     type_name: 
     struct_member_name: "ModelMatrix"
@@ -342,7 +342,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td19
-    id: 22
+    id: 29
     op: 24
     type_name: 
     struct_member_name: "ProjectionMatrix"
@@ -359,7 +359,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td20
-    id: 2
+    id: 8
     op: 22
     type_name: 
     struct_member_name: "Time"
@@ -376,7 +376,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td21
-    id: 3
+    id: 19
     op: 23
     type_name: 
     struct_member_name: "Scale"
@@ -393,7 +393,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td22
-    id: 25
+    id: 31
     op: 28
     type_name: 
     struct_member_name: "UvOffsets"
@@ -410,7 +410,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td23
-    id: 5
+    id: 13
     op: 21
     type_name: 
     struct_member_name: "EnableTarget"
@@ -427,7 +427,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td24
-    id: 26
+    id: 11
     op: 30
     type_name: "type.MyCBuffer"
     struct_member_name: 
@@ -451,7 +451,7 @@ all_type_descriptions:
       - *td22
       - *td23
   - &td25
-    id: 21
+    id: 30
     op: 23
     type_name: 
     struct_member_name: 
@@ -480,6 +480,7 @@ all_block_variables:
       vector: { component_count: 3 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td0
@@ -495,6 +496,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td1
@@ -510,6 +512,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td2
@@ -525,6 +528,7 @@ all_block_variables:
       vector: { component_count: 3 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td3
@@ -540,6 +544,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td4
@@ -555,6 +560,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td5
@@ -570,6 +576,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td6
@@ -585,6 +592,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td7
@@ -600,6 +608,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td8
@@ -615,6 +624,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td9
@@ -622,14 +632,15 @@ all_block_variables:
     name: "Strengths"
     offset: 16
     absolute_offset: 0
-    size: 32
-    padded_size: 32
+    size: 24
+    padded_size: 24
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 6
     members:
       - *bv4
@@ -641,16 +652,17 @@ all_block_variables:
     type_description: *td10
   - &bv11
     name: "Type"
-    offset: 48
+    offset: 40
     absolute_offset: 0
     size: 4
-    padded_size: 16
+    padded_size: 8
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td11
@@ -658,14 +670,15 @@ all_block_variables:
     name: "ClothProperties"
     offset: 0
     absolute_offset: 0
-    size: 512
-    padded_size: 512
+    size: 384
+    padded_size: 384
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 1, dims: [8,], stride: 64 }
+    array: { dims_count: 1, dims: [8,], stride: 48 }
+    flags: 0x00000001 # UNUSED 
     member_count: 3
     members:
       - *bv3
@@ -674,7 +687,7 @@ all_block_variables:
     type_description: *td12
   - &bv13
     name: "ClothColors"
-    offset: 512
+    offset: 384
     absolute_offset: 0
     size: 128
     padded_size: 128
@@ -684,36 +697,39 @@ all_block_variables:
       vector: { component_count: 3 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 1, dims: [8,], stride: 16 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td13
   - &bv14
     name: "Scales"
-    offset: 640
+    offset: 512
     absolute_offset: 0
-    size: 128
-    padded_size: 128
+    size: 116
+    padded_size: 116
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 1, dims: [8,], stride: 16 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td14
   - &bv15
     name: "EnableBitMask"
-    offset: 768
+    offset: 628
     absolute_offset: 0
     size: 4
-    padded_size: 16
+    padded_size: 12
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 1 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td15
@@ -721,14 +737,15 @@ all_block_variables:
     name: "AuxDatArray"
     offset: 32
     absolute_offset: 0
-    size: 7840
-    padded_size: 7840
+    size: 6400
+    padded_size: 6400
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 1, dims: [10,], stride: 784 }
+    array: { dims_count: 1, dims: [10,], stride: 640 }
+    flags: 0x00000001 # UNUSED 
     member_count: 4
     members:
       - *bv12
@@ -740,14 +757,15 @@ all_block_variables:
     name: "Material"
     offset: 0
     absolute_offset: 0
-    size: 94464
-    padded_size: 94464
+    size: 77184
+    padded_size: 77184
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 3, dims: [2,2,3,], stride: 7872 }
+    array: { dims_count: 3, dims: [2,2,3,], stride: 6432 }
+    flags: 0x00000001 # UNUSED 
     member_count: 4
     members:
       - *bv0
@@ -757,8 +775,8 @@ all_block_variables:
     type_description: *td17
   - &bv18
     name: "ModelMatrix"
-    offset: 94464
-    absolute_offset: 94464
+    offset: 77184
+    absolute_offset: 77184
     size: 64
     padded_size: 64
     decorations: 0x00000004 # ROW_MAJOR 
@@ -767,13 +785,14 @@ all_block_variables:
       vector: { component_count: 4 }
       matrix: { column_count: 4, row_count: 4, stride: 16 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td18
   - &bv19
     name: "ProjectionMatrix"
-    offset: 94528
-    absolute_offset: 94528
+    offset: 77248
+    absolute_offset: 77248
     size: 64
     padded_size: 64
     decorations: 0x00000004 # ROW_MAJOR 
@@ -782,13 +801,14 @@ all_block_variables:
       vector: { component_count: 4 }
       matrix: { column_count: 4, row_count: 4, stride: 16 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td19
   - &bv20
     name: "Time"
-    offset: 94592
-    absolute_offset: 94592
+    offset: 77312
+    absolute_offset: 77312
     size: 4
     padded_size: 4
     decorations: 0x00000000 # NONE
@@ -797,13 +817,14 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000000 # NONE
     member_count: 0
     members:
     type_description: *td20
   - &bv21
     name: "Scale"
-    offset: 94596
-    absolute_offset: 94596
+    offset: 77316
+    absolute_offset: 77316
     size: 12
     padded_size: 12
     decorations: 0x00000000 # NONE
@@ -812,36 +833,39 @@ all_block_variables:
       vector: { component_count: 3 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td21
   - &bv22
     name: "UvOffsets"
-    offset: 94608
-    absolute_offset: 94608
-    size: 192
-    padded_size: 192
+    offset: 77328
+    absolute_offset: 77328
+    size: 184
+    padded_size: 184
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 2 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 1, dims: [12,], stride: 16 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td22
   - &bv23
     name: "EnableTarget"
-    offset: 94800
-    absolute_offset: 94800
+    offset: 77512
+    absolute_offset: 77512
     size: 4
-    padded_size: 16
+    padded_size: 8
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td23
@@ -849,14 +873,15 @@ all_block_variables:
     name: "MyCBuffer"
     offset: 0
     absolute_offset: 0
-    size: 94816
-    padded_size: 94816
+    size: 77520
+    padded_size: 77520
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000000 # NONE
     member_count: 7
     members:
       - *bv17
@@ -869,7 +894,7 @@ all_block_variables:
     type_description: *td24
 all_descriptor_bindings:
   - &db0
-    spirv_id: 28
+    spirv_id: 5
     name: "MyCBuffer"
     binding: 0
     input_attachment_index: 0
@@ -883,10 +908,10 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td24
-    word_offset: { binding: 623, set: 619 }
+    word_offset: { binding: 457, set: 453 }
 all_interface_variables:
   - &iv0
-    spirv_id: 37
+    spirv_id: 2
     name: "in.var.POSITION"
     location: 0
     storage_class: 1 # Input
@@ -902,9 +927,9 @@ all_interface_variables:
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td25
-    word_offset: { location: 615 }
+    word_offset: { location: 449 }
   - &iv1
-    spirv_id: 41
+    spirv_id: 3
     name: 
     location: 4294967295
     storage_class: 3 # Output
@@ -924,7 +949,7 @@ all_interface_variables:
 module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
-  entry_point_id: 32
+  entry_point_id: 1
   source_language: 5 # HLSL
   source_language_version: 600
   spirv_execution_model: 0 # Vertex

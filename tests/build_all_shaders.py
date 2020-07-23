@@ -24,13 +24,19 @@ shaders = [
   {'source':"glsl/built_in_format.glsl", 'entry':"main", 'stage':'vert'},
   {'source':"glsl/input_attachment.glsl", 'entry':"main", 'stage':'frag'},
   {'source':"glsl/texel_buffer.glsl", 'entry':"main", 'stage':'vert'},
+  {'source':"glsl/io_vars_vs.glsl", 'entry':"main", 'stage':'vert'},
 
   {'source':"hlsl/append_consume.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
+  {'source':"hlsl/array_of_structured_buffer.hlsl", 'entry':"main", 'profile':'cs_6_0', 'stage':'compute'},
   {'source':"hlsl/binding_array.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/binding_types.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/cbuffer.hlsl", 'entry':"main", 'profile':'vs_6_0', 'stage':'vert'},
+  {'source':"hlsl/constantbuffer.hlsl", 'entry':"main", 'profile':'vs_6_0', 'stage':'vert'},
+  {'source':"hlsl/constantbuffer_nested_structs.hlsl", 'entry':"main", 'profile':'vs_6_0', 'stage':'vert'},
   {'source':"hlsl/counter_buffers.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/semantics.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
+  {'source':"hlsl/structuredbuffer.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
+  {'source':"cbuffer_unused/cbuffer_unused_001.hlsl", 'entry':"main", 'profile':'vs_6_0', 'stage':'vert'},
 ]
 
 if __name__ == "__main__":
@@ -51,7 +57,7 @@ if __name__ == "__main__":
     if ext.lower() == ".glsl" or (ext.lower() == ".hlsl" and not args.dxc):
       compile_cmd_args = [args.glslc, "-g",  "-fshader-stage=" + shader['stage'], "-fentry-point=" + shader['entry'], "-o", spv_path, src_path]
     elif ext.lower() == ".hlsl":
-      compile_cmd_args = [args.dxc, "-spirv", "-Zi", "-fspv-reflect", "-O0", "-T", shader['profile'], "-E", shader['entry'], "-Fo", spv_path, src_path]
+      compile_cmd_args = [args.dxc, "-spirv", "-Zi", "-fspv-reflect", "-fvk-use-dx-layout", "-O0", "-T", shader['profile'], "-E", shader['entry'], "-Fo", spv_path, src_path]
 
     print("%s -> %s" % (src_path, spv_path))
     if args.verbose:

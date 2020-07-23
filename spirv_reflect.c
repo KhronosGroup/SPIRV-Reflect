@@ -2203,7 +2203,11 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
 
   // Clear the current variable's USED flag
   p_var->flags &= ~SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
-  
+
+  // We are done when the end of the access chain is reached
+  if (index_index >= p_access_chain->index_count)
+      return SPV_REFLECT_RESULT_SUCCESS;
+
   // Parsing arrays requires overriding the op type for
   // for the lowest dim's element type.
   SpvOp op_type = p_var->type_description->op;
@@ -2212,32 +2216,32 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
   }
 
   switch (op_type) {
-    default: break;
+    default: {
+      // no more variable flags to update (a SpvOpTypeVector access, for example.)
+      break;
+    }
 
     case SpvOpTypeArray: {
       // Parse through array's type hierarchy to find the actual/non-array element type
       SpvReflectTypeDescription* p_type = p_var->type_description;
-      while ((p_type->op == SpvOpTypeArray) && (index_index < p_access_chain->index_count)) {
-        // Find the array element type id
-        Node* p_node = FindNode(p_parser, p_type->id);
-        if (p_node == NULL) {
-          return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
-        }
-        uint32_t element_type_id = p_node->array_traits.element_type_id;
-        // Get the array element type
-        p_type = FindType(p_module, element_type_id);
-        if (p_type == NULL) {
-          return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
-        }
-        // Next access index
-        index_index += 1;
+      // Find the array element type id
+      Node* p_node = FindNode(p_parser, p_type->id);
+      if (p_node == NULL) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
       }
+      uint32_t element_type_id = p_node->array_traits.element_type_id;
+      // Get the array element type
+      p_type = FindType(p_module, element_type_id);
+      if (p_type == NULL) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+      }
+
       // Parse current var again with a type override and advanced index index
       SpvReflectResult result = ParseDescriptorBlockVariableUsage(
         p_parser,
         p_module,
         p_access_chain,
-        index_index,
+        index_index+1,
         p_type->op,
         p_var);
       if (result != SPV_REFLECT_RESULT_SUCCESS) {
@@ -2259,17 +2263,15 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
       }
 
       SpvReflectBlockVariable* p_member_var = &p_var->members[index];
-      if (index_index < p_access_chain->index_count) {
-        SpvReflectResult result = ParseDescriptorBlockVariableUsage(
-          p_parser,
-          p_module,
-          p_access_chain,
-          index_index + 1,
-          (SpvOp)INVALID_VALUE,
-          p_member_var);
-        if (result != SPV_REFLECT_RESULT_SUCCESS) {
-          return result;
-        }
+      SpvReflectResult result = ParseDescriptorBlockVariableUsage(
+        p_parser,
+        p_module,
+        p_access_chain,
+        index_index + 1,
+        (SpvOp)INVALID_VALUE,
+        p_member_var);
+      if (result != SPV_REFLECT_RESULT_SUCCESS) {
+        return result;
       }
     }
     break;
