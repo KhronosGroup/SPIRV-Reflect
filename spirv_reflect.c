@@ -2342,7 +2342,7 @@ static SpvReflectResult ParseFormat(
 )
 {
   SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
-  bool signedness = p_type->traits.numeric.scalar.signedness;
+  bool signedness = (p_type->traits.numeric.scalar.signedness != 0);
   if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
     uint32_t component_count = p_type->traits.numeric.vector.component_count;
     if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
