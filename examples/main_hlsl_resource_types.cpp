@@ -135,7 +135,7 @@ int main(int argn, char** argv)
   }
 
   spv_ifstream.seekg(0, std::ios::end);
-  size_t size = spv_ifstream.tellg();
+  size_t size = static_cast<size_t>(spv_ifstream.tellg());
   spv_ifstream.seekg(0, std::ios::beg);
 
   {
