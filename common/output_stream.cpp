@@ -515,7 +515,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool fla
     std::string expanded_indent = ss_indent.str(); 
 
     const auto& member = p_members[member_index];
-    bool is_struct = member.type_description->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT;
+    bool is_struct = ((member.type_description->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT) != 0);
     if (is_struct) {
       const std::string name = (member.name == nullptr ? "" : member.name);
 
@@ -934,6 +934,14 @@ void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj
   //}
 }
 
+
+// Avoid unused variable warning/error on Linux
+#ifndef NDEBUG
+#define USE_ASSERT(x) assert(x)
+#else
+#define USE_ASSERT(x) ((void)(x))
+#endif
+
 void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers, std::ostream& os)
 {
   const char* t     = "  ";
@@ -942,18 +950,17 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
 
   StreamWriteShaderModule(os, obj.GetShaderModule(), "");
 
-  SpvReflectResult result = SPV_REFLECT_RESULT_NOT_READY;
   uint32_t count = 0;
   std::vector<SpvReflectInterfaceVariable*> variables;
   std::vector<SpvReflectDescriptorBinding*> bindings;
   std::vector<SpvReflectDescriptorSet*> sets;
 
   count = 0;
-  result = obj.EnumerateInputVariables(&count, nullptr);
-  assert(result == SPV_REFLECT_RESULT_SUCCESS);
+  SpvReflectResult result = obj.EnumerateInputVariables(&count, nullptr);
+  USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   variables.resize(count);
   result = obj.EnumerateInputVariables(&count, variables.data());
-  assert(result == SPV_REFLECT_RESULT_SUCCESS);
+  USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   if (count > 0) {
     os << "\n";
     os << "\n";
@@ -961,7 +968,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
     os << t << "Input variables: " << count << "\n\n";
     for (size_t i = 0; i < variables.size(); ++i) {
       auto p_var = variables[i];
-      assert(result == SPV_REFLECT_RESULT_SUCCESS);
+      USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
       StreamWriteInterfaceVariable(os, *p_var, ttt);
       if (i < (count - 1)) {
@@ -972,10 +979,10 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
 
   count = 0;
   result = obj.EnumerateOutputVariables(&count, nullptr);
-  assert(result == SPV_REFLECT_RESULT_SUCCESS);
+  USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   variables.resize(count);
   result = obj.EnumerateOutputVariables(&count, variables.data());
-  assert(result == SPV_REFLECT_RESULT_SUCCESS);
+  USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   if (count > 0) {
     os << "\n";
     os << "\n";
@@ -983,7 +990,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
     os << t << "Output variables: " << count << "\n\n";
     for (size_t i = 0; i < variables.size(); ++i) {
       auto p_var = variables[i];
-      assert(result == SPV_REFLECT_RESULT_SUCCESS);
+      USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
       StreamWriteInterfaceVariable(os, *p_var, ttt);
       if (i < (count - 1)) {
@@ -994,10 +1001,10 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
 
   count = 0;
   result = obj.EnumerateDescriptorBindings(&count, nullptr);
-  assert(result == SPV_REFLECT_RESULT_SUCCESS);
+  USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   bindings.resize(count);
   result = obj.EnumerateDescriptorBindings(&count, bindings.data());
-  assert(result == SPV_REFLECT_RESULT_SUCCESS);
+  USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   std::sort(std::begin(bindings), std::end(bindings),
             [](SpvReflectDescriptorBinding* a, SpvReflectDescriptorBinding* b) -> bool {
               if (a->set != b->set) {
@@ -1012,7 +1019,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
     os << t << "Descriptor bindings: " << count << "\n\n";
     for (size_t i = 0; i < bindings.size(); ++i) {
       auto p_binding = bindings[i];
-      assert(result == SPV_REFLECT_RESULT_SUCCESS);
+      USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << "Binding" << " " << p_binding->set << "." << p_binding->binding << "" << "\n";
       StreamWriteDescriptorBinding(os, *p_binding, true, flatten_cbuffers, ttt);
       if (i < (count - 1)) {
