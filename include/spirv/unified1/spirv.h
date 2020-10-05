@@ -135,6 +135,8 @@ typedef enum SpvExecutionMode_ {
     SpvExecutionModeLocalSizeHintId = 39,
     SpvExecutionModePostDepthCoverage = 4446,
     SpvExecutionModeStencilRefReplacingEXT = 5027,
+    SpvExecutionModeOutputPrimitivesNV = 5270,
+    SpvExecutionModeOutputTrianglesNV = 5298,
     SpvExecutionModeMax = 0x7fffffff,
 } SpvExecutionMode;
 
