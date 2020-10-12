@@ -24,6 +24,7 @@ shaders = [
   {'source':"glsl/built_in_format.glsl", 'entry':"main", 'stage':'vert'},
   {'source':"glsl/input_attachment.glsl", 'entry':"main", 'stage':'frag'},
   {'source':"glsl/texel_buffer.glsl", 'entry':"main", 'stage':'vert'},
+  {'source':"glsl/struct_offset.glsl", 'entry':"main", 'stage':'vert'},
 
   {'source':"hlsl/append_consume.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/binding_array.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
