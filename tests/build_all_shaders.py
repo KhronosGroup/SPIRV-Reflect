@@ -24,6 +24,7 @@ shaders = [
   {'source':"glsl/built_in_format.glsl", 'entry':"main", 'stage':'vert'},
   {'source':"glsl/input_attachment.glsl", 'entry':"main", 'stage':'frag'},
   {'source':"glsl/texel_buffer.glsl", 'entry':"main", 'stage':'vert'},
+  {'source':"glsl/storage_buffer.glsl", 'entry':"main", 'stage':'comp', 'target-env':'vulkan1.1'},
 
   {'source':"hlsl/append_consume.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/binding_array.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
@@ -50,6 +51,8 @@ if __name__ == "__main__":
     spv_path = base + ".spv"
     if ext.lower() == ".glsl" or (ext.lower() == ".hlsl" and not args.dxc):
       compile_cmd_args = [args.glslc, "-g",  "-fshader-stage=" + shader['stage'], "-fentry-point=" + shader['entry'], "-o", spv_path, src_path]
+      if 'target-env' in shader:
+        compile_cmd_args.append("--target-env=" + shader['target-env'])
     elif ext.lower() == ".hlsl":
       compile_cmd_args = [args.dxc, "-spirv", "-Zi", "-fspv-reflect", "-O0", "-T", shader['profile'], "-E", shader['entry'], "-Fo", spv_path, src_path]
 

@@ -1718,7 +1718,9 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
   for (size_t i = 0; i < p_parser->node_count; ++i) {
     Node* p_node = &(p_parser->nodes[i]);
     if ((p_node->op != SpvOpVariable) ||
-        ((p_node->storage_class != SpvStorageClassUniform) && (p_node->storage_class != SpvStorageClassUniformConstant)))
+        ((p_node->storage_class != SpvStorageClassUniform) &&
+         (p_node->storage_class != SpvStorageClassStorageBuffer) &&
+         (p_node->storage_class != SpvStorageClassUniformConstant)))
     {
       continue;
     }
@@ -1752,7 +1754,9 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
   for (size_t i = 0; i < p_parser->node_count; ++i) {
     Node* p_node = &(p_parser->nodes[i]);
     if ((p_node->op != SpvOpVariable) ||
-        ((p_node->storage_class != SpvStorageClassUniform) && (p_node->storage_class != SpvStorageClassUniformConstant)))\
+        ((p_node->storage_class != SpvStorageClassUniform) &&
+         (p_node->storage_class != SpvStorageClassStorageBuffer) &&
+         (p_node->storage_class != SpvStorageClassUniformConstant)))
     {
       continue;
     }
@@ -1764,8 +1768,11 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
     if (IsNull(p_type)) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     }
-    // If the type is a pointer, resolve it
+    // If the type is a pointer, resolve it. We need to retain the storage class
+    // from the pointer so that we can use it to deduce deescriptor types.
+    SpvStorageClass pointer_storage_class = SpvStorageClassMax;
     if (p_type->op == SpvOpTypePointer) {
+      pointer_storage_class = p_type->storage_class;
       // Find the type's node
       Node* p_type_node = FindNode(p_parser, p_type->id);
       if (IsNull(p_type_node)) {
@@ -1787,6 +1794,18 @@ static SpvReflectResult ParseDescriptorBindings(Parser* p_parser, SpvReflectShad
     p_descriptor->count = 1;
     p_descriptor->uav_counter_id = p_node->decorations.uav_counter_buffer.value;
     p_descriptor->type_description = p_type;
+
+    // If this is in the StorageBuffer storage class, it's for sure a storage
+    // buffer descriptor. We need to handle this case earlier because in SPIR-V
+    // there are two ways to indicate a storage buffer:
+    // 1) Uniform storage class + BufferBlock decoration, or
+    // 2) StorageBuffer storage class + Buffer decoration.
+    // The 1) way is deprecated since SPIR-V v1.3. But the Buffer decoration is
+    // also used together with Uniform storage class to mean uniform buffer..
+    // We'll handle the pre-v1.3 cases in ParseDescriptorType().
+    if (pointer_storage_class == SpvStorageClassStorageBuffer) {
+      p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    }
 
     // Copy image traits
     if ((p_type->type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK) == SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE) {
@@ -1840,62 +1859,64 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
     SpvReflectTypeDescription* p_type = p_descriptor->type_description;
 
-    switch (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK) {
-      default: assert(false && "unknown type flag"); break;
+    if (p_descriptor->descriptor_type == INVALID_VALUE) {
+      switch (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK) {
+        default: assert(false && "unknown type flag"); break;
 
-      case SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE: {
-        if (p_descriptor->image.dim == SpvDimBuffer) {
-          switch (p_descriptor->image.sampled) {
-            default: assert(false && "unknown texel buffer sampled value"); break;
-            case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
-            case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
+        case SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE: {
+          if (p_descriptor->image.dim == SpvDimBuffer) {
+            switch (p_descriptor->image.sampled) {
+              default: assert(false && "unknown texel buffer sampled value"); break;
+              case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
+              case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
+            }
+          }
+          else if(p_descriptor->image.dim == SpvDimSubpassData) {
+            p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+          }
+          else {
+            switch (p_descriptor->image.sampled) {
+              default: assert(false && "unknown image sampled value"); break;
+              case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE; break;
+              case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE; break;
+            }
           }
         }
-        else if(p_descriptor->image.dim == SpvDimSubpassData) {
-          p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        break;
+
+        case SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLER: {
+          p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER;
         }
-        else {
-          switch (p_descriptor->image.sampled) {
-            default: assert(false && "unknown image sampled value"); break;
-            case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE; break;
-            case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE; break;
+        break;
+
+        case (SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE | SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE): {
+          // This is a workaround for: https://github.com/KhronosGroup/glslang/issues/1096
+          if (p_descriptor->image.dim == SpvDimBuffer) {
+            switch (p_descriptor->image.sampled) {
+              default: assert(false && "unknown texel buffer sampled value"); break;
+              case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
+              case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
+            }
+          }
+          else {
+            p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
           }
         }
-      }
-      break;
+        break;
 
-      case SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLER: {
-        p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER;
-      }
-      break;
-
-      case (SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE | SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE): {
-        // This is a workaround for: https://github.com/KhronosGroup/glslang/issues/1096
-        if (p_descriptor->image.dim == SpvDimBuffer) {
-          switch (p_descriptor->image.sampled) {
-            default: assert(false && "unknown texel buffer sampled value"); break;
-            case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
-            case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
+        case SPV_REFLECT_TYPE_FLAG_EXTERNAL_BLOCK: {
+          if (p_type->decoration_flags & SPV_REFLECT_DECORATION_BLOCK) {
+            p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+          }
+          else if (p_type->decoration_flags & SPV_REFLECT_DECORATION_BUFFER_BLOCK) {
+            p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+          }
+          else {
+            assert(false && "unknown struct");
           }
         }
-        else {
-          p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        }
+        break;
       }
-      break;
-
-      case SPV_REFLECT_TYPE_FLAG_EXTERNAL_BLOCK: {
-        if (p_type->decoration_flags & SPV_REFLECT_DECORATION_BLOCK) {
-          p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        }
-        else if (p_type->decoration_flags & SPV_REFLECT_DECORATION_BUFFER_BLOCK) {
-          p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        }
-        else {
-          assert(false && "unknown struct");
-        }
-      }
-      break;
     }
 
     switch (p_descriptor->descriptor_type) {
