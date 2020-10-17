@@ -77,6 +77,8 @@ typedef enum SpvExecutionModel_ {
     SpvExecutionModelFragment = 4,
     SpvExecutionModelGLCompute = 5,
     SpvExecutionModelKernel = 6,
+    SpvExecutionModelTaskNV = 5267,
+    SpvExecutionModelMeshNV = 5268,
     SpvExecutionModelMax = 0x7fffffff,
 } SpvExecutionModel;
 
