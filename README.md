@@ -96,6 +96,13 @@ To run the self-tests:
 - Enable `SPIRV_REFLECT_BUILD_TESTS` in CMake
 - Build and run the `test-spirv-reflect` project.
 
+## Bazel build
+
+We tested the following bazel build command using Linux Bazel 1.2.1.
+```
+bazel build :all
+```
+
 ## License
 
 Copyright 2017-2018 Google Inc.

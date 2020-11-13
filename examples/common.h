@@ -2,7 +2,7 @@
 #define SPIRV_REFLECT_EXAMPLES_COMMON_H
 
 #include <iostream>
-#include <spirv_reflect.h>
+#include "spirv_reflect.h"
 
 void PrintModuleInfo(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent = "");
 void PrintDescriptorSet(std::ostream& os, const SpvReflectDescriptorSet& obj, const char* indent = "");
