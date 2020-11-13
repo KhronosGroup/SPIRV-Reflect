@@ -1859,7 +1859,7 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
     SpvReflectTypeDescription* p_type = p_descriptor->type_description;
 
-    if (p_descriptor->descriptor_type == INVALID_VALUE) {
+    if ((int)p_descriptor->descriptor_type == (int)INVALID_VALUE) {
       switch (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK) {
         default: assert(false && "unknown type flag"); break;
 
