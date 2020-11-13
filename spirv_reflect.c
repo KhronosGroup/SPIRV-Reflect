@@ -2830,6 +2830,8 @@ static SpvReflectResult ParseEntryPoints(Parser* p_parser, SpvReflectShaderModul
       case SpvExecutionModelGeometry               : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_GEOMETRY_BIT; break;
       case SpvExecutionModelFragment               : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT; break;
       case SpvExecutionModelGLCompute              : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT; break;
+      case SpvExecutionModelTaskNV                 : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_TASK_BIT_NV; break;
+      case SpvExecutionModelMeshNV                 : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_MESH_BIT_NV; break;
     }
 
     ++entry_point_index;
@@ -2979,6 +2981,8 @@ static SpvReflectResult ParseExecutionModes(Parser* p_parser, SpvReflectShaderMo
         case SpvExecutionModeLocalSizeHintId:
         case SpvExecutionModePostDepthCoverage:
         case SpvExecutionModeStencilRefReplacingEXT:
+        case SpvExecutionModeOutputPrimitivesNV:
+        case SpvExecutionModeOutputTrianglesNV:
           break;
       }
     }
