@@ -192,7 +192,7 @@ typedef struct Parser {
   SpvSourceLanguage     source_language;
   uint32_t              source_language_version;
   uint32_t              source_file_id;
-  String                source_embedded;
+  const char*           source_embedded;
   size_t                node_count;
   Node*                 nodes;
   uint32_t              entry_point_count;
@@ -552,6 +552,7 @@ static void DestroyParser(Parser* p_parser)
 
     SafeFree(p_parser->nodes);
     SafeFree(p_parser->strings);
+    SafeFree(p_parser->source_embedded);
     SafeFree(p_parser->functions);
     SafeFree(p_parser->access_chains);
     p_parser->node_count = 0;
@@ -605,6 +606,7 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
   }
   // Mark source file id node
   p_parser->source_file_id = (uint32_t)INVALID_VALUE;
+  p_parser->source_embedded = NULL;
 
   // Function node
   uint32_t function_node = (uint32_t)INVALID_VALUE;
@@ -645,6 +647,32 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
         if (p_node->word_count >= 4) {
           CHECKED_READU32(p_parser, p_node->word_offset + 3, p_parser->source_file_id);
         }
+        if (p_node->word_count >= 5) {
+          const char* p_source = (const char*)(p_parser->spirv_code + p_node->word_offset + 4);
+          char* p_source_temp = (char*)calloc(strlen(p_source) + 1, sizeof(char*));
+
+          if (IsNull(p_source_temp)) {
+            return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+          }
+
+          strcpy(p_source_temp, p_source);
+          p_parser->source_embedded = p_source_temp;
+        }
+      }
+      break;
+
+      case SpvOpSourceContinued: {
+        const char* p_source = (const char*)(p_parser->spirv_code + p_node->word_offset + 1);
+        char* p_continued_source = (char*)calloc(strlen(p_source) + strlen(p_parser->source_embedded) + 1, sizeof(char*));
+
+        if (IsNull(p_continued_source)) {
+          return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+        }
+
+        strcpy(p_continued_source, p_parser->source_embedded);
+        strcat(p_continued_source, p_source);
+        SafeFree(p_parser->source_embedded);
+        p_parser->source_embedded = p_continued_source;
       }
       break;
 
@@ -909,6 +937,16 @@ static SpvReflectResult ParseSource(Parser* p_parser, SpvReflectShaderModule* p_
         }
       }
     }
+
+    //Source code
+    char* p_source = (char*)calloc(strlen(p_parser->source_embedded) + 1, sizeof(char*));
+
+    if (IsNull(p_source)) {
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
+
+    strcpy(p_source, p_parser->source_embedded);
+    p_module->source_source = p_source;
   }
 
   return SPV_REFLECT_RESULT_SUCCESS;
@@ -3442,6 +3480,8 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
   if (IsNull(p_module->_internal)) {
     return;
   }
+
+  SafeFree(p_module->source_source);
 
   // Descriptor set bindings
   for (size_t i = 0; i < p_module->descriptor_set_count; ++i) {
