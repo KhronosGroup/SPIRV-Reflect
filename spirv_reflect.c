@@ -939,14 +939,17 @@ static SpvReflectResult ParseSource(Parser* p_parser, SpvReflectShaderModule* p_
     }
 
     //Source code
-    char* p_source = (char*)calloc(strlen(p_parser->source_embedded) + 1, sizeof(char*));
+    if (IsNotNull(p_parser->source_embedded))
+    {
+      char* p_source = (char*)calloc(strlen(p_parser->source_embedded) + 1, sizeof(char*));
 
-    if (IsNull(p_source)) {
-      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      if (IsNull(p_source)) {
+        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      }
+
+      strcpy(p_source, p_parser->source_embedded);
+      p_module->source_source = p_source;
     }
-
-    strcpy(p_source, p_parser->source_embedded);
-    p_module->source_source = p_source;
   }
 
   return SPV_REFLECT_RESULT_SUCCESS;
