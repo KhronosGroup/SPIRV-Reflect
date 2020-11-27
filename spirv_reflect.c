@@ -2314,14 +2314,15 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
         return SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_BLOCK_DATA;
       }
 
-      uint32_t index = p_access_chain->indexes[index_index];
-  
-      if (index >= p_var->member_count) {
-        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_BLOCK_MEMBER_REFERENCE;
-      }
-
-      SpvReflectBlockVariable* p_member_var = &p_var->members[index];
       if (index_index < p_access_chain->index_count) {
+        uint32_t index = p_access_chain->indexes[index_index];
+  
+        if (index >= p_var->member_count) {
+          return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_BLOCK_MEMBER_REFERENCE;
+        }
+
+        SpvReflectBlockVariable* p_member_var = &p_var->members[index];
+
         SpvReflectResult result = ParseDescriptorBlockVariableUsage(
           p_parser,
           p_module,
