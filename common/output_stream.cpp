@@ -522,7 +522,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool fla
       // Begin struct
       TextLine tl = {};
       tl.indent = expanded_indent;
-      tl.type_name = member.type_description->type_name;
+      tl.type_name = (member.type_description->type_name == nullptr ? "" : member.type_description->type_name);
       tl.absolute_offset = member.absolute_offset;
       tl.relative_offset = member.offset;
       tl.size = member.size;
