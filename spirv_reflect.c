@@ -27,6 +27,13 @@
   #include <stdlib.h>
 #endif
 
+#if defined(SPIRV_REFLECT_ENABLE_ASSERTS)
+  #define SPV_REFLECT_ASSERT(COND) \
+    assert(COND);
+#else
+#define SPV_REFLECT_ASSERT(COND)
+#endif
+
 // Temporary enums until these make it into SPIR-V/Vulkan
 // clang-format off
 enum {
@@ -2188,6 +2195,29 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+static void MarkSelfAndAllMemberVarsAsUsed(SpvReflectBlockVariable* p_var)
+{
+  // Clear the current variable's USED flag
+  p_var->flags &= ~SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
+
+  SpvOp op_type = p_var->type_description->op;
+  switch (op_type) {
+    default: break;
+
+    case SpvOpTypeArray: {
+    }
+    break;
+
+    case SpvOpTypeStruct: {
+      for (uint32_t i = 0; i < p_var->member_count; ++i) {
+        SpvReflectBlockVariable* p_member_var = &p_var->members[i];
+        MarkSelfAndAllMemberVarsAsUsed(p_member_var);
+      }
+    }
+    break;
+  }
+}
+
 static SpvReflectResult ParseDescriptorBlockVariableUsage(
   Parser*                  p_parser,
   SpvReflectShaderModule*  p_module,
@@ -2201,7 +2231,7 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
   (void)p_access_chain;
   (void)p_var;
 
-  // Clear the current variable's USED flag
+  // Clear the current variable's UNUSED flag
   p_var->flags &= ~SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
   
   // Parsing arrays requires overriding the op type for
@@ -2229,19 +2259,33 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
         if (p_type == NULL) {
           return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
         }
-        // Next access index
+        // Next access chain index
         index_index += 1;
       }
-      // Parse current var again with a type override and advanced index index
-      SpvReflectResult result = ParseDescriptorBlockVariableUsage(
-        p_parser,
-        p_module,
-        p_access_chain,
-        index_index,
-        p_type->op,
-        p_var);
-      if (result != SPV_REFLECT_RESULT_SUCCESS) {
-        return result;
+      
+      // Only continue parsing if there's remaining indices in the access
+      // chain. If the end of the access chain has been reach then all
+      // remaining variables (including those in struct hierarchies)
+      // are considered USED.
+      //
+      // See: https://github.com/KhronosGroup/SPIRV-Reflect/issues/78
+      //  
+      if (index_index < p_access_chain->index_count) {
+        // Parse current var again with a type override and advanced index index
+        SpvReflectResult result = ParseDescriptorBlockVariableUsage(
+          p_parser,
+          p_module,
+          p_access_chain,
+          index_index,
+          p_type->op,
+          p_var);
+        if (result != SPV_REFLECT_RESULT_SUCCESS) {
+          return result;
+        }
+      }
+      else {
+        // Clear UNUSED flag for remaining variables
+        MarkSelfAndAllMemberVarsAsUsed(p_var);
       }
     }
     break;
@@ -2251,26 +2295,52 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
       if (p_var->member_count == 0) {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_BLOCK_DATA;
       }
-
+      // Get member variable at the access's chain current index
       uint32_t index = p_access_chain->indexes[index_index];
-  
       if (index >= p_var->member_count) {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_BLOCK_MEMBER_REFERENCE;
       }
-
       SpvReflectBlockVariable* p_member_var = &p_var->members[index];
+
+      // Next access chain index
+      index_index += 1;
+
+      // Only continue parsing if there's remaining indices in the access
+      // chain. If the end of the access chain has been reach then all
+      // remaining variables (including those in struct hierarchies)
+      // are considered USED.
+      //
+      // See: https://github.com/KhronosGroup/SPIRV-Reflect/issues/78
+      //
       if (index_index < p_access_chain->index_count) {
-        SpvReflectResult result = ParseDescriptorBlockVariableUsage(
-          p_parser,
-          p_module,
-          p_access_chain,
-          index_index + 1,
-          (SpvOp)INVALID_VALUE,
-          p_member_var);
-        if (result != SPV_REFLECT_RESULT_SUCCESS) {
-          return result;
-        }
+         SpvReflectResult result = ParseDescriptorBlockVariableUsage(
+           p_parser,
+           p_module,
+           p_access_chain,
+           index_index,
+           (SpvOp)INVALID_VALUE,
+           p_member_var);
+         if (result != SPV_REFLECT_RESULT_SUCCESS) {
+           return result;
+         }
       }
+      else {
+        // Clear UNUSED flag for remaining variables
+        MarkSelfAndAllMemberVarsAsUsed(p_member_var);
+      }
+      //SpvReflectBlockVariable* p_member_var = &p_var->members[index];
+      //if (index_index < p_access_chain->index_count) {
+      //  SpvReflectResult result = ParseDescriptorBlockVariableUsage(
+      //    p_parser,
+      //    p_module,
+      //    p_access_chain,
+      //    index_index + 1,
+      //    (SpvOp)INVALID_VALUE,
+      //    p_member_var);
+      //  if (result != SPV_REFLECT_RESULT_SUCCESS) {
+      //    return result;
+      //  }
+      //}
     }
     break;
   }
@@ -3276,24 +3346,31 @@ SpvReflectResult spvReflectCreateShaderModule(
 
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseNodes(&parser);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseStrings(&parser);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseSource(&parser, p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseFunctions(&parser);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseMemberCounts(&parser);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseNames(&parser);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseDecorations(&parser);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
 
   // Start of reflection data parsing
@@ -3311,24 +3388,31 @@ SpvReflectResult spvReflectCreateShaderModule(
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseTypes(&parser, p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseDescriptorBindings(&parser, p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseDescriptorType(p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseUAVCounterBindings(p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseDescriptorBlocks(&parser, p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParsePushConstantBlocks(&parser, p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseEntryPoints(&parser, p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS && p_module->entry_point_count > 0) {
     SpvReflectEntryPoint* p_entry = &(p_module->entry_points[0]);
@@ -3343,12 +3427,15 @@ SpvReflectResult spvReflectCreateShaderModule(
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = DisambiguateStorageBufferSrvUav(p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = SynchronizeDescriptorSets(p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseExecutionModes(&parser, p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
 
   // Destroy module if parse was not successful
