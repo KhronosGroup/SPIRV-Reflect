@@ -1,0 +1,140 @@
+package(
+    default_visibility = ["//visibility:private"],
+)
+
+# Description:
+#
+# The Amber project provides an API and commands for testing shader
+# compiler stack.
+
+licenses(["notice"])  # Apache 2.0
+
+exports_files([
+    "CHANGES",
+    "LICENSE",
+])
+
+COMMON_COPTS = [
+    "-ffunction-sections",
+    "-fdata-sections",
+]
+
+COMMON_CPPOPTS = COMMON_COPTS + [
+    "-std=c++14",
+]
+
+COMMON_LINKOPTS = ["-Wl,--gc-sections"]
+
+cc_library(
+    name = "libspirv_reflect",
+    srcs = ["spirv_reflect.c"],
+    hdrs = [
+        "include/spirv/unified1/spirv.h",
+        "spirv_reflect.h",
+    ],
+    copts = COMMON_COPTS,
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "libcommon",
+    srcs = ["common/output_stream.cpp"],
+    hdrs = ["common/output_stream.h"],
+    copts = COMMON_CPPOPTS,
+    includes = ["common"],
+    deps = [
+        ":libspirv_reflect",
+    ],
+)
+
+cc_library(
+    name = "libexample",
+    srcs = [
+        "examples/arg_parser.cpp",
+        "examples/common.cpp",
+    ],
+    hdrs = [
+        "examples/arg_parser.h",
+        "examples/common.h",
+    ],
+    copts = COMMON_CPPOPTS,
+    includes = ["examples"],
+    deps = [
+        ":libcommon",
+        ":libspirv_reflect",
+    ],
+)
+
+cc_binary(
+    name = "hlsl_resource_types",
+    srcs = [
+        "examples/main_hlsl_resource_types.cpp",
+    ],
+    copts = COMMON_CPPOPTS,
+    includes = ["examples"],
+    linkopts = COMMON_LINKOPTS,
+    deps = [
+        ":libcommon",
+        ":libexample",
+        ":libspirv_reflect",
+    ],
+)
+
+cc_binary(
+    name = "stripper",
+    srcs = [
+        "util/stripper/io.h",
+        "util/stripper/main.cpp",
+        "util/stripper/stripper.cpp",
+        "util/stripper/stripper.h",
+    ],
+    copts = COMMON_CPPOPTS,
+    includes = ["util/stripper"],
+    linkopts = COMMON_LINKOPTS,
+)
+
+cc_binary(
+    name = "io_variables",
+    srcs = [
+        "examples/main_io_variables.cpp",
+        "examples/sample_spv.h",
+    ],
+    copts = COMMON_CPPOPTS,
+    includes = ["examples"],
+    linkopts = COMMON_LINKOPTS,
+    deps = [
+        ":libcommon",
+        ":libexample",
+        ":libspirv_reflect",
+    ],
+)
+
+cc_binary(
+    name = "descriptors",
+    srcs = [
+        "examples/main_descriptors.cpp",
+        "examples/sample_spv.h",
+    ],
+    copts = COMMON_CPPOPTS,
+    includes = ["examples"],
+    linkopts = COMMON_LINKOPTS,
+    deps = [
+        ":libcommon",
+        ":libexample",
+        ":libspirv_reflect",
+    ],
+)
+
+cc_binary(
+    name = "spirv-reflect",
+    srcs = [
+        "main.cpp",
+    ],
+    copts = COMMON_CPPOPTS,
+    linkopts = COMMON_LINKOPTS,
+    deps = [
+        ":libcommon",
+        ":libexample",
+        ":libspirv_reflect",
+    ],
+)
