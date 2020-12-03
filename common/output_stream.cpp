@@ -1522,10 +1522,10 @@ void SpvReflectToYaml::Write(std::ostream& os)
       WriteBlockVariableTypes(os, sm_.push_constant_blocks[i], indent_level+1);
     }
     for(uint32_t i=0; i<sm_.input_variable_count; ++i) {
-      WriteInterfaceVariableTypes(os, sm_.input_variables[i], indent_level+1);
+      WriteInterfaceVariableTypes(os, *sm_.input_variables[i], indent_level+1);
     }
     for(uint32_t i=0; i<sm_.output_variable_count; ++i) {
-      WriteInterfaceVariableTypes(os, sm_.output_variables[i], indent_level+1);
+      WriteInterfaceVariableTypes(os, *sm_.output_variables[i], indent_level+1);
     }
   }
 
@@ -1547,10 +1547,10 @@ void SpvReflectToYaml::Write(std::ostream& os)
   interface_variable_to_index_.clear();
   os << t0 << "all_interface_variables:" << std::endl;
   for(uint32_t i=0; i<sm_.input_variable_count; ++i) {
-    WriteInterfaceVariable(os, sm_.input_variables[i], indent_level+1);
+    WriteInterfaceVariable(os, *sm_.input_variables[i], indent_level+1);
   }
   for(uint32_t i=0; i<sm_.output_variable_count; ++i) {
-    WriteInterfaceVariable(os, sm_.output_variables[i], indent_level+1);
+    WriteInterfaceVariable(os, *sm_.output_variables[i], indent_level+1);
   }
 
   // struct SpvReflectShaderModule {
@@ -1604,18 +1604,18 @@ void SpvReflectToYaml::Write(std::ostream& os)
   // SpvReflectInterfaceVariable*      input_variables;
   os << t1 << "input_variables:" << std::endl;
   for(uint32_t i=0; i < sm_.input_variable_count; ++i) {
-    auto itor = interface_variable_to_index_.find(&sm_.input_variables[i]);
+    auto itor = interface_variable_to_index_.find(sm_.input_variables[i]);
     assert(itor != interface_variable_to_index_.end());
-    os << t2 << "- *iv" << itor->second << " # " << SafeString(sm_.input_variables[i].name) << std::endl;
+    os << t2 << "- *iv" << itor->second << " # " << SafeString(sm_.input_variables[i]->name) << std::endl;
   }
   // uint32_t                          output_variable_count;
   os << t1 << "output_variable_count: " << sm_.output_variable_count << ",\n";
   // SpvReflectInterfaceVariable*      output_variables;
   os << t1 << "output_variables:" << std::endl;
   for(uint32_t i=0; i < sm_.output_variable_count; ++i) {
-    auto itor = interface_variable_to_index_.find(&sm_.output_variables[i]);
+    auto itor = interface_variable_to_index_.find(sm_.output_variables[i]);
     assert(itor != interface_variable_to_index_.end());
-    os << t2 << "- *iv" << itor->second << " # " << SafeString(sm_.output_variables[i].name) << std::endl;
+    os << t2 << "- *iv" << itor->second << " # " << SafeString(sm_.output_variables[i]->name) << std::endl;
   }
   // uint32_t                          push_constant_count;
   os << t1 << "push_constant_count: " << sm_.push_constant_block_count << ",\n";

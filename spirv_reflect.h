@@ -369,10 +369,12 @@ typedef struct SpvReflectEntryPoint {
   SpvExecutionModel                 spirv_execution_model;
   SpvReflectShaderStageFlagBits     shader_stage;
 
-  uint32_t                          input_variable_count;
-  SpvReflectInterfaceVariable*      input_variables;
-  uint32_t                          output_variable_count;
-  SpvReflectInterfaceVariable*      output_variables;
+  uint32_t                          input_variable_count;  
+  SpvReflectInterfaceVariable**     input_variables;       
+  uint32_t                          output_variable_count; 
+  SpvReflectInterfaceVariable**     output_variables;      
+  uint32_t                          interface_variable_count;
+  SpvReflectInterfaceVariable*      interface_variables;
 
   uint32_t                          descriptor_set_count;
   SpvReflectDescriptorSet*          descriptor_sets;
@@ -408,10 +410,12 @@ typedef struct SpvReflectShaderModule {
   SpvReflectDescriptorBinding*      descriptor_bindings;
   uint32_t                          descriptor_set_count;
   SpvReflectDescriptorSet           descriptor_sets[SPV_REFLECT_MAX_DESCRIPTOR_SETS];
-  uint32_t                          input_variable_count;
-  SpvReflectInterfaceVariable*      input_variables;
-  uint32_t                          output_variable_count;
-  SpvReflectInterfaceVariable*      output_variables;
+  uint32_t                          input_variable_count;  
+  SpvReflectInterfaceVariable**     input_variables;       
+  uint32_t                          output_variable_count; 
+  SpvReflectInterfaceVariable**     output_variables;      
+  uint32_t                          interface_variable_count;
+  SpvReflectInterfaceVariable*      interface_variables;
   uint32_t                          push_constant_block_count;
   SpvReflectBlockVariable*          push_constant_blocks;
 
@@ -589,6 +593,58 @@ SpvReflectResult spvReflectEnumerateEntryPointDescriptorSets(
   const char*                   entry_point,
   uint32_t*                     p_count,
   SpvReflectDescriptorSet**     pp_sets
+);
+
+
+/*! @fn spvReflectEnumerateInterfaceVariables
+ @brief  If the module contains multiple entry points, this will only get
+         the interface variables for the first one.
+ @param  p_module      Pointer to an instance of SpvReflectShaderModule.
+ @param  p_count       If pp_variables is NULL, the module's interface variable
+                       count will be stored here.
+                       If pp_variables is not NULL, *p_count must contain
+                       the module's interface variable count.
+ @param  pp_variables  If NULL, the module's interface variable count will be
+                       written to *p_count.
+                       If non-NULL, pp_variables must point to an array with
+                       *p_count entries, where pointers to the module's
+                       interface variables will be written. The caller must not
+                       free the interface variables written to this array.
+ @return               If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                       Otherwise, the error code indicates the cause of the
+                       failure.
+
+*/
+SpvReflectResult spvReflectEnumerateInterfaceVariables(
+  const SpvReflectShaderModule* p_module,
+  uint32_t*                     p_count,
+  SpvReflectInterfaceVariable** pp_variables
+);
+
+/*! @fn spvReflectEnumerateEntryPointInterfaceVariables
+ @brief  Enumerate the interface variables for a given entry point.
+ @param  entry_point The name of the entry point to get the interface variables for.
+ @param  p_module      Pointer to an instance of SpvReflectShaderModule.
+ @param  p_count       If pp_variables is NULL, the entry point's interface variable
+                       count will be stored here.
+                       If pp_variables is not NULL, *p_count must contain
+                       the entry point's interface variable count.
+ @param  pp_variables  If NULL, the entry point's interface variable count will be
+                       written to *p_count.
+                       If non-NULL, pp_variables must point to an array with
+                       *p_count entries, where pointers to the entry point's
+                       interface variables will be written. The caller must not
+                       free the interface variables written to this array.
+ @return               If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                       Otherwise, the error code indicates the cause of the
+                       failure.
+
+*/
+SpvReflectResult spvReflectEnumerateEntryPointInterfaceVariables(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point,
+  uint32_t*                     p_count,
+  SpvReflectInterfaceVariable** pp_variables
 );
 
 
@@ -1320,10 +1376,12 @@ public:
   SpvReflectResult  EnumerateEntryPointDescriptorBindings(const char* entry_point, uint32_t* p_count, SpvReflectDescriptorBinding** pp_bindings) const;
   SpvReflectResult  EnumerateDescriptorSets( uint32_t* p_count, SpvReflectDescriptorSet** pp_sets) const ;
   SpvReflectResult  EnumerateEntryPointDescriptorSets(const char* entry_point, uint32_t* p_count, SpvReflectDescriptorSet** pp_sets) const ;
+  SpvReflectResult  EnumerateInterfaceVariables(uint32_t* p_count, SpvReflectInterfaceVariable** pp_variables) const;
+  SpvReflectResult  EnumerateEntryPointInterfaceVariables(const char* entry_point, uint32_t* p_count, SpvReflectInterfaceVariable** pp_variables) const;
   SpvReflectResult  EnumerateInputVariables(uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
-  SpvReflectResult  EnumerateEntryPointInputVariables(const char* entry_point, uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
+  SpvReflectResult  EnumerateEntryPointInputVariables(const char* entry_point, uint32_t* p_count, SpvReflectInterfaceVariable** pp_variables) const;
   SpvReflectResult  EnumerateOutputVariables(uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
-  SpvReflectResult  EnumerateEntryPointOutputVariables(const char* entry_point, uint32_t* p_count,SpvReflectInterfaceVariable** pp_variables) const;
+  SpvReflectResult  EnumerateEntryPointOutputVariables(const char* entry_point, uint32_t* p_count, SpvReflectInterfaceVariable** pp_variables) const;
   SpvReflectResult  EnumeratePushConstantBlocks(uint32_t* p_count, SpvReflectBlockVariable** pp_blocks) const;
   SpvReflectResult  EnumerateEntryPointPushConstantBlocks(const char* entry_point, uint32_t* p_count, SpvReflectBlockVariable** pp_blocks) const;
   SPV_REFLECT_DEPRECATED("Renamed to EnumeratePushConstantBlocks")
@@ -1597,6 +1655,48 @@ inline SpvReflectResult ShaderModule::EnumerateEntryPointDescriptorSets(
       entry_point,
       p_count,
       pp_sets);
+  return m_result;
+}
+
+
+/*! @fn EnumerateInterfaceVariables
+
+  @param  count
+  @param  pp_variables
+  @return
+
+*/
+inline SpvReflectResult ShaderModule::EnumerateInterfaceVariables(
+  uint32_t*                     p_count,
+  SpvReflectInterfaceVariable** pp_variables
+) const
+{
+  m_result = spvReflectEnumerateInterfaceVariables(
+    &m_module,
+    p_count,
+    pp_variables);
+  return m_result;
+}
+
+/*! @fn EnumerateEntryPointInterfaceVariables
+
+  @param  entry_point
+  @param  count
+  @param  pp_variables
+  @return
+
+*/
+inline SpvReflectResult ShaderModule::EnumerateEntryPointInterfaceVariables(
+  const char*                   entry_point,
+  uint32_t*                     p_count,
+  SpvReflectInterfaceVariable** pp_variables
+) const
+{
+  m_result = spvReflectEnumerateEntryPointInterfaceVariables(
+      &m_module,
+      entry_point,
+      p_count,
+      pp_variables);
   return m_result;
 }
 
