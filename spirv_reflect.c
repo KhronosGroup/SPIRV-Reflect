@@ -715,6 +715,7 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
       case SpvOpTypeReserveId:
       case SpvOpTypeQueue:
       case SpvOpTypePipe:
+      case SpvOpTypeAccelerationStructureKHR:
       {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_id);
         p_node->is_type = true;
@@ -1534,6 +1535,7 @@ static SpvReflectResult ParseType(
         }
         else {
           result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+          SPV_REFLECT_ASSERT(false);
         }
       }
       break;
@@ -1549,6 +1551,7 @@ static SpvReflectResult ParseType(
         }
         else {
           result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+          SPV_REFLECT_ASSERT(false);
         }
         p_type->traits.numeric.matrix.row_count = p_type->traits.numeric.vector.component_count;
         p_type->traits.numeric.matrix.stride = p_node->decorations.matrix_stride;
@@ -1584,7 +1587,8 @@ static SpvReflectResult ParseType(
           result = ParseType(p_parser, p_next_node, NULL, p_module, p_type);
         }
         else {
-          result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+          result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;          
+          SPV_REFLECT_ASSERT(false);
         }
       }
       break;
@@ -1615,6 +1619,7 @@ static SpvReflectResult ParseType(
                 p_type->traits.array.dims_count += 1;
               } else {
                 result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+                SPV_REFLECT_ASSERT(false);
               }
             }
             // Parse next dimension or element type
@@ -1625,6 +1630,7 @@ static SpvReflectResult ParseType(
           }
           else {
             result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+            SPV_REFLECT_ASSERT(false);
           }
         }
       }
@@ -1640,6 +1646,7 @@ static SpvReflectResult ParseType(
         }
         else {
           result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+          SPV_REFLECT_ASSERT(false);
         }
       }
       break;
@@ -1656,6 +1663,7 @@ static SpvReflectResult ParseType(
           Node* p_member_node = FindNode(p_parser, member_id);
           if (IsNull(p_member_node)) {
             result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+            SPV_REFLECT_ASSERT(false);
             break;
           }
 
@@ -1691,7 +1699,13 @@ static SpvReflectResult ParseType(
         }
         else {
           result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+          SPV_REFLECT_ASSERT(false);
         }
+      }
+      break;
+
+      case SpvOpTypeAccelerationStructureKHR: {
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_ACCELERATION_STRUCTURE;
       }
       break;
     }
@@ -1964,23 +1978,27 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
           }
         }
         break;
+
+        case SPV_REFLECT_TYPE_FLAG_EXTERNAL_ACCELERATION_STRUCTURE: {
+          p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        }
+        break;
       }
     }
 
     switch (p_descriptor->descriptor_type) {
-      case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER                : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SAMPLER; break;
-      case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : p_descriptor->resource_type = (SpvReflectResourceType)(SPV_REFLECT_RESOURCE_FLAG_SAMPLER | SPV_REFLECT_RESOURCE_FLAG_SRV); break;
-      case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV; break;
-      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE          : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
-      case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV; break;
-      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
-      case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_CBV; break;
-      case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_CBV; break;
-      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER         : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
-      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
-
-      case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-        break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER                    : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SAMPLER; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER     : p_descriptor->resource_type = (SpvReflectResourceType)(SPV_REFLECT_RESOURCE_FLAG_SAMPLER | SPV_REFLECT_RESOURCE_FLAG_SRV); break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE              : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE              : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER       : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER       : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER             : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_CBV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC     : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_CBV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER             : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC     : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV; break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT           : break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR : p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV; break;
     }
   }
 
@@ -2542,6 +2560,7 @@ static SpvReflectResult ParseInterfaceVariable(
       SpvReflectInterfaceVariable* p_member_var = &p_var->members[member_index];
       SpvReflectResult result = ParseInterfaceVariable(p_parser, p_member_decorations, p_module, p_member_type, p_member_var, p_has_built_in);
       if (result != SPV_REFLECT_RESULT_SUCCESS) {
+        SPV_REFLECT_ASSERT(false);
         return result;
       }
     }
@@ -2559,9 +2578,13 @@ static SpvReflectResult ParseInterfaceVariable(
 
   *p_has_built_in |= p_type_node_decorations->is_built_in;
 
-  SpvReflectResult result = ParseFormat(p_var->type_description, &p_var->format);
-  if (result != SPV_REFLECT_RESULT_SUCCESS) {
-    return result;
+  // Only parse format for interface variables that are input or output
+  if ((p_var->storage_class == SpvStorageClassInput) || (p_var->storage_class == SpvStorageClassOutput)) {
+    SpvReflectResult result = ParseFormat(p_var->type_description, &p_var->format);
+    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+      SPV_REFLECT_ASSERT(false);
+      return result;
+    }
   }
 
   return SPV_REFLECT_RESULT_SUCCESS;
@@ -2662,6 +2685,7 @@ static SpvReflectResult ParseInterfaceVariables(
       p_var,
       &has_built_in);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
+      SPV_REFLECT_ASSERT(false);
       return result;
     }
 

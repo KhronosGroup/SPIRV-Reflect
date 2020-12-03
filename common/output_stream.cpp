@@ -173,17 +173,18 @@ std::string ToStringResourceType(SpvReflectResourceType res_type) {
 
 std::string ToStringDescriptorType(SpvReflectDescriptorType value) {
   switch (value) {
-    case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER                : return "VK_DESCRIPTOR_TYPE_SAMPLER";
-    case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER";
-    case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE          : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE";
-    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE          : return "VK_DESCRIPTOR_TYPE_STORAGE_IMAGE";
-    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER";
-    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER   : return "VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER";
-    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER         : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER";
-    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER         : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER";
-    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC";
-    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC";
-    case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT       : return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER                    : return "VK_DESCRIPTOR_TYPE_SAMPLER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER     : return "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE              : return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE              : return "VK_DESCRIPTOR_TYPE_STORAGE_IMAGE";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER       : return "VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER       : return "VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER             : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER             : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC     : return "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC     : return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT           : return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR : return "VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR";
   }
   // unhandled SpvReflectDescriptorType enum value
   return "VK_DESCRIPTOR_TYPE_???";
@@ -255,13 +256,29 @@ std::string ToStringSpvBuiltIn(SpvBuiltIn built_in) {
     case SpvBuiltInSecondaryViewportMaskNV     : return "SecondaryViewportMaskNV";
     case SpvBuiltInPositionPerViewNV           : return "PositionPerViewNV";
     case SpvBuiltInViewportMaskPerViewNV       : return "ViewportMaskPerViewNV";
+    case SpvBuiltInLaunchIdKHR                 : return "InLaunchIdKHR";
+    case SpvBuiltInLaunchSizeKHR               : return "InLaunchSizeKHR";
+    case SpvBuiltInWorldRayOriginKHR           : return "InWorldRayOriginKHR";
+    case SpvBuiltInWorldRayDirectionKHR        : return "InWorldRayDirectionKHR";
+    case SpvBuiltInObjectRayOriginKHR          : return "InObjectRayOriginKHR";
+    case SpvBuiltInObjectRayDirectionKHR       : return "InObjectRayDirectionKHR";
+    case SpvBuiltInRayTminKHR                  : return "InRayTminKHR";
+    case SpvBuiltInRayTmaxKHR                  : return "InRayTmaxKHR";
+    case SpvBuiltInInstanceCustomIndexKHR      : return "InInstanceCustomIndexKHR";
+    case SpvBuiltInObjectToWorldKHR            : return "InObjectToWorldKHR";
+    case SpvBuiltInWorldToObjectKHR            : return "InWorldToObjectKHR";
+    case SpvBuiltInHitKindKHR                  : return "InHitKindKHR";
+    case SpvBuiltInIncomingRayFlagsKHR         : return "InIncomingRayFlagsKHR";
+    case SpvBuiltInRayGeometryIndexKHR         : return "InRayGeometryIndexKHR";
 
     case SpvBuiltInMax:
     default:
       break;
   }
   // unhandled SpvBuiltIn enum value
-  return "???";
+  std::stringstream ss;
+  ss << "??? (" << built_in << ")";
+  return ss.str();
 }
 
 std::string ToStringSpvImageFormat(SpvImageFormat fmt) {
