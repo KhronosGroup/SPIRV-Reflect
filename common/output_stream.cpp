@@ -267,6 +267,7 @@ std::string ToStringSpvBuiltIn(SpvBuiltIn built_in) {
     case SpvBuiltInInstanceCustomIndexKHR      : return "InInstanceCustomIndexKHR";
     case SpvBuiltInObjectToWorldKHR            : return "InObjectToWorldKHR";
     case SpvBuiltInWorldToObjectKHR            : return "InWorldToObjectKHR";
+    case SpvBuiltInHitTNV                      : return "InHitTNV";
     case SpvBuiltInHitKindKHR                  : return "InHitKindKHR";
     case SpvBuiltInIncomingRayFlagsKHR         : return "InIncomingRayFlagsKHR";
     case SpvBuiltInRayGeometryIndexKHR         : return "InRayGeometryIndexKHR";
