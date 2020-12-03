@@ -36,6 +36,7 @@ reflection code or the test shaders.
 
   spv_paths = []
   for root, dirs, files in os.walk("."):
+    print dirs
     for f in files:
       base, ext = os.path.splitext(f)
       if ext.lower() == ".spv":
@@ -48,7 +49,8 @@ reflection code or the test shaders.
       yaml_cmd_args = [spirv_reflect_exe, "-y", "-v", "1", spv_path]
       if args.verbose:
         print(" ".join(yaml_cmd_args))
-      subprocess.call(yaml_cmd_args, stdout=file(yaml_path, "w"))
+      subprocess.run(yaml_cmd_args, stdout=open(yaml_path, "w"))
+      subprocess.run(yaml_cmd_args)
       print("%s -> %s" % (spv_path, yaml_path))
     except NameError:
       print("spirv-reflect application not found; did you build it first?")

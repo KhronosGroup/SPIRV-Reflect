@@ -138,7 +138,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: 
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 4 }

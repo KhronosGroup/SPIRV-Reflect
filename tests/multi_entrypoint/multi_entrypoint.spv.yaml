@@ -342,7 +342,7 @@ all_interface_variables:
     storage_class: 1 # Input
     semantic: 
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 2 }
@@ -360,7 +360,7 @@ all_interface_variables:
     storage_class: 1 # Input
     semantic: 
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 3 }
@@ -386,7 +386,7 @@ all_interface_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
+    format: 0 # VK_FORMAT_UNDEFINED
     type_description: *td9
     word_offset: { location: 0 }
   - &iv3
@@ -396,7 +396,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: 
     decoration_flags: 0x00000011 # BUILT_IN BLOCK 
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }
@@ -415,7 +415,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: 
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 2 }

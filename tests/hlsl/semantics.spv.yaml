@@ -298,7 +298,7 @@ all_interface_variables:
     storage_class: 1 # Input
     semantic: "NORMAL"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 3 }
@@ -316,7 +316,7 @@ all_interface_variables:
     storage_class: 1 # Input
     semantic: "COLOR_00001"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 3 }
@@ -334,7 +334,7 @@ all_interface_variables:
     storage_class: 1 # Input
     semantic: "OPACITY_512"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 0 }
@@ -352,7 +352,7 @@ all_interface_variables:
     storage_class: 1 # Input
     semantic: "SCALE_987654321"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 4 }
@@ -370,7 +370,7 @@ all_interface_variables:
     storage_class: 1 # Input
     semantic: "TEXCOORD0"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 2 }
@@ -388,7 +388,7 @@ all_interface_variables:
     storage_class: 1 # Input
     semantic: "TEXCOORD1"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 2 }
@@ -406,7 +406,7 @@ all_interface_variables:
     storage_class: 1 # Input
     semantic: "TEXCOORD2"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 2 }
@@ -442,7 +442,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: "SV_TARGET0"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 4 }
@@ -460,7 +460,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: "SV_TARGET1"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 4 }
@@ -478,7 +478,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: "SV_TARGET2"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 4 }
@@ -496,7 +496,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: "SV_TARGET3"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 4 }
@@ -514,7 +514,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: "SV_TARGET4"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 4 }
@@ -532,7 +532,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: "SV_TARGET5"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 4 }
@@ -550,7 +550,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: "SV_TARGET6"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 4 }
@@ -568,7 +568,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: "SV_TARGET7"
     decoration_flags: 0x00000000 # NONE
-    built_in: -1 # ???
+    built_in: -1 # ??? (-1)
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 4 }
