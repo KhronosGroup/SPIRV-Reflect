@@ -107,6 +107,14 @@ std::string ToStringShaderStage(SpvReflectShaderStageFlagBits stage) {
     case SPV_REFLECT_SHADER_STAGE_GEOMETRY_BIT                : return "GS";
     case SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT                : return "PS";
     case SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT                 : return "CS";
+    case SPV_REFLECT_SHADER_STAGE_TASK_BIT_NV                 : return "TASK";
+    case SPV_REFLECT_SHADER_STAGE_MESH_BIT_NV                 : return "MESH";
+    case SPV_REFLECT_SHADER_STAGE_RAYGEN_BIT_KHR              : return "RAYGEN";
+    case SPV_REFLECT_SHADER_STAGE_ANY_HIT_BIT_KHR             : return "ANY_HIT";
+    case SPV_REFLECT_SHADER_STAGE_CLOSEST_HIT_BIT_KHR         : return "CLOSEST_HIT";
+    case SPV_REFLECT_SHADER_STAGE_MISS_BIT_KHR                : return "MISS";
+    case SPV_REFLECT_SHADER_STAGE_INTERSECTION_BIT_KHR        : return "INTERSECTION";
+    case SPV_REFLECT_SHADER_STAGE_CALLABLE_BIT_KHR            : return "CALLABLE";
   }
   // Unhandled SpvReflectShaderStageFlagBits enum value
   return "???";
@@ -938,6 +946,7 @@ void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
   os << "source lang ver : " << obj.source_language_version << "\n";
   os << "source file     : " << (obj.source_file != NULL ? obj.source_file : "") << "\n";
+  os << "shader stage    : " << ToStringShaderStage(obj.shader_stage) << "\n";
 
   if (obj.entry_point_count > 1) {
     // TODO: Figure out what to do with multiple entry points
@@ -946,7 +955,6 @@ void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj
     StreamWriteEntryPoint(os, obj.entry_points[0], "");
   }
  
-  //os << "shader stage    : " << ToStringShaderStage(obj.shader_stage);
   //if ((obj.shader_stage == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT)) {
   //  os << "local size      : " << obj.ent
   //}
