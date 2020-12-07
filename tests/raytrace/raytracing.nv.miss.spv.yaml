@@ -187,7 +187,7 @@ module:
   source_language: 5 # HLSL
   source_language_version: 630
   spirv_execution_model: 5317 # ???
-  shader_stage: 0x00000000 # ???
+  shader_stage: 0x00000800 # MISS
   descriptor_binding_count: 0
   descriptor_bindings:
   descriptor_set_count: 0

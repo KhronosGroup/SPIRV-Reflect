@@ -36,7 +36,6 @@ reflection code or the test shaders.
 
   spv_paths = []
   for root, dirs, files in os.walk("."):
-    print dirs
     for f in files:
       base, ext = os.path.splitext(f)
       if ext.lower() == ".spv":

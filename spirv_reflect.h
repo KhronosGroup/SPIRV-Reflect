@@ -1438,6 +1438,11 @@ public:
   SpvReflectResult ChangeOutputVariableLocation(const SpvReflectInterfaceVariable* p_output_variable, uint32_t new_location);
 
 private:
+  // Make noncopyable
+  ShaderModule(const ShaderModule&);
+  ShaderModule& operator=(const ShaderModule&);
+
+private:
   mutable SpvReflectResult  m_result = SPV_REFLECT_RESULT_NOT_READY;
   SpvReflectShaderModule    m_module = {};
 };

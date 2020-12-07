@@ -112,7 +112,7 @@ module:
   source_language: 5 # HLSL
   source_language_version: 630
   spirv_execution_model: 5313 # ???
-  shader_stage: 0x00000000 # ???
+  shader_stage: 0x00000100 # RAYGEN
   descriptor_binding_count: 1
   descriptor_bindings:
     - *db0 # "rs"
