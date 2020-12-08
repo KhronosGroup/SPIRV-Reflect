@@ -90,6 +90,14 @@ std::string ToStringSpvExecutionModel(SpvExecutionModel model) {
     case SpvExecutionModelFragment               : return "Fragment";
     case SpvExecutionModelGLCompute              : return "GLCompute";
     case SpvExecutionModelKernel                 : return "Kernel";
+    case SpvExecutionModelTaskNV                 : return "TaskNV";
+    case SpvExecutionModelMeshNV                 : return "MeshNV";
+    case SpvExecutionModelRayGenerationKHR       : return "RayGenerationKHR";
+    case SpvExecutionModelIntersectionKHR        : return "IntersectionKHR";
+    case SpvExecutionModelAnyHitKHR              : return "AnyHitKHR";
+    case SpvExecutionModelClosestHitKHR          : return "ClosestHitKHR";
+    case SpvExecutionModelMissKHR                : return "MissKHR";
+    case SpvExecutionModelCallableKHR            : return "CallableKHR";
     
     case SpvExecutionModelMax:
       break;
@@ -122,19 +130,27 @@ std::string ToStringShaderStage(SpvReflectShaderStageFlagBits stage) {
 
 std::string ToStringSpvStorageClass(SpvStorageClass storage_class) {
   switch(storage_class) {
-    case SpvStorageClassUniformConstant : return "UniformConstant";
-    case SpvStorageClassInput           : return "Input";
-    case SpvStorageClassUniform         : return "Uniform";
-    case SpvStorageClassOutput          : return "Output";
-    case SpvStorageClassWorkgroup       : return "Workgroup";
-    case SpvStorageClassCrossWorkgroup  : return "CrossWorkgroup";
-    case SpvStorageClassPrivate         : return "Private";
-    case SpvStorageClassFunction        : return "Function";
-    case SpvStorageClassGeneric         : return "Generic";
-    case SpvStorageClassPushConstant    : return "PushConstant";
-    case SpvStorageClassAtomicCounter   : return "AtomicCounter";
-    case SpvStorageClassImage           : return "Image";
-    case SpvStorageClassStorageBuffer   : return "StorageBuffer";
+    case SpvStorageClassUniformConstant         : return "UniformConstant";
+    case SpvStorageClassInput                   : return "Input";
+    case SpvStorageClassUniform                 : return "Uniform";
+    case SpvStorageClassOutput                  : return "Output";
+    case SpvStorageClassWorkgroup               : return "Workgroup";
+    case SpvStorageClassCrossWorkgroup          : return "CrossWorkgroup";
+    case SpvStorageClassPrivate                 : return "Private";
+    case SpvStorageClassFunction                : return "Function";
+    case SpvStorageClassGeneric                 : return "Generic";
+    case SpvStorageClassPushConstant            : return "PushConstant";
+    case SpvStorageClassAtomicCounter           : return "AtomicCounter";
+    case SpvStorageClassImage                   : return "Image";
+    case SpvStorageClassStorageBuffer           : return "StorageBuffer";
+    case SpvStorageClassCallableDataKHR         : return "CallableDataKHR";
+    case SpvStorageClassIncomingCallableDataKHR : return "IncomingCallableDataKHR";
+    case SpvStorageClassRayPayloadKHR           : return "RayPayloadKHR";
+    case SpvStorageClassHitAttributeKHR         : return "HitAttributeKHR";
+    case SpvStorageClassIncomingRayPayloadKHR   : return "IncomingRayPayloadKHR";
+    case SpvStorageClassShaderRecordBufferKHR   : return "ShaderRecordBufferKHR";
+    case SpvStorageClassPhysicalStorageBuffer   : return "PhysicalStorageBuffer";
+    case SpvStorageClassCodeSectionINTEL        : return "CodeSectionINTEL";
 
     case SpvStorageClassMax:
       break;
@@ -332,6 +348,8 @@ std::string ToStringSpvImageFormat(SpvImageFormat fmt) {
     case SpvImageFormatRg8ui        : return "Rg8ui";
     case SpvImageFormatR16ui        : return "R16ui";
     case SpvImageFormatR8ui         : return "R8ui";
+    case SpvImageFormatR64ui        : return "R64ui";
+    case SpvImageFormatR64i         : return "R64i";
 
     case SpvImageFormatMax:
       break;
