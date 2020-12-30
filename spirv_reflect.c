@@ -656,13 +656,20 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
         }
         if (p_node->word_count >= 5) {
           const char* p_source = (const char*)(p_parser->spirv_code + p_node->word_offset + 4);
-          char* p_source_temp = (char*)calloc(strlen(p_source) + 1, sizeof(char*));
+
+          const size_t source_len = strlen(p_source);
+          char* p_source_temp = (char*)calloc(source_len + 1, sizeof(char*));
 
           if (IsNull(p_source_temp)) {
             return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
           }
 
+      #ifdef _WIN32
+          strcpy_s(p_source_temp, source_len + 1, p_source);
+      #else
           strcpy(p_source_temp, p_source);
+      #endif
+
           p_parser->source_embedded = p_source_temp;
         }
       }
@@ -670,14 +677,23 @@ static SpvReflectResult ParseNodes(Parser* p_parser)
 
       case SpvOpSourceContinued: {
         const char* p_source = (const char*)(p_parser->spirv_code + p_node->word_offset + 1);
-        char* p_continued_source = (char*)calloc(strlen(p_source) + strlen(p_parser->source_embedded) + 1, sizeof(char*));
+
+        const size_t source_len = strlen(p_source);
+        const size_t embedded_source_len = strlen(p_parser->source_embedded); 
+        char* p_continued_source = (char*)calloc(source_len + embedded_source_len + 1, sizeof(char*));
 
         if (IsNull(p_continued_source)) {
           return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
         }
 
+    #ifdef _WIN32
+        strcpy_s(p_continued_source, embedded_source_len + 1, p_parser->source_embedded);
+        strcat_s(p_continued_source, source_len + 1, p_source);
+    #else
         strcpy(p_continued_source, p_parser->source_embedded);
         strcat(p_continued_source, p_source);
+    #endif
+
         SafeFree(p_parser->source_embedded);
         p_parser->source_embedded = p_continued_source;
       }
@@ -950,13 +966,19 @@ static SpvReflectResult ParseSource(Parser* p_parser, SpvReflectShaderModule* p_
     //Source code
     if (IsNotNull(p_parser->source_embedded))
     {
-      char* p_source = (char*)calloc(strlen(p_parser->source_embedded) + 1, sizeof(char*));
+      const size_t source_len = strlen(p_parser->source_embedded);
+      char* p_source = (char*)calloc(source_len + 1, sizeof(char*));
 
       if (IsNull(p_source)) {
         return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
       }
 
+    #ifdef _WIN32
+      strcpy_s(p_source, source_len + 1, p_parser->source_embedded);
+    #else
       strcpy(p_source, p_parser->source_embedded);
+    #endif
+
       p_module->source_source = p_source;
     }
   }
