@@ -437,6 +437,42 @@ std::string ToStringFormat(SpvReflectFormat fmt) {
   return "VK_FORMAT_???";
 }
 
+static std::string ToStringScalarType(const SpvReflectTypeDescrions& type)
+{
+  switch(type.op) {
+    case SpvOpTypeVoid: {
+      return "void";
+      break;
+    }
+    case SpvOpTypeBool: {
+      return "bool";
+      break;
+    }
+    case SpvOpTypeInt: {
+      if (type.traits.numeric.scalar.signedness)
+        return "int";
+      else
+        return "uint";
+    }
+    case SpvOpTypeFloat: {
+      switch (type.traits.numeric.scalar.width) {
+        case 32:
+          return "float";
+        case 64:
+          return "double";
+        default:
+          break;
+      }
+    }
+    case SpvOpTypeStruct: {
+      return "struct";
+    }
+    default:
+      break;
+  }
+  return "";
+}
+
 static std::string ToStringGlslType(const SpvReflectTypeDescription& type)
 {
   switch (type.op) {
@@ -462,11 +498,8 @@ static std::string ToStringGlslType(const SpvReflectTypeDescription& type)
       }
     }
     break;
-
-    default:
-      break;
   }
-  return "";
+  return ToStringScalarType(type);
 }
 
 static std::string ToStringHlslType(const SpvReflectTypeDescription& type)
@@ -498,7 +531,7 @@ static std::string ToStringHlslType(const SpvReflectTypeDescription& type)
     default:
       break;
   }
-  return "";
+  return ToStringScalarType(type);
 }
 
 std::string ToStringType(SpvSourceLanguage src_lang, const SpvReflectTypeDescription& type)
