@@ -437,7 +437,7 @@ std::string ToStringFormat(SpvReflectFormat fmt) {
   return "VK_FORMAT_???";
 }
 
-static std::string ToStringScalarType(const SpvReflectTypeDescrions& type)
+static std::string ToStringScalarType(const SpvReflectTypeDescription& type)
 {
   switch(type.op) {
     case SpvOpTypeVoid: {
@@ -467,8 +467,9 @@ static std::string ToStringScalarType(const SpvReflectTypeDescrions& type)
     case SpvOpTypeStruct: {
       return "struct";
     }
-    default:
+    default: {
       break;
+    }
   }
   return "";
 }
@@ -498,6 +499,8 @@ static std::string ToStringGlslType(const SpvReflectTypeDescription& type)
       }
     }
     break;
+    default:
+      break;
   }
   return ToStringScalarType(type);
 }
