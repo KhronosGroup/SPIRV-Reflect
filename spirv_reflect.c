@@ -2516,38 +2516,68 @@ static SpvReflectResult ParseFormat(
 {
   SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
   bool signedness = (p_type->traits.numeric.scalar.signedness != 0);
+  uint32_t bit_width = p_type->traits.numeric.scalar.width;
   if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
     uint32_t component_count = p_type->traits.numeric.vector.component_count;
     if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
-      switch (component_count) {
-        case 2: *p_format = SPV_REFLECT_FORMAT_R32G32_SFLOAT; break;
-        case 3: *p_format = SPV_REFLECT_FORMAT_R32G32B32_SFLOAT; break;
-        case 4: *p_format = SPV_REFLECT_FORMAT_R32G32B32A32_SFLOAT; break;
+      switch (bit_width) {
+        case 32: {
+          switch (component_count) {
+            case 2: *p_format = SPV_REFLECT_FORMAT_R32G32_SFLOAT; break;
+            case 3: *p_format = SPV_REFLECT_FORMAT_R32G32B32_SFLOAT; break;
+            case 4: *p_format = SPV_REFLECT_FORMAT_R32G32B32A32_SFLOAT; break;
+          }
+        }
+        case 64: {
+          switch (component_count) {
+            case 2: *p_format = SPV_REFLECT_FORMAT_R64G64_SFLOAT; break;
+            case 3: *p_format = SPV_REFLECT_FORMAT_R64G64B64_SFLOAT; break;
+            case 4: *p_format = SPV_REFLECT_FORMAT_R64G64B64A64_SFLOAT; break;
+          }
+        }
       }
       result = SPV_REFLECT_RESULT_SUCCESS;
     }
     else if (p_type->type_flags & (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_BOOL)) {
-      switch (component_count) {
-        case 2: *p_format = signedness ? SPV_REFLECT_FORMAT_R32G32_SINT : SPV_REFLECT_FORMAT_R32G32_UINT; break;
-        case 3: *p_format = signedness ? SPV_REFLECT_FORMAT_R32G32B32_SINT : SPV_REFLECT_FORMAT_R32G32B32_UINT; break;
-        case 4: *p_format = signedness ? SPV_REFLECT_FORMAT_R32G32B32A32_SINT : SPV_REFLECT_FORMAT_R32G32B32A32_UINT; break;
+      switch (bit_width) {
+        case 32: {
+          switch (component_count) {
+            case 2: *p_format = signedness ? SPV_REFLECT_FORMAT_R32G32_SINT : SPV_REFLECT_FORMAT_R32G32_UINT; break;
+            case 3: *p_format = signedness ? SPV_REFLECT_FORMAT_R32G32B32_SINT : SPV_REFLECT_FORMAT_R32G32B32_UINT; break;
+            case 4: *p_format = signedness ? SPV_REFLECT_FORMAT_R32G32B32A32_SINT : SPV_REFLECT_FORMAT_R32G32B32A32_UINT; break;
+          }
+        }
+        case 64: {
+          switch (component_count) {
+            case 2: *p_format = signedness ? SPV_REFLECT_FORMAT_R64G64_SINT : SPV_REFLECT_FORMAT_R64G64_UINT; break;
+            case 3: *p_format = signedness ? SPV_REFLECT_FORMAT_R64G64B64_SINT : SPV_REFLECT_FORMAT_R64G64B64_UINT; break;
+            case 4: *p_format = signedness ? SPV_REFLECT_FORMAT_R64G64B64A64_SINT : SPV_REFLECT_FORMAT_R64G64B64A64_UINT; break;
+          }
+        }
       }
       result = SPV_REFLECT_RESULT_SUCCESS;
     }
   }
   else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
-    *p_format = SPV_REFLECT_FORMAT_R32_SFLOAT;
+    switch(bit_width) {
+      case 32:
+        *p_format = SPV_REFLECT_FORMAT_R32_SFLOAT;
+        break;
+      case 64:
+        *p_format = SPV_REFLECT_FORMAT_R64_SFLOAT;
+        break;
+    }
     result = SPV_REFLECT_RESULT_SUCCESS;
   }
   else if (p_type->type_flags & (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_BOOL)) {
-    if (signedness) {
-      *p_format = SPV_REFLECT_FORMAT_R32_SINT;
-      result = SPV_REFLECT_RESULT_SUCCESS;
-    }
-    else {
-      *p_format = SPV_REFLECT_FORMAT_R32_UINT;
-      result = SPV_REFLECT_RESULT_SUCCESS;
-    }
+    switch(bit_width) {
+      case 32:
+        *p_format = signedness ? SPV_REFLECT_FORMAT_R32_SINT : SPV_REFLECT_FORMAT_R32_UINT; break;
+        break;
+      case 64:
+        *p_format = signedness ? SPV_REFLECT_FORMAT_R64_SINT : SPV_REFLECT_FORMAT_R64_UINT; break;
+    }        
+    result = SPV_REFLECT_RESULT_SUCCESS;
   }
   else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT) {
     *p_format = SPV_REFLECT_FORMAT_UNDEFINED;
