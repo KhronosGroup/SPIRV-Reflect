@@ -94,6 +94,7 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const 
     os << t << "semantic  : " << obj.semantic << "\n";
   }
   os << t << "type      : " << ToStringType(src_lang, *obj.type_description) << "\n";
+  os << t << "format    : " << ToStringFormat(obj.format) << "\n";
   os << t << "qualifier : ";
   if (obj.decoration_flags & SPV_REFLECT_DECORATION_FLAT) {
     os << "flat";
