@@ -987,6 +987,7 @@ void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVar
 void StreamWriteEntryPoint(std::ostream& os, const SpvReflectEntryPoint& obj, const char* indent)
 {
   os << indent << "entry point     : " << obj.name;
+  os << " (stage=" << ToStringShaderStage(obj.shader_stage) << ")";
   if (obj.shader_stage == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT) {
     os << "\n";
     os << "local size      : " << "(" << obj.local_size.x << ", " << obj.local_size.y << ", " << obj.local_size.z << ")";
@@ -1000,18 +1001,14 @@ void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
   os << "source lang ver : " << obj.source_language_version << "\n";
   os << "source file     : " << (obj.source_file != NULL ? obj.source_file : "") << "\n";
-  os << "shader stage    : " << ToStringShaderStage(obj.shader_stage) << "\n";
+  //os << "shader stage    : " << ToStringShaderStage(obj.shader_stage) << "\n";
 
-  if (obj.entry_point_count > 1) {
-    // TODO: Figure out what to do with multiple entry points
+  for (uint32_t i = 0; i < obj.entry_point_count; ++i) {
+    StreamWriteEntryPoint(os, obj.entry_points[i], "");
+    if (i < (obj.entry_point_count - 1)) {
+        os << "\n";
+    }
   }
-  else {
-    StreamWriteEntryPoint(os, obj.entry_points[0], "");
-  }
- 
-  //if ((obj.shader_stage == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT)) {
-  //  os << "local size      : " << obj.ent
-  //}
 }
 
 

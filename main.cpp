@@ -132,7 +132,7 @@ int main(int argn, char** argv)
         if (printed_count > 0) {
           std::cout << ";";
         }
-        std::cout << reflection.GetSourceFile();
+        std::cout << (reflection.GetSourceFile() != NULL ? reflection.GetSourceFile() : "");
       }
 
       std::cout << std::endl;
