@@ -2528,6 +2528,8 @@ static SpvReflectResult ParseFormat(
             case 4: *p_format = SPV_REFLECT_FORMAT_R32G32B32A32_SFLOAT; break;
           }
         }
+        break;
+        
         case 64: {
           switch (component_count) {
             case 2: *p_format = SPV_REFLECT_FORMAT_R64G64_SFLOAT; break;
@@ -2547,6 +2549,8 @@ static SpvReflectResult ParseFormat(
             case 4: *p_format = signedness ? SPV_REFLECT_FORMAT_R32G32B32A32_SINT : SPV_REFLECT_FORMAT_R32G32B32A32_UINT; break;
           }
         }
+        break;
+        
         case 64: {
           switch (component_count) {
             case 2: *p_format = signedness ? SPV_REFLECT_FORMAT_R64G64_SINT : SPV_REFLECT_FORMAT_R64G64_UINT; break;
