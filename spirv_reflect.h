@@ -262,6 +262,8 @@ typedef struct SpvReflectImageTraits {
 typedef struct SpvReflectArrayTraits {
   uint32_t                          dims_count;
   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
+  // Stores Ids for dimensions that are specialization constants
+  uint32_t                          spec_constant_op_ids[SPV_REFLECT_MAX_ARRAY_DIMS];
   uint32_t                          stride; // Measured in bytes
 } SpvReflectArrayTraits;
 

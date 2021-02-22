@@ -1629,16 +1629,19 @@ static SpvReflectResult ParseType(
           // Get length for current dimension
           Node* p_length_node = FindNode(p_parser, length_id);
           if (IsNotNull(p_length_node)) {
+            uint32_t dim_index = p_type->traits.array.dims_count;
             if (p_length_node->op == SpvOpSpecConstant ||
                 p_length_node->op == SpvOpSpecConstantOp) {
-              p_type->traits.array.dims[p_type->traits.array.dims_count] = 0xFFFFFFFF;
+              p_type->traits.array.dims[dim_index] = 0xFFFFFFFF;
+              p_type->traits.array.spec_constant_op_ids[dim_index] = length_id;
               p_type->traits.array.dims_count += 1;
             } else {
               uint32_t length = 0;
               IF_READU32(result, p_parser, p_length_node->word_offset + 3, length);
               if (result == SPV_REFLECT_RESULT_SUCCESS) {
                 // Write the array dim and increment the count and offset
-                p_type->traits.array.dims[p_type->traits.array.dims_count] = length;
+                p_type->traits.array.dims[dim_index] = length;
+                p_type->traits.array.spec_constant_op_ids[dim_index] = 0xFFFFFFFF;
                 p_type->traits.array.dims_count += 1;
               } else {
                 result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
