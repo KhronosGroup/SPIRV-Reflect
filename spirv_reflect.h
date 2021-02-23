@@ -261,6 +261,8 @@ typedef struct SpvReflectImageTraits {
 
 typedef struct SpvReflectArrayTraits {
   uint32_t                          dims_count;
+  // Each entry is: 0xFFFFFFFF for a specialization constant dimension,
+  // 0 for a runtime array dimension, and the array length otherwise.
   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
   // Stores Ids for dimensions that are specialization constants
   uint32_t                          spec_constant_op_ids[SPV_REFLECT_MAX_ARRAY_DIMS];

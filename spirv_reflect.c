@@ -1663,8 +1663,14 @@ static SpvReflectResult ParseType(
       break;
 
       case SpvOpTypeRuntimeArray: {
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_ARRAY;
         uint32_t element_type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 2, element_type_id);
+        p_type->traits.array.stride = p_node->decorations.array_stride;
+        uint32_t dim_index = p_type->traits.array.dims_count;
+        p_type->traits.array.dims[dim_index] = 0;
+        p_type->traits.array.spec_constant_op_ids[dim_index] = 0;
+        p_type->traits.array.dims_count += 1;
         // Parse next dimension or element type
         Node* p_next_node = FindNode(p_parser, element_type_id);
         if (IsNotNull(p_next_node)) {
