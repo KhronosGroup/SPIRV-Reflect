@@ -25,6 +25,7 @@ shaders = [
   {'source':"glsl/input_attachment.glsl", 'entry':"main", 'stage':'frag'},
   {'source':"glsl/texel_buffer.glsl", 'entry':"main", 'stage':'vert'},
   {'source':"glsl/storage_buffer.glsl", 'entry':"main", 'stage':'comp', 'target-env':'vulkan1.1'},
+  {'source':"glsl/matrix_array.glsl", 'entry':"main", 'stage':'comp', 'target-env':'vulkan1.1'},
 
   {'source':"hlsl/append_consume.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
   {'source':"hlsl/binding_array.hlsl", 'entry':"main", 'profile':'ps_6_0', 'stage':'frag'},
