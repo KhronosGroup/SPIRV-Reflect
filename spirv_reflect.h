@@ -410,6 +410,8 @@ typedef struct SpvReflectEntryPoint {
     uint32_t                        y;
     uint32_t                        z;
   } local_size;
+  uint32_t                          invocations; // valid for geometry
+  uint32_t                          output_vertices; // valid for geometry, tesselation
 } SpvReflectEntryPoint;
 
 /*! @struct SpvReflectShaderModule
