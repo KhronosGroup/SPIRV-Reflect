@@ -1669,6 +1669,7 @@ static SpvReflectResult ParseType(
       break;
 
       case SpvOpTypeRuntimeArray: {
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_ARRAY;
         uint32_t element_type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 2, element_type_id);
         // Parse next dimension or element type
