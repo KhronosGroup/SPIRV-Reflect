@@ -58,7 +58,7 @@ module:
   entry_point_id: 1
   source_language: 5 # HLSL
   source_language_version: 630
-  spirv_execution_model: 5315 # ???
+  spirv_execution_model: 5315 # AnyHitKHR
   shader_stage: 0x00000200 # ANY_HIT
   descriptor_binding_count: 1
   descriptor_bindings:
