@@ -4,7 +4,7 @@
 #include <cstring>
 #include <vector>
 
-int SpvStripReflect(uint32_t *data, size_t len) {
+int SpvStripReflect(uint32_t* data, size_t len) {
   const uint32_t kHeaderLength = 5;
   const uint32_t kMagicNumber = 0x07230203u;
   const uint32_t kExtensionOpcode = 10;
@@ -17,6 +17,7 @@ int SpvStripReflect(uint32_t *data, size_t len) {
   const uint32_t kDecorateStringOpcode = 5632;
   const uint32_t kMemberDecorateStringOpcode = 5633;
   const uint32_t kCounterBufferDecoration = 5634;
+  const uint32_t kUserTypeGOOGLEDecoration = 5636;
 
   // Make sure we at least have a header and the magic number is correct
   if (!data || len < kHeaderLength || data[0] != kMagicNumber)
@@ -44,7 +45,8 @@ int SpvStripReflect(uint32_t *data, size_t len) {
     } else if (opcode == kDecorateIdOpcode) {
       if (pos + 2 >= len)
         return -1;
-      if (data[pos + 2] == kCounterBufferDecoration) {
+      if (data[pos + 2] == kCounterBufferDecoration ||
+          data[pos + 2] == kUserTypeGOOGLEDecoration) {
         skip = true;
       }
     } else if (opcode == kExtensionOpcode) {
@@ -52,7 +54,8 @@ int SpvStripReflect(uint32_t *data, size_t len) {
         return -1;
       const char *ext_name = reinterpret_cast<const char *>(&data[pos + 1]);
       if (0 == std::strcmp(ext_name, "SPV_GOOGLE_decorate_string") ||
-          0 == std::strcmp(ext_name, "SPV_GOOGLE_hlsl_functionality1"))
+          0 == std::strcmp(ext_name, "SPV_GOOGLE_hlsl_functionality1") ||
+          0 == std::strcmp(ext_name, "SPV_GOOGLE_user_type"))
         skip = true;
     }
 
