@@ -24,7 +24,7 @@ all_type_descriptions:
     type_name: "Data"
     struct_member_name: 
     storage_class: 0 # UniformConstant
-    type_flags: 0x10080000 # STRUCT EXTERNAL_BLOCK 
+    type_flags: 0x30080000 # ARRAY STRUCT EXTERNAL_BLOCK 
     decoration_flags: 0x00000000 # NONE
     traits:
       numeric:
@@ -129,7 +129,7 @@ all_type_descriptions:
     type_name: "Data"
     struct_member_name: 
     storage_class: 0 # UniformConstant
-    type_flags: 0x10080000 # STRUCT EXTERNAL_BLOCK 
+    type_flags: 0x30080000 # ARRAY STRUCT EXTERNAL_BLOCK 
     decoration_flags: 0x00000000 # NONE
     traits:
       numeric:

@@ -7,7 +7,7 @@ all_type_descriptions:
     type_name: 
     struct_member_name: 
     storage_class: 0 # UniformConstant
-    type_flags: 0x00000108 # VECTOR FLOAT 
+    type_flags: 0x20000108 # ARRAY VECTOR FLOAT 
     decoration_flags: 0x00000000 # NONE
     traits:
       numeric:
@@ -42,7 +42,7 @@ all_type_descriptions:
     type_name: 
     struct_member_name: 
     storage_class: 0 # UniformConstant
-    type_flags: 0x00000108 # VECTOR FLOAT 
+    type_flags: 0x20000108 # ARRAY VECTOR FLOAT 
     decoration_flags: 0x00000000 # NONE
     traits:
       numeric:

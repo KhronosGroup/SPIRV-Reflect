@@ -329,7 +329,7 @@ module:
   entry_point_id: 1
   source_language: 5 # HLSL
   source_language_version: 630
-  spirv_execution_model: 5314 # ???
+  spirv_execution_model: 5314 # IntersectionKHR
   shader_stage: 0x00001000 # INTERSECTION
   descriptor_binding_count: 0
   descriptor_bindings:

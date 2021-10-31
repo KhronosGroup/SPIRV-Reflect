@@ -24,11 +24,11 @@ all_type_descriptions:
     type_name: "type.2d.image"
     struct_member_name: 
     storage_class: -1 # NOT APPLICABLE
-    type_flags: 0x20010000 # ARRAY EXTERNAL_IMAGE 
+    type_flags: 0x20010008 # ARRAY EXTERNAL_IMAGE FLOAT 
     decoration_flags: 0x00000000 # NONE
     traits:
       numeric:
-        scalar: { width: 0, signedness: 0 }
+        scalar: { width: 32, signedness: 0 }
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 1, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
