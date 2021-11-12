@@ -235,12 +235,10 @@ static uint32_t RoundUp(
 #define IsNotNull(ptr) \
   (ptr != NULL)
 
-#define SafeFree(ptr)    \
-  {                      \
-     if (ptr != NULL) {  \
-       free((void*)ptr); \
-       ptr = NULL;       \
-     }                   \
+#define SafeFree(ptr)  \
+  {                    \
+     free((void*)ptr); \
+     ptr = NULL;       \
   }
 
 static int SortCompareUint32(
