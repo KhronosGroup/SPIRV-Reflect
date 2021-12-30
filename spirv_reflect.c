@@ -4896,3 +4896,13 @@ const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang)
   }
   return "";
 }
+
+const char* spvReflectBlockVariableTypeName(
+  const SpvReflectBlockVariable* p_var
+)
+{
+    if (p_var == NULL) {
+        return NULL;
+    }
+    return p_var->type_description->type_name;
+}
