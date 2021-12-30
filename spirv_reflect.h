@@ -1329,7 +1329,7 @@ SpvReflectResult spvReflectChangeInputVariableLocation(
          by multiple entry points in the module, it will be changed in all of
          them.
  @param  p_module          Pointer to an instance of SpvReflectShaderModule.
- @param  p_output_variable  Pointer to the output variable to update.
+ @param  p_output_variable Pointer to the output variable to update.
  @param  new_location      The new location to assign to p_output_variable.
  @return                   If successful, returns SPV_REFLECT_RESULT_SUCCESS.
                            Otherwise, the error code indicates the cause of
@@ -1350,6 +1350,16 @@ SpvReflectResult spvReflectChangeOutputVariableLocation(
          The caller must not free the memory associated with this string.
 */
 const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang);
+
+/*! @fn spvReflectBlockVariableTypeName
+
+ @param  p_var Pointer to block variable.
+ @return Returns string of block variable's type description type name
+         or NULL if p_var is NULL.
+*/
+const char* spvReflectBlockVariableTypeName(
+  const SpvReflectBlockVariable* p_var
+);
 
 #if defined(__cplusplus)
 };
