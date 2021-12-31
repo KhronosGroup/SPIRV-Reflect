@@ -110,6 +110,7 @@ typedef struct SpvReflectPrvStringDecoration {
 
 // clang-format off
 typedef struct SpvReflectPrvDecorations {
+  bool                            is_relaxed_precision;
   bool                            is_block;
   bool                            is_buffer_block;
   bool                            is_row_major;
@@ -457,6 +458,9 @@ static SpvReflectResult ReadStr(
 static SpvReflectDecorationFlags ApplyDecorations(const SpvReflectPrvDecorations* p_decoration_fields)
 {
   SpvReflectDecorationFlags decorations = SPV_REFLECT_DECORATION_NONE;
+  if (p_decoration_fields->is_relaxed_precision) {
+    decorations |= SPV_REFLECT_DECORATION_RELAXED_PRECISION;
+  }
   if (p_decoration_fields->is_block) {
     decorations |= SPV_REFLECT_DECORATION_BLOCK;
   }
@@ -1331,7 +1335,8 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
       default: {
         skip = true;
       }
-      break; 
+      break;
+      case SpvDecorationRelaxedPrecision:
       case SpvDecorationBlock:
       case SpvDecorationBufferBlock:
       case SpvDecorationColMajor:
@@ -1375,6 +1380,11 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
 
     switch (decoration) {
       default: break;
+
+      case SpvDecorationRelaxedPrecision: {
+        p_target_decorations->is_relaxed_precision = true;
+      }
+      break;
 
       case SpvDecorationBlock: {
         p_target_decorations->is_block = true;
@@ -2631,6 +2641,7 @@ static SpvReflectResult ParseFormat(
 
 static SpvReflectResult ParseInterfaceVariable(
   SpvReflectPrvParser*            p_parser,
+  const SpvReflectPrvDecorations* p_var_node_decorations,
   const SpvReflectPrvDecorations* p_type_node_decorations,
   SpvReflectShaderModule*         p_module,
   SpvReflectTypeDescription*      p_type,
@@ -2654,7 +2665,7 @@ static SpvReflectResult ParseInterfaceVariable(
       SpvReflectPrvDecorations* p_member_decorations = &p_type_node->member_decorations[member_index];
       SpvReflectTypeDescription* p_member_type = &p_type->members[member_index];
       SpvReflectInterfaceVariable* p_member_var = &p_var->members[member_index];
-      SpvReflectResult result = ParseInterfaceVariable(p_parser, p_member_decorations, p_module, p_member_type, p_member_var, p_has_built_in);
+      SpvReflectResult result = ParseInterfaceVariable(p_parser, NULL, p_member_decorations, p_module, p_member_type, p_member_var, p_has_built_in);
       if (result != SPV_REFLECT_RESULT_SUCCESS) {
         SPV_REFLECT_ASSERT(false);
         return result;
@@ -2664,6 +2675,9 @@ static SpvReflectResult ParseInterfaceVariable(
 
   p_var->name = p_type_node->name;
   p_var->decoration_flags = ApplyDecorations(p_type_node_decorations);
+  if (p_var_node_decorations != NULL) {
+    p_var->decoration_flags |= ApplyDecorations(p_var_node_decorations);
+  }
   p_var->built_in = p_type_node_decorations->built_in;
   ApplyNumericTraits(p_type, &p_var->numeric);
   if (p_type->op == SpvOpTypeArray) {
@@ -2699,21 +2713,21 @@ static SpvReflectResult ParseInterfaceVariables(
   }
 
   p_entry->interface_variable_count = interface_variable_count;
- p_entry->input_variable_count = 0;
- p_entry->output_variable_count = 0;  
- for (size_t i = 0; i < interface_variable_count; ++i) {
-   uint32_t var_result_id = *(p_interface_variable_ids + i);
-   SpvReflectPrvNode* p_node = FindNode(p_parser, var_result_id);
-   if (IsNull(p_node)) {
-     return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
-   }
+  p_entry->input_variable_count = 0;
+  p_entry->output_variable_count = 0;  
+  for (size_t i = 0; i < interface_variable_count; ++i) {
+    uint32_t var_result_id = *(p_interface_variable_ids + i);
+    SpvReflectPrvNode* p_node = FindNode(p_parser, var_result_id);
+    if (IsNull(p_node)) {
+      return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+    }
  
-   if (p_node->storage_class == SpvStorageClassInput) {
-     p_entry->input_variable_count += 1;
-   }
-   else if (p_node->storage_class == SpvStorageClassOutput) {
-     p_entry->output_variable_count += 1;
-   }
+    if (p_node->storage_class == SpvStorageClassInput) {
+      p_entry->input_variable_count += 1;
+    }
+    else if (p_node->storage_class == SpvStorageClassOutput) {
+      p_entry->output_variable_count += 1;
+    }
  }
  
  if (p_entry->input_variable_count > 0) {
@@ -2775,6 +2789,7 @@ static SpvReflectResult ParseInterfaceVariables(
     bool has_built_in = p_node->decorations.is_built_in;
     SpvReflectResult result = ParseInterfaceVariable(
       p_parser,
+      &p_node->decorations,
       &p_type_node->decorations,
       p_module,
       p_type,

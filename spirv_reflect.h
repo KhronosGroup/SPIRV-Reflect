@@ -112,6 +112,7 @@ typedef enum SpvReflectDecorationFlagBits {
   SPV_REFLECT_DECORATION_NOPERSPECTIVE          = 0x00000020,
   SPV_REFLECT_DECORATION_FLAT                   = 0x00000040,
   SPV_REFLECT_DECORATION_NON_WRITABLE           = 0x00000080,
+  SPV_REFLECT_DECORATION_RELAXED_PRECISION      = 0x00000100,
 } SpvReflectDecorationFlagBits;
 
 typedef uint32_t SpvReflectDecorationFlags;
