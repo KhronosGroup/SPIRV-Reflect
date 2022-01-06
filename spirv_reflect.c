@@ -2154,22 +2154,19 @@ static SpvReflectResult ParseDescriptorBlockVariable(
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     }
     // Resolve to element type if current type is array or run time array
-    if (p_type_node->op == SpvOpTypeArray) {
-      while (p_type_node->op == SpvOpTypeArray) {
+    while (p_type_node->op == SpvOpTypeArray || p_type_node->op == SpvOpTypeRuntimeArray) {
+      if (p_type_node->op == SpvOpTypeArray) {
         p_type_node = FindNode(p_parser, p_type_node->array_traits.element_type_id);
-        if (IsNull(p_type_node)) {
+      }
+      else {
+        // Element type description
+        SpvReflectTypeDescription* p_type_temp = FindType(p_module, p_type_node->array_traits.element_type_id);
+        if (IsNull(p_type_temp)) {
           return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
         }
+        // Element type node
+        p_type_node = FindNode(p_parser, p_type_temp->id);
       }
-    }
-    else if(p_type_node->op == SpvOpTypeRuntimeArray) {
-      // Element type description
-      p_type = FindType(p_module, p_type_node->array_traits.element_type_id);
-      if (IsNull(p_type)) {
-        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
-      }
-      // Element type node
-      p_type_node = FindNode(p_parser, p_type->id);
       if (IsNull(p_type_node)) {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
       }
