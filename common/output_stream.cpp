@@ -26,6 +26,7 @@ struct TextLine {
   uint32_t              padded_size;
   uint32_t              array_stride;
   uint32_t              block_variable_flags;
+  std::vector<uint32_t> array_dims;
   // Text Data
   uint32_t              text_line_flags;
   std::vector<TextLine> lines;
@@ -641,13 +642,30 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool fla
       tl = {};
       tl.indent = expanded_indent;
       tl.name = name;
-      if (member.array.dims_count > 0) {
-        std::stringstream ss_array;
-        for (uint32_t array_dim_index = 0; array_dim_index < member.array.dims_count; ++array_dim_index) {
-          uint32_t dim = member.array.dims[array_dim_index];
-          ss_array << "[" << dim << "]";
+      if ((member.array.dims_count > 0) || (member.type_description->traits.array.dims > 0)) {
+        const SpvReflectArrayTraits* p_array_info = (member.array.dims_count > 0) ? &member.array : nullptr;
+        if (p_array_info == nullptr) {
+          //
+          // glslang based compilers stores array information in the type and not the variable
+          //
+          p_array_info = (member.type_description->traits.array.dims > 0) ? &member.type_description->traits.array : nullptr;
         }
-        tl.name += ss_array.str();
+        if (p_array_info != nullptr) {
+          std::stringstream ss_array;
+          for (uint32_t array_dim_index = 0; array_dim_index < p_array_info->dims_count; ++array_dim_index) {            
+            uint32_t dim = p_array_info->dims[array_dim_index];
+            // 
+            // dim = 0 means it's an unbounded array 
+            //
+            if (dim > 0) {
+                ss_array << "[" << dim << "]";
+            }
+            else {
+                ss_array << "[]";
+            }
+          }
+          tl.name += ss_array.str();
+        }
       }
       tl.absolute_offset = member.absolute_offset;
       tl.relative_offset = member.offset;
