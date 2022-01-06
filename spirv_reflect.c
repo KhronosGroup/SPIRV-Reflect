@@ -1036,6 +1036,7 @@ static SpvReflectResult ParseFunction(
       case SpvOpGenericPtrMemSemantics:
       case SpvOpInBoundsPtrAccessChain:
       case SpvOpStore:
+      case SpvOpImageTexelPointer:
       {
         ++(p_func->accessed_ptr_count);
       }
@@ -1087,6 +1088,7 @@ static SpvReflectResult ParseFunction(
       case SpvOpArrayLength:
       case SpvOpGenericPtrMemSemantics:
       case SpvOpInBoundsPtrAccessChain:
+      case SpvOpImageTexelPointer:
       {
         CHECKED_READU32(p_parser, p_node->word_offset + 3,
                         p_func->accessed_ptrs[p_func->accessed_ptr_count]);
