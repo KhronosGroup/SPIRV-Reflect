@@ -1671,16 +1671,19 @@ static SpvReflectResult ParseType(
           // Get length for current dimension
           SpvReflectPrvNode* p_length_node = FindNode(p_parser, length_id);
           if (IsNotNull(p_length_node)) {
+            uint32_t dim_index = p_type->traits.array.dims_count;
             if (p_length_node->op == SpvOpSpecConstant ||
                 p_length_node->op == SpvOpSpecConstantOp) {
-              p_type->traits.array.dims[p_type->traits.array.dims_count] = 0xFFFFFFFF;
+              p_type->traits.array.dims[dim_index] = 0xFFFFFFFF;
+              p_type->traits.array.spec_constant_op_ids[dim_index] = length_id;
               p_type->traits.array.dims_count += 1;
             } else {
               uint32_t length = 0;
               IF_READU32(result, p_parser, p_length_node->word_offset + 3, length);
               if (result == SPV_REFLECT_RESULT_SUCCESS) {
                 // Write the array dim and increment the count and offset
-                p_type->traits.array.dims[p_type->traits.array.dims_count] = length;
+                p_type->traits.array.dims[dim_index] = length;
+                p_type->traits.array.spec_constant_op_ids[dim_index] = 0xFFFFFFFF;
                 p_type->traits.array.dims_count += 1;
               } else {
                 result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
@@ -1705,6 +1708,11 @@ static SpvReflectResult ParseType(
         p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_ARRAY;
         uint32_t element_type_id = (uint32_t)INVALID_VALUE;
         IF_READU32(result, p_parser, p_node->word_offset + 2, element_type_id);
+        p_type->traits.array.stride = p_node->decorations.array_stride;
+        uint32_t dim_index = p_type->traits.array.dims_count;
+        p_type->traits.array.dims[dim_index] = 0;
+        p_type->traits.array.spec_constant_op_ids[dim_index] = 0;
+        p_type->traits.array.dims_count += 1;
         // Parse next dimension or element type
         SpvReflectPrvNode* p_next_node = FindNode(p_parser, element_type_id);
         if (IsNotNull(p_next_node)) {
