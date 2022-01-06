@@ -3199,7 +3199,11 @@ static SpvReflectResult ParseExecutionModes(
         }
         break;
 
-        case SpvExecutionModeInvocations:
+        case SpvExecutionModeInvocations: {
+          CHECKED_READU32(p_parser, p_node->word_offset + 3, p_entry_point->invocations);
+        }
+        break;
+
         case SpvExecutionModeSpacingEqual:
         case SpvExecutionModeSpacingFractionalEven:
         case SpvExecutionModeSpacingFractionalOdd:
@@ -3222,7 +3226,7 @@ static SpvReflectResult ParseExecutionModes(
           CHECKED_READU32(p_parser, p_node->word_offset + 4, p_entry_point->local_size.y);
           CHECKED_READU32(p_parser, p_node->word_offset + 5, p_entry_point->local_size.z);
         }
-        break;                                        
+        break;
 
         case SpvExecutionModeLocalSizeHint:
         case SpvExecutionModeInputPoints:
@@ -3232,7 +3236,11 @@ static SpvReflectResult ParseExecutionModes(
         case SpvExecutionModeInputTrianglesAdjacency:
         case SpvExecutionModeQuads:
         case SpvExecutionModeIsolines:
-        case SpvExecutionModeOutputVertices:
+        case SpvExecutionModeOutputVertices: {
+          CHECKED_READU32(p_parser, p_node->word_offset + 3, p_entry_point->output_vertices);
+        }
+        break;
+
         case SpvExecutionModeOutputPoints:
         case SpvExecutionModeOutputLineStrip:
         case SpvExecutionModeOutputTriangleStrip:
