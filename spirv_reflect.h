@@ -101,6 +101,13 @@ typedef uint32_t SpvReflectTypeFlags;
 
 /*! @enum SpvReflectDecorationBits
 
+NOTE: HLSL row_major and column_major decorations are reversed
+      in SPIR-V. Meaning that matrices declrations with row_major
+      will get reflected as column_major and vice versa. The
+      row and column decorations get appied during the compilation.
+      SPIRV-Reflect reads the data as is and does not make any
+      attempt to correct it to match what's in the source.
+
 */
 typedef enum SpvReflectDecorationFlagBits {
   SPV_REFLECT_DECORATION_NONE                   = 0x00000000,
