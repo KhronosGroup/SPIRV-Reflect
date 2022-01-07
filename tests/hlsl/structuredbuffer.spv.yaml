@@ -261,7 +261,7 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
+      array: { dims_count: 1, dims: [0,], stride: 228 }
     member_count: 6
     members:
       - *td0
@@ -289,252 +289,6 @@ all_type_descriptions:
     members:
       - *td14
   - &td16
-    id: 14
-    op: 23
-    type_name: 
-    struct_member_name: "Position"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000108 # VECTOR FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 3 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td17
-    id: 13
-    op: 22
-    type_name: 
-    struct_member_name: "x"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000008 # FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td18
-    id: 13
-    op: 22
-    type_name: 
-    struct_member_name: "y"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000008 # FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td19
-    id: 13
-    op: 22
-    type_name: 
-    struct_member_name: "z"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000008 # FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td20
-    id: 3
-    op: 30
-    type_name: "SepNormal"
-    struct_member_name: "Normal"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x10080000 # STRUCT EXTERNAL_BLOCK 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 0, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 3
-    members:
-      - *td17
-      - *td18
-      - *td19
-  - &td21
-    id: 9
-    op: 28
-    type_name: 
-    struct_member_name: "r"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x20000008 # ARRAY FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [5,], stride: 4 }
-    member_count: 0
-    members:
-  - &td22
-    id: 9
-    op: 28
-    type_name: 
-    struct_member_name: "g"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x20000008 # ARRAY FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [5,], stride: 4 }
-    member_count: 0
-    members:
-  - &td23
-    id: 9
-    op: 28
-    type_name: 
-    struct_member_name: "b"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x20000008 # ARRAY FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [5,], stride: 4 }
-    member_count: 0
-    members:
-  - &td24
-    id: 10
-    op: 28
-    type_name: "Rgb"
-    struct_member_name: "Colors"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x30080000 # ARRAY STRUCT EXTERNAL_BLOCK 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 0, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [3,], stride: 60 }
-    member_count: 3
-    members:
-      - *td21
-      - *td22
-      - *td23
-  - &td25
-    id: 13
-    op: 22
-    type_name: 
-    struct_member_name: "u"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000008 # FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td26
-    id: 13
-    op: 22
-    type_name: 
-    struct_member_name: "v"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000008 # FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td27
-    id: 5
-    op: 30
-    type_name: "Uv"
-    struct_member_name: "TexCoords"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x10080000 # STRUCT EXTERNAL_BLOCK 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 0, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 2
-    members:
-      - *td25
-      - *td26
-  - &td28
-    id: 11
-    op: 28
-    type_name: 
-    struct_member_name: "Scales"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x20000008 # ARRAY FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [3,], stride: 4 }
-    member_count: 0
-    members:
-  - &td29
-    id: 15
-    op: 21
-    type_name: 
-    struct_member_name: "Id"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000004 # INT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td30
     id: 21
     op: 23
     type_name: 
@@ -566,7 +320,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td16
+    type_description: *td0
   - &bv1
     name: "x"
     offset: 0
@@ -581,7 +335,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td17
+    type_description: *td1
   - &bv2
     name: "y"
     offset: 4
@@ -596,7 +350,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td18
+    type_description: *td2
   - &bv3
     name: "z"
     offset: 8
@@ -611,7 +365,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td19
+    type_description: *td3
   - &bv4
     name: "Normal"
     offset: 12
@@ -629,7 +383,7 @@ all_block_variables:
       - *bv1
       - *bv2
       - *bv3
-    type_description: *td20
+    type_description: *td4
   - &bv5
     name: "r"
     offset: 0
@@ -644,7 +398,7 @@ all_block_variables:
     array: { dims_count: 1, dims: [5,], stride: 4 }
     member_count: 0
     members:
-    type_description: *td21
+    type_description: *td5
   - &bv6
     name: "g"
     offset: 20
@@ -659,7 +413,7 @@ all_block_variables:
     array: { dims_count: 1, dims: [5,], stride: 4 }
     member_count: 0
     members:
-    type_description: *td22
+    type_description: *td6
   - &bv7
     name: "b"
     offset: 40
@@ -674,7 +428,7 @@ all_block_variables:
     array: { dims_count: 1, dims: [5,], stride: 4 }
     member_count: 0
     members:
-    type_description: *td23
+    type_description: *td7
   - &bv8
     name: "Colors"
     offset: 24
@@ -692,7 +446,7 @@ all_block_variables:
       - *bv5
       - *bv6
       - *bv7
-    type_description: *td24
+    type_description: *td8
   - &bv9
     name: "u"
     offset: 0
@@ -707,7 +461,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td25
+    type_description: *td9
   - &bv10
     name: "v"
     offset: 4
@@ -722,7 +476,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td26
+    type_description: *td10
   - &bv11
     name: "TexCoords"
     offset: 204
@@ -739,7 +493,7 @@ all_block_variables:
     members:
       - *bv9
       - *bv10
-    type_description: *td27
+    type_description: *td11
   - &bv12
     name: "Scales"
     offset: 212
@@ -754,7 +508,7 @@ all_block_variables:
     array: { dims_count: 1, dims: [3,], stride: 4 }
     member_count: 0
     members:
-    type_description: *td28
+    type_description: *td12
   - &bv13
     name: "Id"
     offset: 224
@@ -769,7 +523,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td29
+    type_description: *td13
   - &bv14
     name: 
     offset: 0
@@ -841,7 +595,7 @@ all_interface_variables:
     member_count: 0
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
-    type_description: *td30
+    type_description: *td16
     word_offset: { location: 225 }
 module:
   generator: 14 # Google spiregg

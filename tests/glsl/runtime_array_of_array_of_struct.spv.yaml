@@ -49,7 +49,7 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [3,], stride: 8 }
+      array: { dims_count: 2, dims: [0,3,], stride: 8 }
     member_count: 2
     members:
       - *td0
@@ -120,7 +120,7 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 1, dims: [3,], stride: 8 }
+      array: { dims_count: 2, dims: [0,3,], stride: 8 }
     member_count: 2
     members:
       - *td4

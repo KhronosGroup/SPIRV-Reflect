@@ -84,7 +84,7 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
+      array: { dims_count: 1, dims: [0,], stride: 32 }
     member_count: 2
     members:
       - *td2
@@ -142,40 +142,6 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td8
-    id: 3
-    op: 23
-    type_name: 
-    struct_member_name: "f4"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000108 # VECTOR FLOAT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 4 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td9
-    id: 4
-    op: 21
-    type_name: 
-    struct_member_name: "i"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000004 # INT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 1 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td10
     id: 6
     op: 29
     type_name: "Data"
@@ -189,12 +155,12 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
+      array: { dims_count: 1, dims: [0,], stride: 32 }
     member_count: 2
     members:
-      - *td8
-      - *td9
-  - &td11
+      - *td6
+      - *td7
+  - &td9
     id: 13
     op: 30
     type_name: "type.AppendStructuredBuffer.Data"
@@ -211,8 +177,8 @@ all_type_descriptions:
       array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 1
     members:
-      - *td10
-  - &td12
+      - *td8
+  - &td10
     id: 3
     op: 23
     type_name: 
@@ -306,7 +272,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td6
+    type_description: *td2
   - &bv5
     name: "i"
     offset: 16
@@ -321,7 +287,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td7
+    type_description: *td3
   - &bv6
     name: 
     offset: 0
@@ -401,7 +367,7 @@ all_block_variables:
     members:
       - *bv8
       - *bv9
-    type_description: *td10
+    type_description: *td8
   - &bv11
     name: "MyBufferOut"
     offset: 0
@@ -417,7 +383,7 @@ all_block_variables:
     member_count: 1
     members:
       - *bv10
-    type_description: *td11
+    type_description: *td9
 all_descriptor_bindings:
   - &db0
     spirv_id: 12
@@ -481,7 +447,7 @@ all_descriptor_bindings:
     accessed: 1
     uav_counter_id: 16
     uav_counter_binding: *db1 # "counter.var.MyBufferOut"
-    type_description: *td11
+    type_description: *td9
     word_offset: { binding: 325, set: 321 }
 all_interface_variables:
   - &iv0
@@ -500,7 +466,7 @@ all_interface_variables:
     member_count: 0
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
-    type_description: *td12
+    type_description: *td10
     word_offset: { location: 0 }
   - &iv1
     spirv_id: 29
@@ -518,7 +484,7 @@ all_interface_variables:
     member_count: 0
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
-    type_description: *td12
+    type_description: *td10
     word_offset: { location: 309 }
 module:
   generator: 14 # Google spiregg

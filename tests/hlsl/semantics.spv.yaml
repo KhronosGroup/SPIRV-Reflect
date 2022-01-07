@@ -423,7 +423,7 @@ all_interface_variables:
     location: 4294967295
     storage_class: 1 # Input
     semantic: "SV_PRIMITIVEID"
-    decoration_flags: 0x00000010 # BUILT_IN 
+    decoration_flags: 0x00000050 # FLAT BUILT_IN 
     built_in: 7 # PrimitiveId
     numeric:
       scalar: { width: 32, signedness: 0 }

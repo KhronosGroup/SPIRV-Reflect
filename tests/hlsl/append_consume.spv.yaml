@@ -32,7 +32,7 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
+      array: { dims_count: 1, dims: [0,], stride: 4 }
     member_count: 1
     members:
       - *td0
@@ -55,23 +55,6 @@ all_type_descriptions:
     members:
       - *td1
   - &td3
-    id: 2
-    op: 21
-    type_name: 
-    struct_member_name: "rgba"
-    storage_class: 0 # UniformConstant
-    type_flags: 0x00000004 # INT 
-    decoration_flags: 0x00000000 # NONE
-    traits:
-      numeric:
-        scalar: { width: 32, signedness: 0 }
-        vector: { component_count: 0 }
-        matrix: { column_count: 0, row_count: 0, stride: 0 }
-      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-  - &td4
     id: 8
     op: 21
     type_name: 
@@ -88,7 +71,7 @@ all_type_descriptions:
       array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-  - &td5
+  - &td4
     id: 9
     op: 30
     type_name: "type.ACSBuffer.counter"
@@ -105,8 +88,8 @@ all_type_descriptions:
       array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 1
     members:
-      - *td4
-  - &td6
+      - *td3
+  - &td5
     id: 2
     op: 21
     type_name: 
@@ -123,7 +106,7 @@ all_type_descriptions:
       array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-  - &td7
+  - &td6
     id: 4
     op: 29
     type_name: "Data"
@@ -137,11 +120,11 @@ all_type_descriptions:
         vector: { component_count: 0 }
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-      array: { dims_count: 0, dims: [], stride: 0 }
+      array: { dims_count: 1, dims: [0,], stride: 4 }
     member_count: 1
     members:
-      - *td6
-  - &td8
+      - *td5
+  - &td7
     id: 12
     op: 30
     type_name: "type.AppendStructuredBuffer.Data"
@@ -158,8 +141,8 @@ all_type_descriptions:
       array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 1
     members:
-      - *td7
-  - &td9
+      - *td6
+  - &td8
     id: 22
     op: 23
     type_name: 
@@ -191,7 +174,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td3
+    type_description: *td0
   - &bv1
     name: 
     offset: 0
@@ -238,7 +221,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td4
+    type_description: *td3
   - &bv4
     name: "counter.var.BufferOut"
     offset: 0
@@ -254,7 +237,7 @@ all_block_variables:
     member_count: 1
     members:
       - *bv3
-    type_description: *td5
+    type_description: *td4
   - &bv5
     name: 
     offset: 0
@@ -269,7 +252,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td4
+    type_description: *td3
   - &bv6
     name: "counter.var.BufferIn"
     offset: 0
@@ -285,7 +268,7 @@ all_block_variables:
     member_count: 1
     members:
       - *bv5
-    type_description: *td5
+    type_description: *td4
   - &bv7
     name: "rgba"
     offset: 0
@@ -300,7 +283,7 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    type_description: *td3
+    type_description: *td5
   - &bv8
     name: 
     offset: 0
@@ -316,7 +299,7 @@ all_block_variables:
     member_count: 1
     members:
       - *bv7
-    type_description: *td7
+    type_description: *td6
   - &bv9
     name: "BufferOut"
     offset: 0
@@ -332,7 +315,7 @@ all_block_variables:
     member_count: 1
     members:
       - *bv8
-    type_description: *td8
+    type_description: *td7
 all_descriptor_bindings:
   - &db0
     spirv_id: 11
@@ -348,7 +331,7 @@ all_descriptor_bindings:
     accessed: 1
     uav_counter_id: 4294967295
     uav_counter_binding:
-    type_description: *td5
+    type_description: *td4
     word_offset: { binding: 320, set: 316 }
   - &db1
     spirv_id: 7
@@ -380,7 +363,7 @@ all_descriptor_bindings:
     accessed: 1
     uav_counter_id: 4294967295
     uav_counter_binding:
-    type_description: *td5
+    type_description: *td4
     word_offset: { binding: 328, set: 324 }
   - *db0
   - &db3
@@ -397,7 +380,7 @@ all_descriptor_bindings:
     accessed: 1
     uav_counter_id: 15
     uav_counter_binding: *db2 # "counter.var.BufferOut"
-    type_description: *td8
+    type_description: *td7
     word_offset: { binding: 312, set: 308 }
 all_interface_variables:
   - &iv0
@@ -416,7 +399,7 @@ all_interface_variables:
     member_count: 0
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
-    type_description: *td9
+    type_description: *td8
     word_offset: { location: 0 }
   - &iv1
     spirv_id: 30
@@ -434,7 +417,7 @@ all_interface_variables:
     member_count: 0
     members:
     format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
-    type_description: *td9
+    type_description: *td8
     word_offset: { location: 296 }
 module:
   generator: 14 # Google spiregg
