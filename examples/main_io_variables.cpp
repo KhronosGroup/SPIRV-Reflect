@@ -187,6 +187,7 @@ int main(int argn, char** argv)
     std::vector<VkVertexInputAttributeDescription> attribute_descriptions(input_vars.size(), VkVertexInputAttributeDescription{});
     for (size_t i_var = 0; i_var < input_vars.size(); ++i_var) {
       const SpvReflectInterfaceVariable& refl_var = *(input_vars[i_var]);
+      if (refl_var.built_in == -1) { continue; } // ignore built-in variables
       VkVertexInputAttributeDescription& attr_desc = attribute_descriptions[i_var];
       attr_desc.location = refl_var.location;
       attr_desc.binding = binding_description.binding;
