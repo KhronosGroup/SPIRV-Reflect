@@ -925,6 +925,25 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, bool flatten_cbu
   }
 }
 
+void StreamWritePushConstantsBlock(std::ostream& os, const SpvReflectBlockVariable& obj, bool flatten_cbuffers, const char* indent)
+{
+  const char* t = indent;
+  os << t << "spirv id : " << obj.spirv_id << "\n";
+  
+  os << t << "name     : " << ((obj.name != nullptr) ? obj.name : "<unnamed>");
+  if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
+    os << " " << "(" << obj.type_description->type_name << ")";
+  }
+
+  std::vector<TextLine> text_lines;
+  ParseBlockVariableToTextLines("    ",  flatten_cbuffers, obj, &text_lines);
+  if (!text_lines.empty()) {
+    os << "\n";
+    StreamWriteTextLines(os, t, flatten_cbuffers, text_lines);
+    os << "\n";
+  }
+}
+
 void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, bool flatten_cbuffers, const char* indent)
 {
   const char* t = indent;
@@ -1004,7 +1023,11 @@ void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVar
   }
 
   os << t << "semantic  : " << (obj.semantic != NULL ? obj.semantic : "") << "\n";
-  os << t << "name      : " << (obj.name != NULL ? obj.name : "") << "\n";
+  os << t << "name      : " << (obj.name != NULL ? obj.name : "");
+  if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
+    os << " " << "(" << obj.type_description->type_name << ")";
+  }
+  os << "\n";
   os << t << "qualifier : ";
   if (obj.decoration_flags & SPV_REFLECT_DECORATION_FLAT) {
     os << "flat";
@@ -1061,6 +1084,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
   std::vector<SpvReflectInterfaceVariable*> variables;
   std::vector<SpvReflectDescriptorBinding*> bindings;
   std::vector<SpvReflectDescriptorSet*> sets;
+  std::vector<SpvReflectBlockVariable*> push_constant_bocks;
 
   count = 0;
   SpvReflectResult result = obj.EnumerateInputVariables(&count, nullptr);
@@ -1105,6 +1129,25 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
       }  
     }
   }
+
+  count = 0;
+  result = obj.EnumeratePushConstantBlocks(&count, nullptr);
+  USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+  push_constant_bocks.resize(count);
+  result = obj.EnumeratePushConstantBlocks(&count, push_constant_bocks.data());
+  USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+  if (count > 0) {
+    os << "\n";
+    os << "\n";
+    os << "\n";
+    os << t << "Push constant blocks: " << count << "\n\n";
+    for (size_t i = 0; i < push_constant_bocks.size(); ++i) {
+      auto p_block = push_constant_bocks[i];
+      os << tt << i << ":" << "\n";
+      StreamWritePushConstantsBlock(os, *p_block, flatten_cbuffers, ttt);
+    }
+  }
+
 
   count = 0;
   result = obj.EnumerateDescriptorBindings(&count, nullptr);
