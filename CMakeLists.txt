@@ -4,6 +4,7 @@ project(spirv-reflect)
 
 OPTION(SPIRV_REFLECT_BUILD_TESTS    "Build the SPIRV-Reflect test suite" OFF)
 OPTION(SPIRV_REFLECT_ENABLE_ASSERTS "Enable asserts for debugging" OFF)
+OPTION(SPIRV_REFLECT_STATIC_LIB     "Build a SPIRV-Reflect static library" OFF)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 14)
@@ -62,3 +63,11 @@ if (SPIRV_REFLECT_BUILD_TESTS)
                        COMMAND ${CMAKE_COMMAND} -E copy_directory
                        ${CMAKE_CURRENT_SOURCE_DIR}/tests ${CMAKE_CURRENT_BINARY_DIR}/tests)
 endif()
+
+if(SPIRV_REFLECT_STATIC_LIB)
+    add_library(spirv-reflect-static STATIC ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.c)
+
+    install(TARGETS spirv-reflect-static LIBRARY DESTINATION lib)
+endif()
+
