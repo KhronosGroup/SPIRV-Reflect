@@ -1,5 +1,5 @@
 /*
- Copyright 2017-2018 Google Inc.
+ Copyright 2017-2022 Google Inc.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -3532,16 +3532,8 @@ static SpvReflectResult SynchronizeDescriptorSets(SpvReflectShaderModule* p_modu
   return result;
 }
 
-SpvReflectResult spvReflectGetShaderModule(
-  size_t                   size,
-  const void*              p_code,
-  SpvReflectShaderModule*  p_module
-)
-{
-  return spvReflectCreateShaderModule(size, p_code, p_module);
-}
-
-SpvReflectResult spvReflectCreateShaderModule(
+static SpvReflectResult CreateShaderModule(
+  uint32_t                 flags,
   size_t                   size,
   const void*              p_code,
   SpvReflectShaderModule*  p_module
@@ -3559,15 +3551,27 @@ SpvReflectResult spvReflectCreateShaderModule(
   if (IsNull(p_module->_internal)) {
     return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
   }
-  // Allocate SPIR-V code storage
-  p_module->_internal->spirv_size = size;
-  p_module->_internal->spirv_code = (uint32_t*)calloc(1, p_module->_internal->spirv_size);
-  p_module->_internal->spirv_word_count = (uint32_t)(size / SPIRV_WORD_SIZE);
-  if (IsNull(p_module->_internal->spirv_code)) {
-    SafeFree(p_module->_internal);
-    return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+  // Copy flags
+  p_module->_internal->module_flags = flags;
+  // Figure out if we need to copy the SPIR-V code or not
+  if (flags & SPV_REFLECT_MODULE_FLAG_NO_COPY) {
+    // Set internal size and pointer to args passed in
+    p_module->_internal->spirv_size = size;
+    p_module->_internal->spirv_code = (void*)p_code; // cast that const away
+    p_module->_internal->spirv_word_count = (uint32_t)(size / SPIRV_WORD_SIZE);
   }
-  memcpy(p_module->_internal->spirv_code, p_code, size);
+  else {
+    // Allocate SPIR-V code storage
+    p_module->_internal->spirv_size = size;
+    p_module->_internal->spirv_code = (uint32_t*)calloc(1, p_module->_internal->spirv_size);
+    p_module->_internal->spirv_word_count = (uint32_t)(size / SPIRV_WORD_SIZE);
+    if (IsNull(p_module->_internal->spirv_code)) {
+      SafeFree(p_module->_internal);
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
+    // Copy SPIR-V to code storage
+    memcpy(p_module->_internal->spirv_code, p_code, size);
+  }
 
   SpvReflectPrvParser parser = { 0 };
   SpvReflectResult result = CreateParser(p_module->_internal->spirv_size,
@@ -3686,6 +3690,34 @@ SpvReflectResult spvReflectCreateShaderModule(
   return result;
 }
 
+SpvReflectResult spvReflectCreateShaderModule(
+  size_t                   size,
+  const void*              p_code,
+  SpvReflectShaderModule*  p_module
+)
+{
+    return CreateShaderModule(0, size, p_code, p_module);
+}
+
+SpvReflectResult spvReflectCreateShaderModule2(
+  uint32_t                 flags,
+  size_t                   size,
+  const void*              p_code,
+  SpvReflectShaderModule*  p_module
+)
+{
+  return CreateShaderModule(flags, size, p_code, p_module);
+}
+
+SpvReflectResult spvReflectGetShaderModule(
+  size_t                   size,
+  const void*              p_code,
+  SpvReflectShaderModule*  p_module
+)
+{
+    return spvReflectCreateShaderModule(size, p_code, p_module);
+}
+
 static void SafeFreeTypes(SpvReflectTypeDescription* p_type)
 {
   if (IsNull(p_type)) {
@@ -3792,8 +3824,10 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
   }
   SafeFree(p_module->_internal->type_descriptions);
 
-  // Free SPIR-V code
-  SafeFree(p_module->_internal->spirv_code);
+  // Free SPIR-V code if there was a copy
+  if ((p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_NO_COPY) == 0) {
+    SafeFree(p_module->_internal->spirv_code);
+  }
   // Free internal
   SafeFree(p_module->_internal);
 }
