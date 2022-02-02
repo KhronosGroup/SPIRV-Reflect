@@ -184,14 +184,20 @@ int main(int argn, char** argv)
     binding_description.stride = 0;  // computed below
     binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
-    std::vector<VkVertexInputAttributeDescription> attribute_descriptions(input_vars.size(), VkVertexInputAttributeDescription{});
+    std::vector<VkVertexInputAttributeDescription> attribute_descriptions;
+    attribute_descriptions.reserve(input_vars.size());
     for (size_t i_var = 0; i_var < input_vars.size(); ++i_var) {
       const SpvReflectInterfaceVariable& refl_var = *(input_vars[i_var]);
-      VkVertexInputAttributeDescription& attr_desc = attribute_descriptions[i_var];
+      // ignore built-in variables
+      if (refl_var.decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) { 
+        continue;
+      }
+      VkVertexInputAttributeDescription attr_desc{};
       attr_desc.location = refl_var.location;
       attr_desc.binding = binding_description.binding;
       attr_desc.format = static_cast<VkFormat>(refl_var.format);
       attr_desc.offset = 0;  // final offset computed below after sorting.
+      attribute_descriptions.push_back(attr_desc);
     }
     // Sort attributes by location
     std::sort(std::begin(attribute_descriptions), std::end(attribute_descriptions),
