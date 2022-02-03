@@ -68,12 +68,13 @@ std::string ToStringGenerator(SpvReflectGenerator generator)
 
 std::string ToStringSpvSourceLanguage(SpvSourceLanguage lang) {
   switch(lang) {
-    case SpvSourceLanguageUnknown    : return "Unknown";
-    case SpvSourceLanguageESSL       : return "ESSL";
-    case SpvSourceLanguageGLSL       : return "GLSL";
-    case SpvSourceLanguageOpenCL_C   : return "OpenCL_C";
-    case SpvSourceLanguageOpenCL_CPP : return "OpenCL_CPP";
-    case SpvSourceLanguageHLSL       : return "HLSL";
+    case SpvSourceLanguageUnknown        : return "Unknown";
+    case SpvSourceLanguageESSL           : return "ESSL";
+    case SpvSourceLanguageGLSL           : return "GLSL";
+    case SpvSourceLanguageOpenCL_C       : return "OpenCL_C";
+    case SpvSourceLanguageOpenCL_CPP     : return "OpenCL_CPP";
+    case SpvSourceLanguageHLSL           : return "HLSL";
+    case SpvSourceLanguageCPP_for_OpenCL : return "CPP_for_OpenCL";
 
     case SpvSourceLanguageMax:
       break;
@@ -152,7 +153,8 @@ std::string ToStringSpvStorageClass(SpvStorageClass storage_class) {
     case SpvStorageClassShaderRecordBufferKHR   : return "ShaderRecordBufferKHR";
     case SpvStorageClassPhysicalStorageBuffer   : return "PhysicalStorageBuffer";
     case SpvStorageClassCodeSectionINTEL        : return "CodeSectionINTEL";
-
+    case SpvStorageClassDeviceOnlyINTEL         : return "DeviceOnlyINTEL";
+    case SpvStorageClassHostOnlyINTEL           : return "HostOnlyINTEL";
     case SpvStorageClassMax:
       break;
   }
