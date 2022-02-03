@@ -644,13 +644,13 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool fla
       tl = {};
       tl.indent = expanded_indent;
       tl.name = name;
-      if ((member.array.dims_count > 0) || (member.type_description->traits.array.dims > 0)) {
+      if ((member.array.dims_count > 0) || (member.type_description->traits.array.dims[0] > 0)) {
         const SpvReflectArrayTraits* p_array_info = (member.array.dims_count > 0) ? &member.array : nullptr;
         if (p_array_info == nullptr) {
           //
           // glslang based compilers stores array information in the type and not the variable
           //
-          p_array_info = (member.type_description->traits.array.dims > 0) ? &member.type_description->traits.array : nullptr;
+          p_array_info = (member.type_description->traits.array.dims[0] > 0) ? &member.type_description->traits.array : nullptr;
         }
         if (p_array_info != nullptr) {
           std::stringstream ss_array;
