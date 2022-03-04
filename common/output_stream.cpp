@@ -68,12 +68,13 @@ std::string ToStringGenerator(SpvReflectGenerator generator)
 
 std::string ToStringSpvSourceLanguage(SpvSourceLanguage lang) {
   switch(lang) {
-    case SpvSourceLanguageUnknown    : return "Unknown";
-    case SpvSourceLanguageESSL       : return "ESSL";
-    case SpvSourceLanguageGLSL       : return "GLSL";
-    case SpvSourceLanguageOpenCL_C   : return "OpenCL_C";
-    case SpvSourceLanguageOpenCL_CPP : return "OpenCL_CPP";
-    case SpvSourceLanguageHLSL       : return "HLSL";
+    case SpvSourceLanguageUnknown        : return "Unknown";
+    case SpvSourceLanguageESSL           : return "ESSL";
+    case SpvSourceLanguageGLSL           : return "GLSL";
+    case SpvSourceLanguageOpenCL_C       : return "OpenCL_C";
+    case SpvSourceLanguageOpenCL_CPP     : return "OpenCL_CPP";
+    case SpvSourceLanguageHLSL           : return "HLSL";
+    case SpvSourceLanguageCPP_for_OpenCL : return "CPP_for_OpenCL";
 
     case SpvSourceLanguageMax:
       break;
@@ -152,7 +153,8 @@ std::string ToStringSpvStorageClass(SpvStorageClass storage_class) {
     case SpvStorageClassShaderRecordBufferKHR   : return "ShaderRecordBufferKHR";
     case SpvStorageClassPhysicalStorageBuffer   : return "PhysicalStorageBuffer";
     case SpvStorageClassCodeSectionINTEL        : return "CodeSectionINTEL";
-
+    case SpvStorageClassDeviceOnlyINTEL         : return "DeviceOnlyINTEL";
+    case SpvStorageClassHostOnlyINTEL           : return "HostOnlyINTEL";
     case SpvStorageClassMax:
       break;
   }
@@ -642,13 +644,13 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool fla
       tl = {};
       tl.indent = expanded_indent;
       tl.name = name;
-      if ((member.array.dims_count > 0) || (member.type_description->traits.array.dims > 0)) {
+      if ((member.array.dims_count > 0) || (member.type_description->traits.array.dims[0] > 0)) {
         const SpvReflectArrayTraits* p_array_info = (member.array.dims_count > 0) ? &member.array : nullptr;
         if (p_array_info == nullptr) {
           //
           // glslang based compilers stores array information in the type and not the variable
           //
-          p_array_info = (member.type_description->traits.array.dims > 0) ? &member.type_description->traits.array : nullptr;
+          p_array_info = (member.type_description->traits.array.dims[0] > 0) ? &member.type_description->traits.array : nullptr;
         }
         if (p_array_info != nullptr) {
           std::stringstream ss_array;
