@@ -119,6 +119,7 @@ typedef struct SpvReflectPrvDecorations {
   bool                            is_noperspective;
   bool                            is_flat;
   bool                            is_non_writable;
+  bool                            is_non_readable;
   SpvReflectPrvNumberDecoration   set;
   SpvReflectPrvNumberDecoration   binding;
   SpvReflectPrvNumberDecoration   input_attachment_index;
@@ -484,6 +485,9 @@ static SpvReflectDecorationFlags ApplyDecorations(const SpvReflectPrvDecorations
   }
   if (p_decoration_fields->is_non_writable) {
     decorations |= SPV_REFLECT_DECORATION_NON_WRITABLE;
+  }
+  if (p_decoration_fields->is_non_readable) {
+    decorations |= SPV_REFLECT_DECORATION_NON_READABLE;
   }
   return decorations;
 }
@@ -1349,6 +1353,7 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
       case SpvDecorationNoPerspective:
       case SpvDecorationFlat:
       case SpvDecorationNonWritable:
+      case SpvDecorationNonReadable:
       case SpvDecorationLocation:
       case SpvDecorationBinding:
       case SpvDecorationDescriptorSet:
@@ -1444,6 +1449,11 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
 
       case SpvDecorationNonWritable: {
         p_target_decorations->is_non_writable = true;
+      }
+      break;
+
+      case SpvDecorationNonReadable: {
+        p_target_decorations->is_non_readable = true;
       }
       break;
 
@@ -1941,6 +1951,7 @@ static SpvReflectResult ParseDescriptorBindings(
     p_descriptor->count = 1;
     p_descriptor->uav_counter_id = p_node->decorations.uav_counter_buffer.value;
     p_descriptor->type_description = p_type;
+    p_descriptor->decoration_flags = ApplyDecorations(&p_node->decorations);
 
     // If this is in the StorageBuffer storage class, it's for sure a storage
     // buffer descriptor. We need to handle this case earlier because in SPIR-V

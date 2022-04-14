@@ -139,6 +139,7 @@ typedef enum SpvReflectDecorationFlagBits {
   SPV_REFLECT_DECORATION_FLAT                   = 0x00000040,
   SPV_REFLECT_DECORATION_NON_WRITABLE           = 0x00000080,
   SPV_REFLECT_DECORATION_RELAXED_PRECISION      = 0x00000100,
+  SPV_REFLECT_DECORATION_NON_READABLE           = 0x00000200,
 } SpvReflectDecorationFlagBits;
 
 typedef uint32_t SpvReflectDecorationFlags;
@@ -400,6 +401,8 @@ typedef struct SpvReflectDescriptorBinding {
     uint32_t                          binding;
     uint32_t                          set;
   } word_offset;
+
+  SpvReflectDecorationFlags           decoration_flags;
 } SpvReflectDescriptorBinding;
 
 /*! @struct SpvReflectDescriptorSet
