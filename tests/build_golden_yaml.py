@@ -6,6 +6,7 @@
 import argparse
 import os
 import os.path
+import platform
 import shutil
 import subprocess
 import sys
@@ -24,15 +25,27 @@ that all differences can be traced back to intentional changes to either the
 reflection code or the test shaders.
 """)
 
-  spirv_reflect_exe_paths = [
+  spirv_reflect_exe_paths_windows = [
       "../bin/Debug/spirv-reflect.exe",
       "../bin/Release/spirv-reflect.exe",
-      "../bin/spirv-reflect",
   ]
-  for path in spirv_reflect_exe_paths:
-    if os.path.isfile(path):
-      spirv_reflect_exe = path
-      break
+  spirv_reflect_exe_paths_unix = [
+      "../bin/spirv-reflect",
+  ]  
+  spirv_reflect_exe = None
+  if platform.system() == "Windows":
+    for path in spirv_reflect_exe_paths_windows:
+      if os.path.isfile(path):
+        spirv_reflect_exe = path
+        break
+  else:
+    for path in spirv_reflect_exe_paths_unix:
+      if os.path.isfile(path):
+        spirv_reflect_exe = path
+        break
+  
+  if spirv_reflect_exe is None:
+    exit("spirv-reflect executable not found!")
 
   spv_paths = []
   for root, dirs, files in os.walk("."):
