@@ -15,6 +15,9 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
 if (SPIRV_REFLECT_EXECUTABLE)
+    # ==========================================================================
+    # Compile spirv_reflect.c as C
+    # ==========================================================================
     add_executable(spirv-reflect ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
                                  ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h
                                  ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.c
@@ -39,6 +42,34 @@ if (SPIRV_REFLECT_EXECUTABLE)
     endif()
     
     install(TARGETS spirv-reflect RUNTIME DESTINATION bin)
+
+    # ==========================================================================
+    # Compile spirv_reflect.c as C++
+    # ==========================================================================
+    add_executable(spirv-reflect-pp ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.cpp
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/examples/arg_parser.h
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/examples/arg_parser.cpp
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/examples/common.h
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/examples/common.cpp
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/common/output_stream.h
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/common/output_stream.cpp)
+    target_compile_options(spirv-reflect-pp PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+        $<$<CXX_COMPILER_ID:GNU>:-Wall -Werror>
+        $<$<CXX_COMPILER_ID:Clang>:-Wall -Werror>
+        $<$<CXX_COMPILER_ID:AppleClang>:-Wall -Werror>)
+    if (SPIRV_REFLECT_ENABLE_ASSERTS)
+        target_compile_definitions(spirv-reflect-pp PRIVATE SPIRV_REFLECT_ENABLE_ASSERTS)
+    endif()
+    set_target_properties(spirv-reflect-pp PROPERTIES CXX_STANDARD 11)
+    target_include_directories(spirv-reflect-pp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    if(WIN32)
+        target_compile_definitions(spirv-reflect-pp PRIVATE _CRT_SECURE_NO_WARNINGS)
+    endif()
+    
+    install(TARGETS spirv-reflect-pp RUNTIME DESTINATION bin)
 endif()
 
 if (SPIRV_REFLECT_EXAMPLES)

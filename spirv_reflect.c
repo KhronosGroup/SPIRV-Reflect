@@ -3557,7 +3557,11 @@ static SpvReflectResult CreateShaderModule(
   if (flags & SPV_REFLECT_MODULE_FLAG_NO_COPY) {
     // Set internal size and pointer to args passed in
     p_module->_internal->spirv_size = size;
+#if defined(__cplusplus)
+    p_module->_internal->spirv_code = const_cast<uint32_t*>(static_cast<const uint32_t*>(p_code)); // cast that const away
+#else
     p_module->_internal->spirv_code = (void*)p_code; // cast that const away
+#endif
     p_module->_internal->spirv_word_count = (uint32_t)(size / SPIRV_WORD_SIZE);
   }
   else {
