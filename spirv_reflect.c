@@ -3194,8 +3194,8 @@ static SpvReflectResult ParseExecutionModes(
       // Read entry point id
       uint32_t entry_point_id = 0;
       CHECKED_READU32(p_parser, p_node->word_offset + 1, entry_point_id);
-      
-      // Find entry point 
+
+      // Find entry point
       SpvReflectEntryPoint* p_entry_point = NULL;
       for (size_t entry_point_idx = 0; entry_point_idx < p_module->entry_point_count; ++entry_point_idx) {
         if (p_module->entry_points[entry_point_idx].id == entry_point_id) {
@@ -3207,7 +3207,7 @@ static SpvReflectResult ParseExecutionModes(
       if (IsNull(p_entry_point)) {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ENTRY_POINT;
       }
-      
+
       // Read execution mode
       uint32_t execution_mode = (uint32_t)INVALID_VALUE;
       CHECKED_READU32(p_parser, p_node->word_offset + 2, execution_mode);
@@ -3274,12 +3274,60 @@ static SpvReflectResult ParseExecutionModes(
         case SpvExecutionModeLocalSizeId:
         case SpvExecutionModeLocalSizeHintId:
         case SpvExecutionModePostDepthCoverage:
+        case SpvExecutionModeDenormPreserve:
+        case SpvExecutionModeDenormFlushToZero:
+        case SpvExecutionModeSignedZeroInfNanPreserve:
+        case SpvExecutionModeRoundingModeRTE:
+        case SpvExecutionModeRoundingModeRTZ:
         case SpvExecutionModeStencilRefReplacingEXT:
+        case SpvExecutionModeOutputLinesNV:
         case SpvExecutionModeOutputPrimitivesNV:
         case SpvExecutionModeOutputTrianglesNV:
           break;
       }
+      p_entry_point->execution_mode_count++;
     }
+    uint32_t* indices = (uint32_t*)calloc(p_module->entry_point_count, sizeof(indices));
+    if (IsNull(indices)) {
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
+    for (size_t entry_point_idx = 0; entry_point_idx < p_module->entry_point_count; ++entry_point_idx) {
+      SpvReflectEntryPoint* p_entry_point = &p_module->entry_points[entry_point_idx];
+      p_entry_point->execution_modes =
+          (SpvExecutionMode*)calloc(p_entry_point->execution_mode_count, sizeof(*p_entry_point->execution_modes));
+      if (IsNull(p_entry_point->execution_modes)) {
+        SafeFree(indices);
+        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      }
+    }
+
+    for (size_t node_idx = 0; node_idx < p_parser->node_count; ++node_idx) {
+      SpvReflectPrvNode* p_node = &(p_parser->nodes[node_idx]);
+      if (p_node->op != SpvOpExecutionMode) {
+        continue;
+      }
+
+      // Read entry point id
+      uint32_t entry_point_id = 0;
+      CHECKED_READU32(p_parser, p_node->word_offset + 1, entry_point_id);
+
+      // Find entry point
+      SpvReflectEntryPoint* p_entry_point = NULL;
+      uint32_t* idx = NULL;
+      for (size_t entry_point_idx = 0; entry_point_idx < p_module->entry_point_count; ++entry_point_idx) {
+        if (p_module->entry_points[entry_point_idx].id == entry_point_id) {
+          p_entry_point = &p_module->entry_points[entry_point_idx];
+          idx = &indices[entry_point_idx];
+          break;
+        }
+      }
+
+      // Read execution mode
+      uint32_t execution_mode = (uint32_t)INVALID_VALUE;
+      CHECKED_READU32(p_parser, p_node->word_offset + 2, execution_mode);
+      p_entry_point->execution_modes[(*idx)++] = (SpvExecutionMode)execution_mode;
+    }
+    SafeFree(indices);
   }
   return SPV_REFLECT_RESULT_SUCCESS;
 }
@@ -3824,6 +3872,7 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
     SafeFree(p_entry->interface_variables);
     SafeFree(p_entry->used_uniforms);
     SafeFree(p_entry->used_push_constants);
+    SafeFree(p_entry->execution_modes);
   }
   SafeFree(p_module->entry_points);
 
