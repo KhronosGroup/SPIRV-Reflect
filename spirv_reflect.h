@@ -439,6 +439,9 @@ typedef struct SpvReflectEntryPoint {
   uint32_t                          used_push_constant_count;
   uint32_t*                         used_push_constants;
 
+  uint32_t                          execution_mode_count;
+  SpvExecutionMode*                 execution_modes;
+
   struct LocalSize {
     uint32_t                        x;
     uint32_t                        y;
