@@ -1047,18 +1047,53 @@ void StreamWriteSpecializationConstant(std::ostream& os, const SpvReflectSpecial
   os << t << "constant id: " << obj.constant_id << "\n";
   os << t << "name       : " << (obj.name != NULL ? obj.name : "") << '\n';
   os << t << "type       : ";
-  switch (obj.constant_type) {
-    case SPV_REFLECT_SPECIALIZATION_CONSTANT_BOOL:
+  switch (obj.default_value.type) {
+    case SPV_REFLECT_SCALAR_TYPE_BOOL:
       os << "boolean\n";
-      os << t << "default    : " << obj.default_value.int_bool_value;
+      os << t << "default    : " << obj.default_value.value.int_bool_value;
       break;
-    case SPV_REFLECT_SPECIALIZATION_CONSTANT_INT:
-      os << "integer\n";
-      os << t << "default    : "<<obj.default_value.int_bool_value;
+    case SPV_REFLECT_SCALAR_TYPE_INT:
+      if (obj.default_value.is_signed) {
+        os << "signed ";
+      }
+      else {
+          os << "unsigned ";
+      }
+      os<<obj.default_value.bit_size <<" bit integer\n";
+      os << t << "default    : ";
+      // let's assume only 32 bit and 64 bit types (no 8 and 16 bit types here)
+      if (obj.default_value.bit_size == 32) {
+          if (obj.default_value.is_signed) {
+              os << (int32_t)obj.default_value.value.int_bool_value;
+          }
+          else {
+              os << (uint32_t)obj.default_value.value.int_bool_value;
+          }
+      }
+      else if(obj.default_value.bit_size == 64){
+          if (obj.default_value.is_signed) {
+              os << (int64_t)obj.default_value.value.int64_value;
+          }
+          else {
+              os << (uint32_t)obj.default_value.value.int64_value;
+          }
+      }
+      else {
+          os << "default value not native in c/cpp";
+      }
       break;
-    case SPV_REFLECT_SPECIALIZATION_CONSTANT_FLOAT:
-      os << "float\n";
-      os << t << "default    : " << obj.default_value.float_value;
+    case SPV_REFLECT_SCALAR_TYPE_FLOAT:
+        os << obj.default_value.bit_size << " bit floating point\n";
+        os << t << "default    : ";
+        if (obj.default_value.bit_size == 32) {
+            os << obj.default_value.value.float_value;
+        }
+        else if (obj.default_value.bit_size == 64) {
+            os << obj.default_value.value.float64_value;
+        }
+        else {
+            os << "default value not native in c/cpp";
+        }
       break;
     default:
       os << "unknown type";

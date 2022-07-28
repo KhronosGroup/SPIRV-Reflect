@@ -1818,12 +1818,6 @@ static SpvReflectResult ParseType(
         p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_ACCELERATION_STRUCTURE;
       }
       break;
-
-      case SpvOpSpecConstantTrue:
-      case SpvOpSpecConstantFalse:
-      case SpvOpSpecConstant: {
-      }
-      break;
     }
 
     if (result == SPV_REFLECT_RESULT_SUCCESS) {
@@ -3383,6 +3377,50 @@ static SpvReflectResult ParseExecutionModes(
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+SpvReflectResult GetTypeByTypeId(SpvReflectShaderModule* p_module, uint32_t type_id, SpvReflectTypeDescription** pp_type)
+{
+    SpvReflectResult res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+    for (uint32_t i = 0; i < p_module->_internal->type_description_count; ++i) {
+        if (p_module->_internal->type_descriptions[i].id == type_id) {
+            *pp_type = &p_module->_internal->type_descriptions[i];
+            return SPV_REFLECT_RESULT_SUCCESS;
+        }
+    }
+    return res;
+}
+
+static SpvReflectResult GetScalarConstant(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module, SpvReflectPrvNode* p_node, SpvReflectScalarValue* result)
+{
+    SpvReflectTypeDescription* type;
+    SpvReflectResult res = GetTypeByTypeId(p_module, p_node->result_type_id, &type);
+    if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
+    if(type->type_flags & SPV_REFLECT_TYPE_FLAG_INT){
+        result->type = SPV_REFLECT_SCALAR_TYPE_INT;
+    }
+    else if (type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
+        result->type = SPV_REFLECT_SCALAR_TYPE_FLOAT;
+    }
+    else{
+        result->type = SPV_REFLECT_SCALAR_TYPE_UNKNOWN;
+    }
+    result->bit_size = type->traits.numeric.scalar.width;
+    uint32_t low_word;
+    CHECKED_READU32(p_parser, p_node->word_offset + 3, low_word);
+    if (type->traits.numeric.scalar.width == 32) {
+        result->value.int_bool_value = low_word;
+        return SPV_REFLECT_RESULT_SUCCESS;
+    }
+    else if (type->traits.numeric.scalar.width ==64) {
+        uint32_t high_word;
+        CHECKED_READU32(p_parser, p_node->word_offset + 4, high_word);
+        result->value.int64_value = low_word | (((uint64_t)high_word) << 32);
+        return SPV_REFLECT_RESULT_SUCCESS;
+    }
+    else {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+    }
+}
+
 static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module)
 {
   p_module->specialization_constant_count = 0;
@@ -3408,37 +3446,26 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
     switch(p_node->op) {
       default: continue;
       case SpvOpSpecConstantTrue: {
-        p_module->specialization_constants[index].constant_type = SPV_REFLECT_SPECIALIZATION_CONSTANT_BOOL;
-        p_module->specialization_constants[index].default_value.int_bool_value = 1;
-        p_module->specialization_constants[index].current_value.int_bool_value = 1;
+        p_module->specialization_constants[index].default_value.type = SPV_REFLECT_SCALAR_TYPE_BOOL;
+        p_module->specialization_constants[index].default_value.value.int_bool_value = 1;
+        p_module->specialization_constants[index].default_value.bit_size = 1;
+        p_module->specialization_constants[index].default_value.is_signed = 0;
+        p_module->specialization_constants[index].current_value = p_module->specialization_constants[index].default_value;
       } break;
       case SpvOpSpecConstantFalse: {
-        p_module->specialization_constants[index].constant_type = SPV_REFLECT_SPECIALIZATION_CONSTANT_BOOL;
-        p_module->specialization_constants[index].default_value.int_bool_value = 0;
-        p_module->specialization_constants[index].current_value.int_bool_value = 0;
+        p_module->specialization_constants[index].default_value.type = SPV_REFLECT_SCALAR_TYPE_BOOL;
+        p_module->specialization_constants[index].default_value.value.int_bool_value = 1;
+        p_module->specialization_constants[index].default_value.bit_size = 1;
+        p_module->specialization_constants[index].default_value.is_signed = 0;
+        p_module->specialization_constants[index].current_value = p_module->specialization_constants[index].default_value;
       } break;
       case SpvOpSpecConstant: {
         SpvReflectResult result = SPV_REFLECT_RESULT_SUCCESS;
-        uint32_t element_type_id = (uint32_t)INVALID_VALUE;
-        uint32_t default_value = 0;
-        IF_READU32(result, p_parser, p_node->word_offset + 1, element_type_id);
-        // only support 32 bit arguments here...
-        IF_READU32(result, p_parser, p_node->word_offset + 3, default_value);
-
-        SpvReflectPrvNode* p_next_node = FindNode(p_parser, element_type_id);
-        if(IsNull(p_next_node)){
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
-        }
-        if (p_next_node->op == SpvOpTypeInt) {
-          p_module->specialization_constants[index].constant_type = SPV_REFLECT_SPECIALIZATION_CONSTANT_INT;
-        } else if (p_next_node->op == SpvOpTypeFloat) {
-          p_module->specialization_constants[index].constant_type = SPV_REFLECT_SPECIALIZATION_CONSTANT_FLOAT;
-        } else {
-          return SPV_REFLECT_RESULT_ERROR_PARSE_FAILED;
-        }
-        
-        p_module->specialization_constants[index].default_value.int_bool_value = default_value; //bits are the same for int and float
-        p_module->specialization_constants[index].current_value.int_bool_value = default_value;
+        SpvReflectScalarValue default_value = { 0 };
+        result = GetScalarConstant(p_parser,p_module, p_node, &default_value);
+        if (result != SPV_REFLECT_RESULT_SUCCESS) return result;
+        p_module->specialization_constants[index].default_value = default_value;
+        p_module->specialization_constants[index].current_value = p_module->specialization_constants[index].default_value;
       } break;
     }
     // spec constant id cannot be the same, at least for valid values. (invalid value is just constant?)
@@ -5235,57 +5262,40 @@ SpvReflectResult GetSpecContantById(SpvReflectShaderModule* p_module, uint32_t c
 }
 
 // used for calculating specialization constants.
-// maybe check for recursion?
-SpvReflectResult EvaluateResult(SpvReflectShaderModule* p_module, uint32_t result_id, SpvReflectScalarValue* result)
+SpvReflectResult EvaluateResultImpl(SpvReflectShaderModule* p_module, uint32_t result_id, SpvReflectScalarValue* result, uint32_t maxRecursion)
 {
-    if (!result || !p_module) {
-        return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
-    }
-    if((p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_SPEC_CONSTANT)==0){
-        return SPV_REFLECT_RESULT_ERROR_PARSE_FAILED;
-    }
+    if(!maxRecursion) return SPV_REFLECT_RESULT_ERROR_SPIRV_RECURSION;
     SpvReflectResult res;
     SpvReflectPrvParser* p_parser = p_module->_internal->parser;
     SpvReflectPrvNode* p_node = FindNode(p_parser, result_id);
-    if(!p_node) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+    if (!p_node) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     switch (p_node->op) {
         default:
             return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
         case SpvOpConstant:
             CONSTANT_RESULT:
-            /*switch(){
-            
-            }*/
-            // read constant value
-            return SPV_REFLECT_RESULT_SUCCESS;
-        case SpvOpSpecConstant: {
+            return GetScalarConstant(p_parser, p_module, p_node, result);
+
+        case SpvOpSpecConstant:
+            {
                 if (p_node->decorations.specialization_constant.value == (uint32_t)INVALID_VALUE) {
                     goto CONSTANT_RESULT;
                 }
                 SpvReflectSpecializationConstant* p_constant;
                 res = GetSpecContantById(p_module, p_node->decorations.specialization_constant.value, &p_constant);
-                if(res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                if(p_constant->constant_type== SPV_REFLECT_SPECIALIZATION_CONSTANT_INT || 
-                    p_constant->constant_type==SPV_REFLECT_SPECIALIZATION_CONSTANT_BOOL){
-                    result->int_bool_value = p_constant->current_value.int_bool_value;
-                }
-                else if (p_constant->constant_type == SPV_REFLECT_SPECIALIZATION_CONSTANT_FLOAT) {
-                    result->float_value = p_constant->current_value.float_value;
-                }
-                else {
-                    return SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
-                }
+                if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
+                *result = p_constant->current_value;
             }
             return SPV_REFLECT_RESULT_SUCCESS;
         case SpvOpSpecConstantComposite:
             {
-
+                // only support scalar types for now...
             }
             return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
         case SpvOpUndef:
             {
                 // invalid data should be handled separately?
-                result->int_bool_value = (uint32_t)INVALID_VALUE;
+                result->value.int_bool_value = (uint32_t)INVALID_VALUE;
             }
         case SpvOpSConvert: case SpvOpUConvert: case SpvOpFConvert:
         case SpvOpSNegate: case SpvOpNot: case SpvOpIAdd: case SpvOpISub:
@@ -5305,24 +5315,37 @@ SpvReflectResult EvaluateResult(SpvReflectShaderModule* p_module, uint32_t resul
             // add implementations here.
             return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
 
-        // check shader capability... vulkan should assume this...
+            // check shader capability... vulkan should assume this...
         case SpvOpQuantizeToF16:
             return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
             break;
 
-        // check kernel capability... vulkan have none currently...
+            // check kernel capability... vulkan have none currently...
         case SpvOpConvertFToS: case SpvOpConvertSToF:
         case SpvOpConvertFToU: case SpvOpConvertUToF:
         case SpvOpConvertPtrToU: case SpvOpConvertUToPtr:
         case SpvOpGenericCastToPtr: case SpvOpPtrCastToGeneric:
-        case SpvOpBitcast: case SpvOpFNegate: 
+        case SpvOpBitcast: case SpvOpFNegate:
         case SpvOpFAdd: case SpvOpFSub: case SpvOpFMul: case SpvOpFDiv:
-        case SpvOpFRem: case SpvOpFMod: 
+        case SpvOpFRem: case SpvOpFMod:
         case SpvOpAccessChain: case SpvOpInBoundsAccessChain:
         case SpvOpPtrAccessChain: case SpvOpInBoundsPtrAccessChain:
             return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
             break;
     }
+}
+
+
+SpvReflectResult EvaluateResult(SpvReflectShaderModule* p_module, uint32_t result_id, SpvReflectScalarValue* result)
+{
+    if (!result || !p_module) {
+        return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+    }
+    if((p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_SPEC_CONSTANT)==0){
+        return SPV_REFLECT_RESULT_ERROR_PARSE_FAILED;
+    }
+    // compute at most 100 instruction levels, maybe defining somewhere is better.
+    return EvaluateResultImpl(p_module, result_id, result, 100);
 }
 
 

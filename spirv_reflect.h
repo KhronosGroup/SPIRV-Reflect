@@ -80,7 +80,8 @@ typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ENTRY_POINT,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_EXECUTION_MODE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_DUPLICATE_SPEC_CONSTANT_NAME,
-  SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION
+  SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE
 } SpvReflectResult;
 
 /*! @enum SpvReflectModuleFlagBits
@@ -340,21 +341,31 @@ typedef struct SpvReflectTypeDescription {
 
 */
 typedef enum SpvReflectSpecializationConstantType {
-  SPV_REFLECT_SPECIALIZATION_CONSTANT_BOOL = 0,
-  SPV_REFLECT_SPECIALIZATION_CONSTANT_INT = 1,
-  SPV_REFLECT_SPECIALIZATION_CONSTANT_FLOAT = 2,
+  SPV_REFLECT_SCALAR_TYPE_UNKNOWN = 0,
+  SPV_REFLECT_SCALAR_TYPE_BOOL = 1,
+  SPV_REFLECT_SCALAR_TYPE_INT = 2,
+  SPV_REFLECT_SCALAR_TYPE_FLOAT = 3,
 } SpvReflectSpecializationConstantType;
 
-typedef union SpvReflectScalarValue {
-    float float_value;
-    uint32_t int_bool_value;
+// using union may have alignment issues on certain platforms
+// having type info here helps evaluating results
+typedef struct SpvReflectScalarValue {
+    union {
+        float float_value;
+        uint32_t int_bool_value;
+        // c/cpp doesn't have alignment requirements
+        double float64_value;
+        uint64_t int64_value;
+    } value ;
+    SpvReflectSpecializationConstantType type;
+    int is_signed;
+    int bit_size;
 } SpvReflectScalarValue;
 
 typedef struct SpvReflectSpecializationConstant {
   const char* name;
   uint32_t spirv_id;
   uint32_t constant_id;
-  SpvReflectSpecializationConstantType constant_type;
   SpvReflectScalarValue default_value;
   SpvReflectScalarValue current_value;
 } SpvReflectSpecializationConstant;
