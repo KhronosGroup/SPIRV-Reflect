@@ -79,6 +79,8 @@ typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_BLOCK_MEMBER_REFERENCE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ENTRY_POINT,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_EXECUTION_MODE,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_DUPLICATE_SPEC_CONSTANT_NAME,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION
 } SpvReflectResult;
 
 /*! @enum SpvReflectModuleFlagBits
@@ -92,10 +94,14 @@ SPV_REFLECT_MODULE_FLAG_NO_COPY - Disables copying of SPIR-V code
   This is flag is intended for cases where the memory overhead of
   storing the copied SPIR-V is undesirable.
 
+SPV_REFLECT_MODULE_FLAG_EVALUATE_SPEC_CONSTANT - Keeps the parser
+  as long as the shader module is in lifetime. Needed for evaluating
+  specialization ops after specifying values.
 */
 typedef enum SpvReflectModuleFlagBits {
-  SPV_REFLECT_MODULE_FLAG_NONE    = 0x00000000,
-  SPV_REFLECT_MODULE_FLAG_NO_COPY = 0x00000001,
+  SPV_REFLECT_MODULE_FLAG_NONE                   = 0x00000000,
+  SPV_REFLECT_MODULE_FLAG_NO_COPY                = 0x00000001,
+  SPV_REFLECT_MODULE_FLAG_EVALUATE_SPEC_CONSTANT = 0x00000002
 } SpvReflectModuleFlagBits;
 
 typedef uint32_t SpvReflectModuleFlags;
@@ -330,6 +336,29 @@ typedef struct SpvReflectTypeDescription {
 } SpvReflectTypeDescription;
 
 
+/*! @struct SpvReflectSpecializationConstant
+
+*/
+typedef enum SpvReflectSpecializationConstantType {
+  SPV_REFLECT_SPECIALIZATION_CONSTANT_BOOL = 0,
+  SPV_REFLECT_SPECIALIZATION_CONSTANT_INT = 1,
+  SPV_REFLECT_SPECIALIZATION_CONSTANT_FLOAT = 2,
+} SpvReflectSpecializationConstantType;
+
+typedef union SpvReflectScalarValue {
+    float float_value;
+    uint32_t int_bool_value;
+} SpvReflectScalarValue;
+
+typedef struct SpvReflectSpecializationConstant {
+  const char* name;
+  uint32_t spirv_id;
+  uint32_t constant_id;
+  SpvReflectSpecializationConstantType constant_type;
+  SpvReflectScalarValue default_value;
+  SpvReflectScalarValue current_value;
+} SpvReflectSpecializationConstant;
+
 /*! @struct SpvReflectInterfaceVariable
 
 */
@@ -451,10 +480,18 @@ typedef struct SpvReflectEntryPoint {
     uint32_t                        x;
     uint32_t                        y;
     uint32_t                        z;
+    int                             flags; // 0 if just fixed local size
+                                           // 1 bit set if is instruction id of spec constant
+                                           // 2 bit set if is hint (kernel mode not supported in vulkan, though)
+                                           // this change may break abi
+                                           // if using specialization constants,
+                                           // xyz refers to evaluated result, not just constant_id
   } local_size;
   uint32_t                          invocations; // valid for geometry
   uint32_t                          output_vertices; // valid for geometry, tesselation
 } SpvReflectEntryPoint;
+
+typedef struct SpvReflectPrvParser SpvReflectPrvParser;
 
 /*! @struct SpvReflectShaderModule
 
@@ -484,6 +521,9 @@ typedef struct SpvReflectShaderModule {
   uint32_t                          push_constant_block_count;                        // Uses value(s) from first entry point
   SpvReflectBlockVariable*          push_constant_blocks;                             // Uses value(s) from first entry point
 
+  uint32_t                          specialization_constant_count;
+  SpvReflectSpecializationConstant* specialization_constants;
+  
   struct Internal {
     SpvReflectModuleFlags           module_flags;
     size_t                          spirv_size;
@@ -492,6 +532,7 @@ typedef struct SpvReflectShaderModule {
 
     size_t                          type_description_count;
     SpvReflectTypeDescription*      type_descriptions;
+    SpvReflectPrvParser* parser;
   } * _internal;
 
 } SpvReflectShaderModule;
@@ -753,6 +794,31 @@ SpvReflectResult spvReflectEnumerateInputVariables(
   const SpvReflectShaderModule* p_module,
   uint32_t*                     p_count,
   SpvReflectInterfaceVariable** pp_variables
+);
+
+/*! @fn spvReflectEnumerateSpecializationConstants
+ @brief  If the module contains multiple entry points, this will only get
+         the specialization constants for the first one.
+ @param  p_module      Pointer to an instance of SpvReflectShaderModule.
+ @param  p_count       If pp_constants is NULL, the module's specialization constant
+                       count will be stored here.
+                       If pp_variables is not NULL, *p_count must contain
+                       the module's specialization constant count.
+ @param  pp_variables  If NULL, the module's specialization constant count will be
+                       written to *p_count.
+                       If non-NULL, pp_constants must point to an array with
+                       *p_count entries, where pointers to the module's
+                       specialization constants will be written. The caller must not
+                       free the specialization constants written to this array.
+ @return               If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                       Otherwise, the error code indicates the cause of the
+                       failure.
+
+*/
+SpvReflectResult spvReflectEnumerateSpecializationConstants(
+  const SpvReflectShaderModule*      p_module,
+  uint32_t*                          p_count,
+  SpvReflectSpecializationConstant** pp_constants
 );
 
 /*! @fn spvReflectEnumerateEntryPointInputVariables
@@ -1483,6 +1549,10 @@ public:
   SPV_REFLECT_DEPRECATED("Renamed to EnumeratePushConstantBlocks")
   SpvReflectResult  EnumeratePushConstants(uint32_t* p_count, SpvReflectBlockVariable** pp_blocks) const {
     return EnumeratePushConstantBlocks(p_count, pp_blocks);
+  }
+  SpvReflectResult  EnumerateSpecializationConstants(uint32_t* p_count, SpvReflectSpecializationConstant** pp_constants) const
+  {
+      return spvReflectEnumerateSpecializationConstants(&m_module, p_count, pp_constants);
   }
 
   const SpvReflectDescriptorBinding*  GetDescriptorBinding(uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;

@@ -1040,6 +1040,31 @@ void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVar
   }
 }
 
+void StreamWriteSpecializationConstant(std::ostream& os, const SpvReflectSpecializationConstant& obj, const char* indent)
+{
+  const char* t = indent;
+  os << t << "spirv id   : " << obj.spirv_id << "\n";
+  os << t << "constant id: " << obj.constant_id << "\n";
+  os << t << "name       : " << (obj.name != NULL ? obj.name : "") << '\n';
+  os << t << "type       : ";
+  switch (obj.constant_type) {
+    case SPV_REFLECT_SPECIALIZATION_CONSTANT_BOOL:
+      os << "boolean\n";
+      os << t << "default    : " << obj.default_value.int_bool_value;
+      break;
+    case SPV_REFLECT_SPECIALIZATION_CONSTANT_INT:
+      os << "integer\n";
+      os << t << "default    : "<<obj.default_value.int_bool_value;
+      break;
+    case SPV_REFLECT_SPECIALIZATION_CONSTANT_FLOAT:
+      os << "float\n";
+      os << t << "default    : " << obj.default_value.float_value;
+      break;
+    default:
+      os << "unknown type";
+  }
+}
+
 void StreamWriteEntryPoint(std::ostream& os, const SpvReflectEntryPoint& obj, const char* indent)
 {
   os << indent << "entry point     : " << obj.name;
@@ -1088,9 +1113,32 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
   std::vector<SpvReflectDescriptorBinding*> bindings;
   std::vector<SpvReflectDescriptorSet*> sets;
   std::vector<SpvReflectBlockVariable*> push_constant_bocks;
+  std::vector<SpvReflectSpecializationConstant*> specialization_constants;
 
   count = 0;
-  SpvReflectResult result = obj.EnumerateInputVariables(&count, nullptr);
+  SpvReflectResult result = obj.EnumerateSpecializationConstants(&count, nullptr);
+  USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+  specialization_constants.resize(count);
+  result = obj.EnumerateSpecializationConstants(&count, specialization_constants.data());
+  USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+  if (count > 0) {
+    os << "\n";
+    os << "\n";
+    os << "\n";
+    os << t << "Sepecialization constants: " << count << "\n\n";
+    for (size_t i = 0; i < specialization_constants.size(); ++i) {
+      auto p_var = specialization_constants[i];
+      USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+      os << tt << i << ":" << "\n";
+      StreamWriteSpecializationConstant(os, *p_var, ttt);
+      if (i < (count - 1)) {
+        os << "\n";
+      }  
+    }
+  }
+
+  count = 0;
+  result = obj.EnumerateInputVariables(&count, nullptr);
   USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   variables.resize(count);
   result = obj.EnumerateInputVariables(&count, variables.data());
