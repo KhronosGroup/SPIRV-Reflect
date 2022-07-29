@@ -40,6 +40,7 @@ VERSION HISTORY
 #include <stdint.h>
 #include <string.h>
 
+
 #ifdef _MSC_VER
   #define SPV_REFLECT_DEPRECATED(msg_str) __declspec(deprecated("This symbol is deprecated. Details: " msg_str))
 #elif defined(__clang__)
@@ -349,6 +350,8 @@ typedef enum SpvReflectScalarType {
 } SpvReflectScalarType;
 
 // 16 bit floating point can be common. Just a bitwise representation here...
+// c++ requires c++14 standard for non static union members to have same address.
+// c seems to have always assumed this.
 typedef uint16_t spv_reflect_float16_t;
 typedef struct SpvReflectScalarValue {
     // strongly typed for evaluation purpose
