@@ -264,6 +264,7 @@ typedef enum SpvReflectGenerator {
 } SpvReflectGenerator;
 
 enum {
+  SPV_REFLECT_MAX_VECTOR_DIMS                   =  4,
   SPV_REFLECT_MAX_ARRAY_DIMS                    = 32,
   SPV_REFLECT_MAX_DESCRIPTOR_SETS               = 64,
 };
@@ -340,34 +341,49 @@ typedef struct SpvReflectTypeDescription {
 /*! @struct SpvReflectSpecializationConstant
 
 */
-typedef enum SpvReflectSpecializationConstantType {
+typedef enum SpvReflectScalarType {
   SPV_REFLECT_SCALAR_TYPE_UNKNOWN = 0,
   SPV_REFLECT_SCALAR_TYPE_BOOL = 1,
   SPV_REFLECT_SCALAR_TYPE_INT = 2,
   SPV_REFLECT_SCALAR_TYPE_FLOAT = 3,
-} SpvReflectSpecializationConstantType;
+} SpvReflectScalarType;
 
-// using union may have alignment issues on certain platforms
-// having type info here helps evaluating results
+// 16 bit floating point can be common. Just a bitwise representation here...
+typedef uint16_t spv_reflect_float16_t;
 typedef struct SpvReflectScalarValue {
+    // strongly typed for evaluation purpose
     union {
-        float float_value;
-        uint32_t int_bool_value;
-        // c/cpp doesn't have alignment requirements
+        spv_reflect_float16_t float16_value;
+        float float32_value;
         double float64_value;
-        uint64_t int64_value;
-    } value ;
-    SpvReflectSpecializationConstantType type;
-    int is_signed;
-    int bit_size;
+        uint32_t uint32_bool_value;
+        uint64_t uint64_value;
+        int32_t sint32_value;
+        int64_t sint64_value;
+    } value;
+    // for use with OpUndef
+    int undefined_value;
 } SpvReflectScalarValue;
 
+// only scalar, vector types can evaluate values for now...
+typedef struct SpvReflectValue {
+    SpvReflectScalarType general_type;
+    // may be null if boolean, coming from OpSpecConstantTrue/OpSpecConstantFalse
+    SpvReflectTypeDescription* type;
+    SpvReflectScalarValue values[SPV_REFLECT_MAX_VECTOR_DIMS];
+} SpvReflectValue;
+
 typedef struct SpvReflectSpecializationConstant {
-  const char* name;
   uint32_t spirv_id;
   uint32_t constant_id;
+  SpvReflectScalarType general_type;
+
+  SpvReflectTypeDescription* type;
+  const char* name;
+
   SpvReflectScalarValue default_value;
   SpvReflectScalarValue current_value;
+
 } SpvReflectSpecializationConstant;
 
 /*! @struct SpvReflectInterfaceVariable
@@ -1499,6 +1515,8 @@ const char* spvReflectBlockVariableTypeName(
   const SpvReflectBlockVariable* p_var
 );
 
+SpvReflectResult EvaluateResult(const SpvReflectShaderModule* p_module, uint32_t result_id, SpvReflectValue* result);
+
 #if defined(__cplusplus)
 };
 #endif
@@ -1604,6 +1622,11 @@ public:
   SpvReflectResult ChangeDescriptorSetNumber(const SpvReflectDescriptorSet* p_set, uint32_t new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE);
   SpvReflectResult ChangeInputVariableLocation(const SpvReflectInterfaceVariable* p_input_variable, uint32_t new_location);
   SpvReflectResult ChangeOutputVariableLocation(const SpvReflectInterfaceVariable* p_output_variable, uint32_t new_location);
+
+  SpvReflectResult EvaluateResult(uint32_t result_id, SpvReflectValue& result) const
+  {
+      return ::EvaluateResult(&m_module, result_id, &result);
+  }
 
 private:
   // Make noncopyable

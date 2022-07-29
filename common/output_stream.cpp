@@ -599,7 +599,9 @@ std::string ToStringComponentType(const SpvReflectTypeDescription& type, uint32_
   return ss.str();
 }
 
-void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool flatten_cbuffers, const std::string& parent_name, uint32_t member_count, const SpvReflectBlockVariable* p_members, std::vector<TextLine>* p_text_lines)
+void ParseBlockMembersToTextLines(
+    const spv_reflect::ShaderModule& obj,
+    const char* indent, int indent_depth, bool flatten_cbuffers, const std::string& parent_name, uint32_t member_count, const SpvReflectBlockVariable* p_members, std::vector<TextLine>* p_text_lines)
 {
   const char* t = indent;
   for (uint32_t member_index = 0; member_index < member_count; ++member_index) {
@@ -637,7 +639,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool fla
         current_parent_name = parent_name.empty() ? name : (parent_name + "." + name);
       }
       std::vector<TextLine>* p_target_text_line = flatten_cbuffers ? p_text_lines : &tl.lines;
-      ParseBlockMembersToTextLines(t, indent_depth + 1, flatten_cbuffers, current_parent_name, member.member_count, member.members, p_target_text_line);
+      ParseBlockMembersToTextLines(obj, t, indent_depth + 1, flatten_cbuffers, current_parent_name, member.member_count, member.members, p_target_text_line);
       tl.text_line_flags = TEXT_LINE_TYPE_LINES;
       p_text_lines->push_back(tl);      
 
@@ -697,7 +699,13 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool fla
         std::stringstream ss_array;
         for (uint32_t array_dim_index = 0; array_dim_index < member.array.dims_count; ++array_dim_index) {
           uint32_t dim = member.array.dims[array_dim_index];
-          ss_array << "[" << dim << "]";
+          if (dim == 0xFFFFFFFF) {
+              SpvReflectValue val{};
+              SpvReflectResult res = obj.EvaluateResult(member.array.spec_constant_op_ids[array_dim_index], val);
+              if (res != SPV_REFLECT_RESULT_SUCCESS) throw;
+              dim = val.values[0].value.uint32_bool_value;
+          }
+          ss_array << "[" << dim << "]"; 
         }
         tl.name += ss_array.str();
       }
@@ -712,7 +720,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool fla
   }
 }
 
-void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers, const SpvReflectBlockVariable& block_var, std::vector<TextLine>* p_text_lines)
+void ParseBlockVariableToTextLines(const spv_reflect::ShaderModule& obj, const char* indent, bool flatten_cbuffers, const SpvReflectBlockVariable& block_var, std::vector<TextLine>* p_text_lines)
 {
   // Begin block
   TextLine tl = {};
@@ -725,7 +733,7 @@ void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers, co
 
   // Members
   tl = {};
-  ParseBlockMembersToTextLines(indent, 2, flatten_cbuffers, "", block_var.member_count, block_var.members, &tl.lines);
+  ParseBlockMembersToTextLines(obj, indent, 2, flatten_cbuffers, "", block_var.member_count, block_var.members, &tl.lines);
   tl.text_line_flags = TEXT_LINE_TYPE_LINES;
   p_text_lines->push_back(tl);    
 
@@ -928,7 +936,7 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, bool flatten_cbu
   }
 }
 
-void StreamWritePushConstantsBlock(std::ostream& os, const SpvReflectBlockVariable& obj, bool flatten_cbuffers, const char* indent)
+void StreamWritePushConstantsBlock(std::ostream& os, const spv_reflect::ShaderModule& shader, const SpvReflectBlockVariable& obj, bool flatten_cbuffers, const char* indent)
 {
   const char* t = indent;
   os << t << "spirv id : " << obj.spirv_id << "\n";
@@ -939,7 +947,7 @@ void StreamWritePushConstantsBlock(std::ostream& os, const SpvReflectBlockVariab
   }
 
   std::vector<TextLine> text_lines;
-  ParseBlockVariableToTextLines("    ",  flatten_cbuffers, obj, &text_lines);
+  ParseBlockVariableToTextLines(shader, "    ",  flatten_cbuffers, obj, &text_lines);
   if (!text_lines.empty()) {
     os << "\n";
     StreamWriteTextLines(os, t, flatten_cbuffers, text_lines);
@@ -947,7 +955,7 @@ void StreamWritePushConstantsBlock(std::ostream& os, const SpvReflectBlockVariab
   }
 }
 
-void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, bool flatten_cbuffers, const char* indent)
+void StreamWriteDescriptorBinding(std::ostream& os, const spv_reflect::ShaderModule& shader, const SpvReflectDescriptorBinding& obj, bool write_set, bool flatten_cbuffers, const char* indent)
 {
   const char* t = indent;
   os << t << "spirv id : " << obj.spirv_id << "\n";
@@ -992,7 +1000,7 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
   if (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
       obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
     std::vector<TextLine> text_lines;
-    ParseBlockVariableToTextLines("    ",  flatten_cbuffers, obj.block, &text_lines);
+    ParseBlockVariableToTextLines(shader, "    ",  flatten_cbuffers, obj.block, &text_lines);
     if (!text_lines.empty()) {
       os << "\n";
       StreamWriteTextLines(os, t, flatten_cbuffers, text_lines);
@@ -1047,35 +1055,35 @@ void StreamWriteSpecializationConstant(std::ostream& os, const SpvReflectSpecial
   os << t << "constant id: " << obj.constant_id << "\n";
   os << t << "name       : " << (obj.name != NULL ? obj.name : "") << '\n';
   os << t << "type       : ";
-  switch (obj.default_value.type) {
+  switch (obj.general_type) {
     case SPV_REFLECT_SCALAR_TYPE_BOOL:
       os << "boolean\n";
-      os << t << "default    : " << obj.default_value.value.int_bool_value;
+      os << t << "default    : " << obj.default_value.value.uint32_bool_value;
       break;
     case SPV_REFLECT_SCALAR_TYPE_INT:
-      if (obj.default_value.is_signed) {
+      if (obj.type->traits.numeric.scalar.signedness) {
         os << "signed ";
       }
       else {
           os << "unsigned ";
       }
-      os<<obj.default_value.bit_size <<" bit integer\n";
+      os<< obj.type->traits.numeric.scalar.width <<" bit integer\n";
       os << t << "default    : ";
       // let's assume only 32 bit and 64 bit types (no 8 and 16 bit types here)
-      if (obj.default_value.bit_size == 32) {
-          if (obj.default_value.is_signed) {
-              os << (int32_t)obj.default_value.value.int_bool_value;
+      if (obj.type->traits.numeric.scalar.width == 32) {
+          if (obj.type->traits.numeric.scalar.signedness) {
+              os << obj.default_value.value.sint32_value;
           }
           else {
-              os << (uint32_t)obj.default_value.value.int_bool_value;
+              os << obj.default_value.value.uint32_bool_value;
           }
       }
-      else if(obj.default_value.bit_size == 64){
-          if (obj.default_value.is_signed) {
-              os << (int64_t)obj.default_value.value.int64_value;
+      else if(obj.type->traits.numeric.scalar.width == 64){
+          if (obj.type->traits.numeric.scalar.signedness) {
+              os << obj.default_value.value.sint64_value;
           }
           else {
-              os << (uint32_t)obj.default_value.value.int64_value;
+              os << obj.default_value.value.uint64_value;
           }
       }
       else {
@@ -1083,12 +1091,12 @@ void StreamWriteSpecializationConstant(std::ostream& os, const SpvReflectSpecial
       }
       break;
     case SPV_REFLECT_SCALAR_TYPE_FLOAT:
-        os << obj.default_value.bit_size << " bit floating point\n";
+        os << obj.type->traits.numeric.scalar.width << " bit floating point\n";
         os << t << "default    : ";
-        if (obj.default_value.bit_size == 32) {
-            os << obj.default_value.value.float_value;
+        if (obj.type->traits.numeric.scalar.width == 32) {
+            os << obj.default_value.value.float32_value;
         }
-        else if (obj.default_value.bit_size == 64) {
+        else if (obj.type->traits.numeric.scalar.width == 64) {
             os << obj.default_value.value.float64_value;
         }
         else {
@@ -1230,7 +1238,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
     for (size_t i = 0; i < push_constant_bocks.size(); ++i) {
       auto p_block = push_constant_bocks[i];
       os << tt << i << ":" << "\n";
-      StreamWritePushConstantsBlock(os, *p_block, flatten_cbuffers, ttt);
+      StreamWritePushConstantsBlock(os, obj, *p_block, flatten_cbuffers, ttt);
     }
   }
 
@@ -1257,7 +1265,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
       auto p_binding = bindings[i];
       USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << "Binding" << " " << p_binding->set << "." << p_binding->binding << "" << "\n";
-      StreamWriteDescriptorBinding(os, *p_binding, true, flatten_cbuffers, ttt);
+      StreamWriteDescriptorBinding(os, obj, *p_binding, true, flatten_cbuffers, ttt);
       if (i < (count - 1)) {
         os << "\n\n";
       }  

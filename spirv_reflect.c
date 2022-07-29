@@ -3377,7 +3377,7 @@ static SpvReflectResult ParseExecutionModes(
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-SpvReflectResult GetTypeByTypeId(SpvReflectShaderModule* p_module, uint32_t type_id, SpvReflectTypeDescription** pp_type)
+SpvReflectResult GetTypeByTypeId(const SpvReflectShaderModule* p_module, uint32_t type_id, SpvReflectTypeDescription** pp_type)
 {
     SpvReflectResult res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     for (uint32_t i = 0; i < p_module->_internal->type_description_count; ++i) {
@@ -3389,36 +3389,85 @@ SpvReflectResult GetTypeByTypeId(SpvReflectShaderModule* p_module, uint32_t type
     return res;
 }
 
-static SpvReflectResult GetScalarConstant(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module, SpvReflectPrvNode* p_node, SpvReflectScalarValue* result)
+#define SCALAR_TYPE_FLAGS (SPV_REFLECT_TYPE_FLAG_BOOL | SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_FLOAT)
+#define SCALAR_DISALLOWED_FLAGS (~0 ^ SCALAR_TYPE_FLAGS)
+#define VECTOR_TYPE_FLAGS (SCALAR_TYPE_FLAGS | SPV_REFLECT_TYPE_FLAG_VECTOR)
+#define VECTOR_DISALLOWED_FLAGS (~0 ^ VECTOR_TYPE_FLAGS)
+
+static SpvReflectScalarType ScalarGeneralTypeFromType(SpvReflectTypeDescription* type)
 {
-    SpvReflectTypeDescription* type;
-    SpvReflectResult res = GetTypeByTypeId(p_module, p_node->result_type_id, &type);
+    if ((type->type_flags & SCALAR_TYPE_FLAGS) == SPV_REFLECT_TYPE_FLAG_BOOL) {
+        return SPV_REFLECT_SCALAR_TYPE_BOOL;
+    }
+    else if ((type->type_flags & SCALAR_TYPE_FLAGS) == SPV_REFLECT_TYPE_FLAG_INT) {
+        return SPV_REFLECT_SCALAR_TYPE_INT;
+    }
+    else if ((type->type_flags & SCALAR_TYPE_FLAGS) == SPV_REFLECT_TYPE_FLAG_FLOAT) {
+        return SPV_REFLECT_SCALAR_TYPE_FLOAT;
+    }
+    else {
+        return SPV_REFLECT_SCALAR_TYPE_UNKNOWN;
+    }
+}
+
+static SpvReflectResult GetScalarConstant(const SpvReflectShaderModule* p_module, SpvReflectPrvNode* p_node,
+    SpvReflectScalarValue* result, SpvReflectScalarType* general_type, SpvReflectTypeDescription** type)
+{
+    SpvReflectPrvParser* p_parser = p_module->_internal->parser;
+
+    SpvReflectScalarType g_type;
+    SpvReflectTypeDescription* d_type;
+    SpvReflectResult res = GetTypeByTypeId(p_module, p_node->result_type_id, &d_type);
     if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-    if(type->type_flags & SPV_REFLECT_TYPE_FLAG_INT){
-        result->type = SPV_REFLECT_SCALAR_TYPE_INT;
-    }
-    else if (type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
-        result->type = SPV_REFLECT_SCALAR_TYPE_FLOAT;
-    }
-    else{
-        result->type = SPV_REFLECT_SCALAR_TYPE_UNKNOWN;
-    }
-    result->bit_size = type->traits.numeric.scalar.width;
+
+    if(d_type->type_flags & SCALAR_DISALLOWED_FLAGS) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+    g_type = ScalarGeneralTypeFromType(d_type);
     uint32_t low_word;
     CHECKED_READU32(p_parser, p_node->word_offset + 3, low_word);
-    if (type->traits.numeric.scalar.width == 32) {
-        result->value.int_bool_value = low_word;
-        return SPV_REFLECT_RESULT_SUCCESS;
+    // There is no alignment requirements in c/cpp for unions
+    if (d_type->traits.numeric.scalar.width == 32) {
+        if (g_type == SPV_REFLECT_SCALAR_TYPE_FLOAT) {
+            memcpy(&result->value.float32_value, &low_word, 4);
+        }
+        else if (g_type == SPV_REFLECT_SCALAR_TYPE_INT) {
+            if (d_type->traits.numeric.scalar.signedness) {
+                memcpy(&result->value.sint32_value, &low_word, 4);
+            }
+            else {
+                memcpy(&result->value.uint32_bool_value, &low_word, 4);
+            }
+        }
+        else {
+            //memcpy(&result->value.uint32_bool_value, &low_word, 4);
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+        }
     }
-    else if (type->traits.numeric.scalar.width ==64) {
+    else if (d_type->traits.numeric.scalar.width ==64) {
         uint32_t high_word;
         CHECKED_READU32(p_parser, p_node->word_offset + 4, high_word);
-        result->value.int64_value = low_word | (((uint64_t)high_word) << 32);
-        return SPV_REFLECT_RESULT_SUCCESS;
+        uint64_t combined = low_word | (((uint64_t)high_word) << 32);
+        if (g_type == SPV_REFLECT_SCALAR_TYPE_FLOAT) {
+            memcpy(&result->value.float64_value, &combined, 8);
+        }
+        else if (g_type == SPV_REFLECT_SCALAR_TYPE_INT) {
+            if (d_type->traits.numeric.scalar.signedness) {
+                memcpy(&result->value.sint64_value, &combined, 8);
+            }
+            else {
+                memcpy(&result->value.uint64_value, &combined, 8);
+            }
+        }
+        else {
+            //memcpy(&result->value.uint32_bool_value, &combined, 8);
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+        }
     }
     else {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
     }
+    *general_type = g_type;
+    *type = d_type;
+    return SPV_REFLECT_RESULT_SUCCESS;
 }
 
 static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module)
@@ -3446,23 +3495,19 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
     switch(p_node->op) {
       default: continue;
       case SpvOpSpecConstantTrue: {
-        p_module->specialization_constants[index].default_value.type = SPV_REFLECT_SCALAR_TYPE_BOOL;
-        p_module->specialization_constants[index].default_value.value.int_bool_value = 1;
-        p_module->specialization_constants[index].default_value.bit_size = 1;
-        p_module->specialization_constants[index].default_value.is_signed = 0;
+        p_module->specialization_constants[index].general_type = SPV_REFLECT_SCALAR_TYPE_BOOL;
+        p_module->specialization_constants[index].default_value.value.uint32_bool_value = 1;
         p_module->specialization_constants[index].current_value = p_module->specialization_constants[index].default_value;
       } break;
       case SpvOpSpecConstantFalse: {
-        p_module->specialization_constants[index].default_value.type = SPV_REFLECT_SCALAR_TYPE_BOOL;
-        p_module->specialization_constants[index].default_value.value.int_bool_value = 1;
-        p_module->specialization_constants[index].default_value.bit_size = 1;
-        p_module->specialization_constants[index].default_value.is_signed = 0;
+        p_module->specialization_constants[index].general_type = SPV_REFLECT_SCALAR_TYPE_BOOL;
+        p_module->specialization_constants[index].default_value.value.uint32_bool_value = 0;
         p_module->specialization_constants[index].current_value = p_module->specialization_constants[index].default_value;
       } break;
       case SpvOpSpecConstant: {
         SpvReflectResult result = SPV_REFLECT_RESULT_SUCCESS;
         SpvReflectScalarValue default_value = { 0 };
-        result = GetScalarConstant(p_parser,p_module, p_node, &default_value);
+        result = GetScalarConstant(p_module, p_node, &default_value, &p_module->specialization_constants[index].general_type, &p_module->specialization_constants[index].type);
         if (result != SPV_REFLECT_RESULT_SUCCESS) return result;
         p_module->specialization_constants[index].default_value = default_value;
         p_module->specialization_constants[index].current_value = p_module->specialization_constants[index].default_value;
@@ -3800,6 +3845,8 @@ static SpvReflectResult CreateShaderModule(
   SpvReflectResult result = CreateParser(p_module->_internal->spirv_size,
                                          p_module->_internal->spirv_code,
                                          parser);
+  // used by spec constant parsing GetScalarConstant
+  p_module->_internal->parser = parser;
 
   // Generator
   {
@@ -5249,7 +5296,7 @@ const char* spvReflectBlockVariableTypeName(
     return p_var->type_description->type_name;
 }
 
-SpvReflectResult GetSpecContantById(SpvReflectShaderModule* p_module, uint32_t constant_id, SpvReflectSpecializationConstant** pp_constant)
+SpvReflectResult GetSpecContantById(const SpvReflectShaderModule* p_module, uint32_t constant_id, SpvReflectSpecializationConstant** pp_constant)
 {
     SpvReflectResult res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
     for (uint32_t i = 0; i < p_module->specialization_constant_count; ++i) {
@@ -5262,20 +5309,32 @@ SpvReflectResult GetSpecContantById(SpvReflectShaderModule* p_module, uint32_t c
 }
 
 // used for calculating specialization constants.
-SpvReflectResult EvaluateResultImpl(SpvReflectShaderModule* p_module, uint32_t result_id, SpvReflectScalarValue* result, uint32_t maxRecursion)
+SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint32_t result_id, SpvReflectValue* result, uint32_t maxRecursion)
 {
     if(!maxRecursion) return SPV_REFLECT_RESULT_ERROR_SPIRV_RECURSION;
-    SpvReflectResult res;
+    SpvReflectResult res = SPV_REFLECT_RESULT_SUCCESS;
     SpvReflectPrvParser* p_parser = p_module->_internal->parser;
     SpvReflectPrvNode* p_node = FindNode(p_parser, result_id);
     if (!p_node) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     switch (p_node->op) {
         default:
             return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+        case SpvOpConstantTrue:
+            {
+                result->general_type = SPV_REFLECT_SCALAR_TYPE_BOOL;
+                result->values[0].value.uint32_bool_value = 1;
+            }
+            return SPV_REFLECT_RESULT_SUCCESS;
+        case SpvOpConstantFalse:
+            {
+                result->general_type = SPV_REFLECT_SCALAR_TYPE_BOOL;
+                result->values[0].value.uint32_bool_value = 0;
+            }
+            return SPV_REFLECT_RESULT_SUCCESS;
         case SpvOpConstant:
             CONSTANT_RESULT:
-            return GetScalarConstant(p_parser, p_module, p_node, result);
-
+            return GetScalarConstant(p_module, p_node, &result->values[0], &result->general_type, &result->type);
+        case SpvOpSpecConstantTrue: case SpvOpSpecConstantFalse:
         case SpvOpSpecConstant:
             {
                 if (p_node->decorations.specialization_constant.value == (uint32_t)INVALID_VALUE) {
@@ -5284,7 +5343,9 @@ SpvReflectResult EvaluateResultImpl(SpvReflectShaderModule* p_module, uint32_t r
                 SpvReflectSpecializationConstant* p_constant;
                 res = GetSpecContantById(p_module, p_node->decorations.specialization_constant.value, &p_constant);
                 if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                *result = p_constant->current_value;
+                result->general_type = p_constant->general_type;
+                result->type = p_constant->type;
+                result->values[0] = p_constant->current_value;
             }
             return SPV_REFLECT_RESULT_SUCCESS;
         case SpvOpSpecConstantComposite:
@@ -5292,51 +5353,507 @@ SpvReflectResult EvaluateResultImpl(SpvReflectShaderModule* p_module, uint32_t r
                 // only support scalar types for now...
             }
             return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
-        case SpvOpUndef:
+        case SpvOpSpecConstantOp:
             {
-                // invalid data should be handled separately?
-                result->value.int_bool_value = (uint32_t)INVALID_VALUE;
+                // operation has result type id, thus must be typed
+                res = GetTypeByTypeId(p_module, p_node->result_type_id, &result->type);
+                if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
+
+                // no support for vectors yet...
+                if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+                    return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                }
+
+                // only vector and scalar types of int/bool/float types allowed
+                if (result->type->type_flags & VECTOR_DISALLOWED_FLAGS) {
+                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                }
+
+                result->general_type = ScalarGeneralTypeFromType(result->type);
+
+                // evaluate op
+                uint32_t spec_op;
+                CHECKED_READU32(p_parser, p_node->word_offset + 3, spec_op);
+                spec_op &= 0xFFFF;
+                switch (spec_op) {
+                    default:
+                        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                    case SpvOpUndef:
+                        {
+                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+                                for (uint32_t i = 0; i < result->type->traits.numeric.vector.component_count; ++i) {
+                                    result->values[i].undefined_value = 1;
+                                }
+                            }
+                            else {
+                                result->values[0].undefined_value = 1;
+                            }
+                        }
+                        return SPV_REFLECT_RESULT_SUCCESS;
+                    case SpvOpSConvert: 
+                        // maybe there's a more clever way?
+                        {
+                            // convert of signed integer to any integer of different width.
+                            // result is scalar or vector integer type.
+                            // vectors should be of same length
+
+                            // check result type
+                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                            }
+
+                            // get operand
+                            uint32_t operand_id1;
+                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
+                            SpvReflectValue operand1 = {0};
+                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
+                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
+                            // check type here, remember undefined value and booleans with type == null 
+                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            }
+                            // operand must be signed
+                            if (!operand1.type->traits.numeric.scalar.signedness) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            }
+                            // vector size must match
+                            uint32_t vec_size = 1;
+                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
+                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                }
+                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
+                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                }
+                                vec_size = operand1.type->traits.numeric.vector.component_count;
+                            }
+
+                            // now do the job
+                            for (uint32_t i = 0; i < vec_size; ++i) {
+                                result->values[i].undefined_value = operand1.values->undefined_value;
+                                switch (operand1.type->traits.numeric.scalar.width) {
+                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    case 32:
+                                        // convert int32 to generic integer type
+                                        switch (result->type->traits.numeric.scalar.width) {
+                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            case 32:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint32_value = operand1.values[i].value.sint32_value;
+                                                }
+                                                else {
+                                                    result->values[i].value.uint32_bool_value = (uint32_t)operand1.values[i].value.sint32_value;
+                                                }
+                                                break;
+                                            case 64:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint64_value = (int64_t)operand1.values[i].value.sint32_value;
+                                                }
+                                                else {
+                                                    result->values[i].value.uint64_value = (uint64_t)operand1.values[i].value.sint32_value;
+                                                }
+                                                break;
+                                        }
+                                        break;
+                                    case 64:
+                                        // convert int64 to generic integer type
+                                        switch (result->type->traits.numeric.scalar.width) {
+                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            case 32:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint32_value = (int32_t)operand1.values[i].value.sint64_value;
+                                                }
+                                                else {
+                                                    result->values[i].value.uint32_bool_value = (uint32_t)operand1.values[i].value.sint64_value;
+                                                }
+                                                break;
+                                            case 64:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint64_value = operand1.values[i].value.sint64_value;
+                                                }
+                                                else {
+                                                    result->values[i].value.uint64_value = (uint64_t)operand1.values[i].value.sint64_value;
+                                                }
+                                                break;
+                                        }
+                                }
+                            }
+                            return SPV_REFLECT_RESULT_SUCCESS;
+                        }
+                    case SpvOpUConvert:
+                        {
+                            // convert of unsigned integer to any integer of different width.
+                            // result is scalar or vector integer type.
+                            // vectors should be of same length
+
+                            // check result type
+                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                            }
+
+                            // get operand
+                            uint32_t operand_id1;
+                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
+                            SpvReflectValue operand1 = {0};
+                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
+                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
+                            // check type here, remember undefined value and booleans with type == null 
+                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            }
+                            // operand must not be signed
+                            if (operand1.type->traits.numeric.scalar.signedness) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            }
+                            // vector size must match
+                            uint32_t vec_size = 1;
+                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
+                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                }
+                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
+                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                }
+                                vec_size = operand1.type->traits.numeric.vector.component_count;
+                            }
+
+                            // now do the job
+                            for (uint32_t i = 0; i < vec_size; ++i) {
+                                result->values[i].undefined_value = operand1.values->undefined_value;
+                                switch (operand1.type->traits.numeric.scalar.width) {
+                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    case 32:
+                                        // convert int32 to generic integer type
+                                        switch (result->type->traits.numeric.scalar.width) {
+                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            case 32:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint32_value = operand1.values[i].value.uint32_bool_value;
+                                                }
+                                                else {
+                                                    result->values[i].value.uint32_bool_value = (uint32_t)operand1.values[i].value.uint32_bool_value;
+                                                }
+                                                break;
+                                            case 64:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint64_value = (int64_t)operand1.values[i].value.uint32_bool_value;
+                                                }
+                                                else {
+                                                    result->values[i].value.uint64_value = (uint64_t)operand1.values[i].value.uint32_bool_value;
+                                                }
+                                                break;
+                                        }
+                                        break;
+                                    case 64:
+                                        // convert int64 to generic integer type
+                                        switch (result->type->traits.numeric.scalar.width) {
+                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            case 32:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint32_value = (int32_t)operand1.values[i].value.uint64_value;
+                                                }
+                                                else {
+                                                    result->values[i].value.uint32_bool_value = (uint32_t)operand1.values[i].value.uint64_value;
+                                                }
+                                                break;
+                                            case 64:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint64_value = operand1.values[i].value.uint64_value;
+                                                }
+                                                else {
+                                                    result->values[i].value.uint64_value = (uint64_t)operand1.values[i].value.uint64_value;
+                                                }
+                                                break;
+                                        }
+                                }
+                            }
+                            return SPV_REFLECT_RESULT_SUCCESS;
+                        }
+                    case SpvOpFConvert:
+                        {
+                            // convert of floating point integer to any integer of different width.
+                            // just 32 and 64 bit for now...
+
+                            // check result type
+                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_FLOAT) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                            }
+
+                            // get operand
+                            uint32_t operand_id1;
+                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
+                            SpvReflectValue operand1 = {0};
+                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
+                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
+                            // check type here, remember undefined value and booleans with type == null 
+                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_FLOAT) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            }
+                            // vector size must match
+                            uint32_t vec_size = 1;
+                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
+                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                }
+                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
+                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                }
+                                vec_size = operand1.type->traits.numeric.vector.component_count;
+                            }
+
+                            // now do the job
+                            for (uint32_t i = 0; i < vec_size; ++i) {
+                                result->values[i].undefined_value = operand1.values->undefined_value;
+                                switch (operand1.type->traits.numeric.scalar.width) {
+                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    case 32:
+                                        // convert int32 to generic integer type
+                                        switch (result->type->traits.numeric.scalar.width) {
+                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            case 32:
+                                                result->values[i].value.float32_value = operand1.values[i].value.float32_value;
+                                                break;
+                                            case 64:
+                                                result->values[i].value.float64_value = (double)operand1.values[i].value.float32_value;
+                                                break;
+                                        }
+                                        break;
+                                    case 64:
+                                        // convert int64 to generic integer type
+                                        switch (result->type->traits.numeric.scalar.width) {
+                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            case 32:
+                                                result->values[i].value.float32_value = (float)operand1.values[i].value.float64_value;
+                                                break;
+                                            case 64:
+                                                result->values[i].value.float64_value = operand1.values[i].value.float64_value;
+                                                break;
+                                        }
+                                }
+                            }
+                            return SPV_REFLECT_RESULT_SUCCESS;
+                        }
+                    case SpvOpSNegate:
+                        {
+                            // compute minus sign of op1, not in current spec of what happens if op1 is uint
+
+                            // check result type
+                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                            }
+
+                            // get operand
+                            uint32_t operand_id1;
+                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
+                            SpvReflectValue operand1 = {0};
+                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
+                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
+                            // check type here, remember undefined value and booleans with type == null 
+                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            }
+                            // operand must be signed
+                            if (!operand1.type->traits.numeric.scalar.signedness) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            }
+                            // vector size must match
+                            uint32_t vec_size = 1;
+                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
+                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                }
+                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
+                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                }
+                                vec_size = operand1.type->traits.numeric.vector.component_count;
+                            }
+
+                            // now do the job
+                            for (uint32_t i = 0; i < vec_size; ++i) {
+                                result->values[i].undefined_value = operand1.values->undefined_value;
+                                switch (operand1.type->traits.numeric.scalar.width) {
+                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    case 32:
+                                        // convert int32 to generic integer type
+                                        switch (result->type->traits.numeric.scalar.width) {
+                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            case 32:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint32_value = -operand1.values[i].value.sint32_value;
+                                                }
+                                                else {
+                                                    result->values[i].value.uint32_bool_value = (uint32_t)(-operand1.values[i].value.sint32_value);
+                                                }
+                                                break;
+                                            case 64:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint64_value = -(int64_t)operand1.values[i].value.sint32_value;
+                                                }
+                                                else {
+                                                    result->values[i].value.uint64_value = (uint64_t)(-operand1.values[i].value.sint32_value);
+                                                }
+                                                break;
+                                        }
+                                        break;
+                                    case 64:
+                                        // convert int64 to generic integer type
+                                        switch (result->type->traits.numeric.scalar.width) {
+                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            case 32:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint32_value = (int32_t)(-operand1.values[i].value.sint64_value);
+                                                }
+                                                else {
+                                                    result->values[i].value.uint32_bool_value = (uint32_t)(-operand1.values[i].value.sint64_value);
+                                                }
+                                                break;
+                                            case 64:
+                                                if (result->type->traits.numeric.scalar.signedness) {
+                                                    result->values[i].value.sint64_value = -operand1.values[i].value.sint64_value;
+                                                }
+                                                else {
+                                                    result->values[i].value.uint64_value = (uint64_t)(-operand1.values[i].value.sint64_value);
+                                                }
+                                                break;
+                                        }
+                                }
+                            }
+                            return SPV_REFLECT_RESULT_SUCCESS;
+                    case SpvOpNot:
+                        {
+                            // bitwise not of every component in op1, store into same width result.
+
+                            // check result type
+                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                            }
+
+                            // get operand
+                            uint32_t operand_id1;
+                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
+                            SpvReflectValue operand1 = {0};
+                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
+                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
+                            // check type here, remember undefined value and booleans with type == null 
+                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            }
+                            // width must match
+                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
+                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            }
+                            // vector size must match
+                            uint32_t vec_size = 1;
+                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
+                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                }
+                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
+                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                }
+                                vec_size = operand1.type->traits.numeric.vector.component_count;
+                            }
+
+                            // now do the job
+                            for (uint32_t i = 0; i < vec_size; ++i) {
+                                result->values[i].undefined_value = operand1.values->undefined_value;
+                                switch (operand1.type->traits.numeric.scalar.width) {
+                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    case 32:
+                                        // load data into uint32_t
+                                        uint32_t data;
+                                        if (operand1.type->traits.numeric.scalar.signedness) {
+                                            memcpy(&data, &operand1.values[i].value.sint32_value, 4);
+                                        }
+                                        else{
+                                            memcpy(&data, &operand1.values[i].value.uint32_bool_value, 4);
+                                        }
+                                        data ^= 0xffffffff;
+                                        // write to correct offset
+                                        if (result->type->traits.numeric.scalar.signedness) {
+                                            memcpy(&result->values[i].value.sint32_value, &data, 4);
+                                        }
+                                        else {
+                                            memcpy(&result->values[i].value.uint32_bool_value, &data, 4);
+                                        }
+                                        break;
+                                    case 64:
+                                        // load data into uint64_t
+                                        uint64_t data;
+                                        if (operand1.type->traits.numeric.scalar.signedness) {
+                                            memcpy(&data, &operand1.values[i].value.sint64_value, 8);
+                                        }
+                                        else {
+                                            memcpy(&data, &operand1.values[i].value.uint64_value, 8);
+                                        }
+                                        data ^= 0xffffffffffffffff;
+                                        // write to correct offset
+                                        if (result->type->traits.numeric.scalar.signedness) {
+                                            memcpy(&result->values[i].value.sint64_value, &data, 8);
+                                        }
+                                        else {
+                                            memcpy(&result->values[i].value.uint64_value, &data, 8);
+                                        }
+                                        break;
+                                }
+                            }
+                            return SPV_REFLECT_RESULT_SUCCESS;
+                    
+                    case SpvOpIAdd:
+                        // integer add.
+
+                    case SpvOpISub:
+                        // integer subtract
+
+                    case SpvOpIMul:
+                        // integer multiply
+                    
+                    case SpvOpUDiv:
+                        // unsigned divide
+
+                    case SpvOpSDiv:
+                        // signed divide
+
+                    case SpvOpUMod: case SpvOpSRem: case SpvOpSMod:
+                    case SpvOpShiftRightLogical: case SpvOpShiftRightArithmetic:
+                    case SpvOpShiftLeftLogical: case SpvOpBitwiseOr: case SpvOpBitwiseXor:
+                    case SpvOpBitwiseAnd: case SpvOpVectorShuffle: case SpvOpCompositeExtract:
+                    case SpvOpCompositeInsert:
+                    case SpvOpLogicalOr: case SpvOpLogicalAnd: case SpvOpLogicalNot:
+                    case SpvOpLogicalEqual: case SpvOpLogicalNotEqual:
+                    case SpvOpSelect: case SpvOpIEqual: case SpvOpINotEqual:
+                    case SpvOpULessThan: case SpvOpSLessThan:
+                    case SpvOpUGreaterThan: case SpvOpSGreaterThan:
+                    case SpvOpULessThanEqual: case SpvOpSLessThanEqual:
+                    case SpvOpUGreaterThanEqual: case SpvOpSGreaterThanEqual:
+                        // add implementations here.
+                        return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+
+                        // check shader capability... vulkan should assume this...
+                    case SpvOpQuantizeToF16:
+                        return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                        break;
+
+                        // check kernel capability... vulkan have none currently...
+                    case SpvOpConvertFToS: case SpvOpConvertSToF:
+                    case SpvOpConvertFToU: case SpvOpConvertUToF:
+                    case SpvOpConvertPtrToU: case SpvOpConvertUToPtr:
+                    case SpvOpGenericCastToPtr: case SpvOpPtrCastToGeneric:
+                    case SpvOpBitcast: case SpvOpFNegate:
+                    case SpvOpFAdd: case SpvOpFSub: case SpvOpFMul: case SpvOpFDiv:
+                    case SpvOpFRem: case SpvOpFMod:
+                    case SpvOpAccessChain: case SpvOpInBoundsAccessChain:
+                    case SpvOpPtrAccessChain: case SpvOpInBoundsPtrAccessChain:
+                        return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                        break;
+
+                }
             }
-        case SpvOpSConvert: case SpvOpUConvert: case SpvOpFConvert:
-        case SpvOpSNegate: case SpvOpNot: case SpvOpIAdd: case SpvOpISub:
-        case SpvOpIMul: case SpvOpUDiv: case SpvOpSDiv:
-        case SpvOpUMod: case SpvOpSRem: case SpvOpSMod:
-        case SpvOpShiftRightLogical: case SpvOpShiftRightArithmetic:
-        case SpvOpShiftLeftLogical: case SpvOpBitwiseOr: case SpvOpBitwiseXor:
-        case SpvOpBitwiseAnd: case SpvOpVectorShuffle: case SpvOpCompositeExtract:
-        case SpvOpCompositeInsert:
-        case SpvOpLogicalOr: case SpvOpLogicalAnd: case SpvOpLogicalNot:
-        case SpvOpLogicalEqual: case SpvOpLogicalNotEqual:
-        case SpvOpSelect: case SpvOpIEqual: case SpvOpINotEqual:
-        case SpvOpULessThan: case SpvOpSLessThan:
-        case SpvOpUGreaterThan: case SpvOpSGreaterThan:
-        case SpvOpULessThanEqual: case SpvOpSLessThanEqual:
-        case SpvOpUGreaterThanEqual: case SpvOpSGreaterThanEqual:
-            // add implementations here.
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
-
-            // check shader capability... vulkan should assume this...
-        case SpvOpQuantizeToF16:
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
-            break;
-
-            // check kernel capability... vulkan have none currently...
-        case SpvOpConvertFToS: case SpvOpConvertSToF:
-        case SpvOpConvertFToU: case SpvOpConvertUToF:
-        case SpvOpConvertPtrToU: case SpvOpConvertUToPtr:
-        case SpvOpGenericCastToPtr: case SpvOpPtrCastToGeneric:
-        case SpvOpBitcast: case SpvOpFNegate:
-        case SpvOpFAdd: case SpvOpFSub: case SpvOpFMul: case SpvOpFDiv:
-        case SpvOpFRem: case SpvOpFMod:
-        case SpvOpAccessChain: case SpvOpInBoundsAccessChain:
-        case SpvOpPtrAccessChain: case SpvOpInBoundsPtrAccessChain:
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
-            break;
     }
 }
 
 
-SpvReflectResult EvaluateResult(SpvReflectShaderModule* p_module, uint32_t result_id, SpvReflectScalarValue* result)
+SpvReflectResult EvaluateResult(const SpvReflectShaderModule* p_module, uint32_t result_id, SpvReflectValue* result)
 {
     if (!result || !p_module) {
         return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
