@@ -372,6 +372,7 @@ typedef struct SpvReflectScalarValue {
 typedef struct SpvReflectValue {
     SpvReflectScalarType general_type;
     // may be null if boolean, coming from OpSpecConstantTrue/OpSpecConstantFalse
+    // but type found through return type id is never null.
     SpvReflectTypeDescription* type;
     SpvReflectScalarValue values[SPV_REFLECT_MAX_VECTOR_DIMS];
 } SpvReflectValue;
