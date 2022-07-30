@@ -5280,6 +5280,335 @@ SpvReflectResult GetSpecContantById(const SpvReflectShaderModule* p_module, uint
     return res;
 }
 
+#include <math.h>
+
+#define CHECK_INSTRUCTION_SIZE(node, expected)                                                  \
+{                                                                                               \
+    if (node->word_count != expected) {                                                         \
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;                              \
+    }                                                                                           \
+}
+
+#define CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, p_result, p_op1)                                                               \
+{                                                                                                                               \
+                                                                                                                                \
+    if ((p_result)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                          \
+        if (!((p_op1)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                      \
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+        }                                                                                                                       \
+        if ((p_op1)->type->traits.numeric.vector.component_count != (p_result)->type->traits.numeric.vector.component_count) {  \
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+        }                                                                                                                       \
+        vec_size = (p_result)->type->traits.numeric.vector.component_count;                                                     \
+    }                                                                                                                           \
+}
+
+#define CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, p_result, p_op1, p_op2)                                                        \
+{                                                                                                                               \
+                                                                                                                                \
+    if ((p_result)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                          \
+        if (!((p_op1)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                      \
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+        }                                                                                                                       \
+        if (!((p_op2)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                      \
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+        }                                                                                                                       \
+        if ((p_op1)->type->traits.numeric.vector.component_count != (p_result)->type->traits.numeric.vector.component_count) {  \
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+        }                                                                                                                       \
+        if ((p_op2)->type->traits.numeric.vector.component_count != (p_result)->type->traits.numeric.vector.component_count) {  \
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+        }                                                                                                                       \
+        vec_size = (p_result)->type->traits.numeric.vector.component_count;                                                     \
+    }                                                                                                                           \
+}
+
+#define CHECK_WIDTH_MATCH(p_value1, p_value2)                                                               \
+{                                                                                                           \
+    if ((p_value2)->type->traits.numeric.scalar.width != (p_value1)->type->traits.numeric.scalar.width) {   \
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                 \
+    }                                                                                                       \
+}
+
+#define CHECK_IS_BASIC_TYPE_EXCEPT_BOOL(p_result, b_type)                                   \
+{                                                                                           \
+    if(!(p_result)->type) {                                                                 \
+        /* is result of opconstanttrue, etc. Boolean... */                                  \
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                 \
+    }                                                                                       \
+    if(((p_result)->type->type_flags & SCALAR_TYPE_FLAGS) != b_type) {                      \
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                 \
+    }                                                                                       \
+}
+
+#define CHECK_IS_INTEGER_TYPE(p_result) CHECK_IS_BASIC_TYPE_EXCEPT_BOOL(p_result, SPV_REFLECT_TYPE_FLAG_INT)
+#define CHECK_IS_FLOAT_TYPE(p_result) CHECK_IS_BASIC_TYPE_EXCEPT_BOOL(p_result, SPV_REFLECT_TYPE_FLAG_FLOAT)
+#define CHECK_IS_BOOLEAN_TYPE(p_result)                                     \
+{                                                                           \
+    if((p_result)->type) {                                                  \
+        if(((p_result)->type->type_flags & SCALAR_TYPE_FLAGS) != b_type) {  \
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;             \
+        }                                                                   \
+    }                                                                       \
+}
+
+#define GET_OPERAND(p_module, p_node, offset, p_operand, maxRecursion)                                          \
+{                                                                                                               \
+    uint32_t operand_id;                                                                                        \
+    CHECKED_READU32(p_module->_internal->parser, p_node->word_offset + offset, operand_id);                     \
+    SpvReflectResult result_get_op = EvaluateResultImpl(p_module, operand_id, (p_operand), maxRecursion - 1);   \
+    if (result_get_op != SPV_REFLECT_RESULT_SUCCESS) return result_get_op;                                      \
+}
+
+#define SIMPLE_UNARY_OP_32_BIT_HOOK
+#define SIMPLE_UNARY_OP_64_BIT_HOOK
+
+#define DO_SIMPLE_UNARY_INTEGER_OPERATION(p_result, simple_op_module, simple_op_node, maxRecursion)             \
+{                                                                                                               \
+    CHECK_INSTRUCTION_SIZE((simple_op_node), 5)                                                                 \
+                                                                                                                \
+    /* check result type */                                                                                     \
+    CHECK_IS_INTEGER_TYPE((p_result))                                                                           \
+                                                                                                                \
+    /* get operand */                                                                                           \
+    SpvReflectValue operand1 = {0};                                                                             \
+    GET_OPERAND((simple_op_module), (simple_op_node), 4, &operand1, maxRecursion)                               \
+    /* check type here */                                                                                       \
+    CHECK_IS_INTEGER_TYPE(&operand1)                                                                            \
+                                                                                                                \
+    /* component width must match. */                                                                           \
+    CHECK_WIDTH_MATCH((p_result), &operand1)                                                                    \
+                                                                                                                \
+    /* vector size must match */                                                                                \
+    uint32_t vec_size = 1;                                                                                      \
+    CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, (p_result), &operand1)                                             \
+                                                                                                                \
+    /* now do the job */                                                                                        \
+    for (uint32_t i = 0; i < vec_size; ++i) {                                                                   \
+        (p_result)->values[i].undefined_value = operand1.values->undefined_value;                               \
+        switch (operand1.type->traits.numeric.scalar.width) {                                                   \
+            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                        \
+            case 32:                                                                                            \
+                /* 32 bit integer */                                                                            \
+                {                                                                                               \
+                    int32_t data = operand1.values[i].value.sint32_value;                                       \
+                    SIMPLE_UNARY_OP_32_BIT_HOOK                                                                 \
+                    (p_result)->values[i].value.sint32_value = data;                                            \
+                }                                                                                               \
+                break;                                                                                          \
+            case 64:                                                                                            \
+                /* 64 bit integer */                                                                            \
+                {                                                                                               \
+                    int64_t data = operand1.values[i].value.sint64_value;                                       \
+                    SIMPLE_UNARY_OP_64_BIT_HOOK                                                                 \
+                    (p_result)->values[i].value.sint64_value = data;                                            \
+                }                                                                                               \
+                break;                                                                                          \
+        }                                                                                                       \
+    }                                                                                                           \
+    return SPV_REFLECT_RESULT_SUCCESS;                                                                          \
+}
+
+#define SIMPLE_BINARY_OP_32_BIT_HOOK
+#define SIMPLE_BINARY_OP_64_BIT_HOOK
+
+#define DO_SIMPLE_BINARY_INTEGER_OPERATION(p_result, simple_op_module, simple_op_node, operation, maxRecursion)             \
+{                                                                                                                           \
+    {                                                                                                                       \
+        CHECK_INSTRUCTION_SIZE(simple_op_node, 6)                                                                           \
+        /* check result type*/                                                                                              \
+        CHECK_IS_INTEGER_TYPE(p_result)                                                                                     \
+                                                                                                                            \
+        /* get operand */                                                                                                   \
+        SpvReflectValue operand1 = {0};                                                                                     \
+        GET_OPERAND(simple_op_module, simple_op_node, 4, &operand1, maxRecursion)                                           \
+        CHECK_IS_INTEGER_TYPE(&operand1)                                                                                    \
+                                                                                                                            \
+        SpvReflectValue operand2 = {0};                                                                                     \
+        GET_OPERAND(simple_op_module, simple_op_node, 5, &operand2, maxRecursion)                                           \
+        CHECK_IS_INTEGER_TYPE(&operand2)                                                                                    \
+                                                                                                                            \
+        /* component width must be same */                                                                                  \
+        CHECK_WIDTH_MATCH(p_result, &operand1)                                                                              \
+        CHECK_WIDTH_MATCH(p_result, &operand2)                                                                              \
+                                                                                                                            \
+        /* vectors must be of same size */                                                                                  \
+        uint32_t vec_size = 1;                                                                                              \
+        CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, p_result, &operand1, &operand2)                                            \
+        /* now do the job, width unknown but same, all three sign unkown                                                    \
+          but still, since spv defines signed integer as 2-compliment,                                                      \
+          so do recent c/cpp standard, directly adding uint should be enough.*/                                             \
+        for (uint32_t i = 0; i < vec_size; ++i) {                                                                           \
+            if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {                                 \
+                (p_result)->values[i].undefined_value = 1;                                                                  \
+            }                                                                                                               \
+            switch ((p_result)->type->traits.numeric.scalar.width) {                                                        \
+                default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                \
+                case 32:                                                                                                    \
+                    {                                                                                                       \
+                        /* load data into int32_t*/                                                                         \
+                        int32_t data1 = operand1.values[i].value.sint32_value;                                              \
+                        int32_t data2 = operand2.values[i].value.sint32_value;                                              \
+                        int32_t data = data1 operation data2;                                                               \
+                        SIMPLE_BINARY_OP_32_BIT_HOOK                                                                        \
+                        /* write to correct offset */                                                                       \
+                        (p_result)->values[i].value.sint32_value = data;                                                    \
+                    }                                                                                                       \
+                    break;                                                                                                  \
+                case 64:                                                                                                    \
+                    {                                                                                                       \
+                        /* load data into int64_t*/                                                                         \
+                        int64_t data1 = operand1.values[i].value.sint64_value;                                              \
+                        int64_t data2 = operand2.values[i].value.sint64_value;                                              \
+                        int64_t data = data1 operation data2;                                                               \
+                        SIMPLE_BINARY_OP_32_BIT_HOOK                                                                        \
+                        /* write to correct offset */                                                                       \
+                        (p_result)->values[i].value.sint64_value = data;                                                    \
+                    }                                                                                                       \
+                    break;                                                                                                  \
+            }                                                                                                               \
+        }                                                                                                                   \
+    }                                                                                                                       \
+    return SPV_REFLECT_RESULT_SUCCESS;                                                                                      \
+}
+
+#define DO_UNSIGNED_INTEGER_DIVISION(p_result, simple_op_module, simple_op_node, operation, maxRecursion)                   \
+{                                                                                                                           \
+    CHECK_INSTRUCTION_SIZE(simple_op_node, 6)                                                                               \
+    /* check result type */                                                                                                 \
+    CHECK_IS_INTEGER_TYPE(result)                                                                                           \
+    if ((p_result)->type->traits.numeric.scalar.signedness) {                                                               \
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+    }                                                                                                                       \
+                                                                                                                            \
+    /* get operand */                                                                                                       \
+    SpvReflectValue operand1 = {0};                                                                                         \
+    GET_OPERAND(simple_op_module, simple_op_node, 4, &operand1, maxRecursion)                                               \
+                                                                                                                            \
+    if (operand1.type != (p_result)->type) {                                                                                \
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+    }                                                                                                                       \
+    SpvReflectValue operand2 = {0};                                                                                         \
+    GET_OPERAND(simple_op_module, simple_op_node, 5, &operand2, maxRecursion)                                               \
+    if (operand1.type != (p_result)->type) {                                                                                \
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+    }                                                                                                                       \
+                                                                                                                            \
+    uint32_t vec_size = 1;                                                                                                  \
+    if ((p_result)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                      \
+        vec_size = result->type->traits.numeric.vector.component_count;                                                     \
+    }                                                                                                                       \
+    for (uint32_t i = 0; i < vec_size; ++i) {                                                                               \
+        if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {                                     \
+            (p_result)->values[i].undefined_value = 1;                                                                      \
+        }                                                                                                                   \
+        switch ((p_result)->type->traits.numeric.scalar.width) {                                                            \
+            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                    \
+            case 32:                                                                                                        \
+                {                                                                                                           \
+                    (p_result)->values[i].value.uint32_bool_value                                                           \
+                        = operand1.values[i].value.uint32_bool_value operation operand2.values[i].value.uint32_bool_value;  \
+                    if (operand2.values[i].value.uint32_bool_value == 0) {                                                  \
+                        (p_result)->values[i].undefined_value = 1;                                                          \
+                    }                                                                                                       \
+                }                                                                                                           \
+                break;                                                                                                      \
+            case 64:                                                                                                        \
+                {                                                                                                           \
+                    (p_result)->values[i].value.uint64_value                                                                \
+                        = operand1.values[i].value.uint64_value operation operand2.values[i].value.uint64_value;            \
+                    if (operand2.values[i].value.uint64_value == 0) {                                                       \
+                        (p_result)->values[i].undefined_value = 1;                                                          \
+                    }                                                                                                       \
+                }                                                                                                           \
+                break;                                                                                                      \
+        }                                                                                                                   \
+    }                                                                                                                       \
+    return SPV_REFLECT_RESULT_SUCCESS;                                                                                      \
+}
+
+#define SHIFT_OP_32_BIT_HOOK_PRE
+#define SHIFT_OP_64_BIT_HOOK_PRE
+#define SHIFT_OP_32_BIT_HOOK_POST
+#define SHIFT_OP_64_BIT_HOOK_POST
+
+#define DO_SHIFT_OPERATION(p_result, simple_op_module, simple_op_node, operation, maxRecursion) \
+{                                                                                               \
+    CHECK_INSTRUCTION_SIZE((simple_op_node), 6)                                                 \
+    /* check result type */                                                                     \
+    CHECK_IS_INTEGER_TYPE((p_result))                                                           \
+                                                                                                \
+    /* get operand */                                                                           \
+    SpvReflectValue operand1 = {0};                                                             \
+    GET_OPERAND((simple_op_module), (simple_op_node), 4, &operand1, maxRecursion)               \
+    CHECK_IS_INTEGER_TYPE(&operand1)                                                            \
+                                                                                                \
+    SpvReflectValue operand2 = {0};                                                             \
+    GET_OPERAND((simple_op_module), (simple_op_node), 5, &operand2, maxRecursion)               \
+    CHECK_IS_INTEGER_TYPE(&operand2)                                                            \
+                                                                                                \
+    /* op1 and result must have same width */                                                   \
+    CHECK_WIDTH_MATCH((p_result), &operand1)                                                    \
+    uint32_t res_width = (p_result)->type->traits.numeric.scalar.width;                         \
+                                                                                                \
+    /* vectors must be of same size */                                                          \
+    uint32_t vec_size = 1;                                                                      \
+    CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (p_result), &operand1, &operand2);                 \
+                                                                                                \
+    for (uint32_t i = 0; i < vec_size; ++i) {                                                   \
+        if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {         \
+            (p_result)->values[i].undefined_value = 1;                                          \
+        }                                                                                       \
+        /* load the shift number, set undefined flag if larger than result width*/              \
+        uint8_t shift_num;                                                                      \
+        switch (operand2.type->traits.numeric.scalar.width) {                                   \
+            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                        \
+            case 32:                                                                            \
+                {                                                                               \
+                    uint32_t shift = operand2.values[i].value.uint32_bool_value;                \
+                    if (operand1.values[i].undefined_value || shift >= res_width) {             \
+                        (p_result)->values[i].undefined_value = 1;                              \
+                    }                                                                           \
+                    shift_num = (uint8_t)shift;                                                 \
+                }                                                                               \
+                break;                                                                          \
+            case 64:                                                                            \
+                {                                                                               \
+                    uint64_t shift = operand2.values[i].value.uint64_value;                     \
+                    if (operand1.values[i].undefined_value || shift >= res_width) {             \
+                        (p_result)->values[i].undefined_value = 1;                              \
+                    }                                                                           \
+                    shift_num = (uint8_t)shift;                                                 \
+                }                                                                               \
+                break;                                                                          \
+        }                                                                                       \
+        switch (res_width) {                                                                    \
+            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                        \
+            case 32:                                                                            \
+                {                                                                               \
+                    uint32_t data = operand1.values[i].value.uint32_bool_value;                 \
+                    SHIFT_OP_32_BIT_HOOK_PRE                                                    \
+                    data operation##= shift_num;                                                \
+                    SHIFT_OP_32_BIT_HOOK_POST                                                   \
+                    (p_result)->values[i].value.uint32_bool_value = data;                       \
+                }                                                                               \
+                break;                                                                          \
+            case 64:                                                                            \
+                {                                                                               \
+                    uint64_t data = operand1.values[i].value.uint64_value;                      \
+                    SHIFT_OP_64_BIT_HOOK_PRE                                                    \
+                    data operation##= shift_num;                                                \
+                    SHIFT_OP_64_BIT_HOOK_POST                                                   \
+                    (p_result)->values[i].value.uint64_value = data;                            \
+                }                                                                               \
+                break;                                                                          \
+        }                                                                                       \
+    }                                                                                           \
+    return SPV_REFLECT_RESULT_SUCCESS;                                                          \
+}
+
+
+
 // Used for calculating specialization constants.
 // The switches are not necessary for littel endian cpu,
 // but still there just in case.
@@ -5351,12 +5680,13 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                 // evaluate op
                 uint32_t spec_op;
                 CHECKED_READU32(p_parser, p_node->word_offset + 3, spec_op);
-                spec_op &= 0xFFFF;
                 switch (spec_op) {
                     default:
                         return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
                     case SpvOpUndef:
+                        // write undefined value to result...
                         {
+                            CHECK_INSTRUCTION_SIZE(p_node, 4)
                             if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
                                 for (uint32_t i = 0; i < result->type->traits.numeric.vector.component_count; ++i) {
                                     result->values[i].undefined_value = 1;
@@ -5368,42 +5698,26 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                         }
                         return SPV_REFLECT_RESULT_SUCCESS;
                     case SpvOpSConvert: 
-                        // maybe there's a more clever way?
+                        // sign extend or truncate integers.
+                        // result is scalar or vector integer type.
+                        // vectors should be of same length
                         {
-                            // convert of signed integer to any integer of different width.
-                            // result is scalar or vector integer type.
-                            // vectors should be of same length
+                            CHECK_INSTRUCTION_SIZE(p_node, 5)
 
                             // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
+                            CHECK_IS_INTEGER_TYPE(result)
 
                             // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
                             SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
+                            GET_OPERAND(p_module, p_node, 4, &operand1, maxRecursion)
+                            CHECK_IS_INTEGER_TYPE(&operand1)
                             // operand must be signed
                             if (!operand1.type->traits.numeric.scalar.signedness) {
                                 return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                             }
                             // vector size must match
                             uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = operand1.type->traits.numeric.vector.component_count;
-                            }
+                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, result, &operand1)
 
                             // now do the job
                             for (uint32_t i = 0; i < vec_size; ++i) {
@@ -5411,88 +5725,60 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                                 switch (operand1.type->traits.numeric.scalar.width) {
                                     default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                     case 32:
-                                        // convert int32 to generic integer type
-                                        switch (result->type->traits.numeric.scalar.width) {
-                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                            case 32:
-                                                if (result->type->traits.numeric.scalar.signedness) {
-                                                    result->values[i].value.sint32_value = operand1.values[i].value.sint32_value;
-                                                }
-                                                else {
-                                                    result->values[i].value.uint32_bool_value = (uint32_t)operand1.values[i].value.sint32_value;
-                                                }
-                                                break;
-                                            case 64:
-                                                if (result->type->traits.numeric.scalar.signedness) {
-                                                    result->values[i].value.sint64_value = (int64_t)operand1.values[i].value.sint32_value;
-                                                }
-                                                else {
-                                                    result->values[i].value.uint64_value = (uint64_t)operand1.values[i].value.sint32_value;
-                                                }
-                                                break;
+                                        {
+                                            int32_t data = operand1.values[i].value.sint32_value;
+                                            switch (result->type->traits.numeric.scalar.width) {
+                                                default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                case 32:
+                                                    result->values[i].value.sint32_value = data;
+                                                    break;
+                                                case 64:
+                                                    result->values[i].value.sint64_value = (int64_t)data;
+                                                    break;
+                                            }
                                         }
                                         break;
                                     case 64:
-                                        // convert int64 to generic integer type
-                                        switch (result->type->traits.numeric.scalar.width) {
-                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                            case 32:
-                                                if (result->type->traits.numeric.scalar.signedness) {
-                                                    result->values[i].value.sint32_value = (int32_t)operand1.values[i].value.sint64_value;
-                                                }
-                                                else {
-                                                    result->values[i].value.uint32_bool_value = (uint32_t)operand1.values[i].value.sint64_value;
-                                                }
-                                                break;
-                                            case 64:
-                                                if (result->type->traits.numeric.scalar.signedness) {
-                                                    result->values[i].value.sint64_value = operand1.values[i].value.sint64_value;
-                                                }
-                                                else {
-                                                    result->values[i].value.uint64_value = (uint64_t)operand1.values[i].value.sint64_value;
-                                                }
-                                                break;
+                                        {
+                                            int64_t data = operand1.values[i].value.sint64_value;
+                                            switch (result->type->traits.numeric.scalar.width) {
+                                                default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                case 32:
+                                                    result->values[i].value.sint32_value = (int32_t)data;
+                                                    break;
+                                                case 64:
+                                                    result->values[i].value.sint64_value = data;
+                                                    break;
+                                            }
                                         }
+                                        break;
                                 }
                             }
                         }
                         return SPV_REFLECT_RESULT_SUCCESS;
                     case SpvOpUConvert:
+                        // zero extend or truncate integers.
+                        // result is scalar or vector integer type.
+                        // vectors should be of same length
                         {
-                            // convert of unsigned integer to any integer of different width.
-                            // result is scalar or vector integer type.
-                            // vectors should be of same length
+                            CHECK_INSTRUCTION_SIZE(p_node, 5)
 
                             // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
+                            CHECK_IS_INTEGER_TYPE(result)
 
                             // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
                             SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
+                            GET_OPERAND(p_module, p_node, 4, &operand1, maxRecursion)
+
                             // check type here, remember undefined value and booleans with type == null 
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
+                            CHECK_IS_INTEGER_TYPE(&operand1)
                             // operand must not be signed
                             if (operand1.type->traits.numeric.scalar.signedness) {
                                 return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                             }
                             // vector size must match
                             uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = operand1.type->traits.numeric.vector.component_count;
-                            }
+                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, result, &operand1)
 
                             // now do the job
                             for (uint32_t i = 0; i < vec_size; ++i) {
@@ -5500,83 +5786,55 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                                 switch (operand1.type->traits.numeric.scalar.width) {
                                     default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                     case 32:
-                                        // convert int32 to generic integer type
-                                        switch (result->type->traits.numeric.scalar.width) {
-                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                            case 32:
-                                                if (result->type->traits.numeric.scalar.signedness) {
-                                                    result->values[i].value.sint32_value = operand1.values[i].value.uint32_bool_value;
-                                                }
-                                                else {
-                                                    result->values[i].value.uint32_bool_value = (uint32_t)operand1.values[i].value.uint32_bool_value;
-                                                }
-                                                break;
-                                            case 64:
-                                                if (result->type->traits.numeric.scalar.signedness) {
-                                                    result->values[i].value.sint64_value = (int64_t)operand1.values[i].value.uint32_bool_value;
-                                                }
-                                                else {
-                                                    result->values[i].value.uint64_value = (uint64_t)operand1.values[i].value.uint32_bool_value;
-                                                }
-                                                break;
+                                        {
+                                            uint32_t data = operand1.values[i].value.uint32_bool_value;
+                                            switch (result->type->traits.numeric.scalar.width) {
+                                                default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                case 32:
+                                                    result->values[i].value.uint32_bool_value = data;
+                                                    break;
+                                                case 64:
+                                                    result->values[i].value.uint64_value = (uint64_t)data;
+                                                    break;
+                                            }
                                         }
                                         break;
                                     case 64:
-                                        // convert int64 to generic integer type
-                                        switch (result->type->traits.numeric.scalar.width) {
-                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                            case 32:
-                                                if (result->type->traits.numeric.scalar.signedness) {
-                                                    result->values[i].value.sint32_value = (int32_t)operand1.values[i].value.uint64_value;
-                                                }
-                                                else {
-                                                    result->values[i].value.uint32_bool_value = (uint32_t)operand1.values[i].value.uint64_value;
-                                                }
-                                                break;
-                                            case 64:
-                                                if (result->type->traits.numeric.scalar.signedness) {
-                                                    result->values[i].value.sint64_value = operand1.values[i].value.uint64_value;
-                                                }
-                                                else {
-                                                    result->values[i].value.uint64_value = (uint64_t)operand1.values[i].value.uint64_value;
-                                                }
-                                                break;
+                                        {
+                                            uint64_t data = operand1.values[i].value.uint64_value;
+                                            switch (result->type->traits.numeric.scalar.width) {
+                                                default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                case 32:
+                                                    result->values[i].value.uint32_bool_value = (uint32_t)data;
+                                                    break;
+                                                case 64:
+                                                    result->values[i].value.uint64_value = data;
+                                                    break;
+                                            }
                                         }
+                                        break;
                                 }
                             }
                         }
                         return SPV_REFLECT_RESULT_SUCCESS;
                     case SpvOpFConvert:
+                        // convert of floating point integer to any integer of different width.
+                        // just 32 and 64 bit for now...
                         {
-                            // convert of floating point integer to any integer of different width.
-                            // just 32 and 64 bit for now...
+                            CHECK_INSTRUCTION_SIZE(p_node, 5)
 
                             // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_FLOAT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
+                            CHECK_IS_FLOAT_TYPE(result)
 
                             // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
                             SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
+                            GET_OPERAND(p_module, p_node, 4, &operand1, maxRecursion)
+
                             // check type here, remember undefined value and booleans with type == null 
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_FLOAT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
+                            CHECK_IS_FLOAT_TYPE(&operand1)
                             // vector size must match
                             uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = operand1.type->traits.numeric.vector.component_count;
-                            }
+                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, result, &operand1)
 
                             // now do the job
                             for (uint32_t i = 0; i < vec_size; ++i) {
@@ -5611,1422 +5869,174 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                         }
                         return SPV_REFLECT_RESULT_SUCCESS;
                     case SpvOpSNegate:
-                        // compute minus sign of op1, reading from uint type union member
-                        // currently violates strict aliasing rules...
-                        // same as neg instruction.
-                        // same bitwise not operation and then add 1
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // component size must match.
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // vector size must match
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = operand1.type->traits.numeric.vector.component_count;
-                            }
-
-                            // now do the job
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                result->values[i].undefined_value = operand1.values->undefined_value;
-                                switch (operand1.type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        // convert int32 to generic integer type
-                                        {
-                                            // load data, strict aliasing rules require this memcpy
-                                            // reading from uint32_bool_value without memcpy may still violate strict aliasing rules?
-                                            int32_t data;
-                                            memcpy(&data, &operand1.values[i].value.sint32_value, 4);
-                                            data = -data;
-                                            memcpy(&result->values[i].value.sint32_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        // convert int64 to generic integer type
-                                        {
-                                            // load data, strict aliasing rules require this memcpy
-                                            // reading from uint32_t without memcpy may still violate strict aliasing rules?
-                                            int64_t data;
-                                            memcpy(&data, &operand1.values[i].value.sint64_value, 8);
-                                            data = -data;
-                                            memcpy(&result->values[i].value.sint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        #undef SIMPLE_UNARY_OP_32_BIT_HOOK
+                        #undef SIMPLE_UNARY_OP_64_BIT_HOOK
+                        #define SIMPLE_UNARY_OP_32_BIT_HOOK {data = -data;}
+                        #define SIMPLE_UNARY_OP_64_BIT_HOOK {data = -data;}
+                        DO_SIMPLE_UNARY_INTEGER_OPERATION(result, p_module, p_node, maxRecursion)
+                        #undef SIMPLE_UNARY_OP_32_BIT_HOOK
+                        #undef SIMPLE_UNARY_OP_64_BIT_HOOK
+                        #define SIMPLE_UNARY_OP_32_BIT_HOOK
+                        #define SIMPLE_UNARY_OP_64_BIT_HOOK
                     case SpvOpNot:
                         // bitwise not of every component in op1, store into same width result.
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            // width must match
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            // vector size must match
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = operand1.type->traits.numeric.vector.component_count;
-                            }
-
-                            // now do the job
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                result->values[i].undefined_value = operand1.values->undefined_value;
-                                switch (operand1.type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            // load data into uint32_t
-                                            uint32_t data;
-                                            memcpy(&data, &operand1.values[i].value.uint32_bool_value, 4);
-                                            data ^= 0xffffffff;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint32_bool_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            // load data into uint64_t
-                                            uint64_t data;
-                                            memcpy(&data, &operand1.values[i].value.uint64_value, 8);
-                                            data ^= 0xffffffffffffffff;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
-                        
+                        #undef SIMPLE_UNARY_OP_32_BIT_HOOK
+                        #undef SIMPLE_UNARY_OP_64_BIT_HOOK
+                        #define SIMPLE_UNARY_OP_32_BIT_HOOK data ^= 0xffffffff;
+                        #define SIMPLE_UNARY_OP_64_BIT_HOOK data ^= 0xffffffffffffffff;
+                        DO_SIMPLE_UNARY_INTEGER_OPERATION(result, p_module, p_node, maxRecursion)
+                        #undef SIMPLE_UNARY_OP_32_BIT_HOOK
+                        #undef SIMPLE_UNARY_OP_64_BIT_HOOK
+                        #define SIMPLE_UNARY_OP_32_BIT_HOOK
+                        #define SIMPLE_UNARY_OP_64_BIT_HOOK
                     case SpvOpIAdd:
                         // integer add.
                         // subtraction result is the same for 2-compliment
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // component width must be same
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (operand2.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-
-                            // now do the job, width unknown but same, all three sign unkown
-                            // but still, since spv defines signed integer as 2-compliment,
-                            // so do recent c/cpp standard, directly adding uint should be enough.
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                switch (result->type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            // load data into uint32_t
-                                            uint32_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.uint32_bool_value, 4);
-                                            uint32_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.uint32_bool_value, 4);
-                                            uint32_t data = data1 + data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint32_bool_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            // load data into uint64_t
-                                            uint64_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.uint64_value, 8);
-                                            uint64_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.uint64_value, 8);
-                                            uint64_t data = data1 + data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, +, maxRecursion)
                     case SpvOpISub:
                         // integer subtract.
                         // subtraction result is the same for 2-compliment
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // component width must be same
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (operand2.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-
-                            // now do the job, width unknown but same, all three sign unkown
-                            // but still, since spv defines signed integer as 2-compliment,
-                            // so do recent c/cpp standard, directly adding uint should be enough.
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                switch (result->type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            // load data into uint32_t
-                                            uint32_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.uint32_bool_value, 4);
-                                            uint32_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.uint32_bool_value, 4);
-                                            uint32_t data = data1 - data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint32_bool_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            // load data into uint64_t
-                                            uint64_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.uint64_value, 8);
-                                            uint64_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.uint64_value, 8);
-                                            uint64_t data = data1 - data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, -, maxRecursion)
                     case SpvOpIMul:
                         // integer multiply...
                         // imul instruction on x86, signed and unsigned have no difference in result
                         // except for how they overflow.
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // component width must be same
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (operand2.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                switch (result->type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            // load data into uint32_t
-                                            int32_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.sint32_value, 4);
-                                            int32_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.sint32_value, 4);
-                                            int32_t data = data1 * data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.sint32_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            // load data into uint64_t
-                                            int64_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.sint64_value, 8);
-                                            int64_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.sint64_value, 8);
-                                            int64_t data = data1 * data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.sint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, *, maxRecursion)
                     case SpvOpUDiv:
                         // unsigned divide
                         // All operand must be same unsigned integer scalar or vector type.
                         // x86 div instruction
                         // emits undefined value if divide by zero
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (result->type->traits.numeric.scalar.signedness) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand1.type != result->type) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand1.type != result->type) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                switch (result->type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            result->values[i].value.uint32_bool_value = operand1.values[i].value.uint32_bool_value/ operand2.values[i].value.uint32_bool_value;
-                                            if (operand2.values[i].value.uint32_bool_value == 0) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            result->values[i].value.uint64_value = operand1.values[i].value.uint64_value / operand2.values[i].value.uint64_value;
-                                            if (operand2.values[i].value.uint64_value == 0) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        DO_UNSIGNED_INTEGER_DIVISION(result, p_module, p_node, /, maxRecursion)
                     case SpvOpSDiv:
                         // signed divide
                         // x86 idiv instruction
                         // same bits, same vector size, no sign requirements.
                         // accessing result types that are not signed violates strict aliasing rules. 
                         // emits undefined value if divide by zero or 0x80000... divides -1
-                        // using just the c operator / here. In C89 rounding is implementation defined,
-                        // but in later standard, this means rounding to zero (idiv instruction).
-                        // spirv spec have nothing to say about rounding...
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // component width must be same
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (operand2.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                switch (result->type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            int32_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.sint32_value, 4);
-                                            int32_t data2;
-                                            memcpy(&data2, &operand1.values[i].value.sint32_value, 4);
-                                            if (data2 == 0 || (data2 == -1 && data1 == (int32_t)0x80000000)) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            int32_t data = data1/data2;
-                                            memcpy(&result->values[i].value.sint32_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            int64_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.sint64_value, 8);
-                                            int64_t data2;
-                                            memcpy(&data2, &operand1.values[i].value.sint64_value, 8);
-                                            if (data2 == 0 || (data2 == -1 && data1 == (int64_t)0x8000000000000000)) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            int64_t data = data1 / data2;
-                                            memcpy(&result->values[i].value.sint32_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
+                        #undef SIMPLE_BINARY_OP_32_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_32_BIT_HOOK                                \
+                        if (data2 == 0 || (data2 == -1 && data1 == (int32_t)0x80000000)) {  \
+                            result->values[i].undefined_value = 1;                          \
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        #undef SIMPLE_BINARY_OP_64_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_64_BIT_HOOK                                        \
+                        if (data2 == 0 || (data2 == -1 && data1 == (int64_t)0x8000000000000000)) {  \
+                            result->values[i].undefined_value = 1;                                  \
+                        }
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, /, maxRecursion)
+                        #undef SIMPLE_BINARY_OP_32_BIT_HOOK
+                        #undef SIMPLE_BINARY_OP_64_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_32_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_64_BIT_HOOK
                     case SpvOpUMod:
                         // unsigned modulo
                         // all types must be same unsigned integer scalar or vector type.
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (result->type->traits.numeric.scalar.signedness) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand1.type != result->type) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand1.type != result->type) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                switch (result->type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            result->values[i].value.uint32_bool_value = operand1.values[i].value.uint32_bool_value % operand2.values[i].value.uint32_bool_value;
-                                            if (operand2.values[i].value.uint32_bool_value == 0) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            result->values[i].value.uint64_value = operand1.values[i].value.uint64_value % operand2.values[i].value.uint64_value;
-                                            if (operand2.values[i].value.uint64_value == 0) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        DO_UNSIGNED_INTEGER_DIVISION(result, p_module, p_node, %, maxRecursion)
                     case SpvOpSRem:
                         // just the result of % operator.
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // component width must be same
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (operand2.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                switch (result->type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            int32_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.sint32_value, 4);
-                                            int32_t data2;
-                                            memcpy(&data2, &operand1.values[i].value.sint32_value, 4);
-                                            if (data2 == 0 || (data2 == -1 && data1 == (int32_t)0x80000000)) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            int32_t data = data1 % data2;
-                                            memcpy(&result->values[i].value.sint32_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            int64_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.sint64_value, 8);
-                                            int64_t data2;
-                                            memcpy(&data2, &operand1.values[i].value.sint64_value, 8);
-                                            if (data2 == 0 || (data2 == -1 && data1 == (int64_t)0x8000000000000000)) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            int64_t data = data1 % data2;
-                                            memcpy(&result->values[i].value.sint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
+                        #undef SIMPLE_BINARY_OP_32_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_32_BIT_HOOK                                \
+                        if (data2 == 0 || (data2 == -1 && data1 == (int32_t)0x80000000)) {  \
+                            result->values[i].undefined_value = 1;                          \
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        #undef SIMPLE_BINARY_OP_64_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_64_BIT_HOOK                                        \
+                        if (data2 == 0 || (data2 == -1 && data1 == (int64_t)0x8000000000000000)) {  \
+                            result->values[i].undefined_value = 1;                                  \
+                        }
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, %, maxRecursion)
+                        #undef SIMPLE_BINARY_OP_32_BIT_HOOK
+                        #undef SIMPLE_BINARY_OP_64_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_32_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_64_BIT_HOOK
                     case SpvOpSMod:
                         // not result of % operator, need adjusting with dividend...
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // component width must be same
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (operand2.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                switch (result->type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            int32_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.sint32_value, 4);
-                                            int32_t data2;
-                                            memcpy(&data2, &operand1.values[i].value.sint32_value, 4);
-                                            if (data2 == 0 || (data2 == -1 && data1 == (int32_t)0x80000000)) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            int32_t data = data1 % data2;
-                                            // multiplying data and data2 may result in overflow...
-                                            // need expicit tests...
-                                            if (data != 0) {
-                                                int sign1 = 0, sign2 = 0;
-                                                if (data < 0) sign1 = 1;
-                                                if (data2 < 0) sign2 = 1;
-                                                // remainder is not same as modulo here...
-                                                if ((sign1 + sign2) == 1) {
-                                                    data += data2;
-                                                }
-                                            }
-                                            memcpy(&result->values[i].value.sint32_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            int64_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.sint64_value, 8);
-                                            int64_t data2;
-                                            memcpy(&data2, &operand1.values[i].value.sint64_value, 8);
-                                            if (data2 == 0 || (data2 == -1 && data1 == (int64_t)0x8000000000000000)) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            int64_t data = data1 % data2;
-                                            // multiplying data and data2 may result in overflow...
-                                            // need expicit tests...
-                                            if (data != 0) {
-                                                int sign1 = 0, sign2 = 0;
-                                                if (data < 0) sign1 = 1;
-                                                if (data2 < 0) sign2 = 1;
-                                                // remainder is not same as modulo here...
-                                                if ((sign1 + sign2) == 1) {
-                                                    data += data2;
-                                                }
-                                            }
-                                            memcpy(&result->values[i].value.sint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
+                        #undef SIMPLE_BINARY_OP_32_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_32_BIT_HOOK                                \
+                        if (data2 == 0 || (data2 == -1 && data1 == (int32_t)0x80000000)) {  \
+                            result->values[i].undefined_value = 1;                          \
+                        }                                                                   \
+                        else if (data != 0) {                                               \
+                            int sign1 = 0, sign2 = 0;                                       \
+                            if (data < 0) sign1 = 1;                                        \
+                            if (data2 < 0) sign2 = 1;                                       \
+                            /* remainder is not same as modulo here...*/                    \
+                            if ((sign1 + sign2) == 1) {                                     \
+                                data += data2;                                              \
+                            }                                                               \
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        #undef SIMPLE_BINARY_OP_64_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_64_BIT_HOOK                                        \
+                        if (data2 == 0 || (data2 == -1 && data1 == (int64_t)0x8000000000000000)) {  \
+                            result->values[i].undefined_value = 1;                                  \
+                        }                                                                           \
+                        else if (data != 0) {                                                       \
+                            int sign1 = 0, sign2 = 0;                                               \
+                            if (data < 0) sign1 = 1;                                                \
+                            if (data2 < 0) sign2 = 1;                                               \
+                            /* remainder is not same as modulo here...*/                            \
+                            if ((sign1 + sign2) == 1) {                                             \
+                                data += data2;                                                      \
+                            }                                                                       \
+                        }
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, %, maxRecursion)
+                        #undef SIMPLE_BINARY_OP_32_BIT_HOOK
+                        #undef SIMPLE_BINARY_OP_64_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_32_BIT_HOOK
+                        #define SIMPLE_BINARY_OP_64_BIT_HOOK
                     case SpvOpShiftRightLogical:
                         // zero fill right shift. Just >> in c
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // op1 and result must have same width
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            uint32_t res_width = result->type->traits.numeric.scalar.width;
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                // load the shift number, set undefined flag if larger than result width
-                                uint8_t shift_num;
-                                switch (operand2.type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            uint32_t shift;
-                                            memcpy(&shift, &operand2.values[i].value.uint32_bool_value, 4);
-                                            if (shift >= res_width) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            shift_num = (uint8_t)shift;
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            uint64_t shift;
-                                            memcpy(&shift, &operand2.values[i].value.uint32_bool_value, 8);
-                                            if (shift >= res_width) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            shift_num = (uint8_t)shift;
-                                        }
-                                        break;
-                                }
-                                switch (res_width) {
-                                    default:
-                                        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            uint32_t data;
-                                            memcpy(&data, &operand1.values[i].value.uint32_bool_value, 4);
-                                            data >>= shift_num;
-                                            memcpy(&result->values[i].value.uint32_bool_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            uint64_t data;
-                                            memcpy(&data, &operand1.values[i].value.uint64_value, 8);
-                                            data >>= shift_num;
-                                            memcpy(&result->values[i].value.uint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        DO_SHIFT_OPERATION(result, p_module, p_node, >>, maxRecursion)
                     case SpvOpShiftRightArithmetic:
                         // fill with sign of original number.
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // op1 and result must have same width
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            uint32_t res_width = result->type->traits.numeric.scalar.width;
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                // load the shift number, set undefined flag if larger than result width
-                                uint8_t shift_num;
-                                switch (operand2.type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            uint32_t shift;
-                                            memcpy(&shift, &operand2.values[i].value.uint32_bool_value, 4);
-                                            if (shift >= res_width) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            shift_num = (uint8_t)shift;
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            uint64_t shift;
-                                            memcpy(&shift, &operand2.values[i].value.uint32_bool_value, 8);
-                                            if (shift >= res_width) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            shift_num = (uint8_t)shift;
-                                        }
-                                        break;
-                                }
-                                switch (res_width) {
-                                    default:
-                                        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            uint32_t data;
-                                            memcpy(&data, &operand1.values[i].value.uint32_bool_value, 4);
-                                            uint32_t sign_bit = data & 0x80000000;
-                                            data >>= shift_num;
-                                            if (sign_bit) {
-                                                uint32_t fill = 0xffffffff << (32 - shift_num);
-                                                data |= fill;
-                                            }
-                                            memcpy(&result->values[i].value.uint32_bool_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            uint64_t data;
-                                            memcpy(&data, &operand1.values[i].value.uint64_value, 8);
-                                            uint64_t sign_bit = data & 0x8000000000000000;
-                                            data >>= shift_num;
-                                            if (sign_bit) {
-                                                uint64_t fill = 0xffffffffffffffff << (64 - shift_num);
-                                                data |= fill;
-                                            }
-                                            memcpy(&result->values[i].value.uint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
+                        #undef SHIFT_OP_32_BIT_HOOK_PRE
+                        #undef SHIFT_OP_64_BIT_HOOK_PRE
+                        #undef SHIFT_OP_32_BIT_HOOK_POST
+                        #undef SHIFT_OP_64_BIT_HOOK_POST
+                        #define SHIFT_OP_32_BIT_HOOK_PRE uint32_t sign_bit = data & 0x80000000;
+                        #define SHIFT_OP_64_BIT_HOOK_PRE uint64_t sign_bit = data & 0x8000000000000000;
+                        #define SHIFT_OP_32_BIT_HOOK_POST                           \
+                        if (sign_bit) {                                             \
+                            uint32_t fill = 0xffffffff << (32 - shift_num);         \
+                            data |= fill;                                           \
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        #define SHIFT_OP_64_BIT_HOOK_POST                           \
+                        if (sign_bit) {                                             \
+                            uint64_t fill = 0xffffffffffffffff << (64 - shift_num); \
+                            data |= fill;                                           \
+                        }
+                        DO_SHIFT_OPERATION(result, p_module, p_node, >> , maxRecursion)
+                        #undef SHIFT_OP_32_BIT_HOOK_PRE
+                        #undef SHIFT_OP_64_BIT_HOOK_PRE
+                        #undef SHIFT_OP_32_BIT_HOOK_POST
+                        #undef SHIFT_OP_64_BIT_HOOK_POST
+                        #define SHIFT_OP_32_BIT_HOOK_PRE
+                        #define SHIFT_OP_64_BIT_HOOK_PRE
+                        #define SHIFT_OP_32_BIT_HOOK_POST
+                        #define SHIFT_OP_64_BIT_HOOK_POST
                     case SpvOpShiftLeftLogical:
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // op1 and result must have same width
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            uint32_t res_width = result->type->traits.numeric.scalar.width;
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                // load the shift number, set undefined flag if larger than result width
-                                uint8_t shift_num;
-                                switch (operand2.type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            uint32_t shift;
-                                            memcpy(&shift, &operand2.values[i].value.uint32_bool_value, 4);
-                                            if (shift >= res_width) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            shift_num = (uint8_t)shift;
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            uint64_t shift;
-                                            memcpy(&shift, &operand2.values[i].value.uint32_bool_value, 8);
-                                            if (shift >= res_width) {
-                                                result->values[i].undefined_value = 1;
-                                            }
-                                            shift_num = (uint8_t)shift;
-                                        }
-                                        break;
-                                }
-                                switch (res_width) {
-                                    default:
-                                        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            uint32_t data;
-                                            memcpy(&data, &operand1.values[i].value.uint32_bool_value, 4);
-                                            data <<= shift_num;
-                                            memcpy(&result->values[i].value.uint32_bool_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            uint64_t data;
-                                            memcpy(&data, &operand1.values[i].value.uint64_value, 8);
-                                            data <<= shift_num;
-                                            memcpy(&result->values[i].value.uint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
-                    case SpvOpBitwiseOr: 
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // component width must be same
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (operand2.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                switch (result->type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            // load data into uint32_t
-                                            uint32_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.uint32_bool_value, 4);
-                                            uint32_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.uint32_bool_value, 4);
-                                            uint32_t data = data1 | data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint32_bool_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            // load data into uint64_t
-                                            uint64_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.uint64_value, 8);
-                                            uint64_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.uint64_value, 8);
-                                            uint64_t data = data1 | data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        // zero fill left shift. Just << in c
+                        DO_SHIFT_OPERATION(result, p_module, p_node, << , maxRecursion)
+                    case SpvOpBitwiseOr:
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, |, maxRecursion)
                     case SpvOpBitwiseXor:
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // component width must be same
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (operand2.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                switch (result->type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            // load data into uint32_t
-                                            uint32_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.uint32_bool_value, 4);
-                                            uint32_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.uint32_bool_value, 4);
-                                            uint32_t data = data1 ^ data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint32_bool_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            // load data into uint64_t
-                                            uint64_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.uint64_value, 8);
-                                            uint64_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.uint64_value, 8);
-                                            uint64_t data = data1 ^ data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, ^ , maxRecursion)
                     case SpvOpBitwiseAnd:
-                        {
-                            // check result type
-                            if ((result->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, & , maxRecursion)
 
-                            // get operand
-                            uint32_t operand_id1;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 4, operand_id1);
-                            SpvReflectValue operand1 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id1, &operand1, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand1.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            uint32_t operand_id2;
-                            CHECKED_READU32(p_parser, p_node->word_offset + 5, operand_id2);
-                            SpvReflectValue operand2 = {0};
-                            res = EvaluateResultImpl(p_module, operand_id2, &operand2, maxRecursion - 1);
-                            if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                            // check type here, remember undefined value and booleans with type == null 
-                            if (operand2.general_type != SPV_REFLECT_SCALAR_TYPE_INT) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // component width must be same
-                            if (operand1.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (operand2.type->traits.numeric.scalar.width != result->type->traits.numeric.scalar.width) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-
-                            // vectors must be of same size
-                            uint32_t vec_size = 1;
-                            if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
-                                if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand1.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                if (operand2.type->traits.numeric.vector.component_count != result->type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                }
-                                vec_size = result->type->traits.numeric.vector.component_count;
-                            }
-
-                            for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.values[i].undefined_value || operand2.values[i].undefined_value) {
-                                    result->values[i].undefined_value = 1;
-                                }
-                                switch (result->type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    case 32:
-                                        {
-                                            // load data into uint32_t
-                                            uint32_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.uint32_bool_value, 4);
-                                            uint32_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.uint32_bool_value, 4);
-                                            uint32_t data = data1 & data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint32_bool_value, &data, 4);
-                                        }
-                                        break;
-                                    case 64:
-                                        {
-                                            // load data into uint64_t
-                                            uint64_t data1;
-                                            memcpy(&data1, &operand1.values[i].value.uint64_value, 8);
-                                            uint64_t data2;
-                                            memcpy(&data2, &operand2.values[i].value.uint64_value, 8);
-                                            uint64_t data = data1 & data2;
-                                            // write to correct offset
-                                            memcpy(&result->values[i].value.uint64_value, &data, 8);
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        return SPV_REFLECT_RESULT_SUCCESS;
-                    case SpvOpVectorShuffle:
-                        
+                    // Do not support compostion of vectors for now...
+                    case SpvOpVectorShuffle:    
                     case SpvOpCompositeExtract:
                     case SpvOpCompositeInsert:
-                    case SpvOpLogicalOr: case SpvOpLogicalAnd: case SpvOpLogicalNot:
+                        return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+
+                    case SpvOpLogicalOr:
+                        {
+
+                        }
+                        return SPV_REFLECT_RESULT_SUCCESS;
+                    case SpvOpLogicalAnd: case SpvOpLogicalNot:
                     case SpvOpLogicalEqual: case SpvOpLogicalNotEqual:
                     case SpvOpSelect: case SpvOpIEqual: case SpvOpINotEqual:
                     case SpvOpULessThan: case SpvOpSLessThan:
