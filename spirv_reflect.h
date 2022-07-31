@@ -336,25 +336,18 @@ typedef struct SpvReflectTypeDescription {
 
   uint32_t                          member_count;
   struct SpvReflectTypeDescription* members;
+
+  // for vector, array and matrix types
+  uint32_t                          component_type_id;
 } SpvReflectTypeDescription;
 
 
 /*! @struct SpvReflectSpecializationConstant
 
 */
-typedef enum SpvReflectScalarType {
-  SPV_REFLECT_SCALAR_TYPE_UNKNOWN = 0,
-  SPV_REFLECT_SCALAR_TYPE_BOOL = 1,
-  SPV_REFLECT_SCALAR_TYPE_INT = 2,
-  SPV_REFLECT_SCALAR_TYPE_FLOAT = 3,
-} SpvReflectScalarType;
 
-// 16 bit floating point can be common. Just a bitwise representation here...
-// c++ requires c++14 standard for non static union members to have same address.
-// c seems to have always assumed this.
 typedef uint16_t spv_reflect_float16_t;
-typedef struct SpvReflectScalarValue {
-    // strongly typed for evaluation purpose
+typedef struct SpvReflectScalarValueData {
     union {
         /* small types not implemented yet... */
         uint8_t uint8_value;
@@ -372,26 +365,38 @@ typedef struct SpvReflectScalarValue {
     } value;
     // for use with OpUndef
     int undefined_value;
-} SpvReflectScalarValue;
+} SpvReflectScalarValueData;
+
+typedef struct SpvReflectVectorValueData {
+    SpvReflectScalarValueData value[SPV_REFLECT_MAX_VECTOR_DIMS];
+} SpvReflectVectorValueData;
 
 // only scalar, vector types can evaluate values for now...
+// this struct is not meant to be created on user stack,
+// instead in a internal dictionary and give user const ptr to read.
+typedef union SpvReflectValueNumericData {
+    SpvReflectScalarValueData scalar;
+    SpvReflectVectorValueData vector;
+} SpvReflectValueNumericData;
+
+typedef union SpvReflectValueData {
+    SpvReflectValueNumericData numeric;
+} SpvReflectValueData;
+
 typedef struct SpvReflectValue {
-    // may be null if boolean, coming from OpSpecConstantTrue/OpSpecConstantFalse
-    // but type found through return type id is never null.
     SpvReflectTypeDescription* type;
-    SpvReflectScalarValue values[SPV_REFLECT_MAX_VECTOR_DIMS];
-} SpvReflectValue;
+    SpvReflectValueData data;
+}SpvReflectValue;
 
 typedef struct SpvReflectSpecializationConstant {
   uint32_t spirv_id;
   uint32_t constant_id;
-  SpvReflectScalarType general_type;
 
   SpvReflectTypeDescription* type;
   const char* name;
 
-  SpvReflectScalarValue default_value;
-  SpvReflectScalarValue current_value;
+  SpvReflectScalarValueData default_value;
+  SpvReflectScalarValueData current_value;
 
 } SpvReflectSpecializationConstant;
 

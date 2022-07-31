@@ -667,7 +667,7 @@ void ParseBlockMembersToTextLines(
                     SpvReflectValue val{};
                     SpvReflectResult res = obj.EvaluateResult(member.array.spec_constant_op_ids[array_dim_index], val);
                     if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
-                        dim = val.values[0].value.uint32_bool_value;
+                        dim = val.data.numeric.scalar.value.uint32_bool_value;
                     }
                 }
                 ss_array << "[" << dim << "]";
@@ -710,7 +710,7 @@ void ParseBlockMembersToTextLines(
               SpvReflectValue val{};
               SpvReflectResult res = obj.EvaluateResult(member.array.spec_constant_op_ids[array_dim_index], val);
               if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
-                  dim = val.values[0].value.uint32_bool_value;
+                  dim = val.data.numeric.scalar.value.uint32_bool_value;
               }
           }
           ss_array << "[" << dim << "]"; 
@@ -1041,7 +1041,7 @@ void StreamWriteInterfaceVariable(std::ostream& os, const spv_reflect::ShaderMod
         SpvReflectValue val{};
         SpvReflectResult res = shader.EvaluateResult(obj.array.spec_constant_op_ids[dim_index], val);
         if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
-          dim = val.values[0].value.uint32_bool_value;
+          dim = val.data.numeric.scalar.value.uint32_bool_value;
         }
       }
       os << "[" << obj.array.dims[dim_index] << "]";
@@ -1071,12 +1071,22 @@ void StreamWriteSpecializationConstant(std::ostream& os, const SpvReflectSpecial
   os << t << "constant id: " << obj.constant_id << "\n";
   os << t << "name       : " << (obj.name != NULL ? obj.name : "") << '\n';
   os << t << "type       : ";
-  switch (obj.general_type) {
-    case SPV_REFLECT_SCALAR_TYPE_BOOL:
+  int type = 0;
+  if (!obj.type || obj.type->type_flags == SPV_REFLECT_TYPE_FLAG_BOOL) {
+    type = 1;
+  }
+  else if (obj.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) {
+    type = 2;
+  }
+  else if (obj.type->type_flags == SPV_REFLECT_TYPE_FLAG_FLOAT) {
+    type = 3;
+  }
+  switch (type) {
+    case 1:
       os << "boolean\n";
       os << t << "default    : " << obj.default_value.value.uint32_bool_value;
       break;
-    case SPV_REFLECT_SCALAR_TYPE_INT:
+    case 2:
       if (obj.type->traits.numeric.scalar.signedness) {
         os << "signed ";
       }
@@ -1106,7 +1116,7 @@ void StreamWriteSpecializationConstant(std::ostream& os, const SpvReflectSpecial
           os << "default value not native in c/cpp";
       }
       break;
-    case SPV_REFLECT_SCALAR_TYPE_FLOAT:
+    case 3:
         os << obj.type->traits.numeric.scalar.width << " bit floating point\n";
         os << t << "default    : ";
         if (obj.type->traits.numeric.scalar.width == 32) {
@@ -1141,7 +1151,9 @@ void StreamWriteEntryPoint(std::ostream& os, const spv_reflect::ShaderModule& sh
         SpvReflectResult res = shader.EvaluateResult(obj.local_size.x, val);
         if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_VECTOR)) 
             && (val.type->traits.numeric.scalar.width == 32)) {
-            os << "(" << val.values[0].value.uint32_bool_value << ", " << val.values[1].value.uint32_bool_value << ", " << val.values[2].value.uint32_bool_value << ")";
+            os << "(" << val.data.numeric.vector.value[0].value.uint32_bool_value << ", " 
+                << val.data.numeric.vector.value[1].value.uint32_bool_value << ", "
+                << val.data.numeric.vector.value[2].value.uint32_bool_value << ")";
         }
         else {
             os << "(failed evaluation of WorkGroupSize Builtin)";
@@ -1152,7 +1164,7 @@ void StreamWriteEntryPoint(std::ostream& os, const spv_reflect::ShaderModule& sh
       SpvReflectValue val = {0};
       SpvReflectResult res = shader.EvaluateResult(obj.local_size.x, val);
       if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
-        os << val.values[0].value.uint32_bool_value;
+        os << val.data.numeric.scalar.value.uint32_bool_value;
       }
       else {
         os << "unknown";
@@ -1160,14 +1172,14 @@ void StreamWriteEntryPoint(std::ostream& os, const spv_reflect::ShaderModule& sh
       os << ", ";
       res = shader.EvaluateResult(obj.local_size.y, val);
       if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
-        os << val.values[0].value.uint32_bool_value;
+        os << val.data.numeric.scalar.value.uint32_bool_value;
       }
       else {
         os << "unknown";
       }        os << ", ";
       res = shader.EvaluateResult(obj.local_size.z, val);
       if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
-        os << val.values[0].value.uint32_bool_value;
+        os << val.data.numeric.vector.value[2].value.uint32_bool_value;
       }
       else {
         os << "unknown";
