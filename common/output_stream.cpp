@@ -663,6 +663,13 @@ void ParseBlockMembersToTextLines(
             // dim = 0 means it's an unbounded array 
             //
             if (dim > 0) {
+                if (dim == 0xFFFFFFFF) {
+                    SpvReflectValue val{};
+                    SpvReflectResult res = obj.EvaluateResult(member.array.spec_constant_op_ids[array_dim_index], val);
+                    if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
+                        dim = val.values[0].value.uint32_bool_value;
+                    }
+                }
                 ss_array << "[" << dim << "]";
             }
             else {
@@ -702,8 +709,9 @@ void ParseBlockMembersToTextLines(
           if (dim == 0xFFFFFFFF) {
               SpvReflectValue val{};
               SpvReflectResult res = obj.EvaluateResult(member.array.spec_constant_op_ids[array_dim_index], val);
-              if (res != SPV_REFLECT_RESULT_SUCCESS) throw;
-              dim = val.values[0].value.uint32_bool_value;
+              if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
+                  dim = val.values[0].value.uint32_bool_value;
+              }
           }
           ss_array << "[" << dim << "]"; 
         }
@@ -1009,7 +1017,7 @@ void StreamWriteDescriptorBinding(std::ostream& os, const spv_reflect::ShaderMod
   }
 }
 
-void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVariable& obj, const char* indent)
+void StreamWriteInterfaceVariable(std::ostream& os, const spv_reflect::ShaderModule& shader, const SpvReflectInterfaceVariable& obj, const char* indent)
 {
   const char* t = indent;
   os << t << "spirv id  : " << obj.spirv_id << "\n";
@@ -1028,6 +1036,14 @@ void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVar
   if (obj.array.dims_count > 0) {  
     os << t << "array     : ";
     for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
+      uint32_t dim = obj.array.dims[dim_index];
+      if (dim == 0xFFFFFFFF) {
+        SpvReflectValue val{};
+        SpvReflectResult res = shader.EvaluateResult(obj.array.spec_constant_op_ids[dim_index], val);
+        if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
+          dim = val.values[0].value.uint32_bool_value;
+        }
+      }
       os << "[" << obj.array.dims[dim_index] << "]";
     }
     os << "\n";
@@ -1108,28 +1124,74 @@ void StreamWriteSpecializationConstant(std::ostream& os, const SpvReflectSpecial
   }
 }
 
-void StreamWriteEntryPoint(std::ostream& os, const SpvReflectEntryPoint& obj, const char* indent)
+void StreamWriteEntryPoint(std::ostream& os, const spv_reflect::ShaderModule& shader, const SpvReflectEntryPoint& obj, const char* indent)
 {
   os << indent << "entry point     : " << obj.name;
   os << " (stage=" << ToStringShaderStage(obj.shader_stage) << ")";
   if (obj.shader_stage == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT) {
     os << "\n";
-    os << "local size      : " << "(" << obj.local_size.x << ", " << obj.local_size.y << ", " << obj.local_size.z << ")";
+    if (obj.local_size.flags & 2) {
+      os << "local size      : ";
+    }
+    else {
+      os << "local size hint : ";
+    }
+    if(obj.local_size.flags & 4) {
+        SpvReflectValue val{};
+        SpvReflectResult res = shader.EvaluateResult(obj.local_size.x, val);
+        if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_VECTOR)) 
+            && (val.type->traits.numeric.scalar.width == 32)) {
+            os << "(" << val.values[0].value.uint32_bool_value << ", " << val.values[1].value.uint32_bool_value << ", " << val.values[2].value.uint32_bool_value << ")";
+        }
+        else {
+            os << "(failed evaluation of WorkGroupSize Builtin)";
+        }
+    }
+    else if(obj.local_size.flags & 1) {
+      os << "(";
+      SpvReflectValue val = {0};
+      SpvReflectResult res = shader.EvaluateResult(obj.local_size.x, val);
+      if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
+        os << val.values[0].value.uint32_bool_value;
+      }
+      else {
+        os << "unknown";
+      }
+      os << ", ";
+      res = shader.EvaluateResult(obj.local_size.y, val);
+      if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
+        os << val.values[0].value.uint32_bool_value;
+      }
+      else {
+        os << "unknown";
+      }        os << ", ";
+      res = shader.EvaluateResult(obj.local_size.z, val);
+      if ((res == SPV_REFLECT_RESULT_SUCCESS) && val.type && (val.type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val.type->traits.numeric.scalar.width == 32)) {
+        os << val.values[0].value.uint32_bool_value;
+      }
+      else {
+        os << "unknown";
+      }
+      os  << ")";
+    }
+    else{
+      os << "(" << obj.local_size.x << ", " << obj.local_size.y << ", " << obj.local_size.z << ")";
+    } 
   }
 }
 
-void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent)
+void StreamWriteShaderModule(std::ostream& os, const spv_reflect::ShaderModule& obj, const char* indent)
 {
   (void)indent;
-  os << "generator       : " << ToStringGenerator(obj.generator) << "\n";
-  os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
-  os << "source lang ver : " << obj.source_language_version << "\n";
-  os << "source file     : " << (obj.source_file != NULL ? obj.source_file : "") << "\n";
+  os << "generator       : " << ToStringGenerator(obj.GetShaderModule().generator) << "\n";
+  os << "source lang     : " << spvReflectSourceLanguage(obj.GetShaderModule().source_language) << "\n";
+  os << "source lang ver : " << obj.GetShaderModule().source_language_version << "\n";
+  os << "source file     : " << (obj.GetShaderModule().source_file != NULL ? obj.GetShaderModule().source_file : "") << "\n";
   //os << "shader stage    : " << ToStringShaderStage(obj.shader_stage) << "\n";
 
-  for (uint32_t i = 0; i < obj.entry_point_count; ++i) {
-    StreamWriteEntryPoint(os, obj.entry_points[i], "");
-    if (i < (obj.entry_point_count - 1)) {
+  for (uint32_t i = 0; i < obj.GetShaderModule().entry_point_count; ++i) {
+    StreamWriteEntryPoint(os, obj, obj.GetShaderModule().entry_points[i], "");
+    if (i < (obj.GetShaderModule().entry_point_count - 1)) {
         os << "\n";
     }
   }
@@ -1149,7 +1211,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
   const char* tt    = "    ";
   const char* ttt   = "      ";
 
-  StreamWriteShaderModule(os, obj.GetShaderModule(), "");
+  StreamWriteShaderModule(os, obj, "");
 
   uint32_t count = 0;
   std::vector<SpvReflectInterfaceVariable*> variables;
@@ -1195,7 +1257,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
       auto p_var = variables[i];
       USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
-      StreamWriteInterfaceVariable(os, *p_var, ttt);
+      StreamWriteInterfaceVariable(os, obj,*p_var, ttt);
       if (i < (count - 1)) {
         os << "\n";
       }  
@@ -1217,7 +1279,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
       auto p_var = variables[i];
       USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
-      StreamWriteInterfaceVariable(os, *p_var, ttt);
+      StreamWriteInterfaceVariable(os, obj, *p_var, ttt);
       if (i < (count - 1)) {
         os << "\n";
       }  

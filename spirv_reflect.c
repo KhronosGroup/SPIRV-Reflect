@@ -1445,6 +1445,7 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
       case SpvDecorationBuiltIn: {
         p_target_decorations->is_built_in = true;
         uint32_t word_offset = p_node->word_offset + member_offset + 3;
+        // no rule specifies a result cannot be decorated twice. But let's assume this for now...
         CHECKED_READU32_CAST(p_parser, word_offset, SpvBuiltIn, p_target_decorations->built_in);
       }
       break;
@@ -3397,34 +3398,16 @@ SpvReflectResult GetTypeByTypeId(const SpvReflectShaderModule* p_module, uint32_
 #define COMPOSITE_TYPE_FLAGS (VECTOR_TYPE_FLAGS|SPV_REFLECT_TYPE_FLAG_MATRIX|SPV_REFLECT_TYPE_FLAG_STRUCT|SPV_REFLECT_TYPE_FLAG_ARRAY)
 #define COMPOSITE_DISALLOWED_FLAGS (~0 ^ COMPOSITE_TYPE_FLAGS)
 
-static SpvReflectScalarType ScalarGeneralTypeFromType(SpvReflectTypeDescription* type)
-{
-    if ((type->type_flags & SCALAR_TYPE_FLAGS) == SPV_REFLECT_TYPE_FLAG_BOOL) {
-        return SPV_REFLECT_SCALAR_TYPE_BOOL;
-    }
-    else if ((type->type_flags & SCALAR_TYPE_FLAGS) == SPV_REFLECT_TYPE_FLAG_INT) {
-        return SPV_REFLECT_SCALAR_TYPE_INT;
-    }
-    else if ((type->type_flags & SCALAR_TYPE_FLAGS) == SPV_REFLECT_TYPE_FLAG_FLOAT) {
-        return SPV_REFLECT_SCALAR_TYPE_FLOAT;
-    }
-    else {
-        return SPV_REFLECT_SCALAR_TYPE_UNKNOWN;
-    }
-}
-
 static SpvReflectResult GetScalarConstant(const SpvReflectShaderModule* p_module, SpvReflectPrvNode* p_node,
-    SpvReflectScalarValue* result, SpvReflectScalarType* general_type, SpvReflectTypeDescription** type)
+    SpvReflectScalarValue* result, SpvReflectTypeDescription** type)
 {
     SpvReflectPrvParser* p_parser = p_module->_internal->parser;
 
-    SpvReflectScalarType g_type;
     SpvReflectTypeDescription* d_type;
     SpvReflectResult res = GetTypeByTypeId(p_module, p_node->result_type_id, &d_type);
     if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
 
     if(d_type->type_flags & SCALAR_DISALLOWED_FLAGS) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-    g_type = ScalarGeneralTypeFromType(d_type);
     uint32_t low_word;
     CHECKED_READU32(p_parser, p_node->word_offset + 3, low_word);
     // There is no alignment requirements in c/cpp for unions
@@ -3440,7 +3423,6 @@ static SpvReflectResult GetScalarConstant(const SpvReflectShaderModule* p_module
     else {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
     }
-    *general_type = g_type;
     *type = d_type;
     return SPV_REFLECT_RESULT_SUCCESS;
 }
@@ -3466,6 +3448,18 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
 
   for (size_t i = 0; i < p_parser->node_count; ++i) {
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
+    // check first if it's WorkGroupSize builtin
+    // maybe handling builtin as global map may be better.
+    if (p_node->decorations.built_in == SpvBuiltInWorkgroupSize) {
+      // WorkGroupSize builtin's target is all ExecutionMode instructions.
+      for(uint32_t j = 0; j<p_module->entry_point_count; ++j) {
+        if(p_module->entry_points[j].spirv_execution_model == SpvExecutionModelKernel||
+          p_module->entry_points[j].spirv_execution_model == SpvExecutionModelGLCompute){
+          p_module->entry_points[j].local_size.flags = 4;
+          p_module->entry_points[j].local_size.x = p_node->result_id;
+        }
+      }
+    }
     // Specconstants with no id means constant
     switch(p_node->op) {
       default: continue;
@@ -3482,7 +3476,7 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
       case SpvOpSpecConstant: {
         SpvReflectResult result = SPV_REFLECT_RESULT_SUCCESS;
         SpvReflectScalarValue default_value = { 0 };
-        result = GetScalarConstant(p_module, p_node, &default_value, &p_module->specialization_constants[index].general_type, &p_module->specialization_constants[index].type);
+        result = GetScalarConstant(p_module, p_node, &default_value, &p_module->specialization_constants[index].type);
         if (result != SPV_REFLECT_RESULT_SUCCESS) return result;
         p_module->specialization_constants[index].default_value = default_value;
         p_module->specialization_constants[index].current_value = p_module->specialization_constants[index].default_value;
@@ -3490,11 +3484,11 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
     }
     // spec constant id cannot be the same, at least for valid values. (invalid value is just constant?)
     if (p_node->decorations.specialization_constant.value != (uint32_t)INVALID_VALUE) {
-        for (uint32_t j = 0; j < index; ++j) {
-            if (p_module->specialization_constants[j].constant_id == p_node->decorations.specialization_constant.value) {
-                return SPV_REFLECT_RESULT_ERROR_SPIRV_DUPLICATE_SPEC_CONSTANT_NAME;
-            }
+      for (uint32_t j = 0; j < index; ++j) {
+        if (p_module->specialization_constants[j].constant_id == p_node->decorations.specialization_constant.value) {
+          return SPV_REFLECT_RESULT_ERROR_SPIRV_DUPLICATE_SPEC_CONSTANT_NAME;
         }
+      }
     }
 
     p_module->specialization_constants[index].name = p_node->name;
@@ -3896,10 +3890,6 @@ static SpvReflectResult CreateShaderModule(
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseSpecializationConstants(parser, p_module);
-    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
-  }
-  if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseEntryPoints(parser, p_module);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
@@ -3927,6 +3917,11 @@ static SpvReflectResult CreateShaderModule(
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseExecutionModes(parser, p_module);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+  }
+  // WorkGroupSize builtin needs to update entry point localsize member
+  if (result == SPV_REFLECT_RESULT_SUCCESS) {
+      result = ParseSpecializationConstants(parser, p_module);
+      SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
 
   // Destroy module if parse was not successful
@@ -5723,22 +5718,20 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
     if (!p_node) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     switch (p_node->op) {
         default:
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
         case SpvOpConstantTrue:
             {
-                result->general_type = SPV_REFLECT_SCALAR_TYPE_BOOL;
                 result->values[0].value.uint32_bool_value = 1;
             }
             return SPV_REFLECT_RESULT_SUCCESS;
         case SpvOpConstantFalse:
             {
-                result->general_type = SPV_REFLECT_SCALAR_TYPE_BOOL;
                 result->values[0].value.uint32_bool_value = 0;
             }
             return SPV_REFLECT_RESULT_SUCCESS;
         case SpvOpConstant:
             CONSTANT_RESULT:
-            return GetScalarConstant(p_module, p_node, &result->values[0], &result->general_type, &result->type);
+            return GetScalarConstant(p_module, p_node, &result->values[0], &result->type);
         case SpvOpSpecConstantTrue: case SpvOpSpecConstantFalse:
         case SpvOpSpecConstant:
             {
@@ -5748,31 +5741,57 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                 SpvReflectSpecializationConstant* p_constant;
                 res = GetSpecContantById(p_module, p_node->decorations.specialization_constant.value, &p_constant);
                 if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                result->general_type = p_constant->general_type;
                 result->type = p_constant->type;
                 result->values[0] = p_constant->current_value;
             }
             return SPV_REFLECT_RESULT_SUCCESS;
         case SpvOpSpecConstantComposite:
             {
-                // only support scalar types for now...
+                // only support compositing vector types for now...
+                // vectors are needed for spv compiled to WorkgroupSize builtin
+                // in expressing actual localsize
+                res = GetTypeByTypeId(p_module, p_node->result_type_id, &result->type);
+                if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
+                // compositing types
+                if (result->type->type_flags & VECTOR_DISALLOWED_FLAGS) {
+                    return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                }
+                uint32_t vec_size = 1;
+                // should always have, since scalars do not need composite
+                if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+                    vec_size = result->type->traits.numeric.vector.component_count;
+                }
+                // check instruction size
+                if (p_node->word_count != 3 + vec_size) {
+                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                }
+                for (uint32_t i = 0; i < vec_size; ++i) {
+                    SpvReflectValue operandi = {0};
+                    GET_OPERAND(p_module, p_node, 3 + i, &operandi, maxRecursion);
+                    // check type compatibility
+                    if (operandi.type && (operandi.type->type_flags & SCALAR_DISALLOWED_FLAGS)) {
+                        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                    }
+                    if ((!operandi.type && !(result->type->type_flags& SPV_REFLECT_TYPE_FLAG_BOOL)) 
+                        ||(operandi.type && ((operandi.type->type_flags & SCALAR_TYPE_FLAGS) != (result->type->type_flags & SCALAR_TYPE_FLAGS)))) {
+                        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                    }
+                    result->values[i] = operandi.values[0];
+                }
             }
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+            return SPV_REFLECT_RESULT_SUCCESS;
         case SpvOpSpecConstantOp:
             {
                 // operation has result type id, thus must be typed
                 res = GetTypeByTypeId(p_module, p_node->result_type_id, &result->type);
                 if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
 
-                // no support for vectors yet...
-                if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
+                // only vector and scalar types of int/bool/float types implemented
+                // only OpSelect, OpUndef and access chain instructions can work with non-vector or scalar types
+                // they are not currently supported... (likely never will)
+                if (result->type->type_flags & VECTOR_DISALLOWED_FLAGS) {
                     return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
                 }
-
-                // only vector and scalar types of int/bool/float types allowed
-                CHECK_VECTOR_OR_SCALAR_TYPE(result)
-
-                result->general_type = ScalarGeneralTypeFromType(result->type);
 
                 // evaluate op
                 uint32_t spec_op;

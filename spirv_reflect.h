@@ -356,13 +356,19 @@ typedef uint16_t spv_reflect_float16_t;
 typedef struct SpvReflectScalarValue {
     // strongly typed for evaluation purpose
     union {
+        /* small types not implemented yet... */
+        uint8_t uint8_value;
+        int8_t sint8_value;
+        uint16_t uint16_value;
+        int16_t sint16_value;
         spv_reflect_float16_t float16_value;
-        float float32_value;
-        double float64_value;
+        /* types that are currently supported */
         uint32_t uint32_bool_value;
-        uint64_t uint64_value;
         int32_t sint32_value;
+        float float32_value;
+        uint64_t uint64_value;
         int64_t sint64_value;
+        double float64_value;
     } value;
     // for use with OpUndef
     int undefined_value;
@@ -370,7 +376,6 @@ typedef struct SpvReflectScalarValue {
 
 // only scalar, vector types can evaluate values for now...
 typedef struct SpvReflectValue {
-    SpvReflectScalarType general_type;
     // may be null if boolean, coming from OpSpecConstantTrue/OpSpecConstantFalse
     // but type found through return type id is never null.
     SpvReflectTypeDescription* type;
@@ -514,6 +519,7 @@ typedef struct SpvReflectEntryPoint {
     int                             flags; // 0 if just fixed local size
                                            // 1 bit set if is instruction id of spec constant
                                            // 2 bit set if is hint (kernel mode not supported in vulkan, though)
+                                           // 4 bit is set if x is result_id decorated with WorkGroupSize
                                            // this change may break abi
                                            // if using specialization constants,
                                            // xyz refers to evaluated result, not just constant_id
