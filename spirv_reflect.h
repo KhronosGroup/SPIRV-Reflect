@@ -405,8 +405,6 @@ typedef struct SpvReflectSpecializationConstant {
   const char* name;
 
   SpvReflectScalarValueData default_value;
-  SpvReflectScalarValueData current_value;
-
 } SpvReflectSpecializationConstant;
 
 /*! @struct SpvReflectInterfaceVariable
@@ -542,9 +540,10 @@ typedef struct SpvReflectEntryPoint {
   uint32_t                          output_vertices; // valid for geometry, tesselation
 } SpvReflectEntryPoint;
 
-typedef struct SpvReflectPrvParser SpvReflectPrvParser;
-
-typedef struct SpvReflectPrvEvaluation SpvReflectPrvEvaluation;
+/*! @struct SpvReflectEvaluation
+    @brief Opaque type that stores evaluation state and information
+*/
+typedef struct SpvReflectEvaluation SpvReflectEvaluation;
 
 /*! @struct SpvReflectShaderModule
 
@@ -585,7 +584,7 @@ typedef struct SpvReflectShaderModule {
 
     size_t                          type_description_count;
     SpvReflectTypeDescription*      type_descriptions;
-    SpvReflectPrvEvaluation*        evaluator;
+    SpvReflectEvaluation*        evaluator;
   } * _internal;
 
 } SpvReflectShaderModule;
@@ -1541,7 +1540,65 @@ const char* spvReflectBlockVariableTypeName(
   const SpvReflectBlockVariable* p_var
 );
 
-SpvReflectResult EvaluateResult(SpvReflectShaderModule* p_module, uint32_t result_id, const SpvReflectValue** result);
+
+/*! @fn spvReflectGetEvaluationInterface
+ @brief  Retrieves the handle for evaluation
+ @param  p_module      Pointer to an instance of SpvReflectShaderModule.
+ @return               If successful, returns the evaluation instance.
+                       Otherwise, returns NULL.
+*/
+SpvReflectEvaluation* spvReflectGetEvaluationInterface(SpvReflectShaderModule* p_module);
+
+typedef enum SpvReflectScalarType {
+    SPIRV_REFLECT_SCALAR_TYPE_INVALID,
+    SPIRV_REFLECT_SCALAR_TYPE_BOOL,
+    SPIRV_REFLECT_SCALAR_TYPE_I32,
+    SPIRV_REFLECT_SCALAR_TYPE_I64,
+    SPIRV_REFLECT_SCALAR_TYPE_F32,
+    SPIRV_REFLECT_SCALAR_TYPE_F64
+} SpvReflectScalarType;
+
+/*! @fn spvReflectSetSpecConstantValue
+ @brief  Sets the current value of specialization constant. Type must follow c/c++ type aliasing rules.
+ @param  p_eval      Pointer to an instance of SpvReflectEvaluation.
+ @param  specId      Specialization constant id of the constant.
+ @param  type        Type of user specified value. For error checking.
+ @param  value       User provided value.
+ @return             If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                     Otherwise, the error code indicates the cause of
+                     the failure.
+*/
+SpvReflectResult spvReflectSetSpecConstantValue(SpvReflectEvaluation* p_eval, uint32_t specId, SpvReflectScalarType type, const SpvReflectScalarValueData* value);
+
+/*! @fn spvReflectGetSpecConstantValue
+ @brief  Get the current value of specialization constant. Type must follow c/c++ type aliasing rules.
+ @param  p_eval      Pointer to an instance of SpvReflectEvaluation.
+ @param  specId      Specialization constant id of the constant.
+ @param  value       Current value.
+ @return             If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                     Otherwise, the error code indicates the cause of
+                     the failure.
+*/
+SpvReflectResult spvReflectGetSpecConstantValue(SpvReflectEvaluation* p_eval, uint32_t specId, const SpvReflectValue** value);
+
+/*! @fn spvReflectEvaluateResult
+ @brief  Evaluates the result specified by result_id, only works for
+         constant expressions.
+ @param  p_eval      Pointer to an instance of SpvReflectEvaluation.
+ @param  result_id   The result id to retrieve
+ @param  result      pointer to hold result application can read from.
+ @return             If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                     Otherwise, the error code indicates the cause of
+                     the failure.
+*/
+SpvReflectResult spvReflectEvaluateResult(SpvReflectEvaluation* p_eval, uint32_t result_id, const SpvReflectValue** result);
+
+
+SpvReflectResult spvReflectGetRelatedSpecIds(SpvReflectEvaluation* p_eval, uint32_t result_id, uint32_t* count, uint32_t* ids);
+
+/*
+
+*/
 
 #if defined(__cplusplus)
 };
@@ -1651,7 +1708,12 @@ public:
 
   SpvReflectResult EvaluateResult(uint32_t result_id, const SpvReflectValue** result)
   {
-      return ::EvaluateResult(&m_module, result_id, result);
+    if (p_eval) {
+      return spvReflectEvaluateResult(p_eval, result_id, result);
+    }
+    else {
+      return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+    }
   }
 
 private:
@@ -1662,6 +1724,7 @@ private:
 private:
   mutable SpvReflectResult  m_result = SPV_REFLECT_RESULT_NOT_READY;
   SpvReflectShaderModule    m_module = {};
+  SpvReflectEvaluation*     p_eval = nullptr;
 };
 
 
@@ -1687,6 +1750,7 @@ inline ShaderModule::ShaderModule(size_t size, const void* p_code, SpvReflectMod
     size,
     p_code,
     &m_module);
+  p_eval = spvReflectGetEvaluationInterface(&m_module);
 }
 
 /*! @fn ShaderModule
@@ -1700,6 +1764,7 @@ inline ShaderModule::ShaderModule(const std::vector<uint8_t>& code, SpvReflectMo
     code.size(),
     code.data(),
     &m_module);
+  p_eval = spvReflectGetEvaluationInterface(&m_module);
 }
 
 /*! @fn ShaderModule
@@ -1713,6 +1778,7 @@ inline ShaderModule::ShaderModule(const std::vector<uint32_t>& code, SpvReflectM
     code.size() * sizeof(uint32_t),
     code.data(),
     &m_module);
+  p_eval = spvReflectGetEvaluationInterface(&m_module);
 }
 
 /*! @fn  ~ShaderModule
