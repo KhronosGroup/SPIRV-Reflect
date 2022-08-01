@@ -217,6 +217,46 @@ typedef struct SpvReflectPrvParser {
 } SpvReflectPrvParser;
 // clang-format on
 
+typedef enum SpvReflectEvaluationState {
+    SPV_REFLECT_EVALUATION_STATE_UNINITIALIZED = 0,
+    // for tracking recursion
+    SPV_REFLECT_EVALUATION_STATE_WORKING        = 1,
+    SPV_REFLECT_EVALUATION_STATE_DONE           = 2,
+    // for possible update tracking
+    SPV_REFLECT_EVALUATION_STATE_UPDATED        = 3,
+    // failed evaluation
+    SPV_REFLECT_EVALUATION_STATE_FAILED         = 4
+}SpvReflectEvaluationState;
+
+// clang-format off
+typedef struct SpvReflectPrvEvaluationNode {
+    uint32_t                        result_id;
+    SpvOp                           op;
+    uint32_t                        word_offset;
+    uint32_t                        word_count;
+    SpvReflectEvaluationState       evaluation_state;
+    SpvReflectValue                 value;
+
+    SpvReflectSpecializationConstant* spec_const;
+} SpvReflectPrvEvaluationNode;
+// clang-format on
+
+// clang-format off
+typedef struct SpvReflectPrvEvaluation {
+    // original code if no-copy, else it's a copy of constant instructions
+    size_t                                spirv_word_count;
+    uint32_t*                             spirv_code;
+
+    uint32_t                              node_count;
+    SpvReflectPrvEvaluationNode*          nodes;
+
+    // ohh I hope I could decouple this... But FindType uses this...
+    // just a reference
+    SpvReflectShaderModule*               member_type_finder;
+} SpvReflectPrvEvaluation;
+// clang-format on
+
+
 static uint32_t Max(
    uint32_t a, 
    uint32_t b)
@@ -520,6 +560,21 @@ static SpvReflectPrvNode* FindNode(
     }
   }
   return p_node;
+}
+
+static SpvReflectPrvEvaluationNode* FindEvaluationNode(
+    SpvReflectPrvEvaluation* p_eval,
+    uint32_t             result_id)
+{
+    SpvReflectPrvEvaluationNode* p_node = NULL;
+    for (size_t i = 0; i < p_eval->node_count; ++i) {
+        SpvReflectPrvEvaluationNode* p_elem = &(p_eval->nodes[i]);
+        if (p_elem->result_id == result_id) {
+            p_node = p_elem;
+            break;
+        }
+    }
+    return p_node;
 }
 
 static SpvReflectTypeDescription* FindType(const SpvReflectShaderModule* p_module, uint32_t type_id)
@@ -3387,6 +3442,42 @@ static SpvReflectResult ParseExecutionModes(
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+static bool EvalCodeInRange(
+  const SpvReflectPrvEvaluation* p_eval, 
+  uint32_t                   index)
+{
+  bool in_range = false;
+  if (IsNotNull(p_eval)) {
+    in_range = (index < p_eval->spirv_word_count);
+  }
+  return in_range;
+}
+
+static SpvReflectResult EvalReadU32(
+  const SpvReflectPrvEvaluation* p_eval,
+  uint32_t             word_offset,
+  uint32_t*            p_value)
+{
+  assert(IsNotNull(p_eval));
+  assert(IsNotNull(p_eval->spirv_code));
+  assert(EvalCodeInRange(p_eval, word_offset));
+  SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_EOF;
+  if (IsNotNull(p_eval) && IsNotNull(p_eval->spirv_code) && EvalCodeInRange(p_eval, word_offset)) {
+    *p_value = *(p_eval->spirv_code + word_offset);
+    result = SPV_REFLECT_RESULT_SUCCESS;
+  }
+  return result;
+}
+
+#define EVAL_CHECKED_READU32(eval, word_offset, value, res, cleanup)                                   \
+  {                                                                                      \
+    res = EvalReadU32(eval,                     \
+                                                      word_offset, (uint32_t*)&(value)); \
+    if (res != SPV_REFLECT_RESULT_SUCCESS) {                     \
+      goto cleanup;                                                     \
+    }                                                                                    \
+  }
+
 #define SCALAR_TYPE_FLAGS (SPV_REFLECT_TYPE_FLAG_BOOL | SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_FLOAT)
 #define SCALAR_DISALLOWED_FLAGS (~0 ^ SCALAR_TYPE_FLAGS)
 #define VECTOR_TYPE_FLAGS (SCALAR_TYPE_FLAGS | SPV_REFLECT_TYPE_FLAG_VECTOR)
@@ -3395,22 +3486,44 @@ static SpvReflectResult ParseExecutionModes(
 #define COMPOSITE_TYPE_FLAGS (VECTOR_TYPE_FLAGS|SPV_REFLECT_TYPE_FLAG_MATRIX|SPV_REFLECT_TYPE_FLAG_STRUCT|SPV_REFLECT_TYPE_FLAG_ARRAY)
 #define COMPOSITE_DISALLOWED_FLAGS (~0 ^ COMPOSITE_TYPE_FLAGS)
 
-static SpvReflectResult GetScalarConstant(const SpvReflectShaderModule* p_module, SpvReflectPrvNode* p_node,
+// getting constant also happens before evaluation is created.
+static SpvReflectResult EvalGetScalarConstant(const SpvReflectPrvEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node)
+{
+    SpvReflectResult result = SPV_REFLECT_RESULT_SUCCESS;
+    if(p_node->value.type->type_flags & SCALAR_DISALLOWED_FLAGS) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+    uint32_t low_word;
+    EVAL_CHECKED_READU32(p_eval, p_node->word_offset + 3, low_word, result, CLEANUP);
+    // There is no alignment requirements in c/cpp for unions
+    if (p_node->value.type->traits.numeric.scalar.width == 32) {
+        memcpy(&p_node->value.data.numeric.scalar.value.uint32_bool_value, &low_word, 4);
+    }
+    else if (p_node->value.type->traits.numeric.scalar.width ==64) {
+        uint32_t high_word;
+        EVAL_CHECKED_READU32(p_eval, p_node->word_offset + 4, high_word, result, CLEANUP);
+        uint64_t combined = low_word | (((uint64_t)high_word) << 32);
+        memcpy(&p_node->value.data.numeric.scalar.value.uint64_value, &combined, 8);
+    }
+    else {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+    }
+    CLEANUP:
+    return result;
+}
+
+static SpvReflectResult ParserGetScalarConstant(const SpvReflectShaderModule* p_module, SpvReflectPrvParser* p_parser, SpvReflectPrvNode* p_node,
     SpvReflectScalarValueData* result, SpvReflectTypeDescription** type)
 {
-    SpvReflectPrvParser* p_parser = p_module->_internal->parser;
-
     SpvReflectTypeDescription* d_type = FindType(p_module, p_node->result_type_id);
     if (!d_type) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
 
-    if(d_type->type_flags & SCALAR_DISALLOWED_FLAGS) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+    if (d_type->type_flags & SCALAR_DISALLOWED_FLAGS) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
     uint32_t low_word;
     CHECKED_READU32(p_parser, p_node->word_offset + 3, low_word);
     // There is no alignment requirements in c/cpp for unions
     if (d_type->traits.numeric.scalar.width == 32) {
         memcpy(&result->value.uint32_bool_value, &low_word, 4);
     }
-    else if (d_type->traits.numeric.scalar.width ==64) {
+    else if (d_type->traits.numeric.scalar.width == 64) {
         uint32_t high_word;
         CHECKED_READU32(p_parser, p_node->word_offset + 4, high_word);
         uint64_t combined = low_word | (((uint64_t)high_word) << 32);
@@ -3423,12 +3536,32 @@ static SpvReflectResult GetScalarConstant(const SpvReflectShaderModule* p_module
     return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+#define MODULE_EVALUATION_FLAGS (SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT | SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY)
+
+#define IS_CONSTANT_OP(op_code) \
+    (((op_code) == SpvOpSpecConstantTrue) || ((op_code) == SpvOpSpecConstantFalse) || ((op_code) == SpvOpSpecConstant) \
+    || ((op_code) == SpvOpSpecConstantOp) || ((op_code) == SpvOpSpecConstantComposite) || ((op_code) == SpvOpConstant)  \
+    || ((op_code) == SpvOpConstantTrue) || ((op_code) == SpvOpConstantFalse) || ((op_code) == SpvOpConstantComposite)  \
+    || ((op_code) == SpvOpConstantNull) || ((op_code) == SpvOpConstantSampler) || ((op_code) == SpvOpConstantPipeStorage)  \
+    || ((op_code) == SpvOpSpecConstantCompositeContinuedINTEL) || ((op_code) == SpvOpConstantFunctionPointerINTEL) \
+    || ((op_code) == SpvOpConstantCompositeContinuedINTEL))
+
+// defined later..
+static SpvReflectSpecializationConstant* GetSpecContantById(const SpvReflectShaderModule* p_module, uint32_t constant_id);
 static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module)
 {
   p_module->specialization_constant_count = 0;
   p_module->specialization_constants = NULL;
+
+  uint32_t constant_instruction_num = 0;
+  uint32_t instruction_size = 0;
   for (size_t i = 0; i < p_parser->node_count; ++i) {
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
+    // constant types need to be tracked after parser is dead...
+    if (IS_CONSTANT_OP(p_node->op)) {
+        constant_instruction_num++;
+        instruction_size += p_node->word_count;
+    }
     if (p_node->op == SpvOpSpecConstantTrue || p_node->op == SpvOpSpecConstantFalse || p_node->op == SpvOpSpecConstant) {
       p_module->specialization_constant_count++;
     }
@@ -3470,7 +3603,7 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
       case SpvOpSpecConstant: {
         SpvReflectResult result = SPV_REFLECT_RESULT_SUCCESS;
         SpvReflectScalarValueData default_value = { 0 };
-        result = GetScalarConstant(p_module, p_node, &default_value, &p_module->specialization_constants[index].type);
+        result = ParserGetScalarConstant(p_module, p_parser, p_node, &default_value, &p_module->specialization_constants[index].type);
         if (result != SPV_REFLECT_RESULT_SUCCESS) return result;
         p_module->specialization_constants[index].default_value = default_value;
         p_module->specialization_constants[index].current_value = p_module->specialization_constants[index].default_value;
@@ -3491,8 +3624,67 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
     index++;
   }
 
+  // need to evaluate expr later on...
+  if (p_module->_internal->module_flags & MODULE_EVALUATION_FLAGS) {
+    p_module->_internal->evaluator = (SpvReflectPrvEvaluation*)calloc(1, sizeof(SpvReflectPrvEvaluation));
+    // needed for FindType for constituent types
+    p_module->_internal->evaluator->member_type_finder = p_module;
+    p_module->_internal->evaluator->node_count = constant_instruction_num;
+    p_module->_internal->evaluator->nodes = (SpvReflectPrvEvaluationNode*)calloc(constant_instruction_num,sizeof(SpvReflectPrvEvaluationNode));
+    if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY) {
+      // use original code for evaluation.
+      p_module->_internal->evaluator->spirv_code = p_module->_internal->spirv_code;
+      p_module->_internal->evaluator->spirv_word_count = p_module->_internal->spirv_word_count;
+    }
+    else if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT) {
+      // need to copy instructions from code for later evaluation.
+      p_module->_internal->evaluator->spirv_code = (uint32_t*)malloc(instruction_size * sizeof(uint32_t));
+      p_module->_internal->evaluator->spirv_word_count = instruction_size;
+    }
+
+    // need to update correct offset in new code if not no-copy
+    uint32_t current_offset = 0;
+    uint32_t current_cinst = 0;
+    for (size_t i = 0; i < p_parser->node_count; ++i) {
+      SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
+      // constant types need to be tracked after parser is dead...
+      if (IS_CONSTANT_OP(p_node->op)) {
+        p_module->_internal->evaluator->nodes[current_cinst].op = p_node->op;
+        p_module->_internal->evaluator->nodes[current_cinst].result_id = p_node->result_id;
+        p_module->_internal->evaluator->nodes[current_cinst].word_count = p_node->word_count;
+        p_module->_internal->evaluator->nodes[current_cinst].value.type = FindType(p_module, p_node->result_type_id);
+        if (!p_module->_internal->evaluator->nodes[current_cinst].value.type) {
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+        }
+        p_module->_internal->evaluator->nodes[current_cinst].evaluation_state = SPV_REFLECT_EVALUATION_STATE_UNINITIALIZED;
+        p_module->_internal->evaluator->nodes[current_cinst].spec_const = NULL;
+        if (p_node->decorations.specialization_constant.value != INVALID_VALUE) {
+          p_module->_internal->evaluator->nodes[current_cinst].spec_const = GetSpecContantById(p_module, p_node->decorations.specialization_constant.value);
+        }
+        if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY) {
+          p_module->_internal->evaluator->nodes[current_cinst].word_offset = p_node->word_offset;
+        }
+        else {
+          p_module->_internal->evaluator->nodes[current_cinst].word_offset = current_offset;
+          memcpy(p_module->_internal->evaluator->spirv_code + current_offset, p_module->_internal->spirv_code + p_node->word_offset, 4 * p_node->word_count);
+        }
+        ++current_cinst;
+        current_offset += p_node->word_count;
+      }
+    }
+  }
+
   return SPV_REFLECT_RESULT_SUCCESS;
 }
+
+static void DestroyEvaluator(SpvReflectPrvEvaluation* evaluator, bool owns_code)
+{
+    SafeFree(evaluator->nodes);
+    if (owns_code) {
+        SafeFree(evaluator->spirv_code);
+    }
+}
+
 
 static SpvReflectResult ParsePushConstantBlocks(
   SpvReflectPrvParser*    p_parser, 
@@ -3803,13 +3995,13 @@ static SpvReflectResult CreateShaderModule(
   }
 
   // parser now works in internal field of p_module.
-  // SpvReflectPrvParser parser = { 0 };
-  SpvReflectPrvParser* parser = (SpvReflectPrvParser*)calloc(1,sizeof(SpvReflectPrvParser));
+  SpvReflectPrvParser parser = { 0 };
+  // SpvReflectPrvParser* parser = (SpvReflectPrvParser*)calloc(1,sizeof(SpvReflectPrvParser));
   SpvReflectResult result = CreateParser(p_module->_internal->spirv_size,
                                          p_module->_internal->spirv_code,
-                                         parser);
+                                         &parser);
   // used by spec constant parsing GetScalarConstant
-  p_module->_internal->parser = parser;
+  //p_module->_internal->parser = parser;
 
   // Generator
   {
@@ -3818,38 +4010,38 @@ static SpvReflectResult CreateShaderModule(
   }
 
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseNodes(parser);
+    result = ParseNodes(&parser);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseStrings(parser);
+    result = ParseStrings(&parser);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseSource(parser, p_module);
+    result = ParseSource(&parser, p_module);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseFunctions(parser);
+    result = ParseFunctions(&parser);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseMemberCounts(parser);
+    result = ParseMemberCounts(&parser);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseNames(parser);
+    result = ParseNames(&parser);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseDecorations(parser);
+    result = ParseDecorations(&parser);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
 
   // Start of reflection data parsing
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    p_module->source_language = parser->source_language;
-    p_module->source_language_version = parser->source_language_version;
+    p_module->source_language = parser.source_language;
+    p_module->source_language_version = parser.source_language_version;
 
     // Zero out descriptor set data
     p_module->descriptor_set_count = 0;
@@ -3860,11 +4052,11 @@ static SpvReflectResult CreateShaderModule(
     }
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseTypes(parser, p_module);
+    result = ParseTypes(&parser, p_module);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseDescriptorBindings(parser, p_module);
+    result = ParseDescriptorBindings(&parser, p_module);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
@@ -3876,15 +4068,15 @@ static SpvReflectResult CreateShaderModule(
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseDescriptorBlocks(parser, p_module);
+    result = ParseDescriptorBlocks(&parser, p_module);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParsePushConstantBlocks(parser, p_module);
+    result = ParsePushConstantBlocks(&parser, p_module);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseEntryPoints(parser, p_module);
+    result = ParseEntryPoints(&parser, p_module);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS && p_module->entry_point_count > 0) {
@@ -3909,12 +4101,12 @@ static SpvReflectResult CreateShaderModule(
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseExecutionModes(parser, p_module);
+    result = ParseExecutionModes(&parser, p_module);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   // WorkGroupSize builtin needs to update entry point localsize member
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-      result = ParseSpecializationConstants(parser, p_module);
+      result = ParseSpecializationConstants(&parser, p_module);
       SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
 
@@ -3923,16 +4115,7 @@ static SpvReflectResult CreateShaderModule(
     spvReflectDestroyShaderModule(p_module);
   }
 
-  // parser is needed for evaluating specconstants
-  if (flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_SPEC_CONSTANT) {
-      p_module->_internal->parser = parser;
-  }
-  else {
-      DestroyParser(parser);
-      SafeFree(parser)
-  }
-
-
+  DestroyParser(&parser);
   return result;
 }
 
@@ -4076,9 +4259,10 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
   if ((p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_NO_COPY) == 0) {
     SafeFree(p_module->_internal->spirv_code);
   }
-  if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_SPEC_CONSTANT) {
-     DestroyParser(p_module->_internal->parser);
-     SafeFree(p_module->_internal->parser);
+
+  if (p_module->_internal->module_flags & MODULE_EVALUATION_FLAGS) {
+      DestroyEvaluator(p_module->_internal->evaluator, !(p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY));
+      SafeFree(p_module->_internal->evaluator)
   }
 
   // Free internal
@@ -5260,16 +5444,16 @@ const char* spvReflectBlockVariableTypeName(
     return p_var->type_description->type_name;
 }
 
-SpvReflectResult GetSpecContantById(const SpvReflectShaderModule* p_module, uint32_t constant_id, SpvReflectSpecializationConstant** pp_constant)
+
+
+SpvReflectSpecializationConstant* GetSpecContantById(const SpvReflectShaderModule* p_module, uint32_t constant_id)
 {
-    SpvReflectResult res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
     for (uint32_t i = 0; i < p_module->specialization_constant_count; ++i) {
         if (p_module->specialization_constants[i].constant_id == constant_id) {
-            *pp_constant = &p_module->specialization_constants[i];
-            return SPV_REFLECT_RESULT_SUCCESS;
+            return  &p_module->specialization_constants[i];
         }
     }
-    return res;
+    return NULL;
 }
 
 SpvReflectResult GetMemberByIndex(const SpvReflectShaderModule* p_module, const SpvReflectValueData* mother, const SpvReflectTypeDescription* mother_type, 
@@ -5299,7 +5483,7 @@ SpvReflectResult GetMemberByIndex(const SpvReflectShaderModule* p_module, const 
     }
 }
 
-SpvReflectResult CopyValueData(const SpvReflectShaderModule* p_module, const SpvReflectTypeDescription* type, SpvReflectValueData* dst, SpvReflectValueData* src)
+SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflectValueData* dst, SpvReflectValueData* src)
 {
     if (!type || !(type->type_flags & VECTOR_DISALLOWED_FLAGS)) {
         if (!type || !(type->type_flags & SCALAR_DISALLOWED_FLAGS)) {
@@ -5324,259 +5508,265 @@ SpvReflectResult CopyValueData(const SpvReflectShaderModule* p_module, const Spv
     }                                                                                           \
 }
 
-#define CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, p_result, p_op1)                                                               \
+#define CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, p_result, p_op1, res, CLEANUP)                                                 \
 {                                                                                                                               \
     if ((p_result)->type && (p_result)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                      \
         if (!((p_op1)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                      \
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
+            goto CLEANUP;                                                                                                       \
         }                                                                                                                       \
         if ((p_op1)->type->traits.numeric.vector.component_count != (p_result)->type->traits.numeric.vector.component_count) {  \
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
+            goto CLEANUP;                                                                                                       \
         }                                                                                                                       \
         vec_size = (p_result)->type->traits.numeric.vector.component_count;                                                     \
     }                                                                                                                           \
 }
 
-#define CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, p_result, p_op1, p_op2)\
+#define CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, p_result, p_op1, p_op2, res, CLEANUP)\
 {                                                                                                                               \
     /* may be scalar boolean if type == null, but never p_result */                                                             \
     if ((p_result)->type && (p_result)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                      \
         if(!(p_op1)->type || !(p_op2)->type) {                                                                                  \
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
+            goto CLEANUP;                                                                                                       \
         }                                                                                                                       \
         if (!((p_op1)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                      \
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
+            goto CLEANUP;                                                                                                       \
         }                                                                                                                       \
         if (!((p_op2)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                      \
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
+            goto CLEANUP;                                                                                                       \
         }                                                                                                                       \
         if ((p_op1)->type->traits.numeric.vector.component_count != (p_result)->type->traits.numeric.vector.component_count) {  \
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
+            goto CLEANUP;                                                                                                       \
         }                                                                                                                       \
         if ((p_op2)->type->traits.numeric.vector.component_count != (p_result)->type->traits.numeric.vector.component_count) {  \
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
+            goto CLEANUP;                                                                                                       \
         }                                                                                                                       \
         vec_size = (p_result)->type->traits.numeric.vector.component_count;                                                     \
     }                                                                                                                           \
 }
 
-#define CHECK_WIDTH_MATCH(p_value1, p_value2)                                                               \
+#define CHECK_WIDTH_MATCH(p_value1, p_value2, res, CLEANUP)                                                 \
 {                                                                                                           \
     if ((p_value2)->type->traits.numeric.scalar.width != (p_value1)->type->traits.numeric.scalar.width) {   \
-        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                 \
+        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                  \
+            goto CLEANUP;                                                                                   \
     }                                                                                                       \
 }
 
-#define CHECK_IS_BASIC_TYPE_EXCEPT_BOOL(p_result, b_type)                                   \
+#define CHECK_IS_BASIC_TYPE(p_result, b_type, res, CLEANUP)                     \
 {                                                                                           \
-    if(!(p_result)->type) {                                                                 \
-        /* is result of opconstanttrue, etc. Boolean... */                                  \
-        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                 \
-    }                                                                                       \
     if(((p_result)->type->type_flags & SCALAR_TYPE_FLAGS) != b_type) {                      \
-        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                 \
+        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                  \
+            goto CLEANUP;                                                                   \
     }                                                                                       \
 }
 
-#define CHECK_IS_INTEGER_TYPE(p_result) CHECK_IS_BASIC_TYPE_EXCEPT_BOOL(p_result, SPV_REFLECT_TYPE_FLAG_INT)
-#define CHECK_IS_FLOAT_TYPE(p_result) CHECK_IS_BASIC_TYPE_EXCEPT_BOOL(p_result, SPV_REFLECT_TYPE_FLAG_FLOAT)
-#define CHECK_IS_BOOLEAN_TYPE(p_result)                                                         \
-{                                                                                               \
-    if((p_result)->type) {                                                                      \
-        if(((p_result)->type->type_flags & SCALAR_TYPE_FLAGS) != SPV_REFLECT_TYPE_FLAG_BOOL) {  \
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                 \
-        }                                                                                       \
-    }                                                                                           \
-}
+#define CHECK_IS_INTEGER_TYPE(p_result, res, CLEANUP) CHECK_IS_BASIC_TYPE(p_result, SPV_REFLECT_TYPE_FLAG_INT, res, CLEANUP)
+#define CHECK_IS_FLOAT_TYPE(p_result, res, CLEANUP) CHECK_IS_BASIC_TYPE(p_result, SPV_REFLECT_TYPE_FLAG_FLOAT, res, CLEANUP)
+#define CHECK_IS_BOOLEAN_TYPE(p_result, res, CLEANUP) CHECK_IS_BASIC_TYPE(p_result, SPV_REFLECT_TYPE_FLAG_BOOL, res, CLEANUP)
 
-#define CHECK_VECTOR_OR_SCALAR_TYPE(p_result)                                                   \
+
+#define CHECK_VECTOR_OR_SCALAR_TYPE(p_result, res, CLEANUP)                                     \
 {                                                                                               \
     if ((p_result)->type && ((p_result)->type->type_flags & VECTOR_DISALLOWED_FLAGS)) {         \
-        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                     \
+        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                      \
+            goto CLEANUP;                                                                       \
     }                                                                                           \
 }                                                                                               \
 
-#define GET_OPERAND(p_module, p_node, offset, p_operand, maxRecursion)                                          \
-{                                                                                                               \
-    uint32_t operand_id;                                                                                        \
-    CHECKED_READU32(p_module->_internal->parser, p_node->word_offset + offset, operand_id);                     \
-    SpvReflectResult result_get_op = EvaluateResultImpl(p_module, operand_id, (p_operand), maxRecursion - 1);   \
-    if (result_get_op != SPV_REFLECT_RESULT_SUCCESS) return result_get_op;                                      \
+#define GET_OPERAND(eval, p_node, offset, p_operand, res, CLEANUP)                                              \
+{                                                                                                                   \
+    uint32_t operand_id;                                                                                            \
+    EVAL_CHECKED_READU32(eval, p_node->word_offset + offset, operand_id, res, CLEANUP);   \
+    res = EvaluateResultImpl(eval, operand_id, &(p_operand));                                                   \
+    if (res != SPV_REFLECT_RESULT_SUCCESS) goto CLEANUP;                                                            \
 }
 
 #define SIMPLE_UNARY_OP_32_BIT_HOOK
 #define SIMPLE_UNARY_OP_64_BIT_HOOK
 
-#define DO_SIMPLE_UNARY_INTEGER_OPERATION(p_result, simple_op_module, simple_op_node, maxRecursion)             \
-{                                                                                                               \
-    CHECK_INSTRUCTION_SIZE((simple_op_node), 5)                                                                 \
-                                                                                                                \
-    /* check result type */                                                                                     \
-    CHECK_IS_INTEGER_TYPE((p_result))                                                                           \
-    CHECK_VECTOR_OR_SCALAR_TYPE((p_result))                                                                     \
-                                                                                                                \
-    /* get operand */                                                                                           \
-    SpvReflectValue operand1 = {0};                                                                             \
-    GET_OPERAND((simple_op_module), (simple_op_node), 4, &operand1, maxRecursion)                               \
-    /* check type here */                                                                                       \
-    CHECK_IS_INTEGER_TYPE(&operand1)                                                                            \
-    CHECK_VECTOR_OR_SCALAR_TYPE(&operand1)                                                                      \
-                                                                                                                \
-    /* component width must match. */                                                                           \
-    CHECK_WIDTH_MATCH((p_result), &operand1)                                                                    \
-                                                                                                                \
-    /* vector size must match */                                                                                \
-    uint32_t vec_size = 1;                                                                                      \
-    CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, (p_result), &operand1)\
-                                                                                                                \
-    /* now do the job */                                                                                        \
-    for (uint32_t i = 0; i < vec_size; ++i) {                                                                   \
-        (p_result)->data.numeric.vector.value[i].undefined_value                                                \
-            = operand1.data.numeric.vector.value[i].undefined_value;                                            \
-        switch (operand1.type->traits.numeric.scalar.width) {                                                   \
-            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                        \
-            case 32:                                                                                            \
-                /* 32 bit integer */                                                                            \
-                {                                                                                               \
-                    int32_t data = operand1.data.numeric.vector.value[i].value.sint32_value;                    \
-                    SIMPLE_UNARY_OP_32_BIT_HOOK                                                                 \
-                    (p_result)->data.numeric.vector.value[i].value.sint32_value = data;                         \
-                }                                                                                               \
-                break;                                                                                          \
-            case 64:                                                                                            \
-                /* 64 bit integer */                                                                            \
-                {                                                                                               \
-                    int64_t data = operand1.data.numeric.vector.value[i].value.sint64_value;                    \
-                    SIMPLE_UNARY_OP_64_BIT_HOOK                                                                 \
-                    (p_result)->data.numeric.vector.value[i].value.sint64_value = data;                         \
-                }                                                                                               \
-                break;                                                                                          \
-        }                                                                                                       \
-    }                                                                                                           \
-    return SPV_REFLECT_RESULT_SUCCESS;                                                                          \
+#define DO_SIMPLE_UNARY_INTEGER_OPERATION(p_result, simple_op_eval, simple_op_node, res, CLEANUP)     \
+{                                                                                                       \
+    CHECK_INSTRUCTION_SIZE((simple_op_node), 5)                                                         \
+                                                                                                        \
+    /* check result type */                                                                             \
+    CHECK_IS_INTEGER_TYPE((p_result), res, CLEANUP)                                                     \
+    CHECK_VECTOR_OR_SCALAR_TYPE((p_result), res, CLEANUP)                                               \
+                                                                                                        \
+    /* get operand */                                                                                   \
+    SpvReflectValue* operand1 = NULL;                                                                   \
+    GET_OPERAND((simple_op_eval), (simple_op_node), 4, operand1, res, CLEANUP)                        \
+    /* check type here */                                                                               \
+    CHECK_IS_INTEGER_TYPE(operand1, res, CLEANUP)                                                       \
+    CHECK_VECTOR_OR_SCALAR_TYPE(operand1, res, CLEANUP)                                                 \
+                                                                                                        \
+    /* component width must match. */                                                                   \
+    CHECK_WIDTH_MATCH((p_result), operand1, res, CLEANUP)                                               \
+                                                                                                        \
+    /* vector size must match */                                                                        \
+    uint32_t vec_size = 1;                                                                              \
+    CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, (p_result), operand1, res, CLEANUP)                        \
+                                                                                                        \
+    /* now do the job */                                                                                \
+    for (uint32_t i = 0; i < vec_size; ++i) {                                                           \
+        (p_result)->data.numeric.vector.value[i].undefined_value                                        \
+            = operand1->data.numeric.vector.value[i].undefined_value;                                   \
+        switch (operand1->type->traits.numeric.scalar.width) {                                          \
+            default:                                                                                    \
+                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                      \
+                goto CLEANUP;                                                                           \
+            case 32:                                                                                    \
+                /* 32 bit integer */                                                                    \
+                {                                                                                       \
+                    int32_t data = operand1->data.numeric.vector.value[i].value.sint32_value;           \
+                    SIMPLE_UNARY_OP_32_BIT_HOOK                                                         \
+                    (p_result)->data.numeric.vector.value[i].value.sint32_value = data;                 \
+                }                                                                                       \
+                break;                                                                                  \
+            case 64:                                                                                    \
+                /* 64 bit integer */                                                                    \
+                {                                                                                       \
+                    int64_t data = operand1->data.numeric.vector.value[i].value.sint64_value;           \
+                    SIMPLE_UNARY_OP_64_BIT_HOOK                                                         \
+                    (p_result)->data.numeric.vector.value[i].value.sint64_value = data;                 \
+                }                                                                                       \
+                break;                                                                                  \
+        }                                                                                               \
+    }                                                                                                   \
 }
 
 #define SIMPLE_BINARY_OP_32_BIT_HOOK
 #define SIMPLE_BINARY_OP_64_BIT_HOOK
 
-#define DO_SIMPLE_BINARY_INTEGER_OPERATION(p_result, simple_op_module, simple_op_node, operation, maxRecursion)             \
-{                                                                                                                           \
-    {                                                                                                                       \
-        CHECK_INSTRUCTION_SIZE(simple_op_node, 6)                                                                           \
-        /* check result type*/                                                                                              \
-        CHECK_IS_INTEGER_TYPE(p_result)                                                                                     \
-        CHECK_VECTOR_OR_SCALAR_TYPE((p_result))                                                                             \
-                                                                                                                            \
-        /* get operand */                                                                                                   \
-        SpvReflectValue operand1 = {0};                                                                                     \
-        GET_OPERAND(simple_op_module, simple_op_node, 4, &operand1, maxRecursion)                                           \
-        CHECK_IS_INTEGER_TYPE(&operand1)                                                                                    \
-        CHECK_VECTOR_OR_SCALAR_TYPE(&operand1)                                                                              \
-                                                                                                                            \
-        SpvReflectValue operand2 = {0};                                                                                     \
-        GET_OPERAND(simple_op_module, simple_op_node, 5, &operand2, maxRecursion)                                           \
-        CHECK_IS_INTEGER_TYPE(&operand2)                                                                                    \
-        CHECK_VECTOR_OR_SCALAR_TYPE(&operand2)                                                                              \
-                                                                                                                            \
-        /* component width must be same */                                                                                  \
-        CHECK_WIDTH_MATCH(p_result, &operand1)                                                                              \
-        CHECK_WIDTH_MATCH(p_result, &operand2)                                                                              \
-                                                                                                                            \
-        /* vectors must be of same size */                                                                                  \
-        uint32_t vec_size = 1;                                                                                              \
-        CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (p_result), &operand1, &operand2)                                          \
-        /* now do the job, width unknown but same, all three sign unkown                                                    \
-          but still, since spv defines signed integer as 2-compliment,                                                      \
-          so do recent c/cpp standard, directly adding uint should be enough.*/                                             \
-        for (uint32_t i = 0; i < vec_size; ++i) {                                                                           \
-            if (operand1.data.numeric.vector.value[i].undefined_value                                                       \
-                || operand2.data.numeric.vector.value[i].undefined_value) {                                                 \
-                (p_result)->data.numeric.vector.value[i].undefined_value = 1;                                               \
-            }                                                                                                               \
-            switch ((p_result)->type->traits.numeric.scalar.width) {                                                        \
-                default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                \
-                case 32:                                                                                                    \
-                    {                                                                                                       \
-                        /* load data into int32_t*/                                                                         \
-                        int32_t data1 = operand1.data.numeric.vector.value[i].value.sint32_value;                           \
-                        int32_t data2 = operand2.data.numeric.vector.value[i].value.sint32_value;                           \
-                        int32_t data = data1 operation data2;                                                               \
-                        SIMPLE_BINARY_OP_32_BIT_HOOK                                                                        \
-                        /* write to correct offset */                                                                       \
-                        (p_result)->data.numeric.vector.value[i].value.sint32_value = data;                                 \
-                    }                                                                                                       \
-                    break;                                                                                                  \
-                case 64:                                                                                                    \
-                    {                                                                                                       \
-                        /* load data into int64_t*/                                                                         \
-                        int64_t data1 = operand1.data.numeric.vector.value[i].value.sint64_value;                           \
-                        int64_t data2 = operand2.data.numeric.vector.value[i].value.sint64_value;                           \
-                        int64_t data = data1 operation data2;                                                               \
-                        SIMPLE_BINARY_OP_32_BIT_HOOK                                                                        \
-                        /* write to correct offset */                                                                       \
-                        (p_result)->data.numeric.vector.value[i].value.sint64_value = data;                                 \
-                    }                                                                                                       \
-                    break;                                                                                                  \
-            }                                                                                                               \
-        }                                                                                                                   \
-    }                                                                                                                       \
-    return SPV_REFLECT_RESULT_SUCCESS;                                                                                      \
+#define DO_SIMPLE_BINARY_INTEGER_OPERATION(p_result, simple_op_eval, simple_op_node, operation, res, CLEANUP)   \
+{                                                                                                                 \
+    {                                                                                                             \
+        CHECK_INSTRUCTION_SIZE(simple_op_node, 6)                                                                 \
+        /* check result type*/                                                                                    \
+        CHECK_IS_INTEGER_TYPE(p_result, res, CLEANUP)                                                             \
+        CHECK_VECTOR_OR_SCALAR_TYPE((p_result), res, CLEANUP)                                                     \
+                                                                                                                  \
+        /* get operand */                                                                                         \
+        SpvReflectValue* operand1 = NULL;                                                                         \
+        GET_OPERAND(simple_op_eval, simple_op_node, 4, operand1, res, CLEANUP)                                  \
+        CHECK_IS_INTEGER_TYPE(operand1, res, CLEANUP)                                                             \
+        CHECK_VECTOR_OR_SCALAR_TYPE(operand1, res, CLEANUP)                                                       \
+                                                                                                                  \
+        SpvReflectValue* operand2 = NULL;                                                                         \
+        GET_OPERAND(simple_op_eval, simple_op_node, 5, operand2, res, CLEANUP)                                  \
+        CHECK_IS_INTEGER_TYPE(operand2, res, CLEANUP)                                                             \
+        CHECK_VECTOR_OR_SCALAR_TYPE(operand2, res, CLEANUP)                                                       \
+                                                                                                                  \
+        /* component width must be same */                                                                        \
+        CHECK_WIDTH_MATCH(p_result, operand1, res, CLEANUP)                                                       \
+        CHECK_WIDTH_MATCH(p_result, operand2, res, CLEANUP)                                                       \
+                                                                                                                  \
+        /* vectors must be of same size */                                                                        \
+        uint32_t vec_size = 1;                                                                                    \
+        CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (p_result), operand1, operand2, res, CLEANUP)                    \
+        /* now do the job, width unknown but same, all three sign unkown                                          \
+          but still, since spv defines signed integer as 2-compliment,                                            \
+          so do recent c/cpp standard, directly adding uint should be enough.*/                                   \
+        for (uint32_t i = 0; i < vec_size; ++i) {                                                                 \
+            if (operand1->data.numeric.vector.value[i].undefined_value                                            \
+                || operand2->data.numeric.vector.value[i].undefined_value) {                                      \
+                (p_result)->data.numeric.vector.value[i].undefined_value = 1;                                     \
+            }                                                                                                     \
+            switch ((p_result)->type->traits.numeric.scalar.width) {                                              \
+                default:                                                                                          \
+                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                            \
+                    goto CLEANUP;                                                                                 \
+                case 32:                                                                                          \
+                    {                                                                                             \
+                        /* load data into int32_t*/                                                               \
+                        int32_t data1 = operand1->data.numeric.vector.value[i].value.sint32_value;                \
+                        int32_t data2 = operand2->data.numeric.vector.value[i].value.sint32_value;                \
+                        int32_t data = data1 operation data2;                                                     \
+                        SIMPLE_BINARY_OP_32_BIT_HOOK                                                              \
+                        /* write to correct offset */                                                             \
+                        (p_result)->data.numeric.vector.value[i].value.sint32_value = data;                       \
+                    }                                                                                             \
+                    break;                                                                                        \
+                case 64:                                                                                          \
+                    {                                                                                             \
+                        /* load data into int64_t*/                                                               \
+                        int64_t data1 = operand1->data.numeric.vector.value[i].value.sint64_value;                \
+                        int64_t data2 = operand2->data.numeric.vector.value[i].value.sint64_value;                \
+                        int64_t data = data1 operation data2;                                                     \
+                        SIMPLE_BINARY_OP_32_BIT_HOOK                                                              \
+                        /* write to correct offset */                                                             \
+                        (p_result)->data.numeric.vector.value[i].value.sint64_value = data;                       \
+                    }                                                                                             \
+                    break;                                                                                        \
+            }                                                                                                     \
+        }                                                                                                         \
+    }                                                                                                             \
 }
 
-#define DO_UNSIGNED_INTEGER_DIVISION(p_result, simple_op_module, simple_op_node, operation, maxRecursion)                   \
-{                                                                                                                           \
-    CHECK_INSTRUCTION_SIZE(simple_op_node, 6)                                                                               \
-    /* check result type */                                                                                                 \
-    CHECK_IS_INTEGER_TYPE(p_result)                                                                                         \
-    CHECK_VECTOR_OR_SCALAR_TYPE(p_result)                                                                                   \
-    if ((p_result)->type->traits.numeric.scalar.signedness) {                                                               \
-        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
-    }                                                                                                                       \
-                                                                                                                            \
-    /* get operand */                                                                                                       \
-    SpvReflectValue operand1 = {0};                                                                                         \
-    GET_OPERAND(simple_op_module, simple_op_node, 4, &operand1, maxRecursion)                                               \
-    if ((!operand1.type) || operand1.type->id != (p_result)->type->id) {                                                    \
-        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
-    }                                                                                                                       \
-    SpvReflectValue operand2 = {0};                                                                                         \
-    GET_OPERAND(simple_op_module, simple_op_node, 5, &operand2, maxRecursion)                                               \
-    if ((!operand2.type) || operand2.type->id != (p_result)->type->id) {                                                    \
-        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                 \
-    }                                                                                                                       \
-                                                                                                                            \
-    uint32_t vec_size = 1;                                                                                                  \
-    CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (p_result), &operand1, &operand2)                                              \
-    for (uint32_t i = 0; i < vec_size; ++i) {                                                                               \
-        if (operand1.data.numeric.vector.value[i].undefined_value                                                           \
-            || operand2.data.numeric.vector.value[i].undefined_value) {                                                     \
-            (p_result)->data.numeric.vector.value[i].undefined_value = 1;                                                   \
-        }                                                                                                                   \
-        switch ((p_result)->type->traits.numeric.scalar.width) {                                                            \
-            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                    \
-            case 32:                                                                                                        \
-                {                                                                                                           \
-                    (p_result)->data.numeric.vector.value[i].value.uint32_bool_value                                        \
-                        = operand1.data.numeric.vector.value[i].value.uint32_bool_value                                     \
-                            operation operand2.data.numeric.vector.value[i].value.uint32_bool_value;                        \
-                    if (operand2.data.numeric.vector.value[i].value.uint32_bool_value == 0) {                               \
-                        (p_result)->data.numeric.vector.value[i].undefined_value = 1;                                       \
-                    }                                                                                                       \
-                }                                                                                                           \
-                break;                                                                                                      \
-            case 64:                                                                                                        \
-                {                                                                                                           \
-                    (p_result)->data.numeric.vector.value[i].value.uint64_value                                             \
-                        = operand1.data.numeric.vector.value[i].value.uint64_value                                          \
-                            operation operand2.data.numeric.vector.value[i].value.uint64_value;                             \
-                    if (operand2.data.numeric.vector.value[i].value.uint64_value == 0) {                                    \
-                        (p_result)->data.numeric.vector.value[i].undefined_value = 1;                                       \
-                    }                                                                                                       \
-                }                                                                                                           \
-                break;                                                                                                      \
-        }                                                                                                                   \
-    }                                                                                                                       \
-    return SPV_REFLECT_RESULT_SUCCESS;                                                                                      \
+#define DO_UNSIGNED_INTEGER_DIVISION(p_result, simple_op_eval, simple_op_node, operation, res, CLEANUP)     \
+{                                                                                                             \
+    CHECK_INSTRUCTION_SIZE(simple_op_node, 6)                                                                 \
+    /* check result type */                                                                                   \
+    CHECK_IS_INTEGER_TYPE(p_result, res, CLEANUP)                                                             \
+    CHECK_VECTOR_OR_SCALAR_TYPE(p_result, res, CLEANUP)                                                       \
+    if ((p_result)->type->traits.numeric.scalar.signedness) {                                                 \
+        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                    \
+        goto CLEANUP;                                                                                         \
+    }                                                                                                         \
+                                                                                                              \
+    /* get operand */                                                                                         \
+    SpvReflectValue* operand1 = NULL;                                                                         \
+    GET_OPERAND(simple_op_eval, simple_op_node, 4, operand1, res, CLEANUP)                                  \
+    if ((!operand1->type) || operand1->type->id != (p_result)->type->id) {                                    \
+        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                    \
+        goto CLEANUP;                                                                                         \
+    }                                                                                                         \
+    SpvReflectValue* operand2 = NULL;                                                                         \
+    GET_OPERAND(simple_op_eval, simple_op_node, 5, operand2, res, CLEANUP)                                  \
+    if ((!operand2->type) || operand2->type->id != (p_result)->type->id) {                                    \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                \
+            goto CLEANUP;                                                                                     \
+    }                                                                                                         \
+                                                                                                              \
+    uint32_t vec_size = 1;                                                                                    \
+    CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (p_result), operand1, operand2, res, CLEANUP)                    \
+    for (uint32_t i = 0; i < vec_size; ++i) {                                                                 \
+        if (operand1->data.numeric.vector.value[i].undefined_value                                            \
+            || operand2->data.numeric.vector.value[i].undefined_value) {                                      \
+            (p_result)->data.numeric.vector.value[i].undefined_value = 1;                                     \
+        }                                                                                                     \
+        switch ((p_result)->type->traits.numeric.scalar.width) {                                              \
+            default:                                                                                          \
+                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                            \
+                goto CLEANUP;                                                                                 \
+            case 32:                                                                                          \
+                {                                                                                             \
+                    (p_result)->data.numeric.vector.value[i].value.uint32_bool_value                          \
+                        = operand1->data.numeric.vector.value[i].value.uint32_bool_value                      \
+                            operation operand2->data.numeric.vector.value[i].value.uint32_bool_value;         \
+                    if (operand2->data.numeric.vector.value[i].value.uint32_bool_value == 0) {                \
+                        (p_result)->data.numeric.vector.value[i].undefined_value = 1;                         \
+                    }                                                                                         \
+                }                                                                                             \
+                break;                                                                                        \
+            case 64:                                                                                          \
+                {                                                                                             \
+                    (p_result)->data.numeric.vector.value[i].value.uint64_value                               \
+                        = operand1->data.numeric.vector.value[i].value.uint64_value                           \
+                            operation operand2->data.numeric.vector.value[i].value.uint64_value;              \
+                    if (operand2->data.numeric.vector.value[i].value.uint64_value == 0) {                     \
+                        (p_result)->data.numeric.vector.value[i].undefined_value = 1;                         \
+                    }                                                                                         \
+                }                                                                                             \
+                break;                                                                                        \
+        }                                                                                                     \
+    }                                                                                                         \
 }
 
 #define SHIFT_OP_32_BIT_HOOK_PRE
@@ -5584,45 +5774,47 @@ SpvReflectResult CopyValueData(const SpvReflectShaderModule* p_module, const Spv
 #define SHIFT_OP_32_BIT_HOOK_POST
 #define SHIFT_OP_64_BIT_HOOK_POST
 
-#define DO_SHIFT_OPERATION(p_result, simple_op_module, simple_op_node, operation, maxRecursion)         \
+#define DO_SHIFT_OPERATION(p_result, simple_op_eval, simple_op_node, operation, res, CLEANUP)         \
 {                                                                                                       \
     CHECK_INSTRUCTION_SIZE((simple_op_node), 6)                                                         \
     /* check result type */                                                                             \
-    CHECK_IS_INTEGER_TYPE((p_result))                                                                   \
-    CHECK_VECTOR_OR_SCALAR_TYPE(p_result)                                                               \
+    CHECK_IS_INTEGER_TYPE((p_result), res, CLEANUP)                                                     \
+    CHECK_VECTOR_OR_SCALAR_TYPE(p_result, res, CLEANUP)                                                 \
                                                                                                         \
     /* get operand */                                                                                   \
-    SpvReflectValue operand1 = {0};                                                                     \
-    GET_OPERAND((simple_op_module), (simple_op_node), 4, &operand1, maxRecursion)                       \
-    CHECK_IS_INTEGER_TYPE(&operand1)                                                                    \
-    CHECK_VECTOR_OR_SCALAR_TYPE(&operand1)                                                              \
+    SpvReflectValue* operand1 = NULL;                                                                   \
+    GET_OPERAND((simple_op_eval), (simple_op_node), 4, operand1, res, CLEANUP)                        \
+    CHECK_IS_INTEGER_TYPE(operand1, res, CLEANUP)                                                       \
+    CHECK_VECTOR_OR_SCALAR_TYPE(operand1, res, CLEANUP)                                                 \
                                                                                                         \
-    SpvReflectValue operand2 = {0};                                                                     \
-    GET_OPERAND((simple_op_module), (simple_op_node), 5, &operand2, maxRecursion)                       \
-    CHECK_IS_INTEGER_TYPE(&operand2)                                                                    \
-    CHECK_VECTOR_OR_SCALAR_TYPE(&operand2)                                                              \
+    SpvReflectValue* operand2 = NULL;                                                                   \
+    GET_OPERAND((simple_op_eval), (simple_op_node), 5, operand2, res, CLEANUP)                        \
+    CHECK_IS_INTEGER_TYPE(operand2, res, CLEANUP)                                                       \
+    CHECK_VECTOR_OR_SCALAR_TYPE(operand2, res, CLEANUP)                                                 \
                                                                                                         \
     /* op1 and result must have same width */                                                           \
-    CHECK_WIDTH_MATCH((p_result), &operand1)                                                            \
+    CHECK_WIDTH_MATCH((p_result), operand1, res, CLEANUP)                                               \
     uint32_t res_width = (p_result)->type->traits.numeric.scalar.width;                                 \
                                                                                                         \
     /* vectors must be of same size */                                                                  \
     uint32_t vec_size = 1;                                                                              \
-    CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (p_result), &operand1, &operand2)                          \
+    CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (p_result), operand1, operand2, res, CLEANUP)              \
                                                                                                         \
     for (uint32_t i = 0; i < vec_size; ++i) {                                                           \
-        if (operand1.data.numeric.vector.value[i].undefined_value                                       \
-            || operand2.data.numeric.vector.value[i].undefined_value) {                                 \
+        if (operand1->data.numeric.vector.value[i].undefined_value                                      \
+            || operand2->data.numeric.vector.value[i].undefined_value) {                                \
             (p_result)->data.numeric.vector.value[i].undefined_value = 1;                               \
         }                                                                                               \
         /* load the shift number, set undefined flag if larger than result width*/                      \
         uint8_t shift_num;                                                                              \
-        switch (operand2.type->traits.numeric.scalar.width) {                                           \
-            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                \
+        switch (operand2->type->traits.numeric.scalar.width) {                                          \
+            default:                                                                                    \
+                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                      \
+                goto CLEANUP;                                                                           \
             case 32:                                                                                    \
                 {                                                                                       \
-                    uint32_t shift = operand2.data.numeric.vector.value[i].value.uint32_bool_value;     \
-                    if (operand1.data.numeric.vector.value[i].undefined_value || shift >= res_width) {  \
+                    uint32_t shift = operand2->data.numeric.vector.value[i].value.uint32_bool_value;    \
+                    if (operand1->data.numeric.vector.value[i].undefined_value || shift >= res_width) { \
                         (p_result)->data.numeric.vector.value[i].undefined_value = 1;                   \
                     }                                                                                   \
                     shift_num = (uint8_t)shift;                                                         \
@@ -5630,8 +5822,8 @@ SpvReflectResult CopyValueData(const SpvReflectShaderModule* p_module, const Spv
                 break;                                                                                  \
             case 64:                                                                                    \
                 {                                                                                       \
-                    uint64_t shift = operand2.data.numeric.vector.value[i].value.uint64_value;          \
-                    if (operand1.data.numeric.vector.value[i].undefined_value || shift >= res_width) {  \
+                    uint64_t shift = operand2->data.numeric.vector.value[i].value.uint64_value;         \
+                    if (operand1->data.numeric.vector.value[i].undefined_value || shift >= res_width) { \
                         (p_result)->data.numeric.vector.value[i].undefined_value = 1;                   \
                     }                                                                                   \
                     shift_num = (uint8_t)shift;                                                         \
@@ -5639,10 +5831,12 @@ SpvReflectResult CopyValueData(const SpvReflectShaderModule* p_module, const Spv
                 break;                                                                                  \
         }                                                                                               \
         switch (res_width) {                                                                            \
-            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                \
+            default:                                                                                    \
+                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                      \
+                goto CLEANUP;                                                                           \
             case 32:                                                                                    \
                 {                                                                                       \
-                    uint32_t data = operand1.data.numeric.vector.value[i].value.uint32_bool_value;      \
+                    uint32_t data = operand1->data.numeric.vector.value[i].value.uint32_bool_value;     \
                     SHIFT_OP_32_BIT_HOOK_PRE                                                            \
                     data operation##= shift_num;                                                        \
                     SHIFT_OP_32_BIT_HOOK_POST                                                           \
@@ -5651,7 +5845,7 @@ SpvReflectResult CopyValueData(const SpvReflectShaderModule* p_module, const Spv
                 break;                                                                                  \
             case 64:                                                                                    \
                 {                                                                                       \
-                    uint64_t data = operand1.data.numeric.vector.value[i].value.uint64_value;           \
+                    uint64_t data = operand1->data.numeric.vector.value[i].value.uint64_value;          \
                     SHIFT_OP_64_BIT_HOOK_PRE                                                            \
                     data operation##= shift_num;                                                        \
                     SHIFT_OP_64_BIT_HOOK_POST                                                           \
@@ -5660,94 +5854,93 @@ SpvReflectResult CopyValueData(const SpvReflectShaderModule* p_module, const Spv
                 break;                                                                                  \
         }                                                                                               \
     }                                                                                                   \
-    return SPV_REFLECT_RESULT_SUCCESS;                                                                  \
 }
 
-#define DO_BINARY_BOOLEAN_LOGICAL_OPERATION(p_result, simple_op_module, simple_op_node, operation, maxRecursion)       \
-{                                                                                                       \
-    CHECK_INSTRUCTION_SIZE((simple_op_node), 6)                                                         \
-                                                                                                        \
-    /* check result type */                                                                             \
-    CHECK_IS_BOOLEAN_TYPE((p_result))                                                                   \
-    CHECK_VECTOR_OR_SCALAR_TYPE((p_result))                                                             \
-                                                                                                        \
-    /* get operand */                                                                                   \
-    SpvReflectValue operand1 = {0};                                                                     \
-    GET_OPERAND((simple_op_module), (simple_op_node), 4, &operand1, maxRecursion)                       \
-    CHECK_IS_BOOLEAN_TYPE(&operand1)                                                                    \
-    CHECK_VECTOR_OR_SCALAR_TYPE(&operand1)                                                              \
-                                                                                                        \
-    SpvReflectValue operand2 = {0};                                                                     \
-    GET_OPERAND((simple_op_module), (simple_op_node), 5, &operand2, maxRecursion)                       \
-    CHECK_IS_BOOLEAN_TYPE(&operand2)                                                                    \
-    CHECK_VECTOR_OR_SCALAR_TYPE(&operand2)                                                              \
-                                                                                                        \
-    /* vectors must be of same size */                                                                  \
-    uint32_t vec_size = 1;                                                                              \
-    CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (p_result), &operand1, &operand2)                          \
-                                                                                                        \
-    for (uint32_t i = 0; i < vec_size; ++i) {                                                           \
-        if (operand1.data.numeric.vector.value[i].undefined_value                                       \
-                operation operand2.data.numeric.vector.value[i].undefined_value) {                      \
-                    (p_result)->data.numeric.vector.value[i].undefined_value = 1;                       \
-        }                                                                                               \
-        /* write to correct offset */                                                                   \
-        (p_result)->data.numeric.vector.value[i].value.uint32_bool_value                                \
-            = operand1.data.numeric.vector.value[i].value.uint32_bool_value                             \
-                operation operand2.data.numeric.vector.value[i].value.uint32_bool_value;                \
-    }                                                                                                   \
-    return SPV_REFLECT_RESULT_SUCCESS;                                                                  \
+#define DO_BINARY_BOOLEAN_LOGICAL_OPERATION(p_result, simple_op_eval, simple_op_node, operation, res, CLEANUP)  \
+{                                                                                                                 \
+    CHECK_INSTRUCTION_SIZE((simple_op_node), 6)                                                                   \
+                                                                                                                  \
+    /* check result type */                                                                                       \
+    CHECK_IS_BOOLEAN_TYPE((p_result), res, CLEANUP)                                                               \
+    CHECK_VECTOR_OR_SCALAR_TYPE((p_result), res, CLEANUP)                                                         \
+                                                                                                                  \
+    /* get operand */                                                                                             \
+    SpvReflectValue* operand1 = NULL;                                                                             \
+    GET_OPERAND((simple_op_eval), (simple_op_node), 4, operand1, res, CLEANUP)                                  \
+    CHECK_IS_BOOLEAN_TYPE(operand1, res, CLEANUP)                                                                 \
+    CHECK_VECTOR_OR_SCALAR_TYPE(operand1, res, CLEANUP)                                                           \
+                                                                                                                  \
+    SpvReflectValue* operand2 = NULL;                                                                             \
+    GET_OPERAND((simple_op_eval), (simple_op_node), 5, operand2, res, CLEANUP)                                  \
+    CHECK_IS_BOOLEAN_TYPE(operand2, res, CLEANUP)                                                                 \
+    CHECK_VECTOR_OR_SCALAR_TYPE(operand2, res, CLEANUP)                                                           \
+                                                                                                                  \
+    /* vectors must be of same size */                                                                            \
+    uint32_t vec_size = 1;                                                                                        \
+    CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (p_result), operand1, operand2, res, CLEANUP)                        \
+                                                                                                                  \
+    for (uint32_t i = 0; i < vec_size; ++i) {                                                                     \
+        if (operand1->data.numeric.vector.value[i].undefined_value                                                \
+                operation operand2->data.numeric.vector.value[i].undefined_value) {                               \
+                    (p_result)->data.numeric.vector.value[i].undefined_value = 1;                                 \
+        }                                                                                                         \
+        /* write to correct offset */                                                                             \
+        (p_result)->data.numeric.vector.value[i].value.uint32_bool_value                                          \
+            = operand1->data.numeric.vector.value[i].value.uint32_bool_value                                      \
+                operation operand2->data.numeric.vector.value[i].value.uint32_bool_value;                         \
+    }                                                                                                             \
 }
 
-#define DO_BINARY_INTEGER_LOGICAL_OPERATION(p_result, simple_op_module, simple_op_node, operation, maxRecursion, _32bit_member, _64bit_member)\
-{                                                                                                                           \
-    CHECK_INSTRUCTION_SIZE((simple_op_node), 6)                                                                             \
-                                                                                                                            \
-    /* check result type */                                                                                                 \
-    CHECK_IS_BOOLEAN_TYPE((p_result))                                                                                       \
-    CHECK_VECTOR_OR_SCALAR_TYPE((p_result))                                                                                 \
-                                                                                                                            \
-    /* get operand */                                                                                                       \
-    SpvReflectValue operand1 = {0};                                                                                         \
-    GET_OPERAND((simple_op_module), (simple_op_node), 4, &operand1, maxRecursion)                                           \
-    CHECK_IS_INTEGER_TYPE(&operand1)                                                                                        \
-    CHECK_VECTOR_OR_SCALAR_TYPE(&operand1)                                                                                  \
-                                                                                                                            \
-    SpvReflectValue operand2 = {0};                                                                                         \
-    GET_OPERAND((simple_op_module), (simple_op_node), 5, &operand2, maxRecursion)                                           \
-    CHECK_IS_INTEGER_TYPE(&operand2)                                                                                        \
-    CHECK_VECTOR_OR_SCALAR_TYPE(&operand2)                                                                                  \
-                                                                                                                            \
-    /* vectors must be of same size */                                                                                      \
-    uint32_t vec_size = 1;                                                                                                  \
-    CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (p_result), &operand1, &operand2)                                              \
-                                                                                                                            \
-    for (uint32_t i = 0; i < vec_size; ++i) {                                                                               \
-        if (operand1.data.numeric.vector.value[i].undefined_value                                                           \
-            || operand2.data.numeric.vector.value[i].undefined_value) {                                                     \
-            (p_result)->data.numeric.vector.value[i].undefined_value = 1;                                                   \
-        }                                                                                                                   \
-        switch (operand1.type->traits.numeric.scalar.width) {                                                               \
-            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                    \
-            case 32:                                                                                                        \
-                (p_result)->data.numeric.vector.value[i].value.uint32_bool_value                                            \
-                        = operand1.data.numeric.vector.value[i].value.##_32bit_member                                       \
-                            operation operand2.data.numeric.vector.value[i].value.##_32bit_member;                          \
-                break;                                                                                                      \
-            case 64:                                                                                                        \
-                (p_result)->data.numeric.vector.value[i].value.uint32_bool_value                                            \
-                        = operand1.data.numeric.vector.value[i].value.##_64bit_member                                       \
-                            operation operand2.data.numeric.vector.value[i].value.##_64bit_member;                          \
-                break;                                                                                                      \
-        }                                                                                                                   \
-    }                                                                                                                       \
-    return SPV_REFLECT_RESULT_SUCCESS;                                                                                      \
+#define DO_BINARY_INTEGER_LOGICAL_OPERATION(p_result, simple_op_eval, simple_op_node, operation, _32bit_member, _64bit_member, res, CLEANUP)  \
+{                                                                                                                                               \
+    CHECK_INSTRUCTION_SIZE((simple_op_node), 6)                                                                                                 \
+                                                                                                                                                \
+    /* check result type */                                                                                                                     \
+    CHECK_IS_BOOLEAN_TYPE((p_result), res, CLEANUP)                                                                                             \
+    CHECK_VECTOR_OR_SCALAR_TYPE((p_result), res, CLEANUP)                                                                                       \
+                                                                                                                                                \
+    /* get operand */                                                                                                                           \
+    SpvReflectValue* operand1 = NULL;                                                                                                           \
+    GET_OPERAND((simple_op_eval), (simple_op_node), 4, operand1, res, CLEANUP)                                                                \
+    CHECK_IS_INTEGER_TYPE(operand1, res, CLEANUP)                                                                                               \
+    CHECK_VECTOR_OR_SCALAR_TYPE(operand1, res, CLEANUP)                                                                                         \
+                                                                                                                                                \
+    SpvReflectValue* operand2 = NULL;                                                                                                           \
+    GET_OPERAND((simple_op_eval), (simple_op_node), 5, operand2, res, CLEANUP)                                                                \
+    CHECK_IS_INTEGER_TYPE(operand2, res, CLEANUP)                                                                                               \
+    CHECK_VECTOR_OR_SCALAR_TYPE(operand2, res, CLEANUP)                                                                                         \
+                                                                                                                                                \
+    /* vectors must be of same size */                                                                                                          \
+    uint32_t vec_size = 1;                                                                                                                      \
+    CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (p_result), operand1, operand2, res, CLEANUP)                                                      \
+                                                                                                                                                \
+    for (uint32_t i = 0; i < vec_size; ++i) {                                                                                                   \
+        if (operand1->data.numeric.vector.value[i].undefined_value                                                                              \
+            || operand2->data.numeric.vector.value[i].undefined_value) {                                                                        \
+            (p_result)->data.numeric.vector.value[i].undefined_value = 1;                                                                       \
+        }                                                                                                                                       \
+        switch (operand1->type->traits.numeric.scalar.width) {                                                                                  \
+            default:                                                                                                                            \
+                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                              \
+                goto CLEANUP;                                                                                                                   \
+            case 32:                                                                                                                            \
+                (p_result)->data.numeric.vector.value[i].value.uint32_bool_value                                                                \
+                        = operand1->data.numeric.vector.value[i].value.##_32bit_member                                                          \
+                            operation operand2->data.numeric.vector.value[i].value.##_32bit_member;                                             \
+                break;                                                                                                                          \
+            case 64:                                                                                                                            \
+                (p_result)->data.numeric.vector.value[i].value.uint32_bool_value                                                                \
+                        = operand1->data.numeric.vector.value[i].value.##_64bit_member                                                          \
+                            operation operand2->data.numeric.vector.value[i].value.##_64bit_member;                                             \
+                break;                                                                                                                          \
+        }                                                                                                                                       \
+    }                                                                                                                                           \
 }
 
-#define DO_BINARY_UINTEGER_LOGICAL_OPERATION(p_result, simple_op_module, simple_op_node, operation, maxRecursion) \
-    DO_BINARY_INTEGER_LOGICAL_OPERATION(p_result, simple_op_module, simple_op_node, operation, maxRecursion, uint32_bool_value, uint64_value)
-#define DO_BINARY_SINTEGER_LOGICAL_OPERATION(p_result, simple_op_module, simple_op_node, operation, maxRecursion) \
-    DO_BINARY_INTEGER_LOGICAL_OPERATION(p_result, simple_op_module, simple_op_node, operation, maxRecursion, sint32_value, sint64_value)
+#define DO_BINARY_UINTEGER_LOGICAL_OPERATION(p_result, simple_op_eval, simple_op_node, operation, res, CLEANUP) \
+    DO_BINARY_INTEGER_LOGICAL_OPERATION(p_result, simple_op_eval, simple_op_node, operation, uint32_bool_value, uint64_value, res, CLEANUP)
+#define DO_BINARY_SINTEGER_LOGICAL_OPERATION(p_result, simple_op_eval, simple_op_node, operation, res, CLEANUP) \
+    DO_BINARY_INTEGER_LOGICAL_OPERATION(p_result, simple_op_eval, simple_op_node, operation, sint32_value, sint64_value, res, CLEANUP)
 
 // Used for calculating specialization constants.
 // The switches are not necessary for littel endian cpu,
@@ -5755,54 +5948,65 @@ SpvReflectResult CopyValueData(const SpvReflectShaderModule* p_module, const Spv
 // memcpy is required since c/c++ have strict aliasing rules
 // access to signed and unsigned versions of same width integer's
 // address does not violate strict aliasing rules
-SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint32_t result_id, SpvReflectValue* result, uint32_t maxRecursion)
+SpvReflectResult EvaluateResultImpl(SpvReflectPrvEvaluation* p_eval, uint32_t result_id, const SpvReflectValue** p_result)
 {
-    if(!maxRecursion) return SPV_REFLECT_RESULT_ERROR_SPIRV_RECURSION;
     SpvReflectResult res = SPV_REFLECT_RESULT_SUCCESS;
-    SpvReflectPrvParser* p_parser = p_module->_internal->parser;
-    SpvReflectPrvNode* p_node = FindNode(p_parser, result_id);
+    SpvReflectPrvEvaluationNode* p_node = FindEvaluationNode(p_eval, result_id);
     if (!p_node) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+    *p_result = &p_node->value;
+    SpvReflectValue* result = &p_node->value;
+    if (!result->type) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+    }
+    if (p_node->evaluation_state == SPV_REFLECT_EVALUATION_STATE_FAILED) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+    }
+    if (p_node->evaluation_state == SPV_REFLECT_EVALUATION_STATE_WORKING) {
+        p_node->evaluation_state = SPV_REFLECT_EVALUATION_STATE_FAILED;
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_RECURSION;
+    }
+    if (p_node->evaluation_state == SPV_REFLECT_EVALUATION_STATE_DONE) {
+        return SPV_REFLECT_RESULT_SUCCESS;
+    }
+    p_node->evaluation_state = SPV_REFLECT_EVALUATION_STATE_WORKING;
+
     switch (p_node->op) {
         default:
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+            break;
         case SpvOpConstantTrue:
             {
-                result->type = NULL;
                 result->data.numeric.scalar.value.uint32_bool_value = 1;
             }
-            return SPV_REFLECT_RESULT_SUCCESS;
+            break;
         case SpvOpConstantFalse:
             {
-                result->type = NULL;
                 result->data.numeric.scalar.value.uint32_bool_value = 0;
             }
-            return SPV_REFLECT_RESULT_SUCCESS;
+            break;
         case SpvOpConstant:
             CONSTANT_RESULT:
-            return GetScalarConstant(p_module, p_node, &result->data.numeric.scalar, &result->type);
+            res = EvalGetScalarConstant(p_eval, p_node);
+            break;
         case SpvOpSpecConstantTrue: case SpvOpSpecConstantFalse:
         case SpvOpSpecConstant:
             {
-                if (p_node->decorations.specialization_constant.value == (uint32_t)INVALID_VALUE) {
+                if (!p_node->spec_const) {
                     goto CONSTANT_RESULT;
                 }
-                SpvReflectSpecializationConstant* p_constant;
-                res = GetSpecContantById(p_module, p_node->decorations.specialization_constant.value, &p_constant);
-                if (res != SPV_REFLECT_RESULT_SUCCESS) return res;
-                result->type = p_constant->type;
-                result->data.numeric.scalar = p_constant->current_value;
+                result->data.numeric.scalar = p_node->spec_const->current_value;
             }
-            return SPV_REFLECT_RESULT_SUCCESS;
+            break;
         case SpvOpSpecConstantComposite:
             {
                 // only support compositing vector types for now...
                 // vectors are needed for spv compiled to WorkgroupSize builtin
                 // in expressing actual localsize
-                result->type = FindType(p_module, p_node->result_type_id);
-                if (!result->type) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+                
                 // compositing types
                 if (result->type->type_flags & VECTOR_DISALLOWED_FLAGS) {
-                    return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                    goto CLEANUP;
                 }
                 uint32_t vec_size = 1;
                 // should always have, since scalars do not need composite
@@ -5811,49 +6015,48 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                 }
                 // check instruction size
                 if (p_node->word_count != 3 + vec_size) {
-                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                    goto CLEANUP;
                 }
                 for (uint32_t i = 0; i < vec_size; ++i) {
-                    SpvReflectValue operandi = {0};
-                    GET_OPERAND(p_module, p_node, 3 + i, &operandi, maxRecursion);
+                    SpvReflectValue* operandi = NULL;
+                    GET_OPERAND(p_eval, p_node, 3 + i, operandi, res, CLEANUP);
                     // check type compatibility
-                    if (operandi.type && (operandi.type->type_flags & SCALAR_DISALLOWED_FLAGS)) {
-                        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                    if (operandi->type->type_flags & SCALAR_DISALLOWED_FLAGS) {
+                        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                        goto CLEANUP;
                     }
-                    if ((!operandi.type && !(result->type->type_flags& SPV_REFLECT_TYPE_FLAG_BOOL)) 
-                        ||(operandi.type && ((operandi.type->type_flags & SCALAR_TYPE_FLAGS) != (result->type->type_flags & SCALAR_TYPE_FLAGS)))) {
-                        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                    }
-                    result->data.numeric.vector.value[i] = operandi.data.numeric.scalar;
+                    result->data.numeric.vector.value[i] = operandi->data.numeric.scalar;
                 }
             }
-            return SPV_REFLECT_RESULT_SUCCESS;
+            break;
         case SpvOpSpecConstantOp:
             {
                 // operation has result type id, thus must be typed
-                result->type = FindType(p_module, p_node->result_type_id);
-                if (!result->type) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
 
                 // only vector and scalar types of int/bool/float types implemented
                 // only OpSelect, OpUndef and access chain instructions can work with non-vector or scalar types
                 // they are not currently supported... (likely never will)
                 if (result->type->type_flags & VECTOR_DISALLOWED_FLAGS) {
-                    return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                    goto CLEANUP;
                 }
 
                 // evaluate op
                 uint32_t spec_op;
-                CHECKED_READU32(p_parser, p_node->word_offset + 3, spec_op);
+                EVAL_CHECKED_READU32(p_eval, p_node->word_offset + 3, spec_op, res, CLEANUP);
                 switch (spec_op) {
                     default:
-                        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                        goto CLEANUP;
                     case SpvOpUndef:
                         // write undefined value to result...
                         {
                             CHECK_INSTRUCTION_SIZE(p_node, 4)
                             // all types allowed except void
                             if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VOID) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
                             if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {
                                 for (uint32_t i = 0; i < result->type->traits.numeric.vector.component_count; ++i) {
@@ -5864,7 +6067,7 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                                 result->data.numeric.scalar.undefined_value = 1;
                             }
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        break;
                     case SpvOpSConvert: 
                         // sign extend or truncate integers.
                         // result is scalar or vector integer type.
@@ -5873,33 +6076,38 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                             CHECK_INSTRUCTION_SIZE(p_node, 5)
 
                             // check result type
-                            CHECK_IS_INTEGER_TYPE(result)
-                            CHECK_VECTOR_OR_SCALAR_TYPE(result)
+                            CHECK_IS_INTEGER_TYPE(result, res, CLEANUP)
+                            CHECK_VECTOR_OR_SCALAR_TYPE(result, res, CLEANUP)
 
                             // get operand
-                            SpvReflectValue operand1 = {0};
-                            GET_OPERAND(p_module, p_node, 4, &operand1, maxRecursion)
-                            CHECK_IS_INTEGER_TYPE(&operand1)
-                            CHECK_VECTOR_OR_SCALAR_TYPE(&operand1)
+                            SpvReflectValue* operand1 = NULL;
+                            GET_OPERAND(p_eval, p_node, 4, operand1, res, CLEANUP)
+                            CHECK_IS_INTEGER_TYPE(operand1, res, CLEANUP)
+                            CHECK_VECTOR_OR_SCALAR_TYPE(operand1, res, CLEANUP)
 
                             // operand must be signed
-                            if (!operand1.type->traits.numeric.scalar.signedness) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            if (!operand1->type->traits.numeric.scalar.signedness) {
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
                             // vector size must match
                             uint32_t vec_size = 1;
-                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, result, &operand1)
+                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, result, operand1, res, CLEANUP)
 
                             // now do the job
                             for (uint32_t i = 0; i < vec_size; ++i) {
-                                result->data.numeric.vector.value[i].undefined_value = operand1.data.numeric.vector.value[i].undefined_value;
-                                switch (operand1.type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                result->data.numeric.vector.value[i].undefined_value = operand1->data.numeric.vector.value[i].undefined_value;
+                                switch (operand1->type->traits.numeric.scalar.width) {
+                                    default:
+                                        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                        goto CLEANUP;
                                     case 32:
                                         {
-                                            int32_t data = operand1.data.numeric.vector.value[i].value.sint32_value;
+                                            int32_t data = operand1->data.numeric.vector.value[i].value.sint32_value;
                                             switch (result->type->traits.numeric.scalar.width) {
-                                                default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                default: 
+                                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                    goto CLEANUP;
                                                 case 32:
                                                     result->data.numeric.vector.value[i].value.sint32_value = data;
                                                     break;
@@ -5911,9 +6119,11 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                                         break;
                                     case 64:
                                         {
-                                            int64_t data = operand1.data.numeric.vector.value[i].value.sint64_value;
+                                            int64_t data = operand1->data.numeric.vector.value[i].value.sint64_value;
                                             switch (result->type->traits.numeric.scalar.width) {
-                                                default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                default: 
+                                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                    goto CLEANUP;
                                                 case 32:
                                                     result->data.numeric.vector.value[i].value.sint32_value = (int32_t)data;
                                                     break;
@@ -5926,7 +6136,7 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                                 }
                             }
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        break;
                     case SpvOpUConvert:
                         // zero extend or truncate integers.
                         // result is scalar or vector integer type.
@@ -5935,33 +6145,38 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                             CHECK_INSTRUCTION_SIZE(p_node, 5)
 
                             // check result type
-                            CHECK_IS_INTEGER_TYPE(result)
-                            CHECK_VECTOR_OR_SCALAR_TYPE(result)
+                            CHECK_IS_INTEGER_TYPE(result, res, CLEANUP)
+                            CHECK_VECTOR_OR_SCALAR_TYPE(result, res, CLEANUP)
 
                             // get operand
-                            SpvReflectValue operand1 = {0};
-                            GET_OPERAND(p_module, p_node, 4, &operand1, maxRecursion)
-                            CHECK_IS_INTEGER_TYPE(&operand1)
-                            CHECK_VECTOR_OR_SCALAR_TYPE(&operand1)
+                            SpvReflectValue* operand1 = NULL;
+                            GET_OPERAND(p_eval, p_node, 4, operand1, res, CLEANUP)
+                            CHECK_IS_INTEGER_TYPE(operand1, res, CLEANUP)
+                            CHECK_VECTOR_OR_SCALAR_TYPE(operand1, res, CLEANUP)
 
                             // operand must not be signed
-                            if (operand1.type->traits.numeric.scalar.signedness) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            if (operand1->type->traits.numeric.scalar.signedness) {
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
                             // vector size must match
                             uint32_t vec_size = 1;
-                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, result, &operand1)
+                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, result, operand1, res, CLEANUP)
 
                             // now do the job
                             for (uint32_t i = 0; i < vec_size; ++i) {
-                                result->data.numeric.vector.value[i].undefined_value = operand1.data.numeric.vector.value[i].undefined_value;
-                                switch (operand1.type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                result->data.numeric.vector.value[i].undefined_value = operand1->data.numeric.vector.value[i].undefined_value;
+                                switch (operand1->type->traits.numeric.scalar.width) {
+                                    default: 
+                                        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                        goto CLEANUP;
                                     case 32:
                                         {
-                                            uint32_t data = operand1.data.numeric.vector.value[i].value.uint32_bool_value;
+                                            uint32_t data = operand1->data.numeric.vector.value[i].value.uint32_bool_value;
                                             switch (result->type->traits.numeric.scalar.width) {
-                                                default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                default: 
+                                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                    goto CLEANUP;
                                                 case 32:
                                                     result->data.numeric.vector.value[i].value.uint32_bool_value = data;
                                                     break;
@@ -5973,9 +6188,11 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                                         break;
                                     case 64:
                                         {
-                                            uint64_t data = operand1.data.numeric.vector.value[i].value.uint64_value;
+                                            uint64_t data = operand1->data.numeric.vector.value[i].value.uint64_value;
                                             switch (result->type->traits.numeric.scalar.width) {
-                                                default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                default: 
+                                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                    goto CLEANUP;
                                                 case 32:
                                                     result->data.numeric.vector.value[i].value.uint32_bool_value = (uint32_t)data;
                                                     break;
@@ -5988,7 +6205,7 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                                 }
                             }
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        break;
                     case SpvOpFConvert:
                         // convert of floating point integer to any integer of different width.
                         // just 32 and 64 bit for now...
@@ -5996,93 +6213,105 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                             CHECK_INSTRUCTION_SIZE(p_node, 5)
 
                             // check result type
-                            CHECK_IS_FLOAT_TYPE(result)
-                            CHECK_VECTOR_OR_SCALAR_TYPE(result)
+                            CHECK_IS_FLOAT_TYPE(result, res, CLEANUP)
+                            CHECK_VECTOR_OR_SCALAR_TYPE(result, res, CLEANUP)
                             
                             // get operand
-                            SpvReflectValue operand1 = {0};
-                            GET_OPERAND(p_module, p_node, 4, &operand1, maxRecursion)
+                            SpvReflectValue* operand1 = NULL;
+                            GET_OPERAND(p_eval, p_node, 4, operand1, res, CLEANUP)
 
                             // check type here, remember undefined value and booleans with type == null 
-                            CHECK_IS_FLOAT_TYPE(&operand1)
-                            CHECK_VECTOR_OR_SCALAR_TYPE(&operand1)
+                            CHECK_IS_FLOAT_TYPE(operand1, res, CLEANUP)
+                            CHECK_VECTOR_OR_SCALAR_TYPE(operand1, res, CLEANUP)
 
                             // vector size must match
                             uint32_t vec_size = 1;
-                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, result, &operand1)
+                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, result, operand1, res, CLEANUP)
 
                             // now do the job
                             for (uint32_t i = 0; i < vec_size; ++i) {
-                                result->data.numeric.vector.value[i].undefined_value = operand1.data.numeric.vector.value[i].undefined_value;
-                                switch (operand1.type->traits.numeric.scalar.width) {
-                                    default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                result->data.numeric.vector.value[i].undefined_value = operand1->data.numeric.vector.value[i].undefined_value;
+                                switch (operand1->type->traits.numeric.scalar.width) {
+                                    default: 
+                                        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                        goto CLEANUP;
                                     case 32:
                                         // convert int32 to generic integer type
                                         switch (result->type->traits.numeric.scalar.width) {
-                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            default:
+                                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                goto CLEANUP;
                                             case 32:
-                                                result->data.numeric.vector.value[i].value.float32_value = operand1.data.numeric.vector.value[i].value.float32_value;
+                                                result->data.numeric.vector.value[i].value.float32_value = operand1->data.numeric.vector.value[i].value.float32_value;
                                                 break;
                                             case 64:
-                                                result->data.numeric.vector.value[i].value.float64_value = (double)operand1.data.numeric.vector.value[i].value.float32_value;
+                                                result->data.numeric.vector.value[i].value.float64_value = (double)operand1->data.numeric.vector.value[i].value.float32_value;
                                                 break;
                                         }
                                         break;
                                     case 64:
                                         // convert int64 to generic integer type
                                         switch (result->type->traits.numeric.scalar.width) {
-                                            default: return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            default: 
+                                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                goto CLEANUP;
                                             case 32:
-                                                result->data.numeric.vector.value[i].value.float32_value = (float)operand1.data.numeric.vector.value[i].value.float64_value;
+                                                result->data.numeric.vector.value[i].value.float32_value = (float)operand1->data.numeric.vector.value[i].value.float64_value;
                                                 break;
                                             case 64:
-                                                result->data.numeric.vector.value[i].value.float64_value = operand1.data.numeric.vector.value[i].value.float64_value;
+                                                result->data.numeric.vector.value[i].value.float64_value = operand1->data.numeric.vector.value[i].value.float64_value;
                                                 break;
                                         }
                                 }
                             }
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        break;
                     case SpvOpSNegate:
                         #undef SIMPLE_UNARY_OP_32_BIT_HOOK
                         #undef SIMPLE_UNARY_OP_64_BIT_HOOK
                         #define SIMPLE_UNARY_OP_32_BIT_HOOK {data = -data;}
                         #define SIMPLE_UNARY_OP_64_BIT_HOOK {data = -data;}
-                        DO_SIMPLE_UNARY_INTEGER_OPERATION(result, p_module, p_node, maxRecursion)
+                        DO_SIMPLE_UNARY_INTEGER_OPERATION(result, p_eval, p_node, res, CLEANUP)
                         #undef SIMPLE_UNARY_OP_32_BIT_HOOK
                         #undef SIMPLE_UNARY_OP_64_BIT_HOOK
                         #define SIMPLE_UNARY_OP_32_BIT_HOOK
                         #define SIMPLE_UNARY_OP_64_BIT_HOOK
+                        break;
                     case SpvOpNot:
                         // bitwise not of every component in op1, store into same width result.
                         #undef SIMPLE_UNARY_OP_32_BIT_HOOK
                         #undef SIMPLE_UNARY_OP_64_BIT_HOOK
                         #define SIMPLE_UNARY_OP_32_BIT_HOOK data ^= 0xffffffff;
                         #define SIMPLE_UNARY_OP_64_BIT_HOOK data ^= 0xffffffffffffffff;
-                        DO_SIMPLE_UNARY_INTEGER_OPERATION(result, p_module, p_node, maxRecursion)
+                        DO_SIMPLE_UNARY_INTEGER_OPERATION(result, p_eval, p_node, res, CLEANUP)
                         #undef SIMPLE_UNARY_OP_32_BIT_HOOK
                         #undef SIMPLE_UNARY_OP_64_BIT_HOOK
                         #define SIMPLE_UNARY_OP_32_BIT_HOOK
                         #define SIMPLE_UNARY_OP_64_BIT_HOOK
+                        break;
                     case SpvOpIAdd:
                         // integer add.
                         // subtraction result is the same for 2-compliment
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, +, maxRecursion)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_eval, p_node, +, res, CLEANUP)
+                        break;
                     case SpvOpISub:
                         // integer subtract.
                         // subtraction result is the same for 2-compliment
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, -, maxRecursion)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_eval, p_node, -, res, CLEANUP)
+                        break;
                     case SpvOpIMul:
                         // integer multiply...
                         // imul instruction on x86, signed and unsigned have no difference in result
                         // except for how they overflow.
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, *, maxRecursion)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_eval, p_node, *, res, CLEANUP)
+                        break;
                     case SpvOpUDiv:
                         // unsigned divide
                         // All operand must be same unsigned integer scalar or vector type.
                         // x86 div instruction
                         // emits undefined value if divide by zero
-                        DO_UNSIGNED_INTEGER_DIVISION(result, p_module, p_node, /, maxRecursion)
+                        DO_UNSIGNED_INTEGER_DIVISION(result, p_eval, p_node, /, res, CLEANUP)
+                        break;
                     case SpvOpSDiv:
                         // signed divide
                         // x86 idiv instruction
@@ -6092,22 +6321,24 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
                         #define SIMPLE_BINARY_OP_32_BIT_HOOK                                \
                         if (data2 == 0 || (data2 == -1 && data1 == (int32_t)0x80000000)) {  \
-                            result->data.numeric.vector.value[i].undefined_value = 1;                          \
+                            result->data.numeric.vector.value[i].undefined_value = 1;       \
                         }
                         #undef SIMPLE_BINARY_OP_64_BIT_HOOK
                         #define SIMPLE_BINARY_OP_64_BIT_HOOK                                        \
                         if (data2 == 0 || (data2 == -1 && data1 == (int64_t)0x8000000000000000)) {  \
-                            result->data.numeric.vector.value[i].undefined_value = 1;                                  \
+                            result->data.numeric.vector.value[i].undefined_value = 1;               \
                         }
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, /, maxRecursion)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_eval, p_node, /, res, CLEANUP)
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
                         #undef SIMPLE_BINARY_OP_64_BIT_HOOK
                         #define SIMPLE_BINARY_OP_32_BIT_HOOK
                         #define SIMPLE_BINARY_OP_64_BIT_HOOK
+                        break;
                     case SpvOpUMod:
                         // unsigned modulo
                         // all types must be same unsigned integer scalar or vector type.
-                        DO_UNSIGNED_INTEGER_DIVISION(result, p_module, p_node, %, maxRecursion)
+                        DO_UNSIGNED_INTEGER_DIVISION(result, p_eval, p_node, %, res, CLEANUP)
+                        break;
                     case SpvOpSRem:
                         // just the result of % operator.
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
@@ -6120,11 +6351,12 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                         if (data2 == 0 || (data2 == -1 && data1 == (int64_t)0x8000000000000000)) {  \
                             result->data.numeric.vector.value[i].undefined_value = 1;                                  \
                         }
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, %, maxRecursion)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_eval, p_node, %, res, CLEANUP)
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
                         #undef SIMPLE_BINARY_OP_64_BIT_HOOK
                         #define SIMPLE_BINARY_OP_32_BIT_HOOK
                         #define SIMPLE_BINARY_OP_64_BIT_HOOK
+                        break;
                     case SpvOpSMod:
                         // not result of % operator, need adjusting with dividend...
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
@@ -6155,14 +6387,16 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                                 data += data2;                                                      \
                             }                                                                       \
                         }
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, %, maxRecursion)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_eval, p_node, %, res, CLEANUP)
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
                         #undef SIMPLE_BINARY_OP_64_BIT_HOOK
                         #define SIMPLE_BINARY_OP_32_BIT_HOOK
                         #define SIMPLE_BINARY_OP_64_BIT_HOOK
+                        break;
                     case SpvOpShiftRightLogical:
                         // zero fill right shift. Just >> in c
-                        DO_SHIFT_OPERATION(result, p_module, p_node, >>, maxRecursion)
+                        DO_SHIFT_OPERATION(result, p_eval, p_node, >>, res, CLEANUP)
+                        break;
                     case SpvOpShiftRightArithmetic:
                         // fill with sign of original number.
                         #undef SHIFT_OP_32_BIT_HOOK_PRE
@@ -6181,7 +6415,7 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                             uint64_t fill = 0xffffffffffffffff << (64 - shift_num); \
                             data |= fill;                                           \
                         }
-                        DO_SHIFT_OPERATION(result, p_module, p_node, >> , maxRecursion)
+                        DO_SHIFT_OPERATION(result, p_eval, p_node, >> , res, CLEANUP)
                         #undef SHIFT_OP_32_BIT_HOOK_PRE
                         #undef SHIFT_OP_64_BIT_HOOK_PRE
                         #undef SHIFT_OP_32_BIT_HOOK_POST
@@ -6190,44 +6424,53 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                         #define SHIFT_OP_64_BIT_HOOK_PRE
                         #define SHIFT_OP_32_BIT_HOOK_POST
                         #define SHIFT_OP_64_BIT_HOOK_POST
+                        break;
                     case SpvOpShiftLeftLogical:
                         // zero fill left shift. Just << in c
-                        DO_SHIFT_OPERATION(result, p_module, p_node, << , maxRecursion)
+                        DO_SHIFT_OPERATION(result, p_eval, p_node, << , res, CLEANUP)
+                        break;
                     case SpvOpBitwiseOr:
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, |, maxRecursion)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_eval, p_node, |, res, CLEANUP)
+                        break;
                     case SpvOpBitwiseXor:
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, ^ , maxRecursion)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_eval, p_node, ^ , res, CLEANUP)
+                        break;
                     case SpvOpBitwiseAnd:
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_module, p_node, & , maxRecursion)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(result, p_eval, p_node, & , res, CLEANUP)
+                        break;
 
-                    // Do not support compostion of vectors for now...
                     case SpvOpVectorShuffle:
                         {
                             /* check result type*/                                                                                              
-                            CHECK_IS_INTEGER_TYPE(result)                                                                                     
-                            CHECK_VECTOR_OR_SCALAR_TYPE(result)
+                            CHECK_IS_INTEGER_TYPE(result, res, CLEANUP)
+                            CHECK_VECTOR_OR_SCALAR_TYPE(result, res, CLEANUP)
                             if (!(result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
 
-                            SpvReflectValue operand1 = {0};
-                            GET_OPERAND((p_module), (p_node), 4, &operand1, maxRecursion)
-                            CHECK_VECTOR_OR_SCALAR_TYPE(&operand1)
-                            if (!(operand1.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            SpvReflectValue* operand1 = NULL;
+                            GET_OPERAND((p_eval), (p_node), 4, operand1, res, CLEANUP)
+                            CHECK_VECTOR_OR_SCALAR_TYPE(operand1, res, CLEANUP)
+                            if (!(operand1->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
-                            if (operand1.type->component_type_id != result->type->component_type_id) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            if (operand1->type->component_type_id != result->type->component_type_id) {
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
 
                             // cannot skip if type comes with result...
-                            SpvReflectValue operand2 = {0};
-                            GET_OPERAND((p_module), (p_node), 5, &operand2, maxRecursion)
-                            if (!(operand2.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            SpvReflectValue* operand2 = NULL;
+                            GET_OPERAND((p_eval), (p_node), 5, operand2, res, CLEANUP)
+                            if (!(operand2->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
-                            if (operand2.type->component_type_id != result->type->component_type_id) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            if (operand2->type->component_type_id != result->type->component_type_id) {
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
 
                             // instruction size must be:
@@ -6237,156 +6480,170 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                             // now do the job...
                             for (uint32_t i = 0; i < result->type->traits.numeric.vector.component_count; ++i) {
                                 uint32_t mapped_component;
-                                CHECKED_READU32(p_parser, p_node->word_offset + 6 + i, mapped_component)
+                                EVAL_CHECKED_READU32(p_eval, p_node->word_offset + 6 + i, mapped_component, res, CLEANUP)
                                 if (mapped_component == 0xFFFFFFFF) {
                                     result->data.numeric.vector.value[i].undefined_value = 1;
                                 }
-                                else if (mapped_component >= operand1.type->traits.numeric.vector.component_count + operand2.type->traits.numeric.vector.component_count) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                                else if (mapped_component >= operand1->type->traits.numeric.vector.component_count + operand2->type->traits.numeric.vector.component_count) {
+                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+                                    goto CLEANUP;
                                 }
-                                else if (mapped_component < operand1.type->traits.numeric.vector.component_count) {
-                                    result->data.numeric.vector.value[i] = operand1.data.numeric.vector.value[mapped_component];
+                                else if (mapped_component < operand1->type->traits.numeric.vector.component_count) {
+                                    result->data.numeric.vector.value[i] = operand1->data.numeric.vector.value[mapped_component];
                                 }
                                 else {
-                                    result->data.numeric.vector.value[i] = operand2.data.numeric.vector.value[mapped_component - operand1.type->traits.numeric.vector.component_count];
+                                    result->data.numeric.vector.value[i] = operand2->data.numeric.vector.value[mapped_component - operand1->type->traits.numeric.vector.component_count];
                                 }
                             }
-                            return SPV_REFLECT_RESULT_SUCCESS;
                         }
+                        break;
                     // only support vector types for now...
                     case SpvOpCompositeExtract:
                         {
                             // check composite allowed flags
                             if (result->type->type_flags & COMPOSITE_DISALLOWED_FLAGS) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
                             // need to travers the composite tree down to last operand.
                             // currently only support vector composite type.
 
-                            SpvReflectValue operand1 = {0};
-                            GET_OPERAND((p_module), (p_node), 4, &operand1, maxRecursion)
-                            if (operand1.type->type_flags & COMPOSITE_DISALLOWED_FLAGS) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            SpvReflectValue* operand1 = NULL;
+                            GET_OPERAND((p_eval), (p_node), 4, operand1, res, CLEANUP)
+                            if (operand1->type->type_flags & COMPOSITE_DISALLOWED_FLAGS) {
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
 
                             uint32_t cur_offset = 5;
-                            SpvReflectValueData* current_data = &operand1.data;
-                            SpvReflectTypeDescription* current_type = operand1.type;
+                            SpvReflectValueData* current_data = &operand1->data;
+                            SpvReflectTypeDescription* current_type = operand1->type;
                             for (; cur_offset < p_node->word_count; ++cur_offset) {
                                 uint32_t member_index;
-                                CHECKED_READU32(p_parser, p_node->word_offset+cur_offset, member_index);
-                                SpvReflectResult err = GetMemberByIndex(p_module, current_data, current_type, member_index, &current_data, &current_type);
-                                if (err != SPV_REFLECT_RESULT_SUCCESS) {
-                                    return err;
+                                EVAL_CHECKED_READU32(p_eval, p_node->word_offset+cur_offset, member_index, res, CLEANUP);
+                                res = GetMemberByIndex(p_eval->member_type_finder, current_data, current_type, member_index, &current_data, &current_type);
+                                if (res != SPV_REFLECT_RESULT_SUCCESS) {
+                                    goto CLEANUP;
                                 }
                             }
                             if (current_type->id != result->type->id) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
-                            SpvReflectResult err = CopyValueData(p_module, current_type, &result->data, current_data);
-                            if (err != SPV_REFLECT_RESULT_SUCCESS) {
-                                return err;
+                            res = CopyValueData(current_type, &result->data, current_data);
+                            if (res != SPV_REFLECT_RESULT_SUCCESS) {
+                                goto CLEANUP;
                             }
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        break;
                     case SpvOpCompositeInsert:
                         {
 
                             if (result->type->type_flags & COMPOSITE_DISALLOWED_FLAGS) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
 
-                            SpvReflectValue operand2 = {0};
-                            GET_OPERAND((p_module), (p_node), 5, &operand2, maxRecursion)
-                                if (operand2.type->type_flags & COMPOSITE_DISALLOWED_FLAGS) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                            }
-                            if (operand2.type) {
-                                if (operand2.type->id != result->type->id) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            SpvReflectValue* operand2 = NULL;
+                            GET_OPERAND((p_eval), (p_node), 5, operand2, res, CLEANUP)
+                                if (operand2->type->type_flags & COMPOSITE_DISALLOWED_FLAGS) {
+                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    goto CLEANUP;
+                                }
+                            if (operand2->type) {
+                                if (operand2->type->id != result->type->id) {
+                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    goto CLEANUP;
                                 }
                             }
                             else {
                                 if (result->type->type_flags != SPV_REFLECT_TYPE_FLAG_BOOL) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    goto CLEANUP;
                                 }
                             }
-                            result->data = operand2.data;
+                            result->data = operand2->data;
 
-                            SpvReflectValue operand1 = {0};
-                            GET_OPERAND((p_module), (p_node), 4, &operand1, maxRecursion)
+                            SpvReflectValue* operand1 = NULL;
+                            GET_OPERAND((p_eval), (p_node), 4, operand1, res, CLEANUP)
 
                             uint32_t cur_offset = 6;
                             SpvReflectValueData* current_data = &result->data;
                             SpvReflectTypeDescription* current_type = result->type;
                             for (; cur_offset < p_node->word_count; ++cur_offset) {
                                 uint32_t member_index;
-                                CHECKED_READU32(p_parser, p_node->word_offset + cur_offset, member_index);
-                                SpvReflectResult err = GetMemberByIndex(p_module, current_data, current_type, member_index, &current_data, &current_type);
-                                if (err != SPV_REFLECT_RESULT_SUCCESS) {
-                                    return err;
+                                EVAL_CHECKED_READU32(p_eval, p_node->word_offset + cur_offset, member_index, res, CLEANUP);
+                                res = GetMemberByIndex(p_eval->member_type_finder, current_data, current_type, member_index, &current_data, &current_type);
+                                if (res != SPV_REFLECT_RESULT_SUCCESS) {
+                                    goto CLEANUP;
                                 }
                             }
 
                             if (!current_type) {
-                                if (operand1.type && (operand1.type->type_flags != SPV_REFLECT_TYPE_FLAG_BOOL)) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                if (operand1->type && (operand1->type->type_flags != SPV_REFLECT_TYPE_FLAG_BOOL)) {
+                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    goto CLEANUP;
                                 }
                             }
                             else {
-                                if (operand1.type) {
-                                    if (current_type->id != operand1.type->id) {
-                                        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                if (operand1->type) {
+                                    if (current_type->id != operand1->type->id) {
+                                        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                        goto CLEANUP;
                                     }
                                 }
                                 else if (current_type->type_flags != SPV_REFLECT_TYPE_FLAG_BOOL) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    goto CLEANUP;
                                 }
                             }
-                            SpvReflectResult err = CopyValueData(p_module, current_type, current_data, &operand1.data);
-                            if (err != SPV_REFLECT_RESULT_SUCCESS) {
-                                return err;
+                            res = CopyValueData(current_type, current_data, &operand1->data);
+                            if (res != SPV_REFLECT_RESULT_SUCCESS) {
+                                goto CLEANUP;
                             }
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        break;
 
                     case SpvOpLogicalOr:
-                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(result, p_module, p_node, ||, maxRecursion)
+                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(result, p_eval, p_node, ||, res, CLEANUP)
+                        break;
                     case SpvOpLogicalAnd:
-                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(result, p_module, p_node, && , maxRecursion)
-
+                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(result, p_eval, p_node, && , res, CLEANUP)
+                        break;
                     case SpvOpLogicalNot:
                         {
                             CHECK_INSTRUCTION_SIZE(p_node, 5)
 
                             /* check result type */
-                            CHECK_IS_BOOLEAN_TYPE(result)
-                            CHECK_VECTOR_OR_SCALAR_TYPE(result)
+                            CHECK_IS_BOOLEAN_TYPE(result, res, CLEANUP)
+                            CHECK_VECTOR_OR_SCALAR_TYPE(result, res, CLEANUP)
 
                             /* get operand */
-                            SpvReflectValue operand1 = {0};
-                            GET_OPERAND((p_module), (p_node), 4, &operand1, maxRecursion)
-                            CHECK_IS_BOOLEAN_TYPE(&operand1)
-                            CHECK_VECTOR_OR_SCALAR_TYPE(&operand1)
+                            SpvReflectValue* operand1 = NULL;
+                            GET_OPERAND((p_eval), (p_node), 4, operand1, res, CLEANUP)
+                            CHECK_IS_BOOLEAN_TYPE(operand1, res, CLEANUP)
+                            CHECK_VECTOR_OR_SCALAR_TYPE(operand1, res, CLEANUP)
                             
                             /* vectors must be of same size */
                             uint32_t vec_size = 1;
-                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, result, &operand1)
+                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, result, operand1, res, CLEANUP)
 
                             for (uint32_t i = 0; i < vec_size; ++i) {
-                                if (operand1.data.numeric.vector.value[i].undefined_value) {
+                                if (operand1->data.numeric.vector.value[i].undefined_value) {
                                     result->data.numeric.vector.value[i].undefined_value = 1;
                                 }
                                 /* write to correct offset */
-                                result->data.numeric.vector.value[i].value.uint32_bool_value = !operand1.data.numeric.vector.value[i].value.uint32_bool_value;
+                                result->data.numeric.vector.value[i].value.uint32_bool_value = !operand1->data.numeric.vector.value[i].value.uint32_bool_value;
                             }
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        break;
 
                     case SpvOpLogicalEqual:
-                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(result, p_module, p_node, ==, maxRecursion)
+                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(result, p_eval, p_node, ==, res, CLEANUP)
+                        break;
                     case SpvOpLogicalNotEqual:
-                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(result, p_module, p_node, != , maxRecursion)
+                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(result, p_eval, p_node, != , res, CLEANUP)
+                        break;
                     case SpvOpSelect:
                         // same as c/cpp code: a ? b : c;
                         // should allow composite types if not for spec-constant since 1.4
@@ -6395,50 +6652,54 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                             /* check result type, different from other instance since 
                                it should support composite type if not for spec constant */
                             if (result->type->type_flags & COMPOSITE_DISALLOWED_FLAGS) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
 
-                            SpvReflectValue operand1 = {0};
-                            GET_OPERAND((p_module), (p_node), 4, &operand1, maxRecursion)
-                            CHECK_IS_BOOLEAN_TYPE(&operand1)
-                            CHECK_VECTOR_OR_SCALAR_TYPE(&operand1)
+                            SpvReflectValue* operand1 = NULL;
+                            GET_OPERAND((p_eval), (p_node), 4, operand1, res, CLEANUP)
+                            CHECK_IS_BOOLEAN_TYPE(operand1, res, CLEANUP)
+                            CHECK_VECTOR_OR_SCALAR_TYPE(operand1, res, CLEANUP)
 
                             // cannot skip if type comes with result...
-                            SpvReflectValue operand2 = {0};
-                            GET_OPERAND((p_module), (p_node), 5, &operand2, maxRecursion)
-                            if (operand2.type->id != result->type->id) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            SpvReflectValue* operand2 = NULL;
+                            GET_OPERAND((p_eval), (p_node), 5, operand2, res, CLEANUP)
+                            if (operand2->type->id != result->type->id) {
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
 
-                            SpvReflectValue operand3 = {0};
-                            GET_OPERAND((p_module), (p_node), 6, &operand3, maxRecursion)
-                            if (operand3.type->id != result->type->id) {
-                                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                            SpvReflectValue* operand3 = NULL;
+                            GET_OPERAND((p_eval), (p_node), 6, operand3, res, CLEANUP)
+                            if (operand3->type->id != result->type->id) {
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
 
                             uint32_t vec_size = 1;
                             // result can be vector if operand is scalar.
-                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, &operand1, result);
+                            CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, operand1, result, res, CLEANUP);
 
                             if (vec_size != 1) {
                                 if (result->type->type_flags & VECTOR_DISALLOWED_FLAGS) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    goto CLEANUP;
                                 }
                                 for (uint32_t i = 0; i < vec_size; ++i) {
-                                    if (operand1.data.numeric.vector.value[i].undefined_value) {
+                                    if (operand1->data.numeric.vector.value[i].undefined_value) {
                                         result->data.numeric.vector.value[i].undefined_value = 1;
                                     }
-                                    if (operand1.data.numeric.vector.value[i].value.uint32_bool_value) {
-                                        if (operand2.data.numeric.vector.value[i].undefined_value) {
+                                    if (operand1->data.numeric.vector.value[i].value.uint32_bool_value) {
+                                        if (operand2->data.numeric.vector.value[i].undefined_value) {
                                             result->data.numeric.vector.value[i].undefined_value = 1;
                                         }
-                                        result->data.numeric.vector.value[i].value = operand2.data.numeric.vector.value[i].value;
+                                        result->data.numeric.vector.value[i].value = operand2->data.numeric.vector.value[i].value;
                                     }
                                     else {
-                                        if (operand3.data.numeric.vector.value[i].undefined_value) {
+                                        if (operand3->data.numeric.vector.value[i].undefined_value) {
                                             result->data.numeric.vector.value[i].undefined_value = 1;
                                         }
-                                        result->data.numeric.vector.value[i].value = operand3.data.numeric.vector.value[i].value;
+                                        result->data.numeric.vector.value[i].value = operand3->data.numeric.vector.value[i].value;
                                     }
                                 }
                             }
@@ -6447,18 +6708,19 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
 
                                 // we can't deal with other types for now...
                                 if (result->type->type_flags & VECTOR_DISALLOWED_FLAGS) {
-                                    return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                                    goto CLEANUP;
                                 }
 
-                                if (operand1.data.numeric.scalar.value.uint32_bool_value) {
+                                if (operand1->data.numeric.scalar.value.uint32_bool_value) {
                                     // need deep copy if complex
-                                    *result = operand2;
+                                    *result = *operand2;
                                 }
                                 else {
                                     // need deep copy if complex
-                                    *result = operand3;
+                                    *result = *operand3;
                                 }
-                                if (operand1.data.numeric.vector.value[0].undefined_value) {
+                                if (operand1->data.numeric.vector.value[0].undefined_value) {
                                     // we shouldn't care about content here...
                                     for (uint32_t i = 0; i < SPV_REFLECT_MAX_VECTOR_DIMS; ++i) {
                                         result->data.numeric.vector.value[i].undefined_value = 1;
@@ -6466,31 +6728,41 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                                 }
                             }
                         }
-                        return SPV_REFLECT_RESULT_SUCCESS;
+                        break;
                     case SpvOpIEqual:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_module, p_node, ==, maxRecursion)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_eval, p_node, ==, res, CLEANUP)
+                        break;
                     case SpvOpINotEqual:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_module, p_node, != , maxRecursion)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_eval, p_node, != , res, CLEANUP)
+                        break;
                     case SpvOpULessThan:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_module, p_node, < , maxRecursion)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_eval, p_node, < , res, CLEANUP)
+                        break;
                     case SpvOpSLessThan:
-                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(result, p_module, p_node, < , maxRecursion)
+                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(result, p_eval, p_node, < , res, CLEANUP)
+                        break;
                     case SpvOpUGreaterThan:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_module, p_node, > , maxRecursion)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_eval, p_node, > , res, CLEANUP)
+                        break;
                     case SpvOpSGreaterThan:
-                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(result, p_module, p_node, > , maxRecursion)
+                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(result, p_eval, p_node, > , res, CLEANUP)
+                        break;
                     case SpvOpULessThanEqual:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_module, p_node, <= , maxRecursion)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_eval, p_node, <= , res, CLEANUP)
+                        break;
                     case SpvOpSLessThanEqual:
-                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(result, p_module, p_node, <= , maxRecursion)
+                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(result, p_eval, p_node, <= , res, CLEANUP)
+                        break;
                     case SpvOpUGreaterThanEqual:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_module, p_node, >= , maxRecursion)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(result, p_eval, p_node, >= , res, CLEANUP)
+                        break;
                     case SpvOpSGreaterThanEqual:
-                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(result, p_module, p_node, >= , maxRecursion)
+                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(result, p_eval, p_node, >= , res, CLEANUP)
+                        break;
 
                         // check shader capability... vulkan should assume this...
                     case SpvOpQuantizeToF16:
-                        return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                        res = SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
                         break;
 
                         // check kernel capability... vulkan have none currently...
@@ -6503,26 +6775,33 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                     case SpvOpFRem: case SpvOpFMod:
                     case SpvOpAccessChain: case SpvOpInBoundsAccessChain:
                     case SpvOpPtrAccessChain: case SpvOpInBoundsPtrAccessChain:
-                        return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+                        res = SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
                         break;
-
                 }
             }
-
+            break;
     }
+    CLEANUP:
+    if (res != SPV_REFLECT_RESULT_SUCCESS) {
+        p_node->evaluation_state = SPV_REFLECT_EVALUATION_STATE_FAILED;
+    }
+    else {
+        p_node->evaluation_state = SPV_REFLECT_EVALUATION_STATE_DONE;
+    }
+    return res;
 }
 
 
-SpvReflectResult EvaluateResult(const SpvReflectShaderModule* p_module, uint32_t result_id, SpvReflectValue* result)
+SpvReflectResult EvaluateResult(SpvReflectShaderModule* p_module, uint32_t result_id, const SpvReflectValue** result)
 {
     if (!result || !p_module) {
         return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
     }
-    if((p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_SPEC_CONSTANT)==0){
+    if((p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT)==0){
         return SPV_REFLECT_RESULT_ERROR_PARSE_FAILED;
     }
     // compute at most 100 instruction levels, maybe defining somewhere is better.
-    return EvaluateResultImpl(p_module, result_id, result, 100);
+    return EvaluateResultImpl(p_module->_internal->evaluator, result_id, result);
 }
 
 

@@ -96,14 +96,21 @@ SPV_REFLECT_MODULE_FLAG_NO_COPY - Disables copying of SPIR-V code
   This is flag is intended for cases where the memory overhead of
   storing the copied SPIR-V is undesirable.
 
-SPV_REFLECT_MODULE_FLAG_EVALUATE_SPEC_CONSTANT - Keeps the parser
-  as long as the shader module is in lifetime. Needed for evaluating
-  specialization ops after specifying values.
+SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT - copies constant 
+  instructions for use with later evaluation.
+
+SPV_REFLECT_MODULE_FLAG_EVALUATE_NO_COPY - use p_code for later
+  evaluation. User need to make sure not to free memory. Code
+  pointed to need to be valid upon re-evaluation. Re-evaluation
+  MAY happen after changing any spec constant, and when a op is
+  evaluated for the first time. (behavior may be changed to only
+  when related constants are changed)
 */
 typedef enum SpvReflectModuleFlagBits {
   SPV_REFLECT_MODULE_FLAG_NONE                   = 0x00000000,
   SPV_REFLECT_MODULE_FLAG_NO_COPY                = 0x00000001,
-  SPV_REFLECT_MODULE_FLAG_EVALUATE_SPEC_CONSTANT = 0x00000002
+  SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT      = 0x00000002,
+  SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY = 0x00000004
 } SpvReflectModuleFlagBits;
 
 typedef uint32_t SpvReflectModuleFlags;
@@ -375,17 +382,19 @@ typedef struct SpvReflectVectorValueData {
 // this struct is not meant to be created on user stack,
 // instead in a internal dictionary and give user const ptr to read.
 typedef union SpvReflectValueNumericData {
-    SpvReflectScalarValueData scalar;
-    SpvReflectVectorValueData vector;
+  SpvReflectScalarValueData scalar;
+  SpvReflectVectorValueData vector;
 } SpvReflectValueNumericData;
 
 typedef union SpvReflectValueData {
-    SpvReflectValueNumericData numeric;
+  SpvReflectValueNumericData numeric;
 } SpvReflectValueData;
 
 typedef struct SpvReflectValue {
-    SpvReflectTypeDescription* type;
-    SpvReflectValueData data;
+  // never null in valid spirv
+  // means result type id
+  SpvReflectTypeDescription* type;
+  SpvReflectValueData data;
 }SpvReflectValue;
 
 typedef struct SpvReflectSpecializationConstant {
@@ -535,6 +544,8 @@ typedef struct SpvReflectEntryPoint {
 
 typedef struct SpvReflectPrvParser SpvReflectPrvParser;
 
+typedef struct SpvReflectPrvEvaluation SpvReflectPrvEvaluation;
+
 /*! @struct SpvReflectShaderModule
 
 */
@@ -574,7 +585,7 @@ typedef struct SpvReflectShaderModule {
 
     size_t                          type_description_count;
     SpvReflectTypeDescription*      type_descriptions;
-    SpvReflectPrvParser* parser;
+    SpvReflectPrvEvaluation*        evaluator;
   } * _internal;
 
 } SpvReflectShaderModule;
@@ -1530,7 +1541,7 @@ const char* spvReflectBlockVariableTypeName(
   const SpvReflectBlockVariable* p_var
 );
 
-SpvReflectResult EvaluateResult(const SpvReflectShaderModule* p_module, uint32_t result_id, SpvReflectValue* result);
+SpvReflectResult EvaluateResult(SpvReflectShaderModule* p_module, uint32_t result_id, const SpvReflectValue** result);
 
 #if defined(__cplusplus)
 };
@@ -1638,9 +1649,9 @@ public:
   SpvReflectResult ChangeInputVariableLocation(const SpvReflectInterfaceVariable* p_input_variable, uint32_t new_location);
   SpvReflectResult ChangeOutputVariableLocation(const SpvReflectInterfaceVariable* p_output_variable, uint32_t new_location);
 
-  SpvReflectResult EvaluateResult(uint32_t result_id, SpvReflectValue& result) const
+  SpvReflectResult EvaluateResult(uint32_t result_id, const SpvReflectValue** result)
   {
-      return ::EvaluateResult(&m_module, result_id, &result);
+      return ::EvaluateResult(&m_module, result_id, result);
   }
 
 private:
