@@ -6451,9 +6451,11 @@ SpvReflectResult EvaluateResultImpl(const SpvReflectShaderModule* p_module, uint
                                 }
 
                                 if (operand1.data.numeric.scalar.value.uint32_bool_value) {
+                                    // need deep copy if complex
                                     *result = operand2;
                                 }
                                 else {
+                                    // need deep copy if complex
                                     *result = operand3;
                                 }
                                 if (operand1.data.numeric.vector.value[0].undefined_value) {
