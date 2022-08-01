@@ -881,20 +881,10 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
       case SpvOpConstant:
       case SpvOpConstantComposite:
       case SpvOpConstantSampler:
-      case SpvOpConstantNull: {
-        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_type_id);
-        CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
-      }
-      break;
-
+      case SpvOpConstantNull:
       case SpvOpSpecConstantTrue:
       case SpvOpSpecConstantFalse:
-      case SpvOpSpecConstant: {
-        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_type_id);
-        CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
-        p_node->is_type = true;
-      }
-      break;
+      case SpvOpSpecConstant:
       case SpvOpSpecConstantComposite:
       case SpvOpSpecConstantOp: {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_type_id);
@@ -4116,6 +4106,7 @@ static SpvReflectResult CreateShaderModule(
   }
 
   DestroyParser(&parser);
+
   return result;
 }
 
