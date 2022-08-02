@@ -19,6 +19,7 @@ SPIRV-Reflect has been tested on Linux and Windows.
 - Remap descriptor bindings at runtime, and update the source SPIR-V bytecode
   accordingly.
 - Log all reflection data as human-readable text.
+- Experimental specialization constant parsing and evaluation
 
 ## Integration
 

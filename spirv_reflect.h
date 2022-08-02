@@ -1593,8 +1593,20 @@ SpvReflectResult spvReflectGetSpecConstantValue(SpvReflectEvaluation* p_eval, ui
 */
 SpvReflectResult spvReflectEvaluateResult(SpvReflectEvaluation* p_eval, uint32_t result_id, const SpvReflectValue** result);
 
-
-SpvReflectResult spvReflectGetRelatedSpecIds(SpvReflectEvaluation* p_eval, uint32_t result_id, uint32_t* count, uint32_t* ids);
+/*! @fn spvReflectEvaluateResult
+ @brief  Get the specialization constant ids that MAY have an impact on
+         given result if changed. Composting, de-compositing, 
+         (b.x = a, c = b.x), select with non-specialized true/false (1?b:c)
+         are NOT tracked and cleaned up. This may be extened to track the
+         whole tree, but is not the concern of this library.
+         If the resultid's tree cannot be correctly evaluated, count would be 0.
+ @param  p_eval      Pointer to an instance of SpvReflectEvaluation.
+ @param  result_id   The result id in concern
+ @param  specId      The specId in concern
+ @param  ids         Readonly array of specids
+ @return             1 if may be related, 0 otherwise
+*/
+int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id, uint32_t specId);
 
 /*
 

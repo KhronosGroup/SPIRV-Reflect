@@ -238,10 +238,21 @@ typedef struct SpvReflectPrvEvaluationNode {
     SpvReflectValue                 value;
 
     uint32_t                        specId;
+
+    uint32_t                        related_id_count;
+    uint32_t*                       related_specId;
 } SpvReflectPrvEvaluationNode;
 // clang-format on
 
 // clang-format off
+enum SpvReflectEvaluationFlagBits {
+    SPIRV_REFLECT_EVALUATION_FLAG_NONE          = 0,
+    // traverse all branches, currently for OpSelect
+    SPIRV_REFLECT_EVALUATION_FLAG_ALL_BRANCH    = 1
+};
+
+typedef uint32_t SpvReflectEvaluationFlag;
+
 typedef struct SpvReflectEvaluation {
     // original code if no-copy, else it's a copy of constant instructions
     size_t                                spirv_word_count;
@@ -251,8 +262,9 @@ typedef struct SpvReflectEvaluation {
     SpvReflectPrvEvaluationNode*          nodes;
 
     // To flag dry run and tree traversal...
-    uint32_t                              flags;
-
+    SpvReflectEvaluationFlag              flags;
+    // holds the buffer that stores spec id relations
+    uint32_t* specId_relation_buffer;
     // ohh I hope I could decouple this... But FindType uses this...
     // just a reference
     SpvReflectShaderModule*               member_type_finder;
@@ -1015,7 +1027,9 @@ static SpvReflectResult ParseStrings(SpvReflectPrvParser* p_parser)
   if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && IsNotNull(p_parser->nodes)) {
     // Allocate string storage
     p_parser->strings = (SpvReflectPrvString*)calloc(p_parser->string_count, sizeof(*(p_parser->strings)));  
-
+    if(IsNull(p_parser->strings)){
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
     uint32_t string_index = 0;
     for (size_t i = 0; i < p_parser->node_count; ++i) {
       SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
@@ -1284,6 +1298,9 @@ static SpvReflectResult ParseFunctions(SpvReflectPrvParser* p_parser)
       }
       p_func->callee_ptrs = (SpvReflectPrvFunction**)calloc(p_func->callee_count,
                                                             sizeof(*(p_func->callee_ptrs)));
+      if(IsNull(p_func->callee_ptrs)){
+        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      }
       for (size_t j = 0, k = 0; j < p_func->callee_count; ++j) {
         while (p_parser->functions[k].id != p_func->callees[j]) {
           ++k;
@@ -3546,9 +3563,12 @@ static SpvReflectResult ParserGetScalarConstant(const SpvReflectShaderModule* p_
 
 #define MODULE_EVALUATION_FLAGS (SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT | SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY)
 
-#define IS_CONSTANT_LITERAL_OP(op_code)\
-    (((op_code) == SpvOpSpecConstantTrue) || ((op_code) == SpvOpSpecConstantFalse) || ((op_code) == SpvOpSpecConstant) \
-    || ((op_code) == SpvOpConstantTrue) || ((op_code) == SpvOpConstantFalse) || ((op_code) == SpvOpConstant))  
+#define IS_SPEC_LITERAL_OP(op_code)\
+    (((op_code) == SpvOpSpecConstantTrue) || ((op_code) == SpvOpSpecConstantFalse) || ((op_code) == SpvOpSpecConstant))
+#define IS_LITERAL_OP(op_code)\
+    (((op_code) == SpvOpConstantTrue) || ((op_code) == SpvOpConstantFalse) || ((op_code) == SpvOpConstant))
+#define IS_CONSTANT_LITERAL_OP(op_code) (IS_SPEC_LITERAL_OP(op_code)||IS_LITERAL_OP(op_code))
+// constant null and constant sampler etc are not handled in literals or anywhere for now...
 #define IS_CONSTANT_OP(op_code) \
     (IS_CONSTANT_LITERAL_OP(op_code) || ((op_code) == SpvOpSpecConstantOp) || ((op_code) == SpvOpSpecConstantComposite) \
     || ((op_code) == SpvOpConstantComposite) || ((op_code) == SpvOpConstantNull) || ((op_code) == SpvOpConstantSampler) \
@@ -3581,6 +3601,9 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
   }
 
   p_module->specialization_constants = (SpvReflectSpecializationConstant*)calloc(p_module->specialization_constant_count, sizeof(SpvReflectSpecializationConstant));
+  if(IsNull(p_module->specialization_constants)){
+    return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+  }
 
   uint32_t index = 0;
 
@@ -3633,19 +3656,29 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
   // need to evaluate expr later on...
   if (p_module->_internal->module_flags & MODULE_EVALUATION_FLAGS) {
     p_module->_internal->evaluator = (SpvReflectEvaluation*)calloc(1, sizeof(SpvReflectEvaluation));
+    if(!p_module->_internal->evaluator){
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
+    SpvReflectEvaluation* p_eval = p_module->_internal->evaluator;
     // needed for FindType for constituent types
-    p_module->_internal->evaluator->member_type_finder = p_module;
-    p_module->_internal->evaluator->node_count = constant_instruction_num;
-    p_module->_internal->evaluator->nodes = (SpvReflectPrvEvaluationNode*)calloc(constant_instruction_num,sizeof(SpvReflectPrvEvaluationNode));
+    p_eval->member_type_finder = p_module;
+    p_eval->node_count = constant_instruction_num;
+    p_eval->nodes = (SpvReflectPrvEvaluationNode*)calloc(constant_instruction_num,sizeof(SpvReflectPrvEvaluationNode));
+    if(!p_eval->nodes){
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
     if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY) {
       // use original code for evaluation.
-      p_module->_internal->evaluator->spirv_code = p_module->_internal->spirv_code;
-      p_module->_internal->evaluator->spirv_word_count = p_module->_internal->spirv_word_count;
+      p_eval->spirv_code = p_module->_internal->spirv_code;
+      p_eval->spirv_word_count = p_module->_internal->spirv_word_count;
     }
     else if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT) {
       // need to copy instructions from code for later evaluation.
-      p_module->_internal->evaluator->spirv_code = (uint32_t*)malloc(instruction_size * sizeof(uint32_t));
-      p_module->_internal->evaluator->spirv_word_count = instruction_size;
+      p_eval->spirv_code = (uint32_t*)malloc(instruction_size * sizeof(uint32_t));
+      if (!p_module->_internal->evaluator->spirv_code) {
+          return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      }
+      p_eval->spirv_word_count = instruction_size;
     }
 
     // need to update correct offset in new code if not no-copy
@@ -3655,37 +3688,109 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
       SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
       // constant types need to be tracked after parser is dead...
       if (IS_CONSTANT_OP(p_node->op)) {
-        p_module->_internal->evaluator->nodes[current_cinst].op = p_node->op;
-        p_module->_internal->evaluator->nodes[current_cinst].result_id = p_node->result_id;
-        p_module->_internal->evaluator->nodes[current_cinst].word_count = p_node->word_count;
-        p_module->_internal->evaluator->nodes[current_cinst].value.type = FindType(p_module, p_node->result_type_id);
+        p_eval->nodes[current_cinst].op = p_node->op;
+        p_eval->nodes[current_cinst].result_id = p_node->result_id;
+        p_eval->nodes[current_cinst].word_count = p_node->word_count;
+        p_eval->nodes[current_cinst].value.type = FindType(p_module, p_node->result_type_id);
         if (!p_module->_internal->evaluator->nodes[current_cinst].value.type) {
             return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
         }
-        p_module->_internal->evaluator->nodes[current_cinst].evaluation_state = SPV_REFLECT_EVALUATION_STATE_UNINITIALIZED;
+        p_eval->nodes[current_cinst].evaluation_state = SPV_REFLECT_EVALUATION_STATE_UNINITIALIZED;
         if (IS_CONSTANT_LITERAL_OP(p_node->op)) {
           SpvReflectResult res = ParserGetScalarConstant(p_module, p_parser, p_node, 
-            &p_module->_internal->evaluator->nodes[current_cinst].value.data.numeric.scalar,
-            &p_module->_internal->evaluator->nodes[current_cinst].value.type);
+            &p_eval->nodes[current_cinst].value.data.numeric.scalar,
+            &p_eval->nodes[current_cinst].value.type);
           if (res == SPV_REFLECT_RESULT_SUCCESS) {
-            p_module->_internal->evaluator->nodes[current_cinst].evaluation_state = SPV_REFLECT_EVALUATION_STATE_DONE;
+            p_eval->nodes[current_cinst].evaluation_state = SPV_REFLECT_EVALUATION_STATE_DONE;
           }
           else {
-            p_module->_internal->evaluator->nodes[current_cinst].evaluation_state = SPV_REFLECT_EVALUATION_STATE_FAILED;
+            p_eval->nodes[current_cinst].evaluation_state = SPV_REFLECT_EVALUATION_STATE_FAILED;
           }
         }
-        p_module->_internal->evaluator->nodes[current_cinst].specId = p_node->decorations.specialization_constant.value;
+        p_eval->nodes[current_cinst].specId = p_node->decorations.specialization_constant.value;
         if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY) {
-          p_module->_internal->evaluator->nodes[current_cinst].word_offset = p_node->word_offset;
+            p_eval->nodes[current_cinst].word_offset = p_node->word_offset;
         }
         else {
-          p_module->_internal->evaluator->nodes[current_cinst].word_offset = current_offset;
+          p_eval->nodes[current_cinst].word_offset = current_offset;
           memcpy(p_module->_internal->evaluator->spirv_code + current_offset, p_module->_internal->spirv_code + p_node->word_offset, 4 * p_node->word_count);
         }
         ++current_cinst;
         current_offset += p_node->word_count;
       }
     }
+
+    // now evaluation is initialized, find out relations here.
+    // a better way is to write the evaluation tree again, and build an actual tree,
+    // but that would be really difficult...
+    uint32_t orig_flag = p_eval->flags;
+    p_eval->flags |= SPIRV_REFLECT_EVALUATION_FLAG_ALL_BRANCH;
+    uint32_t total_specId_relation = 0;
+    for (uint32_t i = 0; i < p_eval->node_count; ++i) {
+      SpvReflectPrvEvaluationNode* p_ev_node = &p_eval->nodes[i];
+      // do not need to find what constant literals are related to
+      if(!IS_CONSTANT_LITERAL_OP(p_ev_node->op)){
+        // reset evaluation state for tracking which ones are touched
+        for (uint32_t j = 0; j < p_eval->node_count; ++j) {
+          p_eval->nodes[j].evaluation_state = SPV_REFLECT_EVALUATION_STATE_UPDATED;
+        }
+        // we don't care about result here.
+        const SpvReflectValue* evaluated;
+        SpvReflectResult res = spvReflectEvaluateResult(p_eval, p_ev_node->result_id, &evaluated);
+        // will always succeed if types match and evaluation supports the whole tree
+        // just the ops we need.
+        if (res == SPV_REFLECT_RESULT_SUCCESS) {
+          // count how many specId are touched.
+          for (uint32_t j = 0; j < p_eval->node_count; ++j) {
+            if(p_eval->nodes[j].specId!=INVALID_VALUE && p_eval->nodes[j].evaluation_state!= SPV_REFLECT_EVALUATION_STATE_UPDATED) {
+              ++total_specId_relation;
+            }
+          }
+        }
+      }
+    }
+
+    if(total_specId_relation){
+      p_eval->specId_relation_buffer = (uint32_t*)malloc(total_specId_relation * 4);
+      if(!p_eval->specId_relation_buffer){
+        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      }
+      // now fill the relation buffer. Same path.
+      uint32_t offset = 0;
+      for (uint32_t i = 0; i < p_eval->node_count; ++i) {
+        SpvReflectPrvEvaluationNode* p_ev_node = &p_eval->nodes[i];
+        // do not need to find what constant literals are related to
+        if (!IS_CONSTANT_LITERAL_OP(p_ev_node->op)) {
+          // reset evaluation state for tracking which ones are touched
+          for (uint32_t j = 0; j < p_eval->node_count; ++j) {
+            p_eval->nodes[j].evaluation_state = SPV_REFLECT_EVALUATION_STATE_UPDATED;
+          }
+          // we don't care about result here.
+          const SpvReflectValue* evaluated;
+          SpvReflectResult res = spvReflectEvaluateResult(p_eval, p_ev_node->result_id, &evaluated);
+          // will always succeed if types match and evaluation supports the whole tree
+          // just the ops we need.
+          if (res == SPV_REFLECT_RESULT_SUCCESS) {
+            // count how many specId are touched.
+            uint32_t node_spec_id_count = 0;
+            p_ev_node->related_specId = p_eval->specId_relation_buffer + offset;
+            for (uint32_t j = 0; j < p_eval->node_count; ++j) {
+              if (p_eval->nodes[j].specId != INVALID_VALUE && p_eval->nodes[j].evaluation_state != SPV_REFLECT_EVALUATION_STATE_UPDATED) {
+                p_eval->specId_relation_buffer[offset] = p_eval->nodes[j].specId;
+                ++node_spec_id_count;
+                ++offset;
+              }
+            }
+            if (!node_spec_id_count) {
+                p_ev_node->related_specId = NULL;
+            }
+            p_ev_node->related_id_count = node_spec_id_count;
+          }
+        }
+      }
+    }
+    
+    p_eval->flags = orig_flag;
   }
 
   return SPV_REFLECT_RESULT_SUCCESS;
@@ -3905,7 +4010,9 @@ static SpvReflectResult ParseDescriptorSets(SpvReflectShaderModule* p_module)
   for (uint32_t i = 0; i <p_module->descriptor_set_count; ++i) {
     SpvReflectDescriptorSet* p_set = &(p_module->descriptor_sets[i]);
     p_set->bindings = (SpvReflectDescriptorBinding **)calloc(p_set->binding_count, sizeof(*(p_set->bindings)));
-
+    if (IsNull(p_set->bindings)) {
+        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
     uint32_t descriptor_index = 0;
     for (uint32_t j = 0; j < p_module->descriptor_binding_count; ++j) {
       SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[j]);
@@ -4010,12 +4117,9 @@ static SpvReflectResult CreateShaderModule(
 
   // parser now works in internal field of p_module.
   SpvReflectPrvParser parser = { 0 };
-  // SpvReflectPrvParser* parser = (SpvReflectPrvParser*)calloc(1,sizeof(SpvReflectPrvParser));
   SpvReflectResult result = CreateParser(p_module->_internal->spirv_size,
                                          p_module->_internal->spirv_code,
                                          &parser);
-  // used by spec constant parsing GetScalarConstant
-  //p_module->_internal->parser = parser;
 
   // Generator
   {
@@ -5474,8 +5578,8 @@ SpvReflectSpecializationConstant* GetSpecContantById(const SpvReflectShaderModul
 SpvReflectResult GetMemberByIndex(const SpvReflectShaderModule* p_module, const SpvReflectValueData* mother, const SpvReflectTypeDescription* mother_type, 
     uint32_t index, SpvReflectValueData** result, const SpvReflectTypeDescription** child_type)
 {
-    if (!mother_type || !(mother_type->type_flags & VECTOR_DISALLOWED_FLAGS)) {
-        if (!mother_type || !(mother_type->type_flags & SCALAR_DISALLOWED_FLAGS)) {
+    if (!(mother_type->type_flags & VECTOR_DISALLOWED_FLAGS)) {
+        if (!(mother_type->type_flags & SCALAR_DISALLOWED_FLAGS)) {
             // scalar types have no composition
             return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
         }
@@ -5500,8 +5604,8 @@ SpvReflectResult GetMemberByIndex(const SpvReflectShaderModule* p_module, const 
 
 SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflectValueData* dst, SpvReflectValueData* src)
 {
-    if (!type || !(type->type_flags & VECTOR_DISALLOWED_FLAGS)) {
-        if (!type || !(type->type_flags & SCALAR_DISALLOWED_FLAGS)) {
+    if (!(type->type_flags & VECTOR_DISALLOWED_FLAGS)) {
+        if (!(type->type_flags & SCALAR_DISALLOWED_FLAGS)) {
             dst->numeric.scalar = src->numeric.scalar;
             // scalar types have no composition
             return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
@@ -5525,7 +5629,7 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
 
 #define CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, p_result, p_op1, res, CLEANUP)                                                 \
 {                                                                                                                               \
-    if ((p_result)->type && (p_result)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                      \
+    if ((p_result)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                          \
         if (!((p_op1)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                      \
             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
             goto CLEANUP;                                                                                                       \
@@ -5540,12 +5644,7 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
 
 #define CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, p_result, p_op1, p_op2, res, CLEANUP)\
 {                                                                                                                               \
-    /* may be scalar boolean if type == null, but never p_result */                                                             \
-    if ((p_result)->type && (p_result)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                      \
-        if(!(p_op1)->type || !(p_op2)->type) {                                                                                  \
-            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
-            goto CLEANUP;                                                                                                       \
-        }                                                                                                                       \
+    if ((p_result)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                          \
         if (!((p_op1)->type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                      \
             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
             goto CLEANUP;                                                                                                       \
@@ -5574,7 +5673,7 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
     }                                                                                                       \
 }
 
-#define CHECK_IS_BASIC_TYPE(p_result, b_type, res, CLEANUP)                     \
+#define CHECK_IS_BASIC_TYPE(p_result, b_type, res, CLEANUP)                                 \
 {                                                                                           \
     if(((p_result)->type->type_flags & SCALAR_TYPE_FLAGS) != b_type) {                      \
         res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                  \
@@ -5595,12 +5694,13 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
     }                                                                                           \
 }                                                                                               \
 
-#define GET_OPERAND(eval, p_node, offset, p_operand, res, CLEANUP)                                              \
-{                                                                                                                   \
-    uint32_t operand_id;                                                                                            \
-    EVAL_CHECKED_READU32(eval, p_node->word_offset + offset, operand_id, res, CLEANUP);   \
-    res = EvaluateResultImpl(eval, operand_id, &(p_operand));                                                   \
-    if (res != SPV_REFLECT_RESULT_SUCCESS) goto CLEANUP;                                                            \
+#define GET_OPERAND(eval, p_node, offset, p_operand, res, CLEANUP)       \
+{                                                                                           \
+    uint32_t operand_id;                                                                    \
+    EVAL_CHECKED_READU32(eval, p_node->word_offset + offset, operand_id, res, CLEANUP);     \
+    res = EvaluateResultImpl(eval, operand_id, &(p_operand));                               \
+    /* ignore_eval_error is used for traversing tree without calculating. */                \
+    if (res != SPV_REFLECT_RESULT_SUCCESS) goto CLEANUP;                                    \
 }
 
 #define SIMPLE_UNARY_OP_32_BIT_HOOK
@@ -5983,6 +6083,7 @@ SpvReflectResult EvaluateResultImpl(SpvReflectEvaluation* p_eval, uint32_t resul
     if (p_node->evaluation_state == SPV_REFLECT_EVALUATION_STATE_DONE) {
         return SPV_REFLECT_RESULT_SUCCESS;
     }
+    uint32_t orig_state = p_node->evaluation_state;
     p_node->evaluation_state = SPV_REFLECT_EVALUATION_STATE_WORKING;
 
     switch (p_node->op) {
@@ -6009,7 +6110,7 @@ SpvReflectResult EvaluateResultImpl(SpvReflectEvaluation* p_eval, uint32_t resul
                 if (p_node->specId == INVALID_VALUE) {
                     goto CONSTANT_RESULT;
                 }
-                if (p_node->evaluation_state != SPV_REFLECT_EVALUATION_STATE_DONE && p_node->evaluation_state != SPV_REFLECT_EVALUATION_STATE_UPDATED) {
+                if (orig_state != SPV_REFLECT_EVALUATION_STATE_DONE && orig_state != SPV_REFLECT_EVALUATION_STATE_UPDATED) {
                     res = SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
                     goto CLEANUP;
                 }
@@ -6598,24 +6699,11 @@ SpvReflectResult EvaluateResultImpl(SpvReflectEvaluation* p_eval, uint32_t resul
                                 }
                             }
 
-                            if (!current_type) {
-                                if (operand1->type && (operand1->type->type_flags != SPV_REFLECT_TYPE_FLAG_BOOL)) {
-                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    goto CLEANUP;
-                                }
+                            if (current_type->id != operand1->type->id) {
+                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                goto CLEANUP;
                             }
-                            else {
-                                if (operand1->type) {
-                                    if (current_type->id != operand1->type->id) {
-                                        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                        goto CLEANUP;
-                                    }
-                                }
-                                else if (current_type->type_flags != SPV_REFLECT_TYPE_FLAG_BOOL) {
-                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                    goto CLEANUP;
-                                }
-                            }
+
                             res = CopyValueData(current_type, current_data, &operand1->data);
                             if (res != SPV_REFLECT_RESULT_SUCCESS) {
                                 goto CLEANUP;
@@ -6684,14 +6772,29 @@ SpvReflectResult EvaluateResultImpl(SpvReflectEvaluation* p_eval, uint32_t resul
                             // result can be vector if operand is scalar.
                             CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, operand1, result, res, CLEANUP);
 
+                            
+                            SpvReflectValue* operand2 = NULL;
+                            if (p_eval->flags & SPIRV_REFLECT_EVALUATION_FLAG_ALL_BRANCH) {
+                                GET_OPERAND((p_eval), (p_node), 5, operand2, res, CLEANUP)
+                                if (operand2->type->id != result->type->id) {
+                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    goto CLEANUP;
+                                }
+                            }
+                            SpvReflectValue* operand3 = NULL;
+                            if (p_eval->flags & SPIRV_REFLECT_EVALUATION_FLAG_ALL_BRANCH) {
+                                GET_OPERAND((p_eval), (p_node), 6, operand3, res, CLEANUP)
+                                if (operand3->type->id != result->type->id) {
+                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                    goto CLEANUP;
+                                }
+                            }
+
                             if (vec_size != 1) {
                                 if (result->type->type_flags & VECTOR_DISALLOWED_FLAGS) {
                                     res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                     goto CLEANUP;
                                 }
-
-                                SpvReflectValue* operand2 = NULL;
-                                SpvReflectValue* operand3 = NULL;
 
                                 for (uint32_t i = 0; i < vec_size; ++i) {
                                     if (operand1->data.numeric.vector.value[i].undefined_value) {
@@ -6735,21 +6838,23 @@ SpvReflectResult EvaluateResultImpl(SpvReflectEvaluation* p_eval, uint32_t resul
                                 }
 
                                 if (operand1->data.numeric.scalar.value.uint32_bool_value) {
-                                    SpvReflectValue* operand2 = NULL;
-                                    GET_OPERAND((p_eval), (p_node), 5, operand2, res, CLEANUP)
-                                    if (operand2->type->id != result->type->id) {
-                                        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                        goto CLEANUP;
+                                    if(!operand2) {
+                                        GET_OPERAND((p_eval), (p_node), 5, operand2, res, CLEANUP)
+                                        if (operand2->type->id != result->type->id) {
+                                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            goto CLEANUP;
+                                        }
                                     }
                                     // need deep copy if complex
                                     *result = *operand2;
                                 }
                                 else {
-                                    SpvReflectValue* operand3 = NULL;
-                                    GET_OPERAND((p_eval), (p_node), 6, operand3, res, CLEANUP)
-                                    if (operand3->type->id != result->type->id) {
-                                        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                        goto CLEANUP;
+                                    if(!operand3) {
+                                        GET_OPERAND((p_eval), (p_node), 6, operand3, res, CLEANUP)
+                                        if (operand3->type->id != result->type->id) {
+                                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            goto CLEANUP;
+                                        }
                                     }
                                     // need deep copy if complex
                                     *result = *operand3;
@@ -6877,8 +6982,18 @@ SpvReflectResult spvReflectSetSpecConstantValue(SpvReflectEvaluation* p_eval, ui
     p_node->value.data.numeric.scalar = *value;
     p_node->evaluation_state = SPV_REFLECT_EVALUATION_STATE_UPDATED;
     // update state tracking here...
-    // for now, all nodes are updated....
-
+    for (uint32_t i = 0; i < p_eval->node_count; ++i) {
+        bool exist_in_op = false;
+        for (uint32_t j = 0; j < p_eval->nodes[i].related_id_count; ++j) {
+            if (p_eval->nodes[i].related_specId[j] == specId) {
+                exist_in_op = true;
+                break;
+            }
+        }
+        if (exist_in_op) {
+            p_eval->nodes[i].evaluation_state = SPV_REFLECT_EVALUATION_STATE_UPDATED;
+        }
+    }
     return SPV_REFLECT_RESULT_SUCCESS;
 }
 
@@ -6898,6 +7013,18 @@ SpvReflectResult spvReflectEvaluateResult(SpvReflectEvaluation* p_eval, uint32_t
         return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
     }
     return EvaluateResultImpl(p_eval, result_id, result);
+}
+
+int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id, uint32_t specId)
+{
+    SpvReflectPrvEvaluationNode* p_node = FindEvaluationNode(p_eval, result_id);
+    if (!p_node) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+    }
+    for (uint32_t i = 0; i < p_node->related_id_count; ++i) {
+        if (p_node->related_specId[i] == specId) return 1;
+    }
+    return 0;
 }
 
 
