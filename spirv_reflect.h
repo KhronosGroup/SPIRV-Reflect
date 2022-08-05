@@ -1604,7 +1604,7 @@ SpvReflectResult spvReflectEvaluateResult(SpvReflectEvaluation* p_eval, uint32_t
  @param  result_id   The result id in concern
  @param  specId      The specId in concern
  @param  ids         Readonly array of specids
- @return             1 if may be related, 0 otherwise
+ @return             1 if may be related, 0 otherwise (may be a silent error)
 */
 int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id, uint32_t specId);
 
