@@ -254,11 +254,11 @@ typedef struct SpvReflectPrvEvaluationNode {
       uint8_t idx[SPV_REFLECT_MAX_VECTOR_DIMS];
     } vector_shuffle;
     struct CompositeExtract {
-      SpvReflectTypeDescription* src_type;
+      const SpvReflectTypeDescription* src_type;
       SpvReflectValueData*       src_data;
     } composite_extract;
     struct CompositeInsert {
-      SpvReflectTypeDescription* dst_type;
+      const SpvReflectTypeDescription* dst_type;
       SpvReflectValueData* dst_data;
     }composite_insert;
   } instruction_private;
@@ -6890,7 +6890,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
                   {
                     EVALUATE_OPERAND(p_node->id_operands[0], res, CLEANUP)
                     SpvReflectValueData* current_data = p_node->instruction_private.composite_extract.src_data;
-                    SpvReflectTypeDescription* current_type = p_node->instruction_private.composite_extract.src_type;
+                    const SpvReflectTypeDescription* current_type = p_node->instruction_private.composite_extract.src_type;
                     res = CopyValueData(current_type, &result->data, current_data);
                     if (res != SPV_REFLECT_RESULT_SUCCESS) {
                       goto CLEANUP;
@@ -6930,7 +6930,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
 
                     SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
                     SpvReflectValueData* current_data = &p_node->id_operands[0]->value.data;
-                    SpvReflectTypeDescription* current_type = p_node->id_operands[0]->value.type;
+                    const SpvReflectTypeDescription* current_type = p_node->id_operands[0]->value.type;
                     for (uint32_t i = 0; i < p_node->num_literal_words; ++i) {
                       uint32_t member_index;
                       EVAL_CHECKED_READU32(p_parser, p_parser_node->word_offset + 5 + i, member_index, res, CLEANUP);
@@ -7019,7 +7019,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
                     }
                     SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
                     SpvReflectValueData* current_data = &result->data;
-                    SpvReflectTypeDescription* current_type = result->type;
+                    const SpvReflectTypeDescription* current_type = result->type;
                     for (uint32_t i = 0; i < p_node->num_literal_words; ++i) {
                       uint32_t member_index;
                       EVAL_CHECKED_READU32(p_parser, p_parser_node->word_offset + 6 + i, member_index, res, CLEANUP);
