@@ -600,7 +600,7 @@ std::string ToStringComponentType(const SpvReflectTypeDescription& type, uint32_
 }
 
 void ParseBlockMembersToTextLines(
-    spv_reflect::ShaderModule& obj,
+    spv_reflect::Evaluation obj,
     const char* indent, int indent_depth, bool flatten_cbuffers, const std::string& parent_name, uint32_t member_count, const SpvReflectBlockVariable* p_members, std::vector<TextLine>* p_text_lines)
 {
   const char* t = indent;
@@ -728,7 +728,7 @@ void ParseBlockMembersToTextLines(
   }
 }
 
-void ParseBlockVariableToTextLines(spv_reflect::ShaderModule& obj, const char* indent, bool flatten_cbuffers, const SpvReflectBlockVariable& block_var, std::vector<TextLine>* p_text_lines)
+void ParseBlockVariableToTextLines(spv_reflect::Evaluation obj, const char* indent, bool flatten_cbuffers, const SpvReflectBlockVariable& block_var, std::vector<TextLine>* p_text_lines)
 {
   // Begin block
   TextLine tl = {};
@@ -944,7 +944,7 @@ void StreamWriteTextLines(std::ostream& os, const char* indent, bool flatten_cbu
   }
 }
 
-void StreamWritePushConstantsBlock(std::ostream& os, spv_reflect::ShaderModule& shader, const SpvReflectBlockVariable& obj, bool flatten_cbuffers, const char* indent)
+void StreamWritePushConstantsBlock(std::ostream& os, spv_reflect::Evaluation eval, const SpvReflectBlockVariable& obj, bool flatten_cbuffers, const char* indent)
 {
   const char* t = indent;
   os << t << "spirv id : " << obj.spirv_id << "\n";
@@ -955,7 +955,7 @@ void StreamWritePushConstantsBlock(std::ostream& os, spv_reflect::ShaderModule& 
   }
 
   std::vector<TextLine> text_lines;
-  ParseBlockVariableToTextLines(shader, "    ",  flatten_cbuffers, obj, &text_lines);
+  ParseBlockVariableToTextLines(eval, "    ",  flatten_cbuffers, obj, &text_lines);
   if (!text_lines.empty()) {
     os << "\n";
     StreamWriteTextLines(os, t, flatten_cbuffers, text_lines);
@@ -963,7 +963,7 @@ void StreamWritePushConstantsBlock(std::ostream& os, spv_reflect::ShaderModule& 
   }
 }
 
-void StreamWriteDescriptorBinding(std::ostream& os, spv_reflect::ShaderModule& shader, const SpvReflectDescriptorBinding& obj, bool write_set, bool flatten_cbuffers, const char* indent)
+void StreamWriteDescriptorBinding(std::ostream& os, spv_reflect::Evaluation eval, const SpvReflectDescriptorBinding& obj, bool write_set, bool flatten_cbuffers, const char* indent)
 {
   const char* t = indent;
   os << t << "spirv id : " << obj.spirv_id << "\n";
@@ -1008,7 +1008,7 @@ void StreamWriteDescriptorBinding(std::ostream& os, spv_reflect::ShaderModule& s
   if (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
       obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
     std::vector<TextLine> text_lines;
-    ParseBlockVariableToTextLines(shader, "    ",  flatten_cbuffers, obj.block, &text_lines);
+    ParseBlockVariableToTextLines(eval, "    ",  flatten_cbuffers, obj.block, &text_lines);
     if (!text_lines.empty()) {
       os << "\n";
       StreamWriteTextLines(os, t, flatten_cbuffers, text_lines);
@@ -1017,7 +1017,7 @@ void StreamWriteDescriptorBinding(std::ostream& os, spv_reflect::ShaderModule& s
   }
 }
 
-void StreamWriteInterfaceVariable(std::ostream& os, spv_reflect::ShaderModule& shader, const SpvReflectInterfaceVariable& obj, const char* indent)
+void StreamWriteInterfaceVariable(std::ostream& os, spv_reflect::Evaluation eval, const SpvReflectInterfaceVariable& obj, const char* indent)
 {
   const char* t = indent;
   os << t << "spirv id  : " << obj.spirv_id << "\n";
@@ -1039,7 +1039,7 @@ void StreamWriteInterfaceVariable(std::ostream& os, spv_reflect::ShaderModule& s
       uint32_t dim = obj.array.dims[dim_index];
       if (dim == 0xFFFFFFFF) {
           const SpvReflectValue* val;
-        SpvReflectResult res = shader.EvaluateResult(obj.array.spec_constant_op_ids[dim_index], &val);
+        SpvReflectResult res = eval.EvaluateResult(obj.array.spec_constant_op_ids[dim_index], &val);
         if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
           dim = val->data.numeric.scalar.value.uint32_bool_value;
         }
@@ -1134,7 +1134,7 @@ void StreamWriteSpecializationConstant(std::ostream& os, const SpvReflectSpecial
   }
 }
 
-void StreamWriteEntryPoint(std::ostream& os, spv_reflect::ShaderModule& shader, const SpvReflectEntryPoint& obj, const char* indent)
+void StreamWriteEntryPoint(std::ostream& os, spv_reflect::Evaluation eval, const SpvReflectEntryPoint& obj, const char* indent)
 {
   os << indent << "entry point     : " << obj.name;
   os << " (stage=" << ToStringShaderStage(obj.shader_stage) << ")";
@@ -1148,7 +1148,7 @@ void StreamWriteEntryPoint(std::ostream& os, spv_reflect::ShaderModule& shader, 
     }
     if(obj.local_size.flags & 4) {
         const SpvReflectValue* val;
-        SpvReflectResult res = shader.EvaluateResult(obj.local_size.x, &val);
+        SpvReflectResult res = eval.EvaluateResult(obj.local_size.x, &val);
         if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_VECTOR))
             && (val->type->traits.numeric.scalar.width == 32)) {
             os << "(" << val->data.numeric.vector.value[0].value.uint32_bool_value << ", "
@@ -1162,7 +1162,7 @@ void StreamWriteEntryPoint(std::ostream& os, spv_reflect::ShaderModule& shader, 
     else if(obj.local_size.flags & 1) {
       os << "(";
       const SpvReflectValue* val;
-      SpvReflectResult res = shader.EvaluateResult(obj.local_size.x, &val);
+      SpvReflectResult res = eval.EvaluateResult(obj.local_size.x, &val);
       if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
         os << val->data.numeric.scalar.value.uint32_bool_value;
       }
@@ -1170,14 +1170,14 @@ void StreamWriteEntryPoint(std::ostream& os, spv_reflect::ShaderModule& shader, 
         os << "unknown";
       }
       os << ", ";
-      res = shader.EvaluateResult(obj.local_size.y, &val);
+      res = eval.EvaluateResult(obj.local_size.y, &val);
       if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
         os << val->data.numeric.scalar.value.uint32_bool_value;
       }
       else {
         os << "unknown";
       }        os << ", ";
-      res = shader.EvaluateResult(obj.local_size.z, &val);
+      res = eval.EvaluateResult(obj.local_size.z, &val);
       if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
         os << val->data.numeric.vector.value[2].value.uint32_bool_value;
       }
@@ -1192,7 +1192,7 @@ void StreamWriteEntryPoint(std::ostream& os, spv_reflect::ShaderModule& shader, 
   }
 }
 
-void StreamWriteShaderModule(std::ostream& os, spv_reflect::ShaderModule& obj, const char* indent)
+void StreamWriteShaderModule(std::ostream& os, const spv_reflect::ShaderModule& obj, const char* indent)
 {
   (void)indent;
   os << "generator       : " << ToStringGenerator(obj.GetShaderModule().generator) << "\n";
@@ -1202,7 +1202,7 @@ void StreamWriteShaderModule(std::ostream& os, spv_reflect::ShaderModule& obj, c
   //os << "shader stage    : " << ToStringShaderStage(obj.shader_stage) << "\n";
 
   for (uint32_t i = 0; i < obj.GetShaderModule().entry_point_count; ++i) {
-    StreamWriteEntryPoint(os, obj, obj.GetShaderModule().entry_points[i], "");
+    StreamWriteEntryPoint(os, obj.GetEvaluation(), obj.GetShaderModule().entry_points[i], "");
     if (i < (obj.GetShaderModule().entry_point_count - 1)) {
         os << "\n";
     }
@@ -1217,7 +1217,7 @@ void StreamWriteShaderModule(std::ostream& os, spv_reflect::ShaderModule& obj, c
 #define USE_ASSERT(x) ((void)(x))
 #endif
 
-void WriteReflection(spv_reflect::ShaderModule& obj, bool flatten_cbuffers, std::ostream& os)
+void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers, std::ostream& os)
 {
   const char* t     = "  ";
   const char* tt    = "    ";
@@ -1269,7 +1269,7 @@ void WriteReflection(spv_reflect::ShaderModule& obj, bool flatten_cbuffers, std:
       auto p_var = variables[i];
       USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
-      StreamWriteInterfaceVariable(os, obj,*p_var, ttt);
+      StreamWriteInterfaceVariable(os, obj.GetEvaluation(),*p_var, ttt);
       if (i < (count - 1)) {
         os << "\n";
       }  
@@ -1291,7 +1291,7 @@ void WriteReflection(spv_reflect::ShaderModule& obj, bool flatten_cbuffers, std:
       auto p_var = variables[i];
       USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << i << ":" << "\n";
-      StreamWriteInterfaceVariable(os, obj, *p_var, ttt);
+      StreamWriteInterfaceVariable(os, obj.GetEvaluation(), *p_var, ttt);
       if (i < (count - 1)) {
         os << "\n";
       }  
@@ -1312,7 +1312,7 @@ void WriteReflection(spv_reflect::ShaderModule& obj, bool flatten_cbuffers, std:
     for (size_t i = 0; i < push_constant_bocks.size(); ++i) {
       auto p_block = push_constant_bocks[i];
       os << tt << i << ":" << "\n";
-      StreamWritePushConstantsBlock(os, obj, *p_block, flatten_cbuffers, ttt);
+      StreamWritePushConstantsBlock(os, obj.GetEvaluation(), *p_block, flatten_cbuffers, ttt);
     }
   }
 
@@ -1339,7 +1339,7 @@ void WriteReflection(spv_reflect::ShaderModule& obj, bool flatten_cbuffers, std:
       auto p_binding = bindings[i];
       USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
       os << tt << "Binding" << " " << p_binding->set << "." << p_binding->binding << "" << "\n";
-      StreamWriteDescriptorBinding(os, obj, *p_binding, true, flatten_cbuffers, ttt);
+      StreamWriteDescriptorBinding(os, obj.GetEvaluation(), *p_binding, true, flatten_cbuffers, ttt);
       if (i < (count - 1)) {
         os << "\n\n";
       }  

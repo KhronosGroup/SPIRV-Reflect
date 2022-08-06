@@ -1551,7 +1551,7 @@ const char* spvReflectBlockVariableTypeName(
  @return               If successful, returns the evaluation instance.
                        Otherwise, returns NULL.
 */
-SpvReflectEvaluation* spvReflectGetEvaluationInterface(SpvReflectShaderModule* p_module);
+SpvReflectEvaluation* spvReflectGetEvaluationInterface(const SpvReflectShaderModule* p_module);
 
 typedef enum SpvReflectScalarType {
     SPIRV_REFLECT_SCALAR_TYPE_INVALID,
@@ -1643,6 +1643,9 @@ int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id
 
 namespace spv_reflect {
 
+// separate evaluation, so that module can be const.
+class Evaluation;
+
 /*! \class ShaderModule
 
 */
@@ -1660,6 +1663,7 @@ public:
   SpvReflectResult GetResult() const;
 
   const SpvReflectShaderModule& GetShaderModule() const;
+  Evaluation GetEvaluation() const;
 
   uint32_t        GetCodeSize() const;
   const uint32_t* GetCode() const;
@@ -1737,15 +1741,6 @@ public:
   SpvReflectResult ChangeDescriptorSetNumber(const SpvReflectDescriptorSet* p_set, uint32_t new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE);
   SpvReflectResult ChangeInputVariableLocation(const SpvReflectInterfaceVariable* p_input_variable, uint32_t new_location);
   SpvReflectResult ChangeOutputVariableLocation(const SpvReflectInterfaceVariable* p_output_variable, uint32_t new_location);
-  SpvReflectResult EvaluateResult(uint32_t result_id, const SpvReflectValue** result)
-  {
-    if (p_eval) {
-      return spvReflectEvaluateResult(p_eval, result_id, result);
-    }
-    else {
-      return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
-    }
-  }
 
 private:
   // Make noncopyable
@@ -1755,7 +1750,49 @@ private:
 private:
   mutable SpvReflectResult  m_result = SPV_REFLECT_RESULT_NOT_READY;
   SpvReflectShaderModule    m_module = {};
-  SpvReflectEvaluation*     p_eval = nullptr;
+};
+
+class Evaluation {
+public:
+  Evaluation(SpvReflectEvaluation* eval) :p_eval(eval){}
+  SpvReflectResult SetSpecConstantValue(uint32_t specId, SpvReflectScalarType type, const SpvReflectScalarValueData* value)
+  {
+    if (p_eval) {
+      return spvReflectSetSpecConstantValue(p_eval, specId, type, value);
+    }
+    else {
+      return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+    }
+  }
+  SpvReflectResult GetSpecConstantValue(uint32_t specId, const SpvReflectValue** value)
+  {
+    if (p_eval) {
+      return spvReflectGetSpecConstantValue(p_eval, specId, value);
+    }
+    else {
+      return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+    }
+  }
+  SpvReflectResult EvaluateResult(uint32_t result_id, const SpvReflectValue** result)
+  {
+    if (p_eval) {
+      return spvReflectEvaluateResult(p_eval, result_id, result);
+    }
+    else {
+      return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+    }
+  }
+  bool IsRelatedToSpecId(uint32_t result_id, uint32_t specId)
+  {
+    if (p_eval) {
+      return spvReflectIsRelatedToSpecId(p_eval, result_id, specId);
+    }
+    else {
+      return false;
+    }
+  }
+private:
+  SpvReflectEvaluation* p_eval;
 };
 
 
@@ -1781,7 +1818,6 @@ inline ShaderModule::ShaderModule(size_t size, const void* p_code, SpvReflectMod
     size,
     p_code,
     &m_module);
-  p_eval = spvReflectGetEvaluationInterface(&m_module);
 }
 
 /*! @fn ShaderModule
@@ -1795,7 +1831,6 @@ inline ShaderModule::ShaderModule(const std::vector<uint8_t>& code, SpvReflectMo
     code.size(),
     code.data(),
     &m_module);
-  p_eval = spvReflectGetEvaluationInterface(&m_module);
 }
 
 /*! @fn ShaderModule
@@ -1809,7 +1844,6 @@ inline ShaderModule::ShaderModule(const std::vector<uint32_t>& code, SpvReflectM
     code.size() * sizeof(uint32_t),
     code.data(),
     &m_module);
-  p_eval = spvReflectGetEvaluationInterface(&m_module);
 }
 
 /*! @fn  ~ShaderModule
@@ -1851,6 +1885,11 @@ inline SpvReflectResult ShaderModule::GetResult() const {
 */
 inline const SpvReflectShaderModule& ShaderModule::GetShaderModule() const {
   return m_module;
+}
+
+inline Evaluation ShaderModule::GetEvaluation() const
+{
+  return Evaluation(spvReflectGetEvaluationInterface(&m_module));
 }
 
 
