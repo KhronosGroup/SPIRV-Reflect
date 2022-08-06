@@ -581,7 +581,12 @@ typedef struct SpvReflectShaderModule {
 
     size_t                          type_description_count;
     SpvReflectTypeDescription*      type_descriptions;
-    SpvReflectEvaluation*        evaluator;
+
+    // variables can have multiple decoration, decorated to be
+    // multiple builtins. Put used builtin here for safety
+    // stored as result id
+    uint32_t                        builtin_WorkGroupSize;
+    SpvReflectEvaluation*           evaluator;
   } * _internal;
 
 } SpvReflectShaderModule;

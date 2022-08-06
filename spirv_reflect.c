@@ -1415,7 +1415,8 @@ static SpvReflectResult ParseNames(SpvReflectPrvParser* p_parser)
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
+// builtin parsing should be done with shader module (if global) or entry point (if local)
+static SpvReflectResult ParseDecorations(SpvReflectShaderModule* p_module, SpvReflectPrvParser* p_parser)
 {
   for (uint32_t i = 0; i < p_parser->node_count; ++i) {
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
@@ -1540,7 +1541,17 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
         p_target_decorations->is_built_in = true;
         uint32_t word_offset = p_node->word_offset + member_offset + 3;
         // no rule specifies a result cannot be decorated twice. But let's assume this for now...
-        CHECKED_READU32_CAST(p_parser, word_offset, SpvBuiltIn, p_target_decorations->built_in);
+        SpvBuiltIn builtin_id;
+        CHECKED_READU32_CAST(p_parser, word_offset, SpvBuiltIn, builtin_id);
+        p_target_decorations->built_in = builtin_id;
+        // deal with known builtin here...
+        if (builtin_id == SpvBuiltInWorkgroupSize) {
+          // two result_id decorated with same global builtin, wrong decoration..
+          if (p_module->_internal->builtin_WorkGroupSize != INVALID_VALUE) {
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
+          }
+          p_module->_internal->builtin_WorkGroupSize = target_id;
+        }
       }
       break;
 
@@ -3589,22 +3600,24 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
     return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
   }
 
+  // deal with WorkGroupSize builtin
+  if (p_module->_internal->builtin_WorkGroupSize != INVALID_VALUE) {
+    SpvReflectPrvNode* p_node = FindNode(p_parser, p_module->_internal->builtin_WorkGroupSize);
+    for (uint32_t j = 0; j < p_module->entry_point_count; ++j) {
+      if (p_module->entry_points[j].spirv_execution_model == SpvExecutionModelKernel ||
+        p_module->entry_points[j].spirv_execution_model == SpvExecutionModelGLCompute) {
+        p_module->entry_points[j].local_size.flags = 4;
+        p_module->entry_points[j].local_size.x = p_node->result_id;
+      }
+    }
+  }
+
   uint32_t index = 0;
 
   for (size_t i = 0; i < p_parser->node_count; ++i) {
+
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
-    // check first if it's WorkGroupSize builtin
-    // maybe handling builtin as global map may be better.
-    if (p_node->decorations.built_in == SpvBuiltInWorkgroupSize) {
-      // WorkGroupSize builtin's target is all ExecutionMode instructions.
-      for(uint32_t j = 0; j<p_module->entry_point_count; ++j) {
-        if(p_module->entry_points[j].spirv_execution_model == SpvExecutionModelKernel||
-          p_module->entry_points[j].spirv_execution_model == SpvExecutionModelGLCompute){
-          p_module->entry_points[j].local_size.flags = 4;
-          p_module->entry_points[j].local_size.x = p_node->result_id;
-        }
-      }
-    }
+
     // Specconstants with no id means constant
     switch(p_node->op) {
       default: continue;
@@ -4031,6 +4044,7 @@ static SpvReflectResult CreateShaderModule(
   if (IsNull(p_module->_internal)) {
     return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
   }
+  p_module->_internal->builtin_WorkGroupSize = (uint32_t)INVALID_VALUE;
   // Copy flags
   p_module->_internal->module_flags = flags;
   // Figure out if we need to copy the SPIR-V code or not
@@ -4094,7 +4108,7 @@ static SpvReflectResult CreateShaderModule(
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseDecorations(&parser);
+    result = ParseDecorations(p_module, &parser);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
 
