@@ -3546,6 +3546,7 @@ static SpvReflectResult ParserGetScalarConstant(const SpvReflectShaderModule* p_
     || ((op_code) == SpvOpConstantPipeStorage) || ((op_code) == SpvOpSpecConstantCompositeContinuedINTEL)\
     || ((op_code) == SpvOpConstantFunctionPointerINTEL) || ((op_code) == SpvOpConstantCompositeContinuedINTEL))
 
+#if SPIRV_REFLECT_ENABLE_CONSTANT_EVALUATION
 #ifdef _MSC_VER
 #define SPIRV_REFLECT_FORCEINLINE __forceinline
 #else
@@ -3571,6 +3572,8 @@ static SpvReflectResult EvaluateResult_2PASS(SpvReflectEvaluation* p_eval, SpvRe
 {
   return EvaluateResult_Impl(p_eval, p_node, SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS, p_parser);
 }
+
+#endif
 
 static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module)
 {
@@ -3649,7 +3652,7 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
     p_module->specialization_constants[index].spirv_id = p_node->result_id;
     index++;
   }
-
+#if  SPIRV_REFLECT_ENABLE_CONSTANT_EVALUATION
   // need to evaluate expr later on...
   if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT) {
     p_module->_internal->evaluator = (SpvReflectEvaluation*)calloc(1, sizeof(SpvReflectEvaluation));
@@ -3750,7 +3753,7 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
       }
     }
   }
-
+#endif
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
@@ -4340,8 +4343,10 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
   SafeFree(p_module->specialization_constants);
 
   if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT) {
+    if(p_module->_internal->evaluator) {
       DestroyEvaluator(p_module->_internal->evaluator);
       SafeFree(p_module->_internal->evaluator)
+    }
   }
 
   // Free internal
@@ -5569,6 +5574,8 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
     return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
   }
 }
+
+#if SPIRV_REFLECT_ENABLE_CONSTANT_EVALUATION
 
 #define CHECK_INSTRUCTION_SIZE(node, expected)                    \
 {                                                                 \
@@ -7422,6 +7429,28 @@ int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id
     }
     return HaveNodeInTree(p_node, p_spec, false);
 }
+#else
+SpvReflectEvaluation* spvReflectGetEvaluationInterface(SpvReflectShaderModule* p_module)
+{
+  (void)p_module;
+  return NULL;
+}
 
+SpvReflectResult spvReflectEvaluateResult(SpvReflectEvaluation* p_eval, uint32_t result_id, const SpvReflectValue** result)
+{
+  (void)p_eval;
+  (void)result_id;
+  (void)result;
+  return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+}
 
+int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id, uint32_t specId)
+{
+  (void)p_eval;
+  (void)result_id;
+  (void)specId;
+  return 0;
+}
+
+#endif
 

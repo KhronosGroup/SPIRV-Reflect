@@ -537,10 +537,12 @@ typedef struct SpvReflectEntryPoint {
   uint32_t                          output_vertices; // valid for geometry, tesselation
 } SpvReflectEntryPoint;
 
+
 /*! @struct SpvReflectEvaluation
     @brief Opaque type that stores evaluation state and information
 */
 typedef struct SpvReflectEvaluation SpvReflectEvaluation;
+
 
 /*! @struct SpvReflectShaderModule
 
@@ -1570,6 +1572,16 @@ typedef enum SpvReflectScalarType {
                      Otherwise, the error code indicates the cause of
                      the failure.
 */
+/*! @fn spvReflectSetSpecConstantValue
+@brief  Sets the current value of specialization constant. Type must follow c/c++ type aliasing rules.
+@param  p_eval      Pointer to an instance of SpvReflectEvaluation.
+@param  specId      Specialization constant id of the constant.
+@param  type        Type of user specified value. For error checking.
+@param  value       User provided value.
+@return             If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+Otherwise, the error code indicates the cause of
+the failure.
+*/
 SpvReflectResult spvReflectSetSpecConstantValue(SpvReflectEvaluation* p_eval, uint32_t specId, SpvReflectScalarType type, const SpvReflectScalarValueData* value);
 
 /*! @fn spvReflectGetSpecConstantValue
@@ -1580,6 +1592,15 @@ SpvReflectResult spvReflectSetSpecConstantValue(SpvReflectEvaluation* p_eval, ui
  @return             If successful, returns SPV_REFLECT_RESULT_SUCCESS.
                      Otherwise, the error code indicates the cause of
                      the failure.
+*/
+/*! @fn spvReflectGetSpecConstantValue
+@brief  Get the current value of specialization constant. Type must follow c/c++ type aliasing rules.
+@param  p_eval      Pointer to an instance of SpvReflectEvaluation.
+@param  specId      Specialization constant id of the constant.
+@param  value       Current value.
+@return             If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+Otherwise, the error code indicates the cause of
+the failure.
 */
 SpvReflectResult spvReflectGetSpecConstantValue(SpvReflectEvaluation* p_eval, uint32_t specId, const SpvReflectValue** value);
 
@@ -1610,9 +1631,6 @@ SpvReflectResult spvReflectEvaluateResult(SpvReflectEvaluation* p_eval, uint32_t
 */
 int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id, uint32_t specId);
 
-/*
-
-*/
 
 #if defined(__cplusplus)
 };
@@ -1719,7 +1737,6 @@ public:
   SpvReflectResult ChangeDescriptorSetNumber(const SpvReflectDescriptorSet* p_set, uint32_t new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE);
   SpvReflectResult ChangeInputVariableLocation(const SpvReflectInterfaceVariable* p_input_variable, uint32_t new_location);
   SpvReflectResult ChangeOutputVariableLocation(const SpvReflectInterfaceVariable* p_output_variable, uint32_t new_location);
-
   SpvReflectResult EvaluateResult(uint32_t result_id, const SpvReflectValue** result)
   {
     if (p_eval) {
