@@ -3717,14 +3717,17 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
             id_operands += p_ev_node->num_id_operands;
         }
     }
-
-    p_eval->id_operand_buffer = (SpvReflectPrvEvaluationNode**)malloc(id_operands *sizeof(SpvReflectPrvEvaluationNode*));
-    if(IsNull(p_eval->id_operand_buffer)){
-      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    if (id_operands) {
+      p_eval->id_operand_buffer = (SpvReflectPrvEvaluationNode**)malloc(id_operands * sizeof(SpvReflectPrvEvaluationNode*));
+      if (IsNull(p_eval->id_operand_buffer)) {
+        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      }
     }
-    p_eval->literal_word_buffer = (uint32_t*)malloc(literal_words * sizeof(uint32_t));
-    if(IsNull(p_eval->literal_word_buffer)){
-      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    if (literal_words) {
+      p_eval->literal_word_buffer = (uint32_t*)malloc(literal_words * sizeof(uint32_t));
+      if (IsNull(p_eval->literal_word_buffer)) {
+        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      }
     }
     uint32_t id_offset = 0;
     uint32_t literal_offset = 0;
@@ -6930,7 +6933,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
                       goto CLEANUP;
                     }
                     p_node->num_id_operands = 1;
-                    p_node->num_literal_words = p_parser_node->word_count - 5;
+                    p_node->num_literal_words = 0;
                   }
                   break;
                 case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:
@@ -6948,7 +6951,6 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
                     for (uint32_t i = 0; i < p_node->num_literal_words; ++i) {
                       uint32_t member_index;
                       EVAL_CHECKED_READU32(p_parser, p_parser_node->word_offset + 5 + i, member_index, res, CLEANUP);
-                      p_node->literal_words[i] = member_index;
                       res = GetMemberByIndex(p_eval->member_type_finder, current_data, current_type, member_index, &current_data, &current_type);
                       if (res != SPV_REFLECT_RESULT_SUCCESS) {
                         goto CLEANUP;
@@ -7008,7 +7010,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
                       goto CLEANUP;
                     }
                     p_node->num_id_operands = 2;
-                    p_node->num_literal_words = p_parser_node->word_count - 6;
+                    p_node->num_literal_words = 0;
                   }
                   break;
                 case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:
@@ -7037,7 +7039,6 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
                     for (uint32_t i = 0; i < p_node->num_literal_words; ++i) {
                       uint32_t member_index;
                       EVAL_CHECKED_READU32(p_parser, p_parser_node->word_offset + 6 + i, member_index, res, CLEANUP);
-                      p_node->literal_words[i] = member_index;
                       res = GetMemberByIndex(p_eval->member_type_finder, current_data, current_type, member_index, &current_data, &current_type);
                       if (res != SPV_REFLECT_RESULT_SUCCESS) {
                         goto CLEANUP;
