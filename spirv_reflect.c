@@ -236,8 +236,7 @@ typedef struct SpvReflectPrvEvaluationNode {
     uint32_t                        result_id;
     SpvOp                           op;
     SpvOp                           specOp;
-    uint32_t                        word_offset;
-    uint32_t                        word_count;
+
     SpvReflectEvaluationNodeState   evaluation_state;
     SpvReflectValue                 value;
 
@@ -247,27 +246,37 @@ typedef struct SpvReflectPrvEvaluationNode {
     SpvReflectPrvEvaluationNode**   id_operands;
     uint32_t                        num_literal_words;
     uint32_t*                       literal_words;
+
+    // add another 2 passes if need explicit initialization and free...
+    union InstructionPrivate {
+        // used only in preprocess passes to replace parser FindNode
+        SpvReflectPrvNode* uninitialized;
+        struct VectorShuffle {
+            uint8_t idx[SPV_REFLECT_MAX_VECTOR_DIMS];
+        } vector_shuffle;
+        struct CompositeExtract {
+            SpvReflectTypeDescription* src_type;
+            SpvReflectValueData*       src_data;
+        } composite_extract;
+        struct CompositeInsert {
+            SpvReflectTypeDescription* dst_type;
+            SpvReflectValueData* dst_data;
+        }composite_insert;
+    } instruction_private;
 } SpvReflectPrvEvaluationNode;
 // clang-format on
 
 // clang-format off
-typedef enum SpvReflectEvaluationState {
+typedef enum SpvReflectEvaluationMode {
     SPIRV_REFLECT_EVALUATION_MODE_NORMAL       = 0,
     // traverse all branches, currently for OpSelect
     SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS    = 1,
     SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS    = 2,
-} SpvReflectEvaluationState;
+} SpvReflectEvaluationMode;
 
 typedef struct SpvReflectEvaluation {
-    // original code if no-copy, else it's a copy of constant instructions
-    size_t                                spirv_word_count;
-    uint32_t*                             spirv_code;
-
     uint32_t                              node_count;
     SpvReflectPrvEvaluationNode*          nodes;
-
-    // To flag dry run and tree traversal...
-    SpvReflectEvaluationState             state;
 
     SpvReflectPrvEvaluationNode**         id_operand_buffer;
     uint32_t*                             literal_word_buffer;
@@ -426,7 +435,7 @@ static bool InRange(
 }
 
 static SpvReflectResult ReadU32(
-  SpvReflectPrvParser* p_parser,
+  const SpvReflectPrvParser* p_parser,
   uint32_t             word_offset,
   uint32_t*            p_value)
 {
@@ -570,7 +579,7 @@ static void ApplyArrayTraits(const SpvReflectTypeDescription* p_type, SpvReflect
 }
 
 static SpvReflectPrvNode* FindNode(
-  SpvReflectPrvParser* p_parser,
+  const SpvReflectPrvParser* p_parser,
   uint32_t             result_id)
 {
   SpvReflectPrvNode* p_node = NULL;
@@ -3474,36 +3483,9 @@ static SpvReflectResult ParseExecutionModes(
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static bool EvalCodeInRange(
-  const SpvReflectEvaluation* p_eval, 
-  uint32_t                   index)
-{
-  bool in_range = false;
-  if (IsNotNull(p_eval)) {
-    in_range = (index < p_eval->spirv_word_count);
-  }
-  return in_range;
-}
-
-static SpvReflectResult EvalReadU32(
-  const SpvReflectEvaluation* p_eval,
-  uint32_t             word_offset,
-  uint32_t*            p_value)
-{
-  assert(IsNotNull(p_eval));
-  assert(IsNotNull(p_eval->spirv_code));
-  assert(EvalCodeInRange(p_eval, word_offset));
-  SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_EOF;
-  if (IsNotNull(p_eval) && IsNotNull(p_eval->spirv_code) && EvalCodeInRange(p_eval, word_offset)) {
-    *p_value = *(p_eval->spirv_code + word_offset);
-    result = SPV_REFLECT_RESULT_SUCCESS;
-  }
-  return result;
-}
-
-#define EVAL_CHECKED_READU32(eval, word_offset, value, res, cleanup)                                   \
+#define EVAL_CHECKED_READU32(parser, word_offset, value, res, cleanup)                                   \
   {                                                                                      \
-    res = EvalReadU32(eval,                     \
+    res = ReadU32(parser,                     \
                                                       word_offset, (uint32_t*)&(value)); \
     if (res != SPV_REFLECT_RESULT_SUCCESS) {                     \
       goto cleanup;                                                     \
@@ -3519,19 +3501,20 @@ static SpvReflectResult EvalReadU32(
 #define COMPOSITE_DISALLOWED_FLAGS (~0 ^ COMPOSITE_TYPE_FLAGS)
 
 // getting constant also happens before evaluation is created.
-static SpvReflectResult EvalGetScalarConstant(const SpvReflectEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node)
+static SpvReflectResult EvalGetScalarConstant(const SpvReflectPrvParser* p_parser, SpvReflectPrvEvaluationNode* p_node)
 {
     SpvReflectResult result = SPV_REFLECT_RESULT_SUCCESS;
     if(p_node->value.type->type_flags & SCALAR_DISALLOWED_FLAGS) return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+    SpvReflectPrvNode* p_parser_node = FindNode(p_parser, p_node->result_id);
     uint32_t low_word;
-    EVAL_CHECKED_READU32(p_eval, p_node->word_offset + 3, low_word, result, CLEANUP);
+    EVAL_CHECKED_READU32(p_parser, p_parser_node->word_offset + 3, low_word, result, CLEANUP);
     // There is no alignment requirements in c/cpp for unions
     if (p_node->value.type->traits.numeric.scalar.width == 32) {
         memcpy(&p_node->value.data.numeric.scalar.value.uint32_bool_value, &low_word, 4);
     }
     else if (p_node->value.type->traits.numeric.scalar.width ==64) {
         uint32_t high_word;
-        EVAL_CHECKED_READU32(p_eval, p_node->word_offset + 4, high_word, result, CLEANUP);
+        EVAL_CHECKED_READU32(p_parser, p_parser_node->word_offset + 4, high_word, result, CLEANUP);
         uint64_t combined = low_word | (((uint64_t)high_word) << 32);
         memcpy(&p_node->value.data.numeric.scalar.value.uint64_value, &combined, 8);
     }
@@ -3584,9 +3567,33 @@ static SpvReflectResult ParserGetScalarConstant(const SpvReflectShaderModule* p_
 
 // defined later..
 static SpvReflectSpecializationConstant* GetSpecContantById(const SpvReflectShaderModule* p_module, uint32_t constant_id);
-static SpvReflectResult EvaluateResult_Do(SpvReflectPrvEvaluationNode* p_node);
-static SpvReflectResult EvaluateResult_1PASS(SpvReflectEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node);
-static SpvReflectResult EvaluateResult_2PASS(SpvReflectEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node);
+
+
+#ifdef _MSC_VER
+#define SPIRV_REFLECT_FORCEINLINE __forceinline
+#else
+#define SPIRV_REFLECT_FORCEINLINE __attribute__((always_inline)) inline
+#endif
+
+static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflectEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node, SpvReflectEvaluationMode evaluation_mode, SpvReflectPrvParser* p_parser);
+
+// only need node for evaluation.. Type information should not be freed before evaluating for now.
+// may move type info into instruction info later, but now it seems not needed...
+static SpvReflectResult EvaluateResult_Do(SpvReflectPrvEvaluationNode* p_node)
+{
+    return EvaluateResult_Impl(NULL, p_node, SPIRV_REFLECT_EVALUATION_MODE_NORMAL, NULL);
+}
+// 1 PASS parser needs to read specOp and check instruction size
+static SpvReflectResult EvaluateResult_1PASS(SpvReflectEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node, SpvReflectPrvParser* p_parser)
+{
+    return EvaluateResult_Impl(p_eval, p_node, SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS, p_parser);
+}
+
+// 2 PASS needs parser to get id operands and literals
+static SpvReflectResult EvaluateResult_2PASS(SpvReflectEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node, SpvReflectPrvParser* p_parser)
+{
+    return EvaluateResult_Impl(p_eval, p_node, SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS, p_parser);
+}
 
 static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module)
 {
@@ -3678,19 +3685,6 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
     if(!p_eval->nodes){
       return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
     }
-    if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY) {
-      // use original code for evaluation.
-      p_eval->spirv_code = p_module->_internal->spirv_code;
-      p_eval->spirv_word_count = p_module->_internal->spirv_word_count;
-    }
-    else if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT) {
-      // need to copy instructions from code for later evaluation.
-      p_eval->spirv_code = (uint32_t*)malloc(instruction_size * sizeof(uint32_t));
-      if (!p_module->_internal->evaluator->spirv_code) {
-          return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
-      }
-      p_eval->spirv_word_count = instruction_size;
-    }
 
     // need to update correct offset in new code if not no-copy
     uint32_t current_offset = 0;
@@ -3702,7 +3696,6 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
         p_eval->nodes[current_cinst].op = p_node->op;
         p_eval->nodes[current_cinst].specOp = (SpvOp)INVALID_VALUE;
         p_eval->nodes[current_cinst].result_id = p_node->result_id;
-        p_eval->nodes[current_cinst].word_count = p_node->word_count;
         p_eval->nodes[current_cinst].value.type = FindType(p_module, p_node->result_type_id);
         if (!p_module->_internal->evaluator->nodes[current_cinst].value.type) {
             return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
@@ -3719,14 +3712,8 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
             p_eval->nodes[current_cinst].evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_FAILED;
           }
         }
+        p_eval->nodes[current_cinst].instruction_private.uninitialized = p_node;
         p_eval->nodes[current_cinst].specId = p_node->decorations.specialization_constant.value;
-        if (p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY) {
-            p_eval->nodes[current_cinst].word_offset = p_node->word_offset;
-        }
-        else {
-          p_eval->nodes[current_cinst].word_offset = current_offset;
-          memcpy(p_module->_internal->evaluator->spirv_code + current_offset, p_module->_internal->spirv_code + p_node->word_offset, 4 * p_node->word_count);
-        }
         ++current_cinst;
         current_offset += p_node->word_count;
       }
@@ -3738,7 +3725,7 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
       // do not need to find what constant literals are related to
       if(!IS_CONSTANT_LITERAL_OP(p_ev_node->op)){
         // reset evaluation state for tracking which ones are touched
-        EvaluateResult_1PASS(p_eval, p_ev_node);
+        EvaluateResult_1PASS(p_eval, p_ev_node, p_parser);
       }
     }
     uint32_t literal_words = 0;
@@ -3747,7 +3734,6 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
         SpvReflectPrvEvaluationNode* p_ev_node = &p_eval->nodes[i];
         // do not need to find what constant literals are related to
         if (!IS_CONSTANT_LITERAL_OP(p_ev_node->op) && p_ev_node->evaluation_state == SPV_REFLECT_EVALUATION_NODE_STATE_UNINITIALIZED) {
-            // reset evaluation state for tracking which ones are touched
             literal_words += p_ev_node->num_literal_words;
             id_operands += p_ev_node->num_id_operands;
         }
@@ -3765,7 +3751,6 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
     uint32_t literal_offset = 0;
     for (uint32_t i = 0; i < p_eval->node_count; ++i) {
       SpvReflectPrvEvaluationNode* p_ev_node = &p_eval->nodes[i];
-      // do not need to find what constant literals are related to
       if (!IS_CONSTANT_LITERAL_OP(p_ev_node->op) && p_ev_node->evaluation_state == SPV_REFLECT_EVALUATION_NODE_STATE_UNINITIALIZED) {
         p_ev_node->id_operands = p_eval->id_operand_buffer + id_offset;
         p_ev_node->literal_words = p_eval->literal_word_buffer + literal_offset;
@@ -3773,13 +3758,13 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
         id_offset += p_ev_node->num_id_operands;
       }
     }
+    SPV_REFLECT_ASSERT(id_offset == id_operands);
+    SPV_REFLECT_ASSERT(literal_offset == literal_words);
     // 2 PASS
     for (uint32_t i = 0; i < p_eval->node_count; ++i) {
       SpvReflectPrvEvaluationNode* p_ev_node = &p_eval->nodes[i];
-      // do not need to find what constant literals are related to
       if(!IS_CONSTANT_LITERAL_OP(p_ev_node->op)){
-        // reset evaluation state for tracking which ones are touched
-        EvaluateResult_2PASS(p_eval, p_ev_node);
+        EvaluateResult_2PASS(p_eval, p_ev_node, p_parser);
       }
     }
   }
@@ -3788,12 +3773,10 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static void DestroyEvaluator(SpvReflectEvaluation* evaluator, bool owns_code)
+static void DestroyEvaluator(SpvReflectEvaluation* evaluator)
 {
     SafeFree(evaluator->nodes);
-    if (owns_code) {
-        SafeFree(evaluator->spirv_code);
-    }
+
     SafeFree(evaluator->id_operand_buffer);
     SafeFree(evaluator->literal_word_buffer);
 }
@@ -4374,7 +4357,7 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
   }
 
   if (p_module->_internal->module_flags & MODULE_EVALUATION_FLAGS) {
-      DestroyEvaluator(p_module->_internal->evaluator, !(p_module->_internal->module_flags & SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY));
+      DestroyEvaluator(p_module->_internal->evaluator);
       SafeFree(p_module->_internal->evaluator)
   }
 
@@ -5623,55 +5606,55 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
     }                                                                                           \
 }
 
-#define CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, p_result_node, p_op1_node, res, CLEANUP)                                                 \
-{                                                                                                                               \
-    if ((p_result_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                          \
-        if (!((p_op1_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                      \
-            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
-            goto CLEANUP;                                                                                                       \
-        }                                                                                                                       \
-        if ((p_op1_node)->value.type->traits.numeric.vector.component_count != (p_result_node)->value.type->traits.numeric.vector.component_count) {  \
-            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
-            goto CLEANUP;                                                                                                       \
-        }                                                                                                                       \
-        vec_size = (p_result_node)->value.type->traits.numeric.vector.component_count;                                                     \
-    }                                                                                                                           \
+#define CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, p_result_node, p_op1_node, res, CLEANUP)                                                               \
+{                                                                                                                                                       \
+    if ((p_result_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                                       \
+        if (!((p_op1_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                                   \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                          \
+            goto CLEANUP;                                                                                                                               \
+        }                                                                                                                                               \
+        if ((p_op1_node)->value.type->traits.numeric.vector.component_count != (p_result_node)->value.type->traits.numeric.vector.component_count) {    \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                          \
+            goto CLEANUP;                                                                                                                               \
+        }                                                                                                                                               \
+        vec_size = (p_result_node)->value.type->traits.numeric.vector.component_count;                                                                  \
+    }                                                                                                                                                   \
 }
 
-#define CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, p_result_node, p_op1_node, p_op2_node, res, CLEANUP)\
-{                                                                                                                               \
-    if ((p_result_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                          \
-        if (!((p_op1_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                      \
-            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
-            goto CLEANUP;                                                                                                       \
-        }                                                                                                                       \
-        if (!((p_op2_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                      \
-            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
-            goto CLEANUP;                                                                                                       \
-        }                                                                                                                       \
-        if ((p_op1_node)->value.type->traits.numeric.vector.component_count != (p_result_node)->value.type->traits.numeric.vector.component_count) {  \
-            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
-            goto CLEANUP;                                                                                                       \
-        }                                                                                                                       \
-        if ((p_op2_node)->value.type->traits.numeric.vector.component_count != (p_result_node)->value.type->traits.numeric.vector.component_count) {  \
-            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                  \
-            goto CLEANUP;                                                                                                       \
-        }                                                                                                                       \
-        vec_size = (p_result_node)->value.type->traits.numeric.vector.component_count;                                                     \
-    }                                                                                                                           \
+#define CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, p_result_node, p_op1_node, p_op2_node, res, CLEANUP)                                                   \
+{                                                                                                                                                       \
+    if ((p_result_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                                       \
+        if (!((p_op1_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                                   \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                          \
+            goto CLEANUP;                                                                                                                               \
+        }                                                                                                                                               \
+        if (!((p_op2_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                                   \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                          \
+            goto CLEANUP;                                                                                                                               \
+        }                                                                                                                                               \
+        if ((p_op1_node)->value.type->traits.numeric.vector.component_count != (p_result_node)->value.type->traits.numeric.vector.component_count) {    \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                          \
+            goto CLEANUP;                                                                                                                               \
+        }                                                                                                                                               \
+        if ((p_op2_node)->value.type->traits.numeric.vector.component_count != (p_result_node)->value.type->traits.numeric.vector.component_count) {    \
+            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                          \
+            goto CLEANUP;                                                                                                                               \
+        }                                                                                                                                               \
+        vec_size = (p_result_node)->value.type->traits.numeric.vector.component_count;                                                                  \
+    }                                                                                                                                                   \
 }
 
-#define CHECK_WIDTH_MATCH(p_node1, p_node2, res, CLEANUP)                                                 \
-{                                                                                                           \
-    if ((p_node1)->value.type->traits.numeric.scalar.width != (p_node2)->value.type->traits.numeric.scalar.width) {   \
-        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                  \
-            goto CLEANUP;                                                                                   \
-    }                                                                                                       \
+#define CHECK_WIDTH_MATCH(p_node1, p_node2, res, CLEANUP)                                                           \
+{                                                                                                                   \
+    if ((p_node1)->value.type->traits.numeric.scalar.width != (p_node2)->value.type->traits.numeric.scalar.width) { \
+        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                          \
+            goto CLEANUP;                                                                                           \
+    }                                                                                                               \
 }
 
-#define CHECK_IS_BASIC_TYPE(p_result_node, b_type, res, CLEANUP)                                 \
+#define CHECK_IS_BASIC_TYPE(p_result_node, b_type, res, CLEANUP)                            \
 {                                                                                           \
-    if(((p_result_node)->value.type->type_flags & SCALAR_TYPE_FLAGS) != b_type) {                      \
+    if(((p_result_node)->value.type->type_flags & SCALAR_TYPE_FLAGS) != b_type) {           \
         res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                  \
             goto CLEANUP;                                                                   \
     }                                                                                       \
@@ -5682,268 +5665,272 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
 #define CHECK_IS_BOOLEAN_TYPE(p_result_node, res, CLEANUP) CHECK_IS_BASIC_TYPE(p_result_node, SPV_REFLECT_TYPE_FLAG_BOOL, res, CLEANUP)
 
 
-#define CHECK_VECTOR_OR_SCALAR_TYPE(p_result_node, res, CLEANUP)                                     \
-{                                                                                               \
-    if ((p_result_node)->value.type && ((p_result_node)->value.type->type_flags & VECTOR_DISALLOWED_FLAGS)) {         \
-        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                      \
-            goto CLEANUP;                                                                       \
-    }                                                                                           \
-}                                                                                               \
-
-#define GET_OPERAND(eval, p_node, offset, p_result_node, res, CLEANUP)                          \
-{                                                                                           \
-    uint32_t operand_id;                                                                    \
-    EVAL_CHECKED_READU32(eval, p_node->word_offset + offset, operand_id, res, CLEANUP);     \
-    p_result_node = FindEvaluationNode(p_eval, operand_id);                                 \
-    if(!p_result_node) {                                                                    \
-        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;                          \
-        goto CLEANUP;                                                                       \
-    }                                                                                       \
+#define CHECK_VECTOR_OR_SCALAR_TYPE(p_result_node, res, CLEANUP)                                                \
+{                                                                                                               \
+    if ((p_result_node)->value.type && ((p_result_node)->value.type->type_flags & VECTOR_DISALLOWED_FLAGS)) {   \
+        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                      \
+        goto CLEANUP;                                                                                           \
+    }                                                                                                           \
 }
 
-#define EVALUATE_OPERAND(p_result_node, res, CLEANUP)   \
-{                                                       \
-    res = EvaluateResult_Do(p_result_node);      \
-    if (res != SPV_REFLECT_RESULT_SUCCESS) goto CLEANUP;\
+#define GET_OPERAND(p_parser, eval, p_node, offset, p_result_node, res, CLEANUP)                    \
+{                                                                                                   \
+    uint32_t operand_id;                                                                            \
+    SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;                   \
+    EVAL_CHECKED_READU32(p_parser, p_parser_node->word_offset + offset, operand_id, res, CLEANUP);  \
+    p_result_node = FindEvaluationNode(p_eval, operand_id);                                         \
+    if(!p_result_node) {                                                                            \
+        res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;                                  \
+        goto CLEANUP;                                                                               \
+    }                                                                                               \
+}
+
+#define EVALUATE_OPERAND(p_result_node, res, CLEANUP) \
+{                                                                   \
+    res = EvaluateResult_Do(p_result_node);           \
+    if (res != SPV_REFLECT_RESULT_SUCCESS) goto CLEANUP;            \
 }
 
 #define SIMPLE_UNARY_OP_32_BIT_HOOK
 #define SIMPLE_UNARY_OP_64_BIT_HOOK
 
-#define DO_SIMPLE_UNARY_INTEGER_OPERATION(simple_op_eval, p_node, res, CLEANUP)     \
-{                                                                                                       \
-    switch (evaluation_mode) {                                                                                      \
-        default:                                                                                                    \
-            {\
-                res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;\
-                goto CLEANUP;\
-            }\
-        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:\
-            {\
-                uint32_t vec_size = 1;\
-                if (p_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {\
-                    vec_size = p_node->value.type->traits.numeric.vector.component_count;\
-                }\
-                SpvReflectPrvEvaluationNode* operand1 = p_node->id_operands[0];\
-                EVALUATE_OPERAND(operand1, res, CLEANUP)\
-                \
-                for (uint32_t i = 0; i < vec_size; ++i) {                                                           \
-                    p_node->value.data.numeric.vector.value[i].undefined_value                                        \
-                        = operand1->value.data.numeric.vector.value[i].undefined_value;                                   \
-                    switch (operand1->value.type->traits.numeric.scalar.width) {                                          \
-                        default:                                                                                    \
-                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                      \
-                            goto CLEANUP;                                                                           \
-                        case 32:                                                                                    \
-                            /* 32 bit integer */                                                                    \
-                            {                                                                                       \
-                                int32_t data = operand1->value.data.numeric.vector.value[i].value.sint32_value;           \
-                                SIMPLE_UNARY_OP_32_BIT_HOOK                                                         \
-                                p_node->value.data.numeric.vector.value[i].value.sint32_value = data;                 \
-                            }                                                                                       \
-                            break;                                                                                  \
-                        case 64:                                                                                    \
-                            /* 64 bit integer */                                                                    \
-                            {                                                                                       \
-                                int64_t data = operand1->value.data.numeric.vector.value[i].value.sint64_value;           \
-                                SIMPLE_UNARY_OP_64_BIT_HOOK                                                         \
-                                p_node->value.data.numeric.vector.value[i].value.sint64_value = data;                 \
-                            }                                                                                       \
-                            break;                                                                                  \
-                    }                                                                                               \
-                }                                                                                                   \
-            }                                                                                                       \
-            break;\
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:\
-            {\
-                CHECK_INSTRUCTION_SIZE(p_node, 5)\
-                p_node->num_id_operands = 1;\
-                p_node->num_literal_words = 0;\
-                \
-                /* check result type */\
-                CHECK_IS_INTEGER_TYPE(p_node, res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(p_node, res, CLEANUP)\
-            }\
-            break;\
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:\
-            {\
-                GET_OPERAND((simple_op_eval), p_node, 4, p_node->id_operands[0], res, CLEANUP)\
-                CHECK_IS_INTEGER_TYPE(p_node->id_operands[0], res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(p_node->id_operands[0], res, CLEANUP)\
-                CHECK_WIDTH_MATCH(p_node, p_node->id_operands[0], res, CLEANUP)\
-                uint32_t vec_size = 1;                                                                              \
-                CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, p_node, p_node->id_operands[0], res, CLEANUP)\
-            }\
-            break;\
-    }\
+#define DO_SIMPLE_UNARY_INTEGER_OPERATION(mode, p_simple_op_parser, simple_op_eval, simple_op_node, res, CLEANUP)                           \
+{                                                                                                                                           \
+    switch (mode) {                                                                                                                         \
+        default:                                                                                                                            \
+            {                                                                                                                               \
+                res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;                                                                              \
+                goto CLEANUP;                                                                                                               \
+            }                                                                                                                               \
+        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:                                                                                          \
+            {                                                                                                                               \
+                uint32_t vec_size = 1;                                                                                                      \
+                if ((simple_op_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                              \
+                    vec_size = (simple_op_node)->value.type->traits.numeric.vector.component_count;                                         \
+                }                                                                                                                           \
+                SpvReflectPrvEvaluationNode* operand1 = (simple_op_node)->id_operands[0];                                                   \
+                EVALUATE_OPERAND(operand1, res, CLEANUP)                                                                                    \
+                                                                                                                                            \
+                for (uint32_t i = 0; i < vec_size; ++i) {                                                                                   \
+                    (simple_op_node)->value.data.numeric.vector.value[i].undefined_value                                                    \
+                        = operand1->value.data.numeric.vector.value[i].undefined_value;                                                     \
+                    switch (operand1->value.type->traits.numeric.scalar.width) {                                                            \
+                        default:                                                                                                            \
+                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                              \
+                            goto CLEANUP;                                                                                                   \
+                        case 32:                                                                                                            \
+                            /* 32 bit integer */                                                                                            \
+                            {                                                                                                               \
+                                int32_t data = operand1->value.data.numeric.vector.value[i].value.sint32_value;                             \
+                                SIMPLE_UNARY_OP_32_BIT_HOOK                                                                                 \
+                                (simple_op_node)->value.data.numeric.vector.value[i].value.sint32_value = data;                             \
+                            }                                                                                                               \
+                            break;                                                                                                          \
+                        case 64:                                                                                                            \
+                            /* 64 bit integer */                                                                                            \
+                            {                                                                                                               \
+                                int64_t data = operand1->value.data.numeric.vector.value[i].value.sint64_value;                             \
+                                SIMPLE_UNARY_OP_64_BIT_HOOK                                                                                 \
+                                (simple_op_node)->value.data.numeric.vector.value[i].value.sint64_value = data;                             \
+                            }                                                                                                               \
+                            break;                                                                                                          \
+                    }                                                                                                                       \
+                }                                                                                                                           \
+            }                                                                                                                               \
+            break;                                                                                                                          \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:                                                                                       \
+            {                                                                                                                               \
+                SpvReflectPrvNode* p_parser_node = simple_op_node->instruction_private.uninitialized;                                       \
+                CHECK_INSTRUCTION_SIZE(p_parser_node, 5)                                                                                    \
+                (simple_op_node)->num_id_operands = 1;                                                                                      \
+                (simple_op_node)->num_literal_words = 0;                                                                                    \
+                                                                                                                                            \
+                /* check result type */                                                                                                     \
+                CHECK_IS_INTEGER_TYPE((simple_op_node), res, CLEANUP)                                                                       \
+                CHECK_VECTOR_OR_SCALAR_TYPE((simple_op_node), res, CLEANUP)                                                                 \
+            }                                                                                                                               \
+            break;                                                                                                                          \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:                                                                                       \
+            {                                                                                                                               \
+                GET_OPERAND((p_simple_op_parser), (simple_op_eval), (simple_op_node), 4, (simple_op_node)->id_operands[0], res, CLEANUP)    \
+                CHECK_IS_INTEGER_TYPE((simple_op_node)->id_operands[0], res, CLEANUP)                                                       \
+                CHECK_VECTOR_OR_SCALAR_TYPE((simple_op_node)->id_operands[0], res, CLEANUP)                                                 \
+                CHECK_WIDTH_MATCH((simple_op_node), (simple_op_node)->id_operands[0], res, CLEANUP)                                         \
+                uint32_t vec_size = 1;                                                                                                      \
+                CHECK_IF_VECTOR_SIZE_MATCH_1OP(vec_size, (simple_op_node), (simple_op_node)->id_operands[0], res, CLEANUP)                  \
+            }                                                                                                                               \
+            break;                                                                                                                          \
+    }                                                                                                                                       \
 }
 
 #define SIMPLE_BINARY_OP_32_BIT_HOOK
 #define SIMPLE_BINARY_OP_64_BIT_HOOK
-#define DO_SIMPLE_BINARY_INTEGER_OPERATION(simple_op_eval, simple_op_node, operation, res, CLEANUP)   \
-{                                                                                                                 \
-    switch (evaluation_mode) {                                                                                      \
-        default:                                                                                                    \
-            {\
-                res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;\
-                goto CLEANUP;\
-            }\
-        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:\
-            {\
-                uint32_t vec_size = 1;\
-                if (simple_op_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {\
-                    vec_size = simple_op_node->value.type->traits.numeric.vector.component_count;\
-                }\
-                SpvReflectPrvEvaluationNode* operand1 = simple_op_node->id_operands[0];\
-                SpvReflectPrvEvaluationNode* operand2 = simple_op_node->id_operands[1];\
-                EVALUATE_OPERAND(operand1, res, CLEANUP)\
-                EVALUATE_OPERAND(operand2, res, CLEANUP)\
-                for (uint32_t i = 0; i < vec_size; ++i) {                                                                 \
-                    if (operand1->value.data.numeric.vector.value[i].undefined_value                                            \
-                        || operand2->value.data.numeric.vector.value[i].undefined_value) {                                      \
-                        (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                     \
-                    }                                                                                                     \
-                    switch ((simple_op_node)->value.type->traits.numeric.scalar.width) {                                              \
-                        default:                                                                                          \
-                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                            \
-                            goto CLEANUP;                                                                                 \
-                        case 32:                                                                                          \
-                            {                                                                                             \
-                                /* load data into int32_t*/                                                               \
-                                int32_t data1 = operand1->value.data.numeric.vector.value[i].value.sint32_value;                \
-                                int32_t data2 = operand2->value.data.numeric.vector.value[i].value.sint32_value;                \
-                                int32_t data = data1 operation data2;                                                     \
-                                SIMPLE_BINARY_OP_32_BIT_HOOK                                                              \
-                                /* write to correct offset */                                                             \
-                                (simple_op_node)->value.data.numeric.vector.value[i].value.sint32_value = data;                       \
-                            }                                                                                             \
-                            break;                                                                                        \
-                        case 64:                                                                                          \
-                            {                                                                                             \
-                                /* load data into int64_t*/                                                               \
-                                int64_t data1 = operand1->value.data.numeric.vector.value[i].value.sint64_value;                \
-                                int64_t data2 = operand2->value.data.numeric.vector.value[i].value.sint64_value;                \
-                                int64_t data = data1 operation data2;                                                     \
-                                SIMPLE_BINARY_OP_32_BIT_HOOK                                                              \
-                                /* write to correct offset */                                                             \
-                                (simple_op_node)->value.data.numeric.vector.value[i].value.sint64_value = data;                       \
-                            }                                                                                             \
-                            break;                                                                                        \
-                    }                                                                                                     \
-                }\
-            }\
-            break;\
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:\
-            {\
-                CHECK_INSTRUCTION_SIZE(simple_op_node, 6)                                                                 \
-                simple_op_node->num_id_operands = 2;\
-                simple_op_node->num_literal_words = 0;\
-                \
-                /* check result type */\
-                CHECK_IS_INTEGER_TYPE(simple_op_node, res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node, res, CLEANUP)\
-            }\
-            break;\
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:\
-            {\
-                GET_OPERAND((simple_op_eval), simple_op_node, 4, p_node->id_operands[0], res, CLEANUP)\
-                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[0], res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[0], res, CLEANUP)\
-                GET_OPERAND((simple_op_eval), p_node, 5, p_node->id_operands[1], res, CLEANUP)\
-                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[1], res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[1], res, CLEANUP)\
-                                                                                           \
-                /* check agains result */\
-                CHECK_WIDTH_MATCH(simple_op_node, p_node->id_operands[0], res, CLEANUP)\
-                CHECK_WIDTH_MATCH(simple_op_node, p_node->id_operands[1], res, CLEANUP)\
-                uint32_t vec_size = 1;                                                                              \
-                CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)\
-            }\
-            break;\
-    }\
+#define DO_SIMPLE_BINARY_INTEGER_OPERATION(mode, p_simple_op_parser,simple_op_eval, simple_op_node, operation, res, CLEANUP)                            \
+{                                                                                                                                                       \
+    switch (mode) {                                                                                                                                     \
+        default:                                                                                                                                        \
+            {                                                                                                                                           \
+                res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;                                                                                          \
+                goto CLEANUP;                                                                                                                           \
+            }                                                                                                                                           \
+        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:                                                                                                      \
+            {                                                                                                                                           \
+                uint32_t vec_size = 1;                                                                                                                  \
+                if (simple_op_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                            \
+                    vec_size = simple_op_node->value.type->traits.numeric.vector.component_count;                                                       \
+                }                                                                                                                                       \
+                SpvReflectPrvEvaluationNode* operand1 = simple_op_node->id_operands[0];                                                                 \
+                SpvReflectPrvEvaluationNode* operand2 = simple_op_node->id_operands[1];                                                                 \
+                EVALUATE_OPERAND(operand1, res, CLEANUP)                                                                                                \
+                EVALUATE_OPERAND(operand2, res, CLEANUP)                                                                                                \
+                for (uint32_t i = 0; i < vec_size; ++i) {                                                                                               \
+                    if (operand1->value.data.numeric.vector.value[i].undefined_value                                                                    \
+                        || operand2->value.data.numeric.vector.value[i].undefined_value) {                                                              \
+                        (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                                       \
+                    }                                                                                                                                   \
+                    switch ((simple_op_node)->value.type->traits.numeric.scalar.width) {                                                                \
+                        default:                                                                                                                        \
+                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                          \
+                            goto CLEANUP;                                                                                                               \
+                        case 32:                                                                                                                        \
+                            {                                                                                                                           \
+                                /* load data into int32_t*/                                                                                             \
+                                int32_t data1 = operand1->value.data.numeric.vector.value[i].value.sint32_value;                                        \
+                                int32_t data2 = operand2->value.data.numeric.vector.value[i].value.sint32_value;                                        \
+                                int32_t data = data1 operation data2;                                                                                   \
+                                SIMPLE_BINARY_OP_32_BIT_HOOK                                                                                            \
+                                /* write to correct offset */                                                                                           \
+                                (simple_op_node)->value.data.numeric.vector.value[i].value.sint32_value = data;                                         \
+                            }                                                                                                                           \
+                            break;                                                                                                                      \
+                        case 64:                                                                                                                        \
+                            {                                                                                                                           \
+                                /* load data into int64_t*/                                                                                             \
+                                int64_t data1 = operand1->value.data.numeric.vector.value[i].value.sint64_value;                                        \
+                                int64_t data2 = operand2->value.data.numeric.vector.value[i].value.sint64_value;                                        \
+                                int64_t data = data1 operation data2;                                                                                   \
+                                SIMPLE_BINARY_OP_32_BIT_HOOK                                                                                            \
+                                /* write to correct offset */                                                                                           \
+                                (simple_op_node)->value.data.numeric.vector.value[i].value.sint64_value = data;                                         \
+                            }                                                                                                                           \
+                            break;                                                                                                                      \
+                    }                                                                                                                                   \
+                }                                                                                                                                       \
+            }                                                                                                                                           \
+            break;                                                                                                                                      \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:                                                                                                   \
+            {                                                                                                                                           \
+                SpvReflectPrvNode* p_parser_node = simple_op_node->instruction_private.uninitialized;                                                   \
+                CHECK_INSTRUCTION_SIZE(p_parser_node, 6)                                                                                                \
+                simple_op_node->num_id_operands = 2;                                                                                                    \
+                simple_op_node->num_literal_words = 0;                                                                                                  \
+                                                                                                                                                        \
+                /* check result type */                                                                                                                 \
+                CHECK_IS_INTEGER_TYPE(simple_op_node, res, CLEANUP)                                                                                     \
+                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node, res, CLEANUP)                                                                               \
+            }                                                                                                                                           \
+            break;                                                                                                                                      \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:                                                                                                   \
+            {                                                                                                                                           \
+                GET_OPERAND((p_simple_op_parser),(simple_op_eval), simple_op_node, 4, (simple_op_node)->id_operands[0], res, CLEANUP)                   \
+                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[0], res, CLEANUP)                                                                     \
+                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[0], res, CLEANUP)                                                               \
+                GET_OPERAND((p_simple_op_parser),(simple_op_eval), (simple_op_node), 5, (simple_op_node)->id_operands[1], res, CLEANUP)                 \
+                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                                     \
+                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                               \
+                                                                                                                                                        \
+                /* check agains result */                                                                                                               \
+                CHECK_WIDTH_MATCH(simple_op_node, (simple_op_node)->id_operands[0], res, CLEANUP)                                                       \
+                CHECK_WIDTH_MATCH(simple_op_node, (simple_op_node)->id_operands[1], res, CLEANUP)                                                       \
+                uint32_t vec_size = 1;                                                                                                                  \
+                CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)  \
+            }                                                                                                                                           \
+            break;                                                                                                                                      \
+    }                                                                                                                                                   \
 }
 
-#define DO_UNSIGNED_INTEGER_DIVISION(simple_op_eval, simple_op_node, operation, res, CLEANUP)     \
-{                                                                                                                 \
-    switch (evaluation_mode) {                                                                                      \
-        default:                                                                                                    \
-            res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;\
-            goto CLEANUP;\
-        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:\
-            {\
-                uint32_t vec_size = 1;\
-                if (simple_op_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {\
-                    vec_size = simple_op_node->value.type->traits.numeric.vector.component_count;\
-                }\
-                SpvReflectPrvEvaluationNode* operand1 = simple_op_node->id_operands[0];\
-                SpvReflectPrvEvaluationNode* operand2 = simple_op_node->id_operands[1];\
-                EVALUATE_OPERAND(operand1, res, CLEANUP)\
-                EVALUATE_OPERAND(operand2, res, CLEANUP)\
-                for (uint32_t i = 0; i < vec_size; ++i) {                                                                 \
-                    if (operand1->value.data.numeric.vector.value[i].undefined_value                                            \
-                        || operand2->value.data.numeric.vector.value[i].undefined_value) {                                      \
-                            (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                     \
-                    }                                                                                                     \
-                    switch ((simple_op_node)->value.type->traits.numeric.scalar.width) {                                              \
-                        default:                                                                                          \
-                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                            \
-                            goto CLEANUP;                                                                                 \
-                        case 32:                                                                                          \
-                            {                                                                                             \
-                                (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value                          \
-                                    = operand1->value.data.numeric.vector.value[i].value.uint32_bool_value                      \
-                                        operation operand2->value.data.numeric.vector.value[i].value.uint32_bool_value;         \
-                                if (operand2->value.data.numeric.vector.value[i].value.uint32_bool_value == 0) {                \
-                                    (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                         \
-                                }                                                                                         \
-                            }                                                                                             \
-                            break;                                                                                        \
-                        case 64:                                                                                          \
-                            {                                                                                             \
-                                (simple_op_node)->value.data.numeric.vector.value[i].value.uint64_value                               \
-                                    = operand1->value.data.numeric.vector.value[i].value.uint64_value                           \
-                                        operation operand2->value.data.numeric.vector.value[i].value.uint64_value;              \
-                                if (operand2->value.data.numeric.vector.value[i].value.uint64_value == 0) {                     \
-                                    (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                         \
-                                }                                                                                         \
-                            }                                                                                             \
-                            break;                                                                                        \
-                    }                                                                                                     \
-                }  \
-            }\
-            break; \
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:\
-            {\
-                CHECK_INSTRUCTION_SIZE(simple_op_node, 6)                                                                 \
-                simple_op_node->num_id_operands = 2;\
-                simple_op_node->num_literal_words = 0;\
-                \
-                /* check result type */\
-                CHECK_IS_INTEGER_TYPE(simple_op_node, res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node, res, CLEANUP)\
-                if ((simple_op_node)->value.type->traits.numeric.scalar.signedness) {                                                 \
-                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                    \
-                    goto CLEANUP;                                                                                         \
-                }                                                                                                         \
-            }\
-            break;\
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:\
-            {\
-                GET_OPERAND((simple_op_eval), simple_op_node, 4, simple_op_node->id_operands[0], res, CLEANUP)\
-                if(p_node->id_operands[0]->value.type->id != p_node->value.type->id) {\
-                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;\
-                    goto CLEANUP;\
-                }\
-                GET_OPERAND((simple_op_eval), simple_op_node, 5, simple_op_node->id_operands[1], res, CLEANUP)\
-                if(p_node->id_operands[1]->value.type->id != p_node->value.type->id) {\
-                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;\
-                    goto CLEANUP;\
-                }\
-                uint32_t vec_size = 1;                                                                              \
-                CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)\
-            }\
-            break;\
-    }\
+#define DO_UNSIGNED_INTEGER_DIVISION(mode, p_simple_op_parser,simple_op_eval, simple_op_node, operation, res, CLEANUP)                                          \
+{                                                                                                                                                               \
+    switch (mode) {                                                                                                                                             \
+        default:                                                                                                                                                \
+            res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;                                                                                                      \
+            goto CLEANUP;                                                                                                                                       \
+        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:                                                                                                              \
+            {                                                                                                                                                   \
+                uint32_t vec_size = 1;                                                                                                                          \
+                if (simple_op_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                                    \
+                    vec_size = simple_op_node->value.type->traits.numeric.vector.component_count;                                                               \
+                }                                                                                                                                               \
+                SpvReflectPrvEvaluationNode* operand1 = simple_op_node->id_operands[0];                                                                         \
+                SpvReflectPrvEvaluationNode* operand2 = simple_op_node->id_operands[1];                                                                         \
+                EVALUATE_OPERAND(operand1, res, CLEANUP)                                                                                                        \
+                EVALUATE_OPERAND(operand2, res, CLEANUP)                                                                                                        \
+                for (uint32_t i = 0; i < vec_size; ++i) {                                                                                                       \
+                    if (operand1->value.data.numeric.vector.value[i].undefined_value                                                                            \
+                        || operand2->value.data.numeric.vector.value[i].undefined_value) {                                                                      \
+                            (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                                           \
+                    }                                                                                                                                           \
+                    switch ((simple_op_node)->value.type->traits.numeric.scalar.width) {                                                                        \
+                        default:                                                                                                                                \
+                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                  \
+                            goto CLEANUP;                                                                                                                       \
+                        case 32:                                                                                                                                \
+                            {                                                                                                                                   \
+                                (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value                                                    \
+                                    = operand1->value.data.numeric.vector.value[i].value.uint32_bool_value                                                      \
+                                        operation operand2->value.data.numeric.vector.value[i].value.uint32_bool_value;                                         \
+                                if (operand2->value.data.numeric.vector.value[i].value.uint32_bool_value == 0) {                                                \
+                                    (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                                   \
+                                }                                                                                                                               \
+                            }                                                                                                                                   \
+                            break;                                                                                                                              \
+                        case 64:                                                                                                                                \
+                            {                                                                                                                                   \
+                                (simple_op_node)->value.data.numeric.vector.value[i].value.uint64_value                                                         \
+                                    = operand1->value.data.numeric.vector.value[i].value.uint64_value                                                           \
+                                        operation operand2->value.data.numeric.vector.value[i].value.uint64_value;                                              \
+                                if (operand2->value.data.numeric.vector.value[i].value.uint64_value == 0) {                                                     \
+                                    (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                                   \
+                                }                                                                                                                               \
+                            }                                                                                                                                   \
+                            break;                                                                                                                              \
+                    }                                                                                                                                           \
+                }                                                                                                                                               \
+            }                                                                                                                                                   \
+            break;                                                                                                                                              \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:                                                                                                           \
+            {                                                                                                                                                   \
+                SpvReflectPrvNode* p_parser_node = simple_op_node->instruction_private.uninitialized;                                                           \
+                CHECK_INSTRUCTION_SIZE(p_parser_node, 6)                                                                                                        \
+                (simple_op_node)->num_id_operands = 2;                                                                                                          \
+                (simple_op_node)->num_literal_words = 0;                                                                                                        \
+                                                                                                                                                                \
+                /* check result type */                                                                                                                         \
+                CHECK_IS_INTEGER_TYPE((simple_op_node), res, CLEANUP)                                                                                           \
+                CHECK_VECTOR_OR_SCALAR_TYPE((simple_op_node), res, CLEANUP)                                                                                     \
+                if ((simple_op_node)->value.type->traits.numeric.scalar.signedness) {                                                                           \
+                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                          \
+                    goto CLEANUP;                                                                                                                               \
+                }                                                                                                                                               \
+            }                                                                                                                                                   \
+            break;                                                                                                                                              \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:                                                                                                           \
+            {                                                                                                                                                   \
+                GET_OPERAND((p_simple_op_parser),(simple_op_eval), simple_op_node, 4, simple_op_node->id_operands[0], res, CLEANUP)                             \
+                if((simple_op_node)->id_operands[0]->value.type->id != (simple_op_node)->value.type->id) {                                                      \
+                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                          \
+                    goto CLEANUP;                                                                                                                               \
+                }                                                                                                                                               \
+                GET_OPERAND((p_simple_op_parser),(simple_op_eval), simple_op_node, 5, simple_op_node->id_operands[1], res, CLEANUP)                             \
+                if((simple_op_node)->id_operands[1]->value.type->id != (simple_op_node)->value.type->id) {                                                      \
+                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                          \
+                    goto CLEANUP;                                                                                                                               \
+                }                                                                                                                                               \
+                uint32_t vec_size = 1;                                                                                                                          \
+                CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, (simple_op_node), (simple_op_node)->id_operands[0], (simple_op_node)->id_operands[1], res, CLEANUP)    \
+            }                                                                                                                                                   \
+            break;                                                                                                                                              \
+    }                                                                                                                                                           \
 }
 
 #define SHIFT_OP_32_BIT_HOOK_PRE
@@ -5951,267 +5938,251 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
 #define SHIFT_OP_32_BIT_HOOK_POST
 #define SHIFT_OP_64_BIT_HOOK_POST
 
-#define DO_SHIFT_OPERATION(simple_op_eval, simple_op_node, operation, res, CLEANUP)         \
-{                                                                                                                 \
-    switch (evaluation_mode) {                                                                                      \
-        default:                                                                                                    \
-            res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;\
-            goto CLEANUP;\
-        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:\
-            {\
-                uint32_t vec_size = 1;\
-                if (simple_op_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {\
-                    vec_size = simple_op_node->value.type->traits.numeric.vector.component_count;\
-                }\
-                SpvReflectPrvEvaluationNode* operand1 = simple_op_node->id_operands[0];\
-                SpvReflectPrvEvaluationNode* operand2 = simple_op_node->id_operands[1];\
-                EVALUATE_OPERAND(operand1, res, CLEANUP)\
-                EVALUATE_OPERAND(operand2, res, CLEANUP)\
-                uint32_t res_width = (p_node)->value.type->traits.numeric.scalar.width;\
-                for (uint32_t i = 0; i < vec_size; ++i) {                                                           \
-                    if (operand1->value.data.numeric.vector.value[i].undefined_value                                      \
-                        || operand2->value.data.numeric.vector.value[i].undefined_value) {                                \
-                        (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                               \
-                    }                                                                                               \
-                    /* load the shift number, set undefined flag if larger than result width*/                      \
-                    uint8_t shift_num;                                                                              \
-                    switch (operand2->value.type->traits.numeric.scalar.width) {                                          \
-                        default:                                                                                    \
-                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                      \
-                            goto CLEANUP;                                                                           \
-                        case 32:                                                                                    \
-                            {                                                                                       \
-                                uint32_t shift = operand2->value.data.numeric.vector.value[i].value.uint32_bool_value;    \
-                                if (operand1->value.data.numeric.vector.value[i].undefined_value || shift >= res_width) { \
-                                    (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                   \
-                                }                                                                                   \
-                                shift_num = (uint8_t)shift;                                                         \
-                            }                                                                                       \
-                            break;                                                                                  \
-                        case 64:                                                                                    \
-                            {                                                                                       \
-                                uint64_t shift = operand2->value.data.numeric.vector.value[i].value.uint64_value;         \
-                                if (operand1->value.data.numeric.vector.value[i].undefined_value || shift >= res_width) { \
-                                    (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                   \
-                                }                                                                                   \
-                                shift_num = (uint8_t)shift;                                                         \
-                            }                                                                                       \
-                            break;                                                                                  \
-                    }                                                                                               \
-                    switch (res_width) {                                                                            \
-                        default:                                                                                    \
-                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                      \
-                            goto CLEANUP;                                                                           \
-                        case 32:                                                                                    \
-                            {                                                                                       \
-                                uint32_t data = operand1->value.data.numeric.vector.value[i].value.uint32_bool_value;     \
-                                SHIFT_OP_32_BIT_HOOK_PRE                                                            \
-                                data operation##= shift_num;                                                        \
-                                SHIFT_OP_32_BIT_HOOK_POST                                                           \
-                                (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value = data;            \
-                            }                                                                                       \
-                            break;                                                                                  \
-                        case 64:                                                                                    \
-                            {                                                                                       \
-                                uint64_t data = operand1->value.data.numeric.vector.value[i].value.uint64_value;          \
-                                SHIFT_OP_64_BIT_HOOK_PRE                                                            \
-                                data operation##= shift_num;                                                        \
-                                SHIFT_OP_64_BIT_HOOK_POST                                                           \
-                                (simple_op_node)->value.data.numeric.vector.value[i].value.uint64_value = data;                 \
-                            }                                                                                       \
-                            break;                                                                                  \
-                    }                                                                                               \
-                }                                                                                                   \
-            }\
-            break; \
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:\
-            {\
-                CHECK_INSTRUCTION_SIZE(simple_op_node, 6)                                                                 \
-                simple_op_node->num_id_operands = 2;\
-                simple_op_node->num_literal_words = 0;\
-                \
-                /* check result type */\
-                CHECK_IS_INTEGER_TYPE(simple_op_node, res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node, res, CLEANUP)\
-            }\
-            break;\
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:\
-            {\
-                GET_OPERAND((simple_op_eval), simple_op_node, 4, p_node->id_operands[0], res, CLEANUP)\
-                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[0], res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[0], res, CLEANUP)\
-                GET_OPERAND((simple_op_eval), p_node, 5, p_node->id_operands[1], res, CLEANUP)\
-                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[1], res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[1], res, CLEANUP)\
-                                                                                           \
-                /* op1 and result must have same width */\
-                CHECK_WIDTH_MATCH(simple_op_node, p_node->id_operands[0], res, CLEANUP)\
-                uint32_t vec_size = 1;                                                                              \
-                CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)\
-            }\
-            break;\
-    }\
+#define DO_SHIFT_OPERATION(mode, p_simple_op_parser,simple_op_eval, simple_op_node, operation, res, CLEANUP)                                            \
+{                                                                                                                                                       \
+    switch (mode) {                                                                                                                                     \
+        default:                                                                                                                                        \
+            res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;                                                                                              \
+            goto CLEANUP;                                                                                                                               \
+        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:                                                                                                      \
+            {                                                                                                                                           \
+                uint32_t vec_size = 1;                                                                                                                  \
+                if (simple_op_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                            \
+                    vec_size = simple_op_node->value.type->traits.numeric.vector.component_count;                                                       \
+                }                                                                                                                                       \
+                SpvReflectPrvEvaluationNode* operand1 = simple_op_node->id_operands[0];                                                                 \
+                SpvReflectPrvEvaluationNode* operand2 = simple_op_node->id_operands[1];                                                                 \
+                EVALUATE_OPERAND(operand1, res, CLEANUP)                                                                                                \
+                EVALUATE_OPERAND(operand2, res, CLEANUP)                                                                                                \
+                uint32_t res_width = ((simple_op_node))->value.type->traits.numeric.scalar.width;                                                       \
+                for (uint32_t i = 0; i < vec_size; ++i) {                                                                                               \
+                    if (operand1->value.data.numeric.vector.value[i].undefined_value                                                                    \
+                        || operand2->value.data.numeric.vector.value[i].undefined_value) {                                                              \
+                        (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                                       \
+                    }                                                                                                                                   \
+                    /* load the shift number, set undefined flag if larger than result width*/                                                          \
+                    uint8_t shift_num;                                                                                                                  \
+                    switch (operand2->value.type->traits.numeric.scalar.width) {                                                                        \
+                        default:                                                                                                                        \
+                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                          \
+                            goto CLEANUP;                                                                                                               \
+                        case 32:                                                                                                                        \
+                            {                                                                                                                           \
+                                uint32_t shift = operand2->value.data.numeric.vector.value[i].value.uint32_bool_value;                                  \
+                                if (operand1->value.data.numeric.vector.value[i].undefined_value || shift >= res_width) {                               \
+                                    (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                           \
+                                }                                                                                                                       \
+                                shift_num = (uint8_t)shift;                                                                                             \
+                            }                                                                                                                           \
+                            break;                                                                                                                      \
+                        case 64:                                                                                                                        \
+                            {                                                                                                                           \
+                                uint64_t shift = operand2->value.data.numeric.vector.value[i].value.uint64_value;                                       \
+                                if (operand1->value.data.numeric.vector.value[i].undefined_value || shift >= res_width) {                               \
+                                    (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                           \
+                                }                                                                                                                       \
+                                shift_num = (uint8_t)shift;                                                                                             \
+                            }                                                                                                                           \
+                            break;                                                                                                                      \
+                    }                                                                                                                                   \
+                    switch (res_width) {                                                                                                                \
+                        default:                                                                                                                        \
+                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                          \
+                            goto CLEANUP;                                                                                                               \
+                        case 32:                                                                                                                        \
+                            {                                                                                                                           \
+                                uint32_t data = operand1->value.data.numeric.vector.value[i].value.uint32_bool_value;                                   \
+                                SHIFT_OP_32_BIT_HOOK_PRE                                                                                                \
+                                data operation##= shift_num;                                                                                            \
+                                SHIFT_OP_32_BIT_HOOK_POST                                                                                               \
+                                (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value = data;                                    \
+                            }                                                                                                                           \
+                            break;                                                                                                                      \
+                        case 64:                                                                                                                        \
+                            {                                                                                                                           \
+                                uint64_t data = operand1->value.data.numeric.vector.value[i].value.uint64_value;                                        \
+                                SHIFT_OP_64_BIT_HOOK_PRE                                                                                                \
+                                data operation##= shift_num;                                                                                            \
+                                SHIFT_OP_64_BIT_HOOK_POST                                                                                               \
+                                (simple_op_node)->value.data.numeric.vector.value[i].value.uint64_value = data;                                         \
+                            }                                                                                                                           \
+                            break;                                                                                                                      \
+                    }                                                                                                                                   \
+                }                                                                                                                                       \
+            }                                                                                                                                           \
+            break;                                                                                                                                      \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:                                                                                                   \
+            {                                                                                                                                           \
+                SpvReflectPrvNode* p_parser_node = simple_op_node->instruction_private.uninitialized;                                                   \
+                CHECK_INSTRUCTION_SIZE(p_parser_node, 6)                                                                                                \
+                simple_op_node->num_id_operands = 2;                                                                                                    \
+                simple_op_node->num_literal_words = 0;                                                                                                  \
+                                                                                                                                                        \
+                /* check result type */                                                                                                                 \
+                CHECK_IS_INTEGER_TYPE(simple_op_node, res, CLEANUP)                                                                                     \
+                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node, res, CLEANUP)                                                                               \
+            }                                                                                                                                           \
+            break;                                                                                                                                      \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:                                                                                                   \
+            {                                                                                                                                           \
+                GET_OPERAND((p_simple_op_parser),(simple_op_eval), simple_op_node, 4, (simple_op_node)->id_operands[0], res, CLEANUP)                   \
+                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[0], res, CLEANUP)                                                                     \
+                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[0], res, CLEANUP)                                                               \
+                GET_OPERAND((p_simple_op_parser),(simple_op_eval), (simple_op_node), 5, (simple_op_node)->id_operands[1], res, CLEANUP)                 \
+                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                                     \
+                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                               \
+                                                                                                                                                        \
+                /* op1 and result must have same width */                                                                                               \
+                CHECK_WIDTH_MATCH(simple_op_node, (simple_op_node)->id_operands[0], res, CLEANUP)                                                       \
+                uint32_t vec_size = 1;                                                                                                                  \
+                CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)  \
+            }                                                                                                                                           \
+            break;                                                                                                                                      \
+    }                                                                                                                                                   \
 }
 
-#define DO_BINARY_BOOLEAN_LOGICAL_OPERATION(simple_op_eval, simple_op_node, operation, res, CLEANUP)  \
-{                                                                                                                 \
-    switch (evaluation_mode) {                                                                                      \
-        default:                                                                                                    \
-            res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;\
-            goto CLEANUP;\
-        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:\
-            {\
-                uint32_t vec_size = 1;\
-                if (simple_op_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {\
-                    vec_size = simple_op_node->value.type->traits.numeric.vector.component_count;\
-                }\
-                SpvReflectPrvEvaluationNode* operand1 = simple_op_node->id_operands[0];\
-                SpvReflectPrvEvaluationNode* operand2 = simple_op_node->id_operands[1];\
-                EVALUATE_OPERAND(operand1, res, CLEANUP)\
-                EVALUATE_OPERAND(operand2, res, CLEANUP)\
-                for (uint32_t i = 0; i < vec_size; ++i) {                                                                     \
-                    if (operand1->value.data.numeric.vector.value[i].undefined_value                                                \
-                            operation operand2->value.data.numeric.vector.value[i].undefined_value) {                               \
-                                (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                 \
-                    }                                                                                                         \
-                    /* write to correct offset */                                                                             \
-                    (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value                                          \
-                        = operand1->value.data.numeric.vector.value[i].value.uint32_bool_value                                      \
-                            operation operand2->value.data.numeric.vector.value[i].value.uint32_bool_value;                         \
-                }                                                                                                             \
-            }\
-            break; \
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:\
-            {\
-                CHECK_INSTRUCTION_SIZE(simple_op_node, 6)                                                                 \
-                simple_op_node->num_id_operands = 2;\
-                simple_op_node->num_literal_words = 0;\
-                \
-                /* check result type */\
-                CHECK_IS_BOOLEAN_TYPE((simple_op_node), res, CLEANUP)                                                               \
-                CHECK_VECTOR_OR_SCALAR_TYPE((simple_op_node), res, CLEANUP)                                                         \
-                if ((simple_op_node)->value.type->traits.numeric.scalar.signedness) {                                                 \
-                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                    \
-                    goto CLEANUP;                                                                                         \
-                }                                                                                                         \
-            }\
-            break;\
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:\
-            {\
-                GET_OPERAND((simple_op_eval), simple_op_node, 4, p_node->id_operands[0], res, CLEANUP)\
-                CHECK_IS_BOOLEAN_TYPE(simple_op_node->id_operands[0], res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[0], res, CLEANUP)\
-                GET_OPERAND((simple_op_eval), p_node, 5, p_node->id_operands[1], res, CLEANUP)\
-                CHECK_IS_BOOLEAN_TYPE(simple_op_node->id_operands[1], res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[1], res, CLEANUP)\
-                                                                                           \
-                uint32_t vec_size = 1;                                                                              \
-                CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)\
-            }\
-            break;\
-    }\
+#define DO_BINARY_BOOLEAN_LOGICAL_OPERATION(mode, p_simple_op_parser,simple_op_eval, simple_op_node, operation, res, CLEANUP)                           \
+{                                                                                                                                                       \
+    switch (mode) {                                                                                                                                     \
+        default:                                                                                                                                        \
+            res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;                                                                                              \
+            goto CLEANUP;                                                                                                                               \
+        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:                                                                                                      \
+            {                                                                                                                                           \
+                uint32_t vec_size = 1;                                                                                                                  \
+                if (simple_op_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                            \
+                    vec_size = simple_op_node->value.type->traits.numeric.vector.component_count;                                                       \
+                }                                                                                                                                       \
+                SpvReflectPrvEvaluationNode* operand1 = simple_op_node->id_operands[0];                                                                 \
+                SpvReflectPrvEvaluationNode* operand2 = simple_op_node->id_operands[1];                                                                 \
+                EVALUATE_OPERAND(operand1, res, CLEANUP)                                                                                                \
+                EVALUATE_OPERAND(operand2, res, CLEANUP)                                                                                                \
+                for (uint32_t i = 0; i < vec_size; ++i) {                                                                                               \
+                    if (operand1->value.data.numeric.vector.value[i].undefined_value                                                                    \
+                            operation operand2->value.data.numeric.vector.value[i].undefined_value) {                                                   \
+                                (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                               \
+                    }                                                                                                                                   \
+                    /* write to correct offset */                                                                                                       \
+                    (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value                                                        \
+                        = operand1->value.data.numeric.vector.value[i].value.uint32_bool_value                                                          \
+                            operation operand2->value.data.numeric.vector.value[i].value.uint32_bool_value;                                             \
+                }                                                                                                                                       \
+            }                                                                                                                                           \
+            break;                                                                                                                                      \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:                                                                                                   \
+            {                                                                                                                                           \
+                SpvReflectPrvNode* p_parser_node = simple_op_node->instruction_private.uninitialized;                                                   \
+                CHECK_INSTRUCTION_SIZE(p_parser_node, 6)                                                                                                \
+                simple_op_node->num_id_operands = 2;                                                                                                    \
+                simple_op_node->num_literal_words = 0;                                                                                                  \
+                                                                                                                                                        \
+                /* check result type */                                                                                                                 \
+                CHECK_IS_BOOLEAN_TYPE((simple_op_node), res, CLEANUP)                                                                                   \
+                CHECK_VECTOR_OR_SCALAR_TYPE((simple_op_node), res, CLEANUP)                                                                             \
+                if ((simple_op_node)->value.type->traits.numeric.scalar.signedness) {                                                                   \
+                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                  \
+                    goto CLEANUP;                                                                                                                       \
+                }                                                                                                                                       \
+            }                                                                                                                                           \
+            break;                                                                                                                                      \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:                                                                                                   \
+            {                                                                                                                                           \
+                GET_OPERAND((p_simple_op_parser),(simple_op_eval), simple_op_node, 4, (simple_op_node)->id_operands[0], res, CLEANUP)                   \
+                CHECK_IS_BOOLEAN_TYPE(simple_op_node->id_operands[0], res, CLEANUP)                                                                     \
+                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[0], res, CLEANUP)                                                               \
+                GET_OPERAND((p_simple_op_parser),(simple_op_eval), (simple_op_node), 5, (simple_op_node)->id_operands[1], res, CLEANUP)                 \
+                CHECK_IS_BOOLEAN_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                                     \
+                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                               \
+                                                                                                                                                        \
+                uint32_t vec_size = 1;                                                                                                                  \
+                CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)  \
+            }                                                                                                                                           \
+            break;                                                                                                                                      \
+    }                                                                                                                                                   \
 }
 
-#define DO_BINARY_INTEGER_LOGICAL_OPERATION(simple_op_eval, simple_op_node, operation, _32bit_member, _64bit_member, res, CLEANUP)  \
-{                                                                                                                 \
-    switch (evaluation_mode) {                                                                                      \
-        default:                                                                                                    \
-            res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;\
-            goto CLEANUP;\
-        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:\
-            {\
-                uint32_t vec_size = 1;\
-                if (simple_op_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {\
-                    vec_size = simple_op_node->value.type->traits.numeric.vector.component_count;\
-                }\
-                SpvReflectPrvEvaluationNode* operand1 = simple_op_node->id_operands[0];\
-                SpvReflectPrvEvaluationNode* operand2 = simple_op_node->id_operands[1];\
-                EVALUATE_OPERAND(operand1, res, CLEANUP)\
-                EVALUATE_OPERAND(operand2, res, CLEANUP)\
-                for (uint32_t i = 0; i < vec_size; ++i) {                                                                                                   \
-                    if (operand1->value.data.numeric.vector.value[i].undefined_value                                                                              \
-                        || operand2->value.data.numeric.vector.value[i].undefined_value) {                                                                        \
-                        (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                                                       \
-                    }                                                                                                                                       \
-                    switch (operand1->value.type->traits.numeric.scalar.width) {                                                                                  \
-                        default:                                                                                                                            \
-                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                              \
-                            goto CLEANUP;                                                                                                                   \
-                        case 32:                                                                                                                            \
-                            (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value                                                                \
-                                    = operand1->value.data.numeric.vector.value[i].value.##_32bit_member                                                          \
-                                        operation operand2->value.data.numeric.vector.value[i].value.##_32bit_member;                                             \
-                            break;                                                                                                                          \
-                        case 64:                                                                                                                            \
-                            (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value                                                                \
-                                    = operand1->value.data.numeric.vector.value[i].value.##_64bit_member                                                          \
-                                        operation operand2->value.data.numeric.vector.value[i].value.##_64bit_member;                                             \
-                            break;                                                                                                                          \
-                    }                                                                                                                                       \
-                }                                                                                                                                           \
-            }\
-            break; \
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:\
-            {\
-                CHECK_INSTRUCTION_SIZE(simple_op_node, 6)                                                                 \
-                simple_op_node->num_id_operands = 2;\
-                simple_op_node->num_literal_words = 0;\
-                \
-                /* check result type */\
-                CHECK_IS_BOOLEAN_TYPE((simple_op_node), res, CLEANUP)                                                               \
-                CHECK_VECTOR_OR_SCALAR_TYPE((simple_op_node), res, CLEANUP)                                                         \
-                if ((simple_op_node)->value.type->traits.numeric.scalar.signedness) {                                                 \
-                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                    \
-                    goto CLEANUP;                                                                                         \
-                }                                                                                                         \
-            }\
-            break;\
-        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:\
-            {\
-                GET_OPERAND((simple_op_eval), simple_op_node, 4, p_node->id_operands[0], res, CLEANUP)\
-                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[0], res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[0], res, CLEANUP)\
-                GET_OPERAND((simple_op_eval), p_node, 5, p_node->id_operands[1], res, CLEANUP)\
-                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[1], res, CLEANUP)\
-                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[1], res, CLEANUP)\
-                                                                                           \
-                uint32_t vec_size = 1;                                                                              \
-                CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)\
-            }\
-            break;\
-    }\
+#define DO_BINARY_INTEGER_LOGICAL_OPERATION(mode, p_simple_op_parser,simple_op_eval, simple_op_node, operation, _32bit_member, _64bit_member, res, CLEANUP)     \
+{                                                                                                                                                               \
+    switch (mode) {                                                                                                                                             \
+        default:                                                                                                                                                \
+            res = SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;                                                                                                      \
+            goto CLEANUP;                                                                                                                                       \
+        case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:                                                                                                              \
+            {                                                                                                                                                   \
+                uint32_t vec_size = 1;                                                                                                                          \
+                if (simple_op_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                                    \
+                    vec_size = simple_op_node->value.type->traits.numeric.vector.component_count;                                                               \
+                }                                                                                                                                               \
+                SpvReflectPrvEvaluationNode* operand1 = simple_op_node->id_operands[0];                                                                         \
+                SpvReflectPrvEvaluationNode* operand2 = simple_op_node->id_operands[1];                                                                         \
+                EVALUATE_OPERAND(operand1, res, CLEANUP)                                                                                                        \
+                EVALUATE_OPERAND(operand2, res, CLEANUP)                                                                                                        \
+                for (uint32_t i = 0; i < vec_size; ++i) {                                                                                                       \
+                    if (operand1->value.data.numeric.vector.value[i].undefined_value                                                                            \
+                        || operand2->value.data.numeric.vector.value[i].undefined_value) {                                                                      \
+                        (simple_op_node)->value.data.numeric.vector.value[i].undefined_value = 1;                                                               \
+                    }                                                                                                                                           \
+                    switch (operand1->value.type->traits.numeric.scalar.width) {                                                                                \
+                        default:                                                                                                                                \
+                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                  \
+                            goto CLEANUP;                                                                                                                       \
+                        case 32:                                                                                                                                \
+                            (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value                                                        \
+                                    = operand1->value.data.numeric.vector.value[i].value.##_32bit_member                                                        \
+                                        operation operand2->value.data.numeric.vector.value[i].value.##_32bit_member;                                           \
+                            break;                                                                                                                              \
+                        case 64:                                                                                                                                \
+                            (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value                                                        \
+                                    = operand1->value.data.numeric.vector.value[i].value.##_64bit_member                                                        \
+                                        operation operand2->value.data.numeric.vector.value[i].value.##_64bit_member;                                           \
+                            break;                                                                                                                              \
+                    }                                                                                                                                           \
+                }                                                                                                                                               \
+            }                                                                                                                                                   \
+            break;                                                                                                                                              \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:                                                                                                           \
+            {                                                                                                                                                   \
+                SpvReflectPrvNode* p_parser_node = simple_op_node->instruction_private.uninitialized;                                                           \
+                CHECK_INSTRUCTION_SIZE(p_parser_node, 6)                                                                                                        \
+                simple_op_node->num_id_operands = 2;                                                                                                            \
+                simple_op_node->num_literal_words = 0;                                                                                                          \
+                                                                                                                                                                \
+                /* check result type */                                                                                                                         \
+                CHECK_IS_BOOLEAN_TYPE((simple_op_node), res, CLEANUP)                                                                                           \
+                CHECK_VECTOR_OR_SCALAR_TYPE((simple_op_node), res, CLEANUP)                                                                                     \
+                if ((simple_op_node)->value.type->traits.numeric.scalar.signedness) {                                                                           \
+                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                          \
+                    goto CLEANUP;                                                                                                                               \
+                }                                                                                                                                               \
+            }                                                                                                                                                   \
+            break;                                                                                                                                              \
+        case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:                                                                                                           \
+            {                                                                                                                                                   \
+                GET_OPERAND((p_simple_op_parser),(simple_op_eval), simple_op_node, 4, (simple_op_node)->id_operands[0], res, CLEANUP)                           \
+                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[0], res, CLEANUP)                                                                             \
+                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[0], res, CLEANUP)                                                                       \
+                GET_OPERAND((p_simple_op_parser),(simple_op_eval), (simple_op_node), 5, (simple_op_node)->id_operands[1], res, CLEANUP)                         \
+                CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                                             \
+                CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                                       \
+                                                                                                                                                                \
+                uint32_t vec_size = 1;                                                                                                                          \
+                CHECK_IF_VECTOR_SIZE_MATCH_2OP(vec_size, simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)          \
+            }                                                                                                                                                   \
+            break;                                                                                                                                              \
+    }                                                                                                                                                           \
 }
 
-#define DO_BINARY_UINTEGER_LOGICAL_OPERATION(simple_op_eval, simple_op_node, operation, res, CLEANUP) \
-    DO_BINARY_INTEGER_LOGICAL_OPERATION(simple_op_eval, simple_op_node, operation, uint32_bool_value, uint64_value, res, CLEANUP)
-#define DO_BINARY_SINTEGER_LOGICAL_OPERATION(simple_op_eval, simple_op_node, operation, res, CLEANUP) \
-    DO_BINARY_INTEGER_LOGICAL_OPERATION(simple_op_eval, simple_op_node, operation, sint32_value, sint64_value, res, CLEANUP)
-
-
-#ifdef _MSC_VER
-#define SPIRV_REFLECT_FORCEINLINE __forceinline
-#else
-#define SPIRV_REFLECT_FORCEINLINE __attribute__((always_inline)) inline
-#endif
-
-
-static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node, SpvReflectEvaluationState evaluation_mode);
-static SpvReflectResult EvaluateResult_Do(SpvReflectPrvEvaluationNode* p_node) {
-    return EvaluateResultImpl(NULL, p_node, SPIRV_REFLECT_EVALUATION_MODE_NORMAL);
-}
-static SpvReflectResult EvaluateResult_1PASS(SpvReflectEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node){
-    return EvaluateResultImpl(p_eval, p_node, SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS);
-}
-static SpvReflectResult EvaluateResult_2PASS(SpvReflectEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node) {
-    return EvaluateResultImpl(p_eval, p_node, SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS);
-}
+#define DO_BINARY_UINTEGER_LOGICAL_OPERATION(mode, p_parser,simple_op_eval, simple_op_node, operation, res, CLEANUP) \
+    DO_BINARY_INTEGER_LOGICAL_OPERATION(mode, p_parser,simple_op_eval, simple_op_node, operation, uint32_bool_value, uint64_value, res, CLEANUP)
+#define DO_BINARY_SINTEGER_LOGICAL_OPERATION(mode, p_parser,simple_op_eval, simple_op_node, operation, res, CLEANUP) \
+    DO_BINARY_INTEGER_LOGICAL_OPERATION(mode, p_parser,simple_op_eval, simple_op_node, operation, sint32_value, sint64_value, res, CLEANUP)
 
 // change implementation to use SpvReflectPrvEvaluationNode* and SpvReflectEvaluation* p_eval as the only two parameters
 // node is the node to evaluate, p_eval != NULL signals AST building. 2 passes of ast building will be 
 // labeled in p_eval's flags
 // This function should be inline, and outside should call the _1PASS, _2PASS, _EVAL versions, so compiler can
 // remove the inner branches...
-static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node, SpvReflectEvaluationState evaluation_mode)
+static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflectEvaluation* p_eval, SpvReflectPrvEvaluationNode* p_node, SpvReflectEvaluationMode evaluation_mode, SpvReflectPrvParser* p_parser)
 {
     if (!p_node) return SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
 
@@ -6343,7 +6314,8 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                 res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                             }
                             // check instruction size
-                            if (p_node->word_count != 3 + vec_size) {
+                            SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                            if (p_parser_node->word_count != 3 + vec_size) {
                                 res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
                                 goto CLEANUP;
                             }
@@ -6353,7 +6325,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                     case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:
                         {
                             for (uint32_t i = 0; i < p_node->num_id_operands; ++i) {
-                                GET_OPERAND(p_eval, p_node, 3 + i, p_node->id_operands[i], res, CLEANUP)
+                                GET_OPERAND(p_parser, p_eval, p_node, 3 + i, p_node->id_operands[i], res, CLEANUP)
                                 // check type compatibility
                                 if (p_node->id_operands[i]->value.type->id != p_node->value.type->component_type_id) {
                                     res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
@@ -6377,7 +6349,8 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                     goto CLEANUP;
                 }
                 if (evaluation_mode == SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS) {
-                    EVAL_CHECKED_READU32(p_eval, p_node->word_offset + 3, p_node->specOp, res, CLEANUP);
+                    SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                    EVAL_CHECKED_READU32(p_parser, p_parser_node->word_offset + 3, p_node->specOp, res, CLEANUP);
                 }
                 
                 switch (p_node->specOp) {
@@ -6407,7 +6380,8 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:
                                     {
-                                        CHECK_INSTRUCTION_SIZE(p_node, 4)
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                                        CHECK_INSTRUCTION_SIZE(p_parser_node, 4)
                                         p_node->num_id_operands = 0;
                                         p_node->num_literal_words = 0;
                                         if (result->type->type_flags & SPV_REFLECT_TYPE_FLAG_VOID) {
@@ -6484,7 +6458,8 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:
                                     {
-                                        CHECK_INSTRUCTION_SIZE(p_node, 5)
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                                        CHECK_INSTRUCTION_SIZE(p_parser_node, 5)
                                         p_node->num_id_operands = 1;
                                         p_node->num_literal_words = 0;
 
@@ -6495,7 +6470,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:
                                     {
-                                        GET_OPERAND(p_eval,p_node, 4, p_node->id_operands[0], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval,p_node, 4, p_node->id_operands[0], res, CLEANUP)
                                         CHECK_IS_INTEGER_TYPE(p_node->id_operands[0], res, CLEANUP)
                                         CHECK_VECTOR_OR_SCALAR_TYPE(p_node->id_operands[0], res, CLEANUP)
 
@@ -6574,7 +6549,8 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:
                                     {
-                                        CHECK_INSTRUCTION_SIZE(p_node, 5)
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                                        CHECK_INSTRUCTION_SIZE(p_parser_node, 5)
                                         p_node->num_id_operands = 1;
                                         p_node->num_literal_words = 0;
 
@@ -6585,7 +6561,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:
                                     {
-                                        GET_OPERAND(p_eval,p_node, 4, p_node->id_operands[0], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval,p_node, 4, p_node->id_operands[0], res, CLEANUP)
                                         CHECK_IS_INTEGER_TYPE(p_node->id_operands[0], res, CLEANUP)
                                         CHECK_VECTOR_OR_SCALAR_TYPE(p_node->id_operands[0], res, CLEANUP)
 
@@ -6657,7 +6633,8 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:
                                     {
-                                        CHECK_INSTRUCTION_SIZE(p_node, 5)
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                                        CHECK_INSTRUCTION_SIZE(p_parser_node, 5)
                                         p_node->num_id_operands = 1;
                                         p_node->num_literal_words = 0;
 
@@ -6668,7 +6645,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:
                                     {
-                                        GET_OPERAND(p_eval,p_node, 4, p_node->id_operands[0], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval,p_node, 4, p_node->id_operands[0], res, CLEANUP)
                                         CHECK_IS_FLOAT_TYPE(p_node->id_operands[0], res, CLEANUP)
                                         CHECK_VECTOR_OR_SCALAR_TYPE(p_node->id_operands[0], res, CLEANUP)
                                         
@@ -6685,7 +6662,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                         #undef SIMPLE_UNARY_OP_64_BIT_HOOK
                         #define SIMPLE_UNARY_OP_32_BIT_HOOK {data = -data;}
                         #define SIMPLE_UNARY_OP_64_BIT_HOOK {data = -data;}
-                        DO_SIMPLE_UNARY_INTEGER_OPERATION(p_eval, p_node, res, CLEANUP)
+                        DO_SIMPLE_UNARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, res, CLEANUP)
                         #undef SIMPLE_UNARY_OP_32_BIT_HOOK
                         #undef SIMPLE_UNARY_OP_64_BIT_HOOK
                         #define SIMPLE_UNARY_OP_32_BIT_HOOK
@@ -6697,7 +6674,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                         #undef SIMPLE_UNARY_OP_64_BIT_HOOK
                         #define SIMPLE_UNARY_OP_32_BIT_HOOK data ^= 0xffffffff;
                         #define SIMPLE_UNARY_OP_64_BIT_HOOK data ^= 0xffffffffffffffff;
-                        DO_SIMPLE_UNARY_INTEGER_OPERATION(p_eval, p_node, res, CLEANUP)
+                        DO_SIMPLE_UNARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, res, CLEANUP)
                         #undef SIMPLE_UNARY_OP_32_BIT_HOOK
                         #undef SIMPLE_UNARY_OP_64_BIT_HOOK
                         #define SIMPLE_UNARY_OP_32_BIT_HOOK
@@ -6706,25 +6683,25 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                     case SpvOpIAdd:
                         // integer add.
                         // subtraction result is the same for 2-compliment
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(p_eval, p_node, +, res, CLEANUP)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, +, res, CLEANUP)
                         break;
                     case SpvOpISub:
                         // integer subtract.
                         // subtraction result is the same for 2-compliment
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(p_eval, p_node, -, res, CLEANUP)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, -, res, CLEANUP)
                         break;
                     case SpvOpIMul:
                         // integer multiply...
                         // imul instruction on x86, signed and unsigned have no difference in result
                         // except for how they overflow.
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(p_eval, p_node, *, res, CLEANUP)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, *, res, CLEANUP)
                         break;
                     case SpvOpUDiv:
                         // unsigned divide
                         // All operand must be same unsigned integer scalar or vector type.
                         // x86 div instruction
                         // emits undefined value if divide by zero
-                        DO_UNSIGNED_INTEGER_DIVISION(p_eval, p_node, /, res, CLEANUP)
+                        DO_UNSIGNED_INTEGER_DIVISION(evaluation_mode, p_parser, p_eval, p_node, /, res, CLEANUP)
                         break;
                     case SpvOpSDiv:
                         // signed divide
@@ -6735,14 +6712,14 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
                         #define SIMPLE_BINARY_OP_32_BIT_HOOK                                \
                         if (data2 == 0 || (data2 == -1 && data1 == (int32_t)0x80000000)) {  \
-                            p_node->value.data.numeric.vector.value[i].undefined_value = 1;       \
+                            p_node->value.data.numeric.vector.value[i].undefined_value = 1; \
                         }
                         #undef SIMPLE_BINARY_OP_64_BIT_HOOK
                         #define SIMPLE_BINARY_OP_64_BIT_HOOK                                        \
                         if (data2 == 0 || (data2 == -1 && data1 == (int64_t)0x8000000000000000)) {  \
-                            p_node->value.data.numeric.vector.value[i].undefined_value = 1;               \
+                            p_node->value.data.numeric.vector.value[i].undefined_value = 1;         \
                         }
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(p_eval, p_node, /, res, CLEANUP)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, /, res, CLEANUP)
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
                         #undef SIMPLE_BINARY_OP_64_BIT_HOOK
                         #define SIMPLE_BINARY_OP_32_BIT_HOOK
@@ -6751,21 +6728,21 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                     case SpvOpUMod:
                         // unsigned modulo
                         // all types must be same unsigned integer scalar or vector type.
-                        DO_UNSIGNED_INTEGER_DIVISION( p_eval, p_node, %, res, CLEANUP)
+                        DO_UNSIGNED_INTEGER_DIVISION(evaluation_mode, p_parser, p_eval, p_node, %, res, CLEANUP)
                         break;
                     case SpvOpSRem:
                         // just the result of % operator.
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
                         #define SIMPLE_BINARY_OP_32_BIT_HOOK                                \
                         if (data2 == 0 || (data2 == -1 && data1 == (int32_t)0x80000000)) {  \
-                            p_node->value.data.numeric.vector.value[i].undefined_value = 1;                          \
+                            p_node->value.data.numeric.vector.value[i].undefined_value = 1; \
                         }
                         #undef SIMPLE_BINARY_OP_64_BIT_HOOK
                         #define SIMPLE_BINARY_OP_64_BIT_HOOK                                        \
                         if (data2 == 0 || (data2 == -1 && data1 == (int64_t)0x8000000000000000)) {  \
-                            p_node->value.data.numeric.vector.value[i].undefined_value = 1;                                  \
+                            p_node->value.data.numeric.vector.value[i].undefined_value = 1;         \
                         }
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(p_eval, p_node, %, res, CLEANUP)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, %, res, CLEANUP)
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
                         #undef SIMPLE_BINARY_OP_64_BIT_HOOK
                         #define SIMPLE_BINARY_OP_32_BIT_HOOK
@@ -6776,7 +6753,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
                         #define SIMPLE_BINARY_OP_32_BIT_HOOK                                \
                         if (data2 == 0 || (data2 == -1 && data1 == (int32_t)0x80000000)) {  \
-                            p_node->value.data.numeric.vector.value[i].undefined_value = 1;                          \
+                            p_node->value.data.numeric.vector.value[i].undefined_value = 1; \
                         }                                                                   \
                         else if (data != 0) {                                               \
                             int sign1 = 0, sign2 = 0;                                       \
@@ -6790,7 +6767,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                         #undef SIMPLE_BINARY_OP_64_BIT_HOOK
                         #define SIMPLE_BINARY_OP_64_BIT_HOOK                                        \
                         if (data2 == 0 || (data2 == -1 && data1 == (int64_t)0x8000000000000000)) {  \
-                            p_node->value.data.numeric.vector.value[i].undefined_value = 1;                                  \
+                            p_node->value.data.numeric.vector.value[i].undefined_value = 1;         \
                         }                                                                           \
                         else if (data != 0) {                                                       \
                             int sign1 = 0, sign2 = 0;                                               \
@@ -6801,7 +6778,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                 data += data2;                                                      \
                             }                                                                       \
                         }
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(p_eval, p_node, %, res, CLEANUP)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, %, res, CLEANUP)
                         #undef SIMPLE_BINARY_OP_32_BIT_HOOK
                         #undef SIMPLE_BINARY_OP_64_BIT_HOOK
                         #define SIMPLE_BINARY_OP_32_BIT_HOOK
@@ -6809,7 +6786,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                         break;
                     case SpvOpShiftRightLogical:
                         // zero fill right shift. Just >> in c
-                        DO_SHIFT_OPERATION(p_eval, p_node, >>, res, CLEANUP)
+                        DO_SHIFT_OPERATION(evaluation_mode, p_parser, p_eval, p_node, >>, res, CLEANUP)
                         break;
                     case SpvOpShiftRightArithmetic:
                         // fill with sign of original number.
@@ -6829,7 +6806,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                             uint64_t fill = 0xffffffffffffffff << (64 - shift_num); \
                             data |= fill;                                           \
                         }
-                        DO_SHIFT_OPERATION(p_eval, p_node, >> , res, CLEANUP)
+                        DO_SHIFT_OPERATION(evaluation_mode, p_parser, p_eval, p_node, >> , res, CLEANUP)
                         #undef SHIFT_OP_32_BIT_HOOK_PRE
                         #undef SHIFT_OP_64_BIT_HOOK_PRE
                         #undef SHIFT_OP_32_BIT_HOOK_POST
@@ -6841,16 +6818,16 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                         break;
                     case SpvOpShiftLeftLogical:
                         // zero fill left shift. Just << in c
-                        DO_SHIFT_OPERATION(p_eval, p_node, << , res, CLEANUP)
+                        DO_SHIFT_OPERATION(evaluation_mode, p_parser, p_eval, p_node, << , res, CLEANUP)
                         break;
                     case SpvOpBitwiseOr:
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(p_eval, p_node, |, res, CLEANUP)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, |, res, CLEANUP)
                         break;
                     case SpvOpBitwiseXor:
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(p_eval, p_node, ^ , res, CLEANUP)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, ^ , res, CLEANUP)
                         break;
                     case SpvOpBitwiseAnd:
-                        DO_SIMPLE_BINARY_INTEGER_OPERATION(p_eval, p_node, & , res, CLEANUP)
+                        DO_SIMPLE_BINARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, & , res, CLEANUP)
                         break;
 
                     case SpvOpVectorShuffle:
@@ -6865,21 +6842,17 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     {
                                         SpvReflectPrvEvaluationNode* operand1 = p_node->id_operands[0];
                                         SpvReflectPrvEvaluationNode* operand2 = p_node->id_operands[1];
-                                        EVALUATE_OPERAND(operand1, res, CLEANUP)
-                                        EVALUATE_OPERAND(operand2, res, CLEANUP)
                                         for (uint32_t i = 0; i < p_node->num_literal_words; ++i) {
-                                            uint32_t mapped_component = p_node->literal_words[i];
-                                            if (mapped_component == 0xFFFFFFFF) {
+                                            uint8_t mapped_component = p_node->instruction_private.vector_shuffle.idx[i];
+                                            if (mapped_component == 0xff) {
                                                 result->data.numeric.vector.value[i].undefined_value = 1;
                                             }
-                                            else if (mapped_component >= operand1->value.type->traits.numeric.vector.component_count + operand2->value.type->traits.numeric.vector.component_count) {
-                                                res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
-                                                goto CLEANUP;
-                                            }
                                             else if (mapped_component < operand1->value.type->traits.numeric.vector.component_count) {
+                                                EVALUATE_OPERAND(operand1, res, CLEANUP)
                                                 result->data.numeric.vector.value[i] = operand1->value.data.numeric.vector.value[mapped_component];
                                             }
                                             else {
+                                                EVALUATE_OPERAND(operand2, res, CLEANUP)
                                                 result->data.numeric.vector.value[i] = operand2->value.data.numeric.vector.value[mapped_component - operand1->value.type->traits.numeric.vector.component_count];
                                             }
                                         }
@@ -6894,19 +6867,22 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                             goto CLEANUP;
                                         }
 
-                                        CHECK_INSTRUCTION_SIZE(p_node, 6 + p_node->value.type->traits.numeric.vector.component_count)
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                                        CHECK_INSTRUCTION_SIZE(p_parser_node, 6 + p_node->value.type->traits.numeric.vector.component_count)
+
+                                        if (p_node->value.type->traits.numeric.vector.component_count > SPV_REFLECT_MAX_VECTOR_DIMS) {
+                                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            goto CLEANUP;
+                                        }
 
                                         p_node->num_id_operands = 2;
-                                        p_node->num_literal_words = p_node->value.type->traits.numeric.vector.component_count;
+                                        p_node->num_literal_words = 0;
 
-                                        // check result type
-                                        CHECK_IS_FLOAT_TYPE(p_node, res, CLEANUP)
-                                        CHECK_VECTOR_OR_SCALAR_TYPE(p_node, res, CLEANUP)
                                     }
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:
                                     {
-                                        GET_OPERAND(p_eval,p_node, 4, p_node->id_operands[0], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval,p_node, 4, p_node->id_operands[0], res, CLEANUP)
                                         CHECK_VECTOR_OR_SCALAR_TYPE(p_node->id_operands[0], res, CLEANUP)
                                         if (!(p_node->id_operands[0]->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
@@ -6916,8 +6892,12 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                             goto CLEANUP;
                                         }
+                                        if (p_node->id_operands[0]->value.type->traits.numeric.vector.component_count > SPV_REFLECT_MAX_VECTOR_DIMS) {
+                                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            goto CLEANUP;
+                                        }
 
-                                        GET_OPERAND(p_eval,p_node, 5, p_node->id_operands[1], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval,p_node, 5, p_node->id_operands[1], res, CLEANUP)
                                         CHECK_VECTOR_OR_SCALAR_TYPE(p_node->id_operands[1], res, CLEANUP)
                                         if (!(p_node->id_operands[1]->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
@@ -6927,9 +6907,27 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                             goto CLEANUP;
                                         }
+                                        if (p_node->id_operands[1]->value.type->traits.numeric.vector.component_count > SPV_REFLECT_MAX_VECTOR_DIMS) {
+                                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                            goto CLEANUP;
+                                        }
 
-                                        for(uint32_t i = 0; i<p_node->num_literal_words; ++i) {
-                                            EVAL_CHECKED_READU32(p_eval, p_node->word_offset + 6 + i, p_node->literal_words[i], res, CLEANUP);
+                                        uint32_t max_index = p_node->id_operands[0]->value.type->traits.numeric.vector.component_count + p_node->id_operands[1]->value.type->traits.numeric.vector.component_count;
+
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                                        for(uint32_t i = 0; i< p_node->value.type->traits.numeric.vector.component_count; ++i) {
+                                            uint32_t idx;
+                                            EVAL_CHECKED_READU32(p_parser, p_parser_node->word_offset + 6 + i, idx, res, CLEANUP);
+                                            if (idx == 0xffffffff) {
+                                                p_node->instruction_private.vector_shuffle.idx[i] = 0xff;
+                                            }
+                                            else {
+                                                if (idx >= max_index) {
+                                                    res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+                                                    goto CLEANUP;
+                                                }
+                                                p_node->instruction_private.vector_shuffle.idx[i] = (uint8_t)idx;
+                                            }
                                         }
                                     }
                                     break;
@@ -6949,19 +6947,8 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                 case SPIRV_REFLECT_EVALUATION_MODE_NORMAL:
                                     {
                                         EVALUATE_OPERAND(p_node->id_operands[0], res, CLEANUP)
-                                        SpvReflectValueData* current_data = &p_node->id_operands[0]->value.data;
-                                        SpvReflectTypeDescription* current_type = p_node->id_operands[0]->value.type;
-                                        for (uint32_t i = 0; i < p_node->num_literal_words; ++i) {
-                                            uint32_t member_index = p_node->literal_words[i];
-                                            res = GetMemberByIndex(p_eval->member_type_finder, current_data, current_type, member_index, &current_data, &current_type);
-                                            if (res != SPV_REFLECT_RESULT_SUCCESS) {
-                                                goto CLEANUP;
-                                            }
-                                        }
-                                        if (current_type->id != p_node->value.type->id) {
-                                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                            goto CLEANUP;
-                                        }
+                                        SpvReflectValueData* current_data = p_node->instruction_private.composite_extract.src_data;
+                                        SpvReflectTypeDescription* current_type = p_node->instruction_private.composite_extract.src_type;
                                         res = CopyValueData(current_type, &result->data, current_data);
                                         if (res != SPV_REFLECT_RESULT_SUCCESS) {
                                             goto CLEANUP;
@@ -6981,28 +6968,30 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                             goto CLEANUP;
                                         }
-                                        if(p_node->word_count < 5) {
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                                        if(p_parser_node->word_count < 5) {
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
                                             goto CLEANUP;
                                         }
                                         p_node->num_id_operands = 1;
-                                        p_node->num_literal_words = p_node->word_count - 5;
+                                        p_node->num_literal_words = p_parser_node->word_count - 5;
                                     }
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:
                                     {
 
-                                        GET_OPERAND(p_eval,p_node, 4, p_node->id_operands[0], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval,p_node, 4, p_node->id_operands[0], res, CLEANUP)
                                         if (p_node->id_operands[0]->value.type->type_flags & COMPOSITE_DISALLOWED_FLAGS) {
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                             goto CLEANUP;
                                         }
 
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
                                         SpvReflectValueData* current_data = &p_node->id_operands[0]->value.data;
                                         SpvReflectTypeDescription* current_type = p_node->id_operands[0]->value.type;
                                         for (uint32_t i = 0; i < p_node->num_literal_words; ++i) {
                                             uint32_t member_index;
-                                            EVAL_CHECKED_READU32(p_eval, p_node->word_offset + 5 + i, member_index, res, CLEANUP);
+                                            EVAL_CHECKED_READU32(p_parser, p_parser_node->word_offset + 5 + i, member_index, res, CLEANUP);
                                             p_node->literal_words[i] = member_index;
                                             res = GetMemberByIndex(p_eval->member_type_finder, current_data, current_type, member_index, &current_data, &current_type);
                                             if (res != SPV_REFLECT_RESULT_SUCCESS) {
@@ -7013,6 +7002,9 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                             goto CLEANUP;
                                         }
+
+                                        p_node->instruction_private.composite_extract.src_data = current_data;
+                                        p_node->instruction_private.composite_extract.src_type = current_type;
                                     }
                                     break;
                             }
@@ -7033,23 +7025,10 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                         if (res != SPV_REFLECT_RESULT_SUCCESS) {
                                             goto CLEANUP;
                                         }
-                                        SpvReflectValueData* current_data = &result->data;
-                                        SpvReflectTypeDescription* current_type = result->type;
-                                        for (uint32_t i = 0; i < p_node->num_literal_words; ++i) {
-                                            uint32_t member_index;
-                                            EVAL_CHECKED_READU32(p_eval, p_node->word_offset + 6 + i, member_index, res, CLEANUP);
-                                            p_node->literal_words[i] = member_index;
-                                            res = GetMemberByIndex(p_eval->member_type_finder, current_data, current_type, member_index, &current_data, &current_type);
-                                            if (res != SPV_REFLECT_RESULT_SUCCESS) {
-                                                goto CLEANUP;
-                                            }
-                                        }
-                                        if (current_type->id != p_node->id_operands[0]->value.type->id) {
-                                            res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-                                            goto CLEANUP;
-                                        }
+                                        
                                         EVALUATE_OPERAND(p_node->id_operands[1], res, CLEANUP)
-                                        res = CopyValueData(current_type, current_data, &p_node->id_operands[1]->value.data);
+                                        res = CopyValueData(p_node->instruction_private.composite_insert.dst_type, 
+                                            p_node->instruction_private.composite_insert.dst_data, &p_node->id_operands[1]->value.data);
                                         if (res != SPV_REFLECT_RESULT_SUCCESS) {
                                             goto CLEANUP;
                                         }
@@ -7069,25 +7048,26 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                             goto CLEANUP;
                                         }
 
-                                        if (p_node->word_count < 6) {
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                                        if (p_parser_node->word_count < 6) {
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
                                             goto CLEANUP;
                                         }
                                         p_node->num_id_operands = 2;
-                                        p_node->num_literal_words = p_node->word_count - 6;
+                                        p_node->num_literal_words = p_parser_node->word_count - 6;
                                     }
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:
                                     {
                                         // the value to modify to
-                                        GET_OPERAND(p_eval, p_node, 4, p_node->id_operands[0], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval, p_node, 4, p_node->id_operands[0], res, CLEANUP)
                                         if (p_node->id_operands[0]->value.type->type_flags & COMPOSITE_DISALLOWED_FLAGS) {
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                             goto CLEANUP;
                                         }
 
                                         // the original value
-                                        GET_OPERAND(p_eval, p_node, 5, p_node->id_operands[1], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval, p_node, 5, p_node->id_operands[1], res, CLEANUP)
                                         if (p_node->id_operands[1]->value.type->type_flags & COMPOSITE_DISALLOWED_FLAGS) {
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                             goto CLEANUP;
@@ -7097,12 +7077,12 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                             goto CLEANUP;
                                         }
-
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
                                         SpvReflectValueData* current_data = &result->data;
                                         SpvReflectTypeDescription* current_type = result->type;
                                         for (uint32_t i = 0; i < p_node->num_literal_words; ++i) {
                                             uint32_t member_index;
-                                            EVAL_CHECKED_READU32(p_eval, p_node->word_offset + 6 + i, member_index, res, CLEANUP);
+                                            EVAL_CHECKED_READU32(p_parser, p_parser_node->word_offset + 6 + i, member_index, res, CLEANUP);
                                             p_node->literal_words[i] = member_index;
                                             res = GetMemberByIndex(p_eval->member_type_finder, current_data, current_type, member_index, &current_data, &current_type);
                                             if (res != SPV_REFLECT_RESULT_SUCCESS) {
@@ -7113,6 +7093,9 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                             goto CLEANUP;
                                         }
+
+                                        p_node->instruction_private.composite_insert.dst_data = current_data;
+                                        p_node->instruction_private.composite_insert.dst_type = current_type;
                                     }
                                     break;
                             }
@@ -7120,10 +7103,10 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                         break;
 
                     case SpvOpLogicalOr:
-                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(p_eval, p_node, ||, res, CLEANUP)
+                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, ||, res, CLEANUP)
                         break;
                     case SpvOpLogicalAnd:
-                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(p_eval, p_node, && , res, CLEANUP)
+                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, && , res, CLEANUP)
                         break;
                     case SpvOpLogicalNot:
                         {
@@ -7149,7 +7132,8 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:
                                     {
-                                        CHECK_INSTRUCTION_SIZE(p_node, 5)
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                                        CHECK_INSTRUCTION_SIZE(p_parser_node, 5)
                                         p_node->num_id_operands = 1;
                                         p_node->num_literal_words = 0;
 
@@ -7164,7 +7148,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:
                                     {
-                                        GET_OPERAND(p_eval, p_node, 4, p_node->id_operands[0], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval, p_node, 4, p_node->id_operands[0], res, CLEANUP)
                                         CHECK_IS_BOOLEAN_TYPE(p_node->id_operands[0], res, CLEANUP)
                                         CHECK_VECTOR_OR_SCALAR_TYPE(p_node->id_operands[0], res, CLEANUP)
 
@@ -7176,10 +7160,10 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                         }
                         break;
                     case SpvOpLogicalEqual:
-                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(p_eval, p_node, ==, res, CLEANUP)
+                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, ==, res, CLEANUP)
                         break;
                     case SpvOpLogicalNotEqual:
-                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(p_eval, p_node, != , res, CLEANUP)
+                        DO_BINARY_BOOLEAN_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, != , res, CLEANUP)
                         break;
                     case SpvOpSelect:
                         // same as c/cpp code: a ? b : c;
@@ -7237,7 +7221,8 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_1PASS:
                                     {
-                                        CHECK_INSTRUCTION_SIZE((p_node), 7)
+                                        SpvReflectPrvNode* p_parser_node = p_node->instruction_private.uninitialized;
+                                        CHECK_INSTRUCTION_SIZE(p_parser_node, 7)
                                         p_node->num_id_operands = 3;
                                         p_node->num_literal_words = 0;
 
@@ -7250,17 +7235,17 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                                     break;
                                 case SPIRV_REFLECT_EVALUATION_MODE_AST_2PASS:
                                     {
-                                        GET_OPERAND(p_eval, p_node, 4, p_node->id_operands[0], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval, p_node, 4, p_node->id_operands[0], res, CLEANUP)
                                         CHECK_IS_BOOLEAN_TYPE(p_node->id_operands[0], res, CLEANUP)
                                         CHECK_VECTOR_OR_SCALAR_TYPE(p_node->id_operands[0], res, CLEANUP)
                                         
-                                        GET_OPERAND(p_eval, p_node, 5, p_node->id_operands[1], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval, p_node, 5, p_node->id_operands[1], res, CLEANUP)
                                         if (p_node->id_operands[1]->value.type->id != p_node->value.type->id) {
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                             goto CLEANUP;
                                         }
 
-                                        GET_OPERAND(p_eval, p_node, 6, p_node->id_operands[2], res, CLEANUP)
+                                        GET_OPERAND(p_parser, p_eval, p_node, 6, p_node->id_operands[2], res, CLEANUP)
                                         if (p_node->id_operands[2]->value.type->id != p_node->value.type->id) {
                                             res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                                             goto CLEANUP;
@@ -7286,34 +7271,34 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResultImpl(SpvReflectE
                         }
                         break;
                     case SpvOpIEqual:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(p_eval, p_node, ==, res, CLEANUP)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, ==, res, CLEANUP)
                         break;
                     case SpvOpINotEqual:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(p_eval, p_node, != , res, CLEANUP)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, != , res, CLEANUP)
                         break;
                     case SpvOpULessThan:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(p_eval, p_node, < , res, CLEANUP)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, < , res, CLEANUP)
                         break;
                     case SpvOpSLessThan:
-                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(p_eval, p_node, < , res, CLEANUP)
+                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, < , res, CLEANUP)
                         break;
                     case SpvOpUGreaterThan:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(p_eval, p_node, > , res, CLEANUP)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, > , res, CLEANUP)
                         break;
                     case SpvOpSGreaterThan:
-                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(p_eval, p_node, > , res, CLEANUP)
+                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, > , res, CLEANUP)
                         break;
                     case SpvOpULessThanEqual:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(p_eval, p_node, <= , res, CLEANUP)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, <= , res, CLEANUP)
                         break;
                     case SpvOpSLessThanEqual:
-                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(p_eval, p_node, <= , res, CLEANUP)
+                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, <= , res, CLEANUP)
                         break;
                     case SpvOpUGreaterThanEqual:
-                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(p_eval, p_node, >= , res, CLEANUP)
+                        DO_BINARY_UINTEGER_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, >= , res, CLEANUP)
                         break;
                     case SpvOpSGreaterThanEqual:
-                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(p_eval, p_node, >= , res, CLEANUP)
+                        DO_BINARY_SINTEGER_LOGICAL_OPERATION(evaluation_mode, p_parser, p_eval, p_node, >= , res, CLEANUP)
                         break;
 
                         // check shader capability... vulkan should assume this...
@@ -7375,13 +7360,19 @@ SpvReflectEvaluation* spvReflectGetEvaluationInterface(SpvReflectShaderModule* p
     return p_module->_internal->evaluator;
 }
 
-bool HaveNodeInTree(const SpvReflectPrvEvaluationNode* p_node_root, const SpvReflectPrvEvaluationNode* p_node_expected)
+bool HaveNodeInTree(SpvReflectPrvEvaluationNode* p_node_root, const SpvReflectPrvEvaluationNode* p_node_expected, bool flag_changed)
 {
     if (p_node_root == p_node_expected) {
+        if (flag_changed) {
+            p_node_root->evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
+        }
         return true;
     }
     for (uint32_t i = 0; i < p_node_root->num_id_operands; ++i) {
-        if (HaveNodeInTree(p_node_root->id_operands[i], p_node_expected)) {
+        if (HaveNodeInTree(p_node_root->id_operands[i], p_node_expected, flag_changed)) {
+            if (flag_changed) {
+                p_node_root->evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
+            }
             return true;
         }
     }
@@ -7435,7 +7426,8 @@ SpvReflectResult spvReflectSetSpecConstantValue(SpvReflectEvaluation* p_eval, ui
     p_node->evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
     // update state tracking here...
     for (uint32_t i = 0; i < p_eval->node_count; ++i) {
-        if (HaveNodeInTree(&p_eval->nodes[i], p_node)) {
+        if (p_eval->nodes[i].evaluation_state == SPV_REFLECT_EVALUATION_NODE_STATE_DONE
+            && HaveNodeInTree(&p_eval->nodes[i], p_node, true)) {
             p_eval->nodes[i].evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
         }
     }
@@ -7473,7 +7465,7 @@ int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id
     if (!p_node) {
         return 0;
     }
-    return HaveNodeInTree(p_node, p_spec);
+    return HaveNodeInTree(p_node, p_spec, false);
 }
 
 

@@ -109,8 +109,7 @@ SPV_REFLECT_MODULE_FLAG_EVALUATE_NO_COPY - use p_code for later
 typedef enum SpvReflectModuleFlagBits {
   SPV_REFLECT_MODULE_FLAG_NONE                   = 0x00000000,
   SPV_REFLECT_MODULE_FLAG_NO_COPY                = 0x00000001,
-  SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT      = 0x00000002,
-  SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT_NO_COPY = 0x00000004
+  SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT      = 0x00000002
 } SpvReflectModuleFlagBits;
 
 typedef uint32_t SpvReflectModuleFlags;
@@ -349,19 +348,14 @@ typedef struct SpvReflectTypeDescription {
 } SpvReflectTypeDescription;
 
 
-/*! @struct SpvReflectSpecializationConstant
-
-*/
-
-typedef uint16_t spv_reflect_float16_t;
 typedef struct SpvReflectScalarValueData {
     union {
         /* small types not implemented yet... */
+        /* also remember float16 */
         uint8_t uint8_value;
         int8_t sint8_value;
         uint16_t uint16_value;
         int16_t sint16_value;
-        spv_reflect_float16_t float16_value;
         /* types that are currently supported */
         uint32_t uint32_bool_value;
         int32_t sint32_value;
@@ -397,6 +391,9 @@ typedef struct SpvReflectValue {
   SpvReflectValueData data;
 }SpvReflectValue;
 
+/*! @struct SpvReflectSpecializationConstant
+
+*/
 typedef struct SpvReflectSpecializationConstant {
   uint32_t spirv_id;
   uint32_t constant_id;
