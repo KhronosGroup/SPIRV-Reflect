@@ -1,0 +1,13 @@
+10c10
+<                OpExecutionMode %main LocalSize 1 1 1
+---
+>                OpExecutionModeId %main LocalSizeId %249 %uint_1 %uint_1
+370d369
+<                OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+587,589c586,587
+<         %249 = OpSpecConstant %uint 1
+<      %v3uint = OpTypeVector %uint 3
+< %gl_WorkGroupSize = OpSpecConstantComposite %v3uint %249 %uint_1 %uint_1
+---
+>         ; default value should be respected, even if no compiler write things other than 1
+>         %249 = OpSpecConstant %uint 4

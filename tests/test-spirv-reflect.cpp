@@ -830,6 +830,7 @@ TEST(SpirvReflectTestCase, TestComputeLocalSize) {
   ASSERT_EQ(module_.entry_points[0].local_size.x, 1);
   ASSERT_EQ(module_.entry_points[0].local_size.y, 1);
   ASSERT_EQ(module_.entry_points[0].local_size.z, 1);
+  ASSERT_EQ(module_.entry_points[0].local_size.flags, 0);
 
   spvReflectDestroyShaderModule(&module_);
 }
@@ -1228,4 +1229,29 @@ TEST_F(SpirvReflectMultiEntryPointTest, ChangeDescriptorSetNumber) {
 
   ASSERT_EQ(set0->bindings[0], set1->bindings[1]);
   ASSERT_EQ(set0->bindings[0]->set, 1);
+}
+
+TEST(SpirvReflectSpecializationConstantTest, TestSpecParsing) {
+  std::vector<uint8_t> spirv_;
+  SpvReflectShaderModule module_;
+  const std::string spirv_path = "../tests/entry_exec_mode/comp_local_size.spv";
+  std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
+  std::streampos spirv_file_nbytes = spirv_file.tellg();
+  spirv_file.seekg(0);
+  spirv_.resize(spirv_file_nbytes);
+  spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
+
+  SpvReflectResult result =
+    spvReflectCreateShaderModule(spirv_.size(), spirv_.data(), &module_);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result)
+    << "spvReflectCreateShaderModule() failed";
+
+  EXPECT_EQ(module_.entry_point_count, 1);
+  EXPECT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
+  EXPECT_EQ(module_.entry_points[0].local_size.x, 1);
+  EXPECT_EQ(module_.entry_points[0].local_size.y, 1);
+  EXPECT_EQ(module_.entry_points[0].local_size.z, 1);
+  EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+
+  spvReflectDestroyShaderModule(&module_);
 }

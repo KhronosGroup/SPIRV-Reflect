@@ -1,0 +1,32 @@
+25c25
+<                OpName %FZERO "FZERO"
+---
+>                OpName %9999 "FZERO"
+42c42
+<                OpName %DZERO2 "DZERO2"
+---
+>                OpName %10000 "DZERO2"
+88c88
+<       %FZERO = OpSpecConstantOp %float FConvert %DZERO
+---
+>       %9999 = OpSpecConstantOp %float FConvert %DZERO
+111c111
+<      %DZERO2 = OpSpecConstantOp %double FConvert %FZERO
+---
+>       %10000 = OpSpecConstantOp %double FConvert %9999
+115c115
+<                OpStore %23 %FZERO
+---
+>                OpStore %23 %9999
+117c117
+<                OpStore %31 %FZERO
+---
+>                OpStore %31 %9999
+119c119
+<                OpStore %37 %FZERO
+---
+>                OpStore %37 %9999
+121c121
+<                OpStore %44 %FZERO
+---
+>                OpStore %44 %9999

@@ -1,0 +1,27 @@
+6a7
+>                OpCapability Int64
+10c11,12
+<                OpExecutionMode %main LocalSize 1 1 1
+---
+>                ; should ignore this if working with WorkGroupSize builtin
+>                OpExecutionMode %main LocalSize 2 3 4
+376c378
+<         %int = OpTypeInt 32 1
+---
+>         %int = OpTypeInt 64 1
+380c382,383
+<        %uint = OpTypeInt 32 0
+---
+>   %uint_orig = OpTypeInt 32 0
+>        %uint = OpTypeInt 64 0
+422a426
+> %uint_orig_1 = OpConstant %uint 1
+587,589c591,594
+<         %249 = OpSpecConstant %uint 1
+<      %v3uint = OpTypeVector %uint 3
+< %gl_WorkGroupSize = OpSpecConstantComposite %v3uint %249 %uint_1 %uint_1
+---
+>         ; default value should be respected, even if no compiler write things other than 1
+>         %249 = OpSpecConstant %uint_orig 4
+> %v3uint_orig = OpTypeVector %uint_orig 3
+> %gl_WorkGroupSize = OpSpecConstantComposite %v3uint_orig %249 %uint_orig_1 %uint_orig_1
