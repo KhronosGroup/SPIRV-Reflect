@@ -1231,10 +1231,10 @@ TEST_F(SpirvReflectMultiEntryPointTest, ChangeDescriptorSetNumber) {
   ASSERT_EQ(set0->bindings[0]->set, 1);
 }
 
-TEST(SpirvReflectSpecializationConstantTest, TestSpecParsing) {
+TEST(SpirvReflectSpecializationConstantTest, TestSpecParsing32) {
   std::vector<uint8_t> spirv_;
   SpvReflectShaderModule module_;
-  const std::string spirv_path = "../tests/entry_exec_mode/comp_local_size.spv";
+  const std::string spirv_path = "../tests/spec_constant/test_32bit.spv";
   std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
   std::streampos spirv_file_nbytes = spirv_file.tellg();
   spirv_file.seekg(0);
@@ -1248,10 +1248,411 @@ TEST(SpirvReflectSpecializationConstantTest, TestSpecParsing) {
 
   EXPECT_EQ(module_.entry_point_count, 1);
   EXPECT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
-  EXPECT_EQ(module_.entry_points[0].local_size.x, 1);
-  EXPECT_EQ(module_.entry_points[0].local_size.y, 1);
-  EXPECT_EQ(module_.entry_points[0].local_size.z, 1);
   EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+  ASSERT_EQ(module_.specialization_constant_count, 9);
+  for (uint32_t i = 0; i < 9; ++i) {
+    const SpvReflectSpecializationConstant* p_constant = &module_.specialization_constants[i];
+    switch (p_constant->constant_id) {
+      default:
+        EXPECT_EQ(0, 1) << "Invalid constant id";
+      case 0:
+        EXPECT_STREQ(p_constant->name, "TRUE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_BOOL);
+        EXPECT_EQ(p_constant->default_value.value.uint32_bool_value, 1);
+        break;
+      case 1:
+        EXPECT_STREQ(p_constant->name, "FALSE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_BOOL);
+        EXPECT_EQ(p_constant->default_value.value.uint32_bool_value, 0);
+        break;
+      case 2:
+        EXPECT_STREQ(p_constant->name, "SONE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 1);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 32);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 1);
+        break;
+      case 3:
+        EXPECT_STREQ(p_constant->name, "STWO");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 1);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 32);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 2);
+        break;
+      case 4:
+        EXPECT_STREQ(p_constant->name, "SNEG_TWO");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 1);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 32);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, -2);
+        break;
+      case 5:
+        EXPECT_STREQ(p_constant->name, "UONE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 0);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 32);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 1);
+        break;
+      case 6:
+        EXPECT_STREQ(p_constant->name, "UTWO");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 0);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 32);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 2);
+        break;
+      case 7:
+        EXPECT_STREQ(p_constant->name, "SNEG_THREE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 1);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 32);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, -3);
+        break;
+      case 8:
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 0);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 32);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 4);
+        break;
+    }
+  }
+  spvReflectDestroyShaderModule(&module_);
+}
+
+TEST(SpirvReflectSpecializationConstantTest, TestSpecParsing64)
+{
+  std::vector<uint8_t> spirv_;
+  SpvReflectShaderModule module_;
+  const std::string spirv_path = "../tests/spec_constant/test_64bit.spv";
+  std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
+  std::streampos spirv_file_nbytes = spirv_file.tellg();
+  spirv_file.seekg(0);
+  spirv_.resize(spirv_file_nbytes);
+  spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
+
+  SpvReflectResult result =
+    spvReflectCreateShaderModule(spirv_.size(), spirv_.data(), &module_);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result)
+    << "spvReflectCreateShaderModule() failed";
+
+  EXPECT_EQ(module_.entry_point_count, 1);
+  EXPECT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
+  EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+  ASSERT_EQ(module_.specialization_constant_count, 9);
+  for (uint32_t i = 0; i < 9; ++i) {
+    const SpvReflectSpecializationConstant* p_constant = &module_.specialization_constants[i];
+    switch (p_constant->constant_id) {
+      default:
+        EXPECT_EQ(0, 1) << "Invalid constant id";
+      case 0:
+        EXPECT_STREQ(p_constant->name, "TRUE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_BOOL);
+        EXPECT_EQ(p_constant->default_value.value.uint32_bool_value, 1);
+        break;
+      case 1:
+        EXPECT_STREQ(p_constant->name, "FALSE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_BOOL);
+        EXPECT_EQ(p_constant->default_value.value.uint32_bool_value, 0);
+        break;
+      case 2:
+        EXPECT_STREQ(p_constant->name, "SONE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 1);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 64);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 1);
+        break;
+      case 3:
+        EXPECT_STREQ(p_constant->name, "STWO");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 1);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 64);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 2);
+        break;
+      case 4:
+        EXPECT_STREQ(p_constant->name, "SNEG_TWO");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 1);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 64);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, -2);
+        break;
+      case 5:
+        EXPECT_STREQ(p_constant->name, "UONE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 0);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 64);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 1);
+        break;
+      case 6:
+        EXPECT_STREQ(p_constant->name, "UTWO");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 0);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 64);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 2);
+        break;
+      case 7:
+        EXPECT_STREQ(p_constant->name, "SNEG_THREE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 1);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 64);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, -3);
+        break;
+      case 8:
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 0);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 32);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 4);
+        break;
+    }
+  }
+  spvReflectDestroyShaderModule(&module_);
+}
+
+TEST(SpirvReflectSpecializationConstantTest, TestSpecParsingFloat)
+{
+  std::vector<uint8_t> spirv_;
+  SpvReflectShaderModule module_;
+  const std::string spirv_path = "../tests/spec_constant/test_convert.spv";
+  std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
+  std::streampos spirv_file_nbytes = spirv_file.tellg();
+  spirv_file.seekg(0);
+  spirv_.resize(spirv_file_nbytes);
+  spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
+
+  SpvReflectResult result =
+    spvReflectCreateShaderModule(spirv_.size(), spirv_.data(), &module_);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result)
+    << "spvReflectCreateShaderModule() failed";
+
+  EXPECT_EQ(module_.entry_point_count, 1);
+  EXPECT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
+  // glslc emits this builtin, even if no speconstant specified, flags!=0
+  //EXPECT_EQ(module_.entry_points[0].local_size.flags, 0);
+  ASSERT_EQ(module_.specialization_constant_count, 4);
+  for (uint32_t i = 0; i < 4; ++i) {
+    const SpvReflectSpecializationConstant* p_constant = &module_.specialization_constants[i];
+    switch (p_constant->constant_id) {
+      default:
+        EXPECT_EQ(0, 1) << "Invalid constant id";
+      case 0:
+        EXPECT_STREQ(p_constant->name, "SONE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 1);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 64);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 1);
+        break;
+      case 1:
+        EXPECT_STREQ(p_constant->name, "UONE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.signedness, 0);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 64);
+        EXPECT_EQ(p_constant->default_value.value.sint32_value, 1);
+        break;
+      case 2:
+        EXPECT_STREQ(p_constant->name, "F_ONE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_FLOAT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 32);
+        EXPECT_EQ(p_constant->default_value.value.float32_value, 1);
+        break;
+      case 3:
+        EXPECT_STREQ(p_constant->name, "D_ONE");
+        EXPECT_EQ(p_constant->type->type_flags, SPV_REFLECT_TYPE_FLAG_FLOAT);
+        EXPECT_EQ(p_constant->type->traits.numeric.scalar.width, 64);
+        EXPECT_EQ(p_constant->default_value.value.float64_value, 1);
+        break;
+    }
+  }
+  spvReflectDestroyShaderModule(&module_);
+}
+
+TEST(SpirvReflectSpecializationConstantTest, TestEvaluate32)
+{
+  std::vector<uint8_t> spirv_;
+  SpvReflectShaderModule module_;
+  const std::string spirv_path = "../tests/spec_constant/test_32bit.spv";
+  std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
+  std::streampos spirv_file_nbytes = spirv_file.tellg();
+  spirv_file.seekg(0);
+  spirv_.resize(spirv_file_nbytes);
+  spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
+
+  SpvReflectResult result =
+    spvReflectCreateShaderModule2(SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT | SPV_REFLECT_MODULE_FLAG_NO_COPY, spirv_.size(), spirv_.data(), &module_);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result)
+    << "spvReflectCreateShaderModule() failed";
+
+  EXPECT_EQ(module_.entry_point_count, 1);
+  EXPECT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
+  EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+  ASSERT_EQ(module_.specialization_constant_count, 9);
+  SpvReflectEvaluation* p_eval = spvReflectGetEvaluationInterface(&module_);
+  ASSERT_NE(p_eval, nullptr);
+  const SpvReflectValue* res = nullptr;
+  ASSERT_EQ(spvReflectEvaluateResult(p_eval, module_.entry_points[0].local_size.x, &res), SPV_REFLECT_RESULT_SUCCESS);
+  ASSERT_NE(res, nullptr);
+  ASSERT_EQ(res->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_VECTOR);
+  ASSERT_EQ(res->type->traits.numeric.vector.component_count, 3);
+  ASSERT_EQ(res->type->traits.numeric.scalar.width, 32);
+  ASSERT_EQ(res->type->traits.numeric.scalar.signedness, 0);
+  ASSERT_EQ(res->data.numeric.vector.value[0].value.uint32_bool_value, 4);
+  ASSERT_EQ(res->data.numeric.vector.value[1].value.uint32_bool_value, 1);
+  ASSERT_EQ(res->data.numeric.vector.value[2].value.uint32_bool_value, 1);
+
+  ASSERT_EQ(module_.descriptor_binding_count, 31);
+  for (uint32_t i = 0; i < module_.descriptor_binding_count; ++i) {
+    ASSERT_NE(module_.descriptor_bindings[i].type_description, nullptr);
+    SpvReflectTypeDescription* p_type = module_.descriptor_bindings[i].type_description;
+    ASSERT_EQ(p_type->type_flags, SPV_REFLECT_TYPE_FLAG_STRUCT | SPV_REFLECT_TYPE_FLAG_EXTERNAL_BLOCK);
+    ASSERT_EQ(p_type->member_count, 2);
+    ASSERT_NE(p_type->members, nullptr);
+    SpvReflectTypeDescription* p_type_arr = &p_type->members[0];
+    ASSERT_EQ(p_type_arr->type_flags, SPV_REFLECT_TYPE_FLAG_FLOAT| SPV_REFLECT_TYPE_FLAG_ARRAY);
+    ASSERT_EQ(p_type_arr->traits.array.dims_count, 1);
+    ASSERT_EQ(p_type_arr->traits.array.dims[0], 0xffffffff);
+    res = nullptr;
+    ASSERT_EQ(spvReflectEvaluateResult(p_eval, p_type_arr->traits.array.spec_constant_op_ids[0], &res), SPV_REFLECT_RESULT_SUCCESS);
+    ASSERT_NE(res, nullptr);
+    ASSERT_NE(res->type, nullptr);
+    ASSERT_EQ(res->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+    ASSERT_EQ(res->type->traits.numeric.scalar.width, 32);
+    ASSERT_EQ(res->data.numeric.scalar.value.uint32_bool_value, 1);
+  }
+
+  SpvReflectScalarValueData data = {0};
+  data.value.sint32_value = -2;
+  ASSERT_EQ(spvReflectSetSpecConstantValue(p_eval, 7, SPIRV_REFLECT_SCALAR_TYPE_I32, &data), SPV_REFLECT_RESULT_SUCCESS);
+  SpvReflectTypeDescription* p_type = module_.descriptor_bindings[10].type_description;
+  SpvReflectTypeDescription* p_type_arr = &p_type->members[0];
+  res = nullptr;
+  ASSERT_EQ(spvReflectEvaluateResult(p_eval, p_type_arr->traits.array.spec_constant_op_ids[0], &res), SPV_REFLECT_RESULT_SUCCESS);
+  ASSERT_NE(res, nullptr);
+  ASSERT_NE(res->type, nullptr);
+  ASSERT_EQ(res->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+  ASSERT_EQ(res->type->traits.numeric.scalar.width, 32);
+  ASSERT_EQ(res->data.numeric.scalar.value.sint32_value, 2);
 
   spvReflectDestroyShaderModule(&module_);
+}
+
+TEST(SpirvReflectSpecializationConstantTest, TestEvaluate64)
+{
+  std::vector<uint8_t> spirv_;
+  SpvReflectShaderModule module_;
+  const std::string spirv_path = "../tests/spec_constant/test_64bit.spv";
+  std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
+  std::streampos spirv_file_nbytes = spirv_file.tellg();
+  spirv_file.seekg(0);
+  spirv_.resize(spirv_file_nbytes);
+  spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
+
+  SpvReflectResult result =
+    spvReflectCreateShaderModule2(SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT | SPV_REFLECT_MODULE_FLAG_NO_COPY, spirv_.size(), spirv_.data(), &module_);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result)
+    << "spvReflectCreateShaderModule() failed";
+
+  EXPECT_EQ(module_.entry_point_count, 1);
+  EXPECT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
+  EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+  ASSERT_EQ(module_.specialization_constant_count, 9);
+  SpvReflectEvaluation* p_eval = spvReflectGetEvaluationInterface(&module_);
+  ASSERT_NE(p_eval, nullptr);
+  const SpvReflectValue* res = nullptr;
+  ASSERT_EQ(spvReflectEvaluateResult(p_eval, module_.entry_points[0].local_size.x, &res), SPV_REFLECT_RESULT_SUCCESS);
+  ASSERT_NE(res, nullptr);
+  ASSERT_EQ(res->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_VECTOR);
+  ASSERT_EQ(res->type->traits.numeric.vector.component_count, 3);
+  ASSERT_EQ(res->type->traits.numeric.scalar.width, 32);
+  ASSERT_EQ(res->type->traits.numeric.scalar.signedness, 0);
+  ASSERT_EQ(res->data.numeric.vector.value[0].value.uint32_bool_value, 4);
+  ASSERT_EQ(res->data.numeric.vector.value[1].value.uint32_bool_value, 1);
+  ASSERT_EQ(res->data.numeric.vector.value[2].value.uint32_bool_value, 1);
+
+  ASSERT_EQ(module_.descriptor_binding_count, 31);
+  for (uint32_t i = 0; i < module_.descriptor_binding_count; ++i) {
+    ASSERT_NE(module_.descriptor_bindings[i].type_description, nullptr);
+    SpvReflectTypeDescription* p_type = module_.descriptor_bindings[i].type_description;
+    ASSERT_EQ(p_type->type_flags, SPV_REFLECT_TYPE_FLAG_STRUCT | SPV_REFLECT_TYPE_FLAG_EXTERNAL_BLOCK);
+    ASSERT_EQ(p_type->member_count, 2);
+    ASSERT_NE(p_type->members, nullptr);
+    SpvReflectTypeDescription* p_type_arr = &p_type->members[0];
+    ASSERT_EQ(p_type_arr->type_flags, SPV_REFLECT_TYPE_FLAG_FLOAT | SPV_REFLECT_TYPE_FLAG_ARRAY);
+    ASSERT_EQ(p_type_arr->traits.array.dims_count, 1);
+    ASSERT_EQ(p_type_arr->traits.array.dims[0], 0xffffffff);
+    const SpvReflectValue* res = nullptr;
+    ASSERT_EQ(spvReflectEvaluateResult(p_eval, p_type_arr->traits.array.spec_constant_op_ids[0], &res), SPV_REFLECT_RESULT_SUCCESS);
+    ASSERT_NE(res, nullptr);
+    ASSERT_NE(res->type, nullptr);
+    ASSERT_EQ(res->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+    ASSERT_EQ(res->type->traits.numeric.scalar.width, 64);
+    ASSERT_EQ(res->data.numeric.scalar.value.uint64_value, 1);
+  }
+
+  SpvReflectScalarValueData data = {0};
+  data.value.sint64_value = -2;
+  ASSERT_EQ(spvReflectSetSpecConstantValue(p_eval, 7, SPIRV_REFLECT_SCALAR_TYPE_I64, &data), SPV_REFLECT_RESULT_SUCCESS);
+  SpvReflectTypeDescription* p_type = module_.descriptor_bindings[10].type_description;
+  SpvReflectTypeDescription* p_type_arr = &p_type->members[0];
+  res = nullptr;
+  ASSERT_EQ(spvReflectEvaluateResult(p_eval, p_type_arr->traits.array.spec_constant_op_ids[0], &res), SPV_REFLECT_RESULT_SUCCESS);
+  ASSERT_NE(res, nullptr);
+  ASSERT_NE(res->type, nullptr);
+  ASSERT_EQ(res->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+  ASSERT_EQ(res->type->traits.numeric.scalar.width, 64);
+  ASSERT_EQ(res->data.numeric.scalar.value.sint32_value, 2);
+  spvReflectDestroyShaderModule(&module_);
+}
+
+TEST(SpirvReflectSpecializationConstantTest, TestConvert) {
+  std::vector<uint8_t> spirv_;
+  SpvReflectShaderModule module_;
+  const std::string spirv_path = "../tests/spec_constant/test_convert.spv";
+  std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
+  std::streampos spirv_file_nbytes = spirv_file.tellg();
+  spirv_file.seekg(0);
+  spirv_.resize(spirv_file_nbytes);
+  spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
+
+  SpvReflectResult result =
+    spvReflectCreateShaderModule2(SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT | SPV_REFLECT_MODULE_FLAG_NO_COPY, spirv_.size(), spirv_.data(), &module_);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result)
+    << "spvReflectCreateShaderModule() failed";
+
+  EXPECT_EQ(module_.entry_point_count, 1);
+  EXPECT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
+  ASSERT_EQ(module_.specialization_constant_count, 4);
+  SpvReflectEvaluation* p_eval = spvReflectGetEvaluationInterface(&module_);
+  ASSERT_NE(p_eval, nullptr);
+
+  const SpvReflectValue* res = nullptr;
+  ASSERT_EQ(spvReflectEvaluateResult(p_eval, 9999, &res), SPV_REFLECT_RESULT_SUCCESS);
+  ASSERT_NE(res, nullptr);
+  ASSERT_NE(res->type, nullptr);
+  ASSERT_EQ(res->type->type_flags, SPV_REFLECT_TYPE_FLAG_FLOAT);
+  ASSERT_EQ(res->type->traits.numeric.scalar.width, 32);
+  ASSERT_EQ(res->data.numeric.scalar.value.float32_value, 1);
+  res = nullptr;
+  ASSERT_EQ(spvReflectEvaluateResult(p_eval, 10000, &res), SPV_REFLECT_RESULT_SUCCESS);
+  ASSERT_NE(res, nullptr);
+  ASSERT_NE(res->type, nullptr);
+  ASSERT_EQ(res->type->type_flags, SPV_REFLECT_TYPE_FLAG_FLOAT);
+  ASSERT_EQ(res->type->traits.numeric.scalar.width, 64);
+  ASSERT_EQ(res->data.numeric.scalar.value.float64_value, 1);
+
+  ASSERT_EQ(module_.descriptor_binding_count, 4);
+  for (uint32_t i = 0; i < module_.descriptor_binding_count; ++i) {
+    ASSERT_NE(module_.descriptor_bindings[i].type_description, nullptr);
+    SpvReflectTypeDescription* p_type = module_.descriptor_bindings[i].type_description;
+    ASSERT_EQ(p_type->type_flags, SPV_REFLECT_TYPE_FLAG_STRUCT | SPV_REFLECT_TYPE_FLAG_EXTERNAL_BLOCK);
+    ASSERT_EQ(p_type->member_count, 2);
+    ASSERT_NE(p_type->members, nullptr);
+    SpvReflectTypeDescription* p_type_arr = &p_type->members[0];
+    ASSERT_EQ(p_type_arr->type_flags, SPV_REFLECT_TYPE_FLAG_FLOAT | SPV_REFLECT_TYPE_FLAG_ARRAY);
+    ASSERT_EQ(p_type_arr->traits.array.dims_count, 1);
+    ASSERT_EQ(p_type_arr->traits.array.dims[0], 0xffffffff);
+    const SpvReflectValue* res = nullptr;
+    ASSERT_EQ(spvReflectEvaluateResult(p_eval, p_type_arr->traits.array.spec_constant_op_ids[0], &res), SPV_REFLECT_RESULT_SUCCESS);
+    ASSERT_NE(res, nullptr);
+    ASSERT_NE(res->type, nullptr);
+    ASSERT_EQ(res->type->type_flags, SPV_REFLECT_TYPE_FLAG_INT);
+    ASSERT_EQ(res->type->traits.numeric.scalar.width, 32);
+    ASSERT_EQ(res->data.numeric.scalar.value.uint32_bool_value, 1);
+  }
 }

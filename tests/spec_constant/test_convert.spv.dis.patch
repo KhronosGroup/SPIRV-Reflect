@@ -1,32 +1,24 @@
-25c25
-<                OpName %FZERO "FZERO"
+37c37
+<                OpName %F_ONE2 "F_ONE2"
 ---
->                OpName %9999 "FZERO"
-42c42
-<                OpName %DZERO2 "DZERO2"
+>                OpName %9999 "F_ONE2"
+43c43
+<                OpName %D_ONE2 "D_ONE2"
 ---
->                OpName %10000 "DZERO2"
-88c88
-<       %FZERO = OpSpecConstantOp %float FConvert %DZERO
+>                OpName %10000 "D_ONE2"
+104c104
+<      %F_ONE2 = OpSpecConstantOp %float FConvert %D_ONE
 ---
->       %9999 = OpSpecConstantOp %float FConvert %DZERO
-111c111
-<      %DZERO2 = OpSpecConstantOp %double FConvert %FZERO
+>      %9999 = OpSpecConstantOp %float FConvert %D_ONE
+114c114
+<      %D_ONE2 = OpSpecConstantOp %double FConvert %F_ONE
 ---
->       %10000 = OpSpecConstantOp %double FConvert %9999
-115c115
-<                OpStore %23 %FZERO
+>      %10000 = OpSpecConstantOp %double FConvert %F_ONE
+122c122
+<                OpStore %38 %F_ONE2
 ---
->                OpStore %23 %9999
-117c117
-<                OpStore %31 %FZERO
+>                OpStore %38 %9999
+124c124
+<                OpStore %45 %F_ONE2
 ---
->                OpStore %31 %9999
-119c119
-<                OpStore %37 %FZERO
----
->                OpStore %37 %9999
-121c121
-<                OpStore %44 %FZERO
----
->                OpStore %44 %9999
+>                OpStore %45 %9999

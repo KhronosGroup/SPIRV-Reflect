@@ -1,7 +1,7 @@
 ; SPIR-V
 ; Version: 1.5
 ; Generator: Google Shaderc over Glslang; 10
-; Bound: 254
+; Bound: 267
 ; Schema: 0
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -21,6 +21,7 @@
                OpMemberName %SSBO_IAdd 0 "val"
                OpMemberName %SSBO_IAdd 1 "dummy"
                OpName %IAdd "IAdd"
+               OpName %SNEG_TWO "SNEG_TWO"
                OpName %ISUB "ISUB"
                OpName %SSBO_ISub "SSBO_ISub"
                OpMemberName %SSBO_ISub 0 "val"
@@ -36,17 +37,17 @@
                OpMemberName %SSBO_UDiv 0 "val"
                OpMemberName %SSBO_UDiv 1 "dummy"
                OpName %UDiv "UDiv"
-               OpName %SNEG_TWO "SNEG_TWO"
+               OpName %SNEG_THREE "SNEG_THREE"
                OpName %SDIV "SDIV"
                OpName %SSBO_SDiv "SSBO_SDiv"
                OpMemberName %SSBO_SDiv 0 "val"
                OpMemberName %SSBO_SDiv 1 "dummy"
                OpName %SDiv "SDiv"
+               OpName %SREM "SREM"
                OpName %SSBO_SRem "SSBO_SRem"
                OpMemberName %SSBO_SRem 0 "val"
                OpMemberName %SSBO_SRem 1 "dummy"
                OpName %SRem "SRem"
-               OpName %SNEG_THREE "SNEG_THREE"
                OpName %SMOD "SMOD"
                OpName %SSBO_SMod "SSBO_SMod"
                OpMemberName %SSBO_SMod 0 "val"
@@ -184,13 +185,14 @@
                OpDecorate %SSBO_IAdd Block
                OpDecorate %IAdd DescriptorSet 0
                OpDecorate %IAdd Binding 0
-               OpDecorate %_arr_float_ISUB ArrayStride 4
+               OpDecorate %SNEG_TWO SpecId 4
+               OpDecorate %_arr_float_32 ArrayStride 4
                OpMemberDecorate %SSBO_ISub 0 Offset 0
                OpMemberDecorate %SSBO_ISub 1 Offset 4
                OpDecorate %SSBO_ISub Block
                OpDecorate %ISub DescriptorSet 0
                OpDecorate %ISub Binding 1
-               OpDecorate %_arr_float_37 ArrayStride 4
+               OpDecorate %_arr_float_39 ArrayStride 4
                OpMemberDecorate %SSBO_IMul 0 Offset 0
                OpMemberDecorate %SSBO_IMul 1 Offset 4
                OpDecorate %SSBO_IMul Block
@@ -202,171 +204,170 @@
                OpDecorate %SSBO_UDiv Block
                OpDecorate %UDiv DescriptorSet 0
                OpDecorate %UDiv Binding 3
-               OpDecorate %SNEG_TWO SpecId 4
-               OpDecorate %_arr_float_52 ArrayStride 4
+               OpDecorate %SNEG_THREE SpecId 7
+               OpDecorate %_arr_float_54 ArrayStride 4
                OpMemberDecorate %SSBO_SDiv 0 Offset 0
                OpMemberDecorate %SSBO_SDiv 1 Offset 4
                OpDecorate %SSBO_SDiv Block
                OpDecorate %SDiv DescriptorSet 0
                OpDecorate %SDiv Binding 4
-               OpDecorate %_arr_float_uint_1 ArrayStride 4
+               OpDecorate %_arr_float_61 ArrayStride 4
                OpMemberDecorate %SSBO_SRem 0 Offset 0
                OpMemberDecorate %SSBO_SRem 1 Offset 4
                OpDecorate %SSBO_SRem Block
                OpDecorate %SRem DescriptorSet 0
                OpDecorate %SRem Binding 5
-               OpDecorate %SNEG_THREE SpecId 7
-               OpDecorate %_arr_float_66 ArrayStride 4
+               OpDecorate %_arr_float_69 ArrayStride 4
                OpMemberDecorate %SSBO_SMod 0 Offset 0
                OpMemberDecorate %SSBO_SMod 1 Offset 4
                OpDecorate %SSBO_SMod Block
                OpDecorate %SMod DescriptorSet 0
                OpDecorate %SMod Binding 6
-               OpDecorate %_arr_float_73 ArrayStride 4
+               OpDecorate %_arr_float_77 ArrayStride 4
                OpMemberDecorate %SSBO_UMod 0 Offset 0
                OpMemberDecorate %SSBO_UMod 1 Offset 4
                OpDecorate %SSBO_UMod Block
                OpDecorate %UMod DescriptorSet 0
                OpDecorate %UMod Binding 7
-               OpDecorate %_arr_float_81 ArrayStride 4
+               OpDecorate %_arr_float_86 ArrayStride 4
                OpMemberDecorate %SSBO_LShl 0 Offset 0
                OpMemberDecorate %SSBO_LShl 1 Offset 4
                OpDecorate %SSBO_LShl Block
                OpDecorate %LShl DescriptorSet 0
                OpDecorate %LShl Binding 8
-               OpDecorate %_arr_float_89 ArrayStride 4
+               OpDecorate %_arr_float_95 ArrayStride 4
                OpMemberDecorate %SSBO_RShl 0 Offset 0
                OpMemberDecorate %SSBO_RShl 1 Offset 4
                OpDecorate %SSBO_RShl Block
                OpDecorate %RShl DescriptorSet 0
                OpDecorate %RShl Binding 9
-               OpDecorate %_arr_float_100 ArrayStride 4
+               OpDecorate %_arr_float_106 ArrayStride 4
                OpMemberDecorate %SSBO_RSha 0 Offset 0
                OpMemberDecorate %SSBO_RSha 1 Offset 4
                OpDecorate %SSBO_RSha Block
                OpDecorate %RSha DescriptorSet 0
                OpDecorate %RSha Binding 10
-               OpDecorate %_arr_float_109 ArrayStride 4
+               OpDecorate %_arr_float_115 ArrayStride 4
                OpMemberDecorate %SSBO_IEq 0 Offset 0
                OpMemberDecorate %SSBO_IEq 1 Offset 4
                OpDecorate %SSBO_IEq Block
                OpDecorate %IEq DescriptorSet 0
                OpDecorate %IEq Binding 11
-               OpDecorate %_arr_float_116 ArrayStride 4
+               OpDecorate %_arr_float_123 ArrayStride 4
                OpMemberDecorate %SSBO_INeq 0 Offset 0
                OpMemberDecorate %SSBO_INeq 1 Offset 4
                OpDecorate %SSBO_INeq Block
                OpDecorate %INeq DescriptorSet 0
                OpDecorate %INeq Binding 12
-               OpDecorate %_arr_float_123 ArrayStride 4
+               OpDecorate %_arr_float_131 ArrayStride 4
                OpMemberDecorate %SSBO_Ult 0 Offset 0
                OpMemberDecorate %SSBO_Ult 1 Offset 4
                OpDecorate %SSBO_Ult Block
                OpDecorate %Ult DescriptorSet 0
                OpDecorate %Ult Binding 13
-               OpDecorate %_arr_float_130 ArrayStride 4
+               OpDecorate %_arr_float_139 ArrayStride 4
                OpMemberDecorate %SSBO_Ule 0 Offset 0
                OpMemberDecorate %SSBO_Ule 1 Offset 4
                OpDecorate %SSBO_Ule Block
                OpDecorate %Ule DescriptorSet 0
                OpDecorate %Ule Binding 14
-               OpDecorate %_arr_float_137 ArrayStride 4
+               OpDecorate %_arr_float_147 ArrayStride 4
                OpMemberDecorate %SSBO_Ugt 0 Offset 0
                OpMemberDecorate %SSBO_Ugt 1 Offset 4
                OpDecorate %SSBO_Ugt Block
                OpDecorate %Ugt DescriptorSet 0
                OpDecorate %Ugt Binding 15
-               OpDecorate %_arr_float_144 ArrayStride 4
+               OpDecorate %_arr_float_155 ArrayStride 4
                OpMemberDecorate %SSBO_Uge 0 Offset 0
                OpMemberDecorate %SSBO_Uge 1 Offset 4
                OpDecorate %SSBO_Uge Block
                OpDecorate %Uge DescriptorSet 0
                OpDecorate %Uge Binding 16
-               OpDecorate %_arr_float_151 ArrayStride 4
+               OpDecorate %_arr_float_162 ArrayStride 4
                OpMemberDecorate %SSBO_Slt 0 Offset 0
                OpMemberDecorate %SSBO_Slt 1 Offset 4
                OpDecorate %SSBO_Slt Block
                OpDecorate %Slt DescriptorSet 0
                OpDecorate %Slt Binding 17
-               OpDecorate %_arr_float_158 ArrayStride 4
+               OpDecorate %_arr_float_169 ArrayStride 4
                OpMemberDecorate %SSBO_Sle 0 Offset 0
                OpMemberDecorate %SSBO_Sle 1 Offset 4
                OpDecorate %SSBO_Sle Block
                OpDecorate %Sle DescriptorSet 0
                OpDecorate %Sle Binding 18
-               OpDecorate %_arr_float_165 ArrayStride 4
+               OpDecorate %_arr_float_176 ArrayStride 4
                OpMemberDecorate %SSBO_Sgt 0 Offset 0
                OpMemberDecorate %SSBO_Sgt 1 Offset 4
                OpDecorate %SSBO_Sgt Block
                OpDecorate %Sgt DescriptorSet 0
                OpDecorate %Sgt Binding 19
-               OpDecorate %_arr_float_172 ArrayStride 4
+               OpDecorate %_arr_float_183 ArrayStride 4
                OpMemberDecorate %SSBO_Sge 0 Offset 0
                OpMemberDecorate %SSBO_Sge 1 Offset 4
                OpDecorate %SSBO_Sge Block
                OpDecorate %Sge DescriptorSet 0
                OpDecorate %Sge Binding 20
-               OpDecorate %_arr_float_179 ArrayStride 4
+               OpDecorate %_arr_float_190 ArrayStride 4
                OpMemberDecorate %SSBO_Lor 0 Offset 0
                OpMemberDecorate %SSBO_Lor 1 Offset 4
                OpDecorate %SSBO_Lor Block
                OpDecorate %Lor DescriptorSet 0
                OpDecorate %Lor Binding 21
-               OpDecorate %_arr_float_186 ArrayStride 4
+               OpDecorate %_arr_float_197 ArrayStride 4
                OpMemberDecorate %SSBO_Land 0 Offset 0
                OpMemberDecorate %SSBO_Land 1 Offset 4
                OpDecorate %SSBO_Land Block
                OpDecorate %Land DescriptorSet 0
                OpDecorate %Land Binding 22
-               OpDecorate %_arr_float_193 ArrayStride 4
+               OpDecorate %_arr_float_204 ArrayStride 4
                OpMemberDecorate %SSBO_Lnot 0 Offset 0
                OpMemberDecorate %SSBO_Lnot 1 Offset 4
                OpDecorate %SSBO_Lnot Block
                OpDecorate %Lnot DescriptorSet 0
                OpDecorate %Lnot Binding 23
-               OpDecorate %_arr_float_200 ArrayStride 4
+               OpDecorate %_arr_float_211 ArrayStride 4
                OpMemberDecorate %SSBO_And 0 Offset 0
                OpMemberDecorate %SSBO_And 1 Offset 4
                OpDecorate %SSBO_And Block
                OpDecorate %And DescriptorSet 0
                OpDecorate %And Binding 24
-               OpDecorate %_arr_float_208 ArrayStride 4
+               OpDecorate %_arr_float_220 ArrayStride 4
                OpMemberDecorate %SSBO_Or 0 Offset 0
                OpMemberDecorate %SSBO_Or 1 Offset 4
                OpDecorate %SSBO_Or Block
                OpDecorate %Or DescriptorSet 0
-               OpDecorate %Or Binding 24
-               OpDecorate %_arr_float_215 ArrayStride 4
+               OpDecorate %Or Binding 25
+               OpDecorate %_arr_float_227 ArrayStride 4
                OpMemberDecorate %SSBO_Xor 0 Offset 0
                OpMemberDecorate %SSBO_Xor 1 Offset 4
                OpDecorate %SSBO_Xor Block
                OpDecorate %Xor DescriptorSet 0
-               OpDecorate %Xor Binding 24
-               OpDecorate %_arr_float_223 ArrayStride 4
+               OpDecorate %Xor Binding 26
+               OpDecorate %_arr_float_235 ArrayStride 4
                OpMemberDecorate %SSBO_Not 0 Offset 0
                OpMemberDecorate %SSBO_Not 1 Offset 4
                OpDecorate %SSBO_Not Block
                OpDecorate %Not DescriptorSet 0
-               OpDecorate %Not Binding 25
-               OpDecorate %_arr_float_230 ArrayStride 4
+               OpDecorate %Not Binding 27
+               OpDecorate %_arr_float_242 ArrayStride 4
                OpMemberDecorate %SSBO_Leq 0 Offset 0
                OpMemberDecorate %SSBO_Leq 1 Offset 4
                OpDecorate %SSBO_Leq Block
                OpDecorate %Leq DescriptorSet 0
-               OpDecorate %Leq Binding 26
-               OpDecorate %_arr_float_237 ArrayStride 4
+               OpDecorate %Leq Binding 28
+               OpDecorate %_arr_float_249 ArrayStride 4
                OpMemberDecorate %SSBO_Lneq 0 Offset 0
                OpMemberDecorate %SSBO_Lneq 1 Offset 4
                OpDecorate %SSBO_Lneq Block
                OpDecorate %Lneq DescriptorSet 0
-               OpDecorate %Lneq Binding 27
+               OpDecorate %Lneq Binding 29
                OpDecorate %_arr_float_SEL ArrayStride 4
                OpMemberDecorate %SSBO_Sel 0 Offset 0
                OpMemberDecorate %SSBO_Sel 1 Offset 4
                OpDecorate %SSBO_Sel Block
                OpDecorate %Sel DescriptorSet 0
-               OpDecorate %Sel Binding 28
-               OpDecorate %249 SpecId 8
+               OpDecorate %Sel Binding 30
+               OpDecorate %262 SpecId 8
                OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
                OpDecorate %TRUE SpecId 0
                OpDecorate %FALSE SpecId 1
@@ -393,17 +394,19 @@
       %int_0 = OpConstant %int 0
     %float_0 = OpConstant %float 0
 %_ptr_StorageBuffer_float = OpTypePointer StorageBuffer %float
-         %28 = OpSpecConstantOp %uint IAdd %SONE %uint_0
-       %ISUB = OpSpecConstantOp %uint ISub %UTWO %28
-%_arr_float_ISUB = OpTypeArray %float %ISUB
-  %SSBO_ISub = OpTypeStruct %_arr_float_ISUB %float
+   %SNEG_TWO = OpSpecConstant %int -2
+         %29 = OpSpecConstantOp %uint IAdd %SNEG_TWO %uint_0
+       %ISUB = OpSpecConstantOp %uint ISub %UTWO %29
+     %uint_3 = OpConstant %uint 3
+         %32 = OpSpecConstantOp %uint ISub %ISUB %uint_3
+%_arr_float_32 = OpTypeArray %float %32
+  %SSBO_ISub = OpTypeStruct %_arr_float_32 %float
 %_ptr_StorageBuffer_SSBO_ISub = OpTypePointer StorageBuffer %SSBO_ISub
        %ISub = OpVariable %_ptr_StorageBuffer_SSBO_ISub StorageBuffer
        %IMUL = OpSpecConstantOp %uint IMul %UTWO %UTWO
-     %uint_3 = OpConstant %uint 3
-         %37 = OpSpecConstantOp %uint ISub %IMUL %uint_3
-%_arr_float_37 = OpTypeArray %float %37
-  %SSBO_IMul = OpTypeStruct %_arr_float_37 %float
+         %39 = OpSpecConstantOp %uint ISub %IMUL %uint_3
+%_arr_float_39 = OpTypeArray %float %39
+  %SSBO_IMul = OpTypeStruct %_arr_float_39 %float
 %_ptr_StorageBuffer_SSBO_IMul = OpTypePointer StorageBuffer %SSBO_IMul
        %IMul = OpVariable %_ptr_StorageBuffer_SSBO_IMul StorageBuffer
        %UDIV = OpSpecConstantOp %uint UDiv %UTWO %UTWO
@@ -411,247 +414,258 @@
   %SSBO_UDiv = OpTypeStruct %_arr_float_UDIV %float
 %_ptr_StorageBuffer_SSBO_UDiv = OpTypePointer StorageBuffer %SSBO_UDiv
        %UDiv = OpVariable %_ptr_StorageBuffer_SSBO_UDiv StorageBuffer
-   %SNEG_TWO = OpSpecConstant %int -2
-       %SDIV = OpSpecConstantOp %int SDiv %STWO %SNEG_TWO
-      %int_2 = OpConstant %int 2
-         %52 = OpSpecConstantOp %int IAdd %SDIV %int_2
-%_arr_float_52 = OpTypeArray %float %52
-  %SSBO_SDiv = OpTypeStruct %_arr_float_52 %float
+ %SNEG_THREE = OpSpecConstant %int -3
+       %SDIV = OpSpecConstantOp %int SDiv %STWO %SNEG_THREE
+      %int_1 = OpConstant %int 1
+         %54 = OpSpecConstantOp %int IAdd %SDIV %int_1
+%_arr_float_54 = OpTypeArray %float %54
+  %SSBO_SDiv = OpTypeStruct %_arr_float_54 %float
 %_ptr_StorageBuffer_SSBO_SDiv = OpTypePointer StorageBuffer %SSBO_SDiv
        %SDiv = OpVariable %_ptr_StorageBuffer_SSBO_SDiv StorageBuffer
-     %uint_1 = OpConstant %uint 1
-%_arr_float_uint_1 = OpTypeArray %float %uint_1
-  %SSBO_SRem = OpTypeStruct %_arr_float_uint_1 %float
+       %SREM = OpSpecConstantOp %int SMod %STWO %SNEG_THREE
+         %61 = OpSpecConstantOp %int ISub %SREM %int_1
+%_arr_float_61 = OpTypeArray %float %61
+  %SSBO_SRem = OpTypeStruct %_arr_float_61 %float
 %_ptr_StorageBuffer_SSBO_SRem = OpTypePointer StorageBuffer %SSBO_SRem
        %SRem = OpVariable %_ptr_StorageBuffer_SSBO_SRem StorageBuffer
- %SNEG_THREE = OpSpecConstant %int -3
        %SMOD = OpSpecConstantOp %int SMod %STWO %SNEG_THREE
-         %66 = OpSpecConstantOp %int IAdd %SMOD %int_2
-%_arr_float_66 = OpTypeArray %float %66
-  %SSBO_SMod = OpTypeStruct %_arr_float_66 %float
+      %int_2 = OpConstant %int 2
+         %69 = OpSpecConstantOp %int IAdd %SMOD %int_2
+%_arr_float_69 = OpTypeArray %float %69
+  %SSBO_SMod = OpTypeStruct %_arr_float_69 %float
 %_ptr_StorageBuffer_SSBO_SMod = OpTypePointer StorageBuffer %SSBO_SMod
        %SMod = OpVariable %_ptr_StorageBuffer_SSBO_SMod StorageBuffer
        %UMOD = OpSpecConstantOp %uint UMod %IADD %IMUL
-         %73 = OpSpecConstantOp %uint ISub %UMOD %uint_1
-%_arr_float_73 = OpTypeArray %float %73
-  %SSBO_UMod = OpTypeStruct %_arr_float_73 %float
+     %uint_1 = OpConstant %uint 1
+         %77 = OpSpecConstantOp %uint ISub %UMOD %uint_1
+%_arr_float_77 = OpTypeArray %float %77
+  %SSBO_UMod = OpTypeStruct %_arr_float_77 %float
 %_ptr_StorageBuffer_SSBO_UMod = OpTypePointer StorageBuffer %SSBO_UMod
        %UMod = OpVariable %_ptr_StorageBuffer_SSBO_UMod StorageBuffer
-       %LSHL = OpSpecConstantOp %uint ShiftLeftLogical %IADD %ISUB
+         %83 = OpSpecConstantOp %uint ISub %ISUB %uint_3
+       %LSHL = OpSpecConstantOp %uint ShiftLeftLogical %IADD %83
     %uint_11 = OpConstant %uint 11
-         %81 = OpSpecConstantOp %uint ISub %LSHL %uint_11
-%_arr_float_81 = OpTypeArray %float %81
-  %SSBO_LShl = OpTypeStruct %_arr_float_81 %float
+         %86 = OpSpecConstantOp %uint ISub %LSHL %uint_11
+%_arr_float_86 = OpTypeArray %float %86
+  %SSBO_LShl = OpTypeStruct %_arr_float_86 %float
 %_ptr_StorageBuffer_SSBO_LShl = OpTypePointer StorageBuffer %SSBO_LShl
        %LShl = OpVariable %_ptr_StorageBuffer_SSBO_LShl StorageBuffer
-       %RSHL = OpSpecConstantOp %uint ShiftRightLogical %IADD %ISUB
+         %92 = OpSpecConstantOp %uint ISub %ISUB %uint_3
+       %RSHL = OpSpecConstantOp %uint ShiftRightLogical %IADD %92
      %uint_2 = OpConstant %uint 2
-         %89 = OpSpecConstantOp %uint ISub %RSHL %uint_2
-%_arr_float_89 = OpTypeArray %float %89
-  %SSBO_RShl = OpTypeStruct %_arr_float_89 %float
+         %95 = OpSpecConstantOp %uint ISub %RSHL %uint_2
+%_arr_float_95 = OpTypeArray %float %95
+  %SSBO_RShl = OpTypeStruct %_arr_float_95 %float
 %_ptr_StorageBuffer_SSBO_RShl = OpTypePointer StorageBuffer %SSBO_RShl
        %RShl = OpVariable %_ptr_StorageBuffer_SSBO_RShl StorageBuffer
-         %95 = OpSpecConstantOp %int IAdd %IADD %uint_0
-         %96 = OpSpecConstantOp %int SNegate %95
-         %97 = OpSpecConstantOp %int SNegate %SDIV
-       %RSHA = OpSpecConstantOp %int ShiftRightArithmetic %96 %97
+        %101 = OpSpecConstantOp %int IAdd %IADD %uint_0
+        %102 = OpSpecConstantOp %int SNegate %101
+        %103 = OpSpecConstantOp %int ISub %int_1 %SDIV
+       %RSHA = OpSpecConstantOp %int ShiftRightArithmetic %102 %103
       %int_4 = OpConstant %int 4
-        %100 = OpSpecConstantOp %int IAdd %RSHA %int_4
-%_arr_float_100 = OpTypeArray %float %100
-  %SSBO_RSha = OpTypeStruct %_arr_float_100 %float
+        %106 = OpSpecConstantOp %int IAdd %RSHA %int_4
+%_arr_float_106 = OpTypeArray %float %106
+  %SSBO_RSha = OpTypeStruct %_arr_float_106 %float
 %_ptr_StorageBuffer_SSBO_RSha = OpTypePointer StorageBuffer %SSBO_RSha
        %RSha = OpVariable %_ptr_StorageBuffer_SSBO_RSha StorageBuffer
+        %112 = OpSpecConstantOp %uint ISub %ISUB %uint_3
        %bool = OpTypeBool
-        %IEQ = OpSpecConstantOp %bool IEqual %IADD %ISUB
-      %int_1 = OpConstant %int 1
-        %109 = OpSpecConstantOp %int Select %IEQ %int_2 %int_1
-%_arr_float_109 = OpTypeArray %float %109
-   %SSBO_IEq = OpTypeStruct %_arr_float_109 %float
+        %IEQ = OpSpecConstantOp %bool IEqual %IADD %112
+        %115 = OpSpecConstantOp %int Select %IEQ %int_2 %int_1
+%_arr_float_115 = OpTypeArray %float %115
+   %SSBO_IEq = OpTypeStruct %_arr_float_115 %float
 %_ptr_StorageBuffer_SSBO_IEq = OpTypePointer StorageBuffer %SSBO_IEq
         %IEq = OpVariable %_ptr_StorageBuffer_SSBO_IEq StorageBuffer
-       %INEQ = OpSpecConstantOp %bool INotEqual %IADD %ISUB
-        %116 = OpSpecConstantOp %int Select %INEQ %int_1 %int_2
-%_arr_float_116 = OpTypeArray %float %116
-  %SSBO_INeq = OpTypeStruct %_arr_float_116 %float
+        %121 = OpSpecConstantOp %uint ISub %ISUB %uint_3
+       %INEQ = OpSpecConstantOp %bool INotEqual %IADD %121
+        %123 = OpSpecConstantOp %int Select %INEQ %int_1 %int_2
+%_arr_float_123 = OpTypeArray %float %123
+  %SSBO_INeq = OpTypeStruct %_arr_float_123 %float
 %_ptr_StorageBuffer_SSBO_INeq = OpTypePointer StorageBuffer %SSBO_INeq
        %INeq = OpVariable %_ptr_StorageBuffer_SSBO_INeq StorageBuffer
-        %ULT = OpSpecConstantOp %bool ULessThan %IADD %ISUB
-        %123 = OpSpecConstantOp %int Select %ULT %int_2 %int_1
-%_arr_float_123 = OpTypeArray %float %123
-   %SSBO_Ult = OpTypeStruct %_arr_float_123 %float
+        %129 = OpSpecConstantOp %uint ISub %ISUB %uint_3
+        %ULT = OpSpecConstantOp %bool ULessThan %IADD %129
+        %131 = OpSpecConstantOp %int Select %ULT %int_2 %int_1
+%_arr_float_131 = OpTypeArray %float %131
+   %SSBO_Ult = OpTypeStruct %_arr_float_131 %float
 %_ptr_StorageBuffer_SSBO_Ult = OpTypePointer StorageBuffer %SSBO_Ult
         %Ult = OpVariable %_ptr_StorageBuffer_SSBO_Ult StorageBuffer
-        %ULE = OpSpecConstantOp %bool ULessThanEqual %IADD %ISUB
-        %130 = OpSpecConstantOp %int Select %ULE %int_2 %int_1
-%_arr_float_130 = OpTypeArray %float %130
-   %SSBO_Ule = OpTypeStruct %_arr_float_130 %float
+        %137 = OpSpecConstantOp %uint ISub %ISUB %uint_3
+        %ULE = OpSpecConstantOp %bool ULessThanEqual %IADD %137
+        %139 = OpSpecConstantOp %int Select %ULE %int_2 %int_1
+%_arr_float_139 = OpTypeArray %float %139
+   %SSBO_Ule = OpTypeStruct %_arr_float_139 %float
 %_ptr_StorageBuffer_SSBO_Ule = OpTypePointer StorageBuffer %SSBO_Ule
         %Ule = OpVariable %_ptr_StorageBuffer_SSBO_Ule StorageBuffer
-        %UGT = OpSpecConstantOp %bool UGreaterThan %IADD %ISUB
-        %137 = OpSpecConstantOp %int Select %UGT %int_1 %int_2
-%_arr_float_137 = OpTypeArray %float %137
-   %SSBO_Ugt = OpTypeStruct %_arr_float_137 %float
+        %145 = OpSpecConstantOp %uint ISub %ISUB %uint_3
+        %UGT = OpSpecConstantOp %bool UGreaterThan %IADD %145
+        %147 = OpSpecConstantOp %int Select %UGT %int_1 %int_2
+%_arr_float_147 = OpTypeArray %float %147
+   %SSBO_Ugt = OpTypeStruct %_arr_float_147 %float
 %_ptr_StorageBuffer_SSBO_Ugt = OpTypePointer StorageBuffer %SSBO_Ugt
         %Ugt = OpVariable %_ptr_StorageBuffer_SSBO_Ugt StorageBuffer
-        %UGE = OpSpecConstantOp %bool UGreaterThanEqual %IADD %ISUB
-        %144 = OpSpecConstantOp %int Select %UGE %int_1 %int_2
-%_arr_float_144 = OpTypeArray %float %144
-   %SSBO_Uge = OpTypeStruct %_arr_float_144 %float
+        %153 = OpSpecConstantOp %uint ISub %ISUB %uint_3
+        %UGE = OpSpecConstantOp %bool UGreaterThanEqual %IADD %153
+        %155 = OpSpecConstantOp %int Select %UGE %int_1 %int_2
+%_arr_float_155 = OpTypeArray %float %155
+   %SSBO_Uge = OpTypeStruct %_arr_float_155 %float
 %_ptr_StorageBuffer_SSBO_Uge = OpTypePointer StorageBuffer %SSBO_Uge
         %Uge = OpVariable %_ptr_StorageBuffer_SSBO_Uge StorageBuffer
-        %SLT = OpSpecConstantOp %bool SLessThan %SMOD %int_1
-        %151 = OpSpecConstantOp %int Select %SLT %int_1 %int_2
-%_arr_float_151 = OpTypeArray %float %151
-   %SSBO_Slt = OpTypeStruct %_arr_float_151 %float
+        %SLT = OpSpecConstantOp %bool SLessThan %SMOD %SREM
+        %162 = OpSpecConstantOp %int Select %SLT %int_1 %int_2
+%_arr_float_162 = OpTypeArray %float %162
+   %SSBO_Slt = OpTypeStruct %_arr_float_162 %float
 %_ptr_StorageBuffer_SSBO_Slt = OpTypePointer StorageBuffer %SSBO_Slt
         %Slt = OpVariable %_ptr_StorageBuffer_SSBO_Slt StorageBuffer
-        %SLE = OpSpecConstantOp %bool SLessThanEqual %SMOD %int_1
-        %158 = OpSpecConstantOp %int Select %SLE %int_1 %int_2
-%_arr_float_158 = OpTypeArray %float %158
-   %SSBO_Sle = OpTypeStruct %_arr_float_158 %float
+        %SLE = OpSpecConstantOp %bool SLessThanEqual %SMOD %SREM
+        %169 = OpSpecConstantOp %int Select %SLE %int_1 %int_2
+%_arr_float_169 = OpTypeArray %float %169
+   %SSBO_Sle = OpTypeStruct %_arr_float_169 %float
 %_ptr_StorageBuffer_SSBO_Sle = OpTypePointer StorageBuffer %SSBO_Sle
         %Sle = OpVariable %_ptr_StorageBuffer_SSBO_Sle StorageBuffer
-        %SGT = OpSpecConstantOp %bool SGreaterThan %SMOD %int_1
-        %165 = OpSpecConstantOp %int Select %SGT %int_2 %int_1
-%_arr_float_165 = OpTypeArray %float %165
-   %SSBO_Sgt = OpTypeStruct %_arr_float_165 %float
+        %SGT = OpSpecConstantOp %bool SGreaterThan %SMOD %SREM
+        %176 = OpSpecConstantOp %int Select %SGT %int_2 %int_1
+%_arr_float_176 = OpTypeArray %float %176
+   %SSBO_Sgt = OpTypeStruct %_arr_float_176 %float
 %_ptr_StorageBuffer_SSBO_Sgt = OpTypePointer StorageBuffer %SSBO_Sgt
         %Sgt = OpVariable %_ptr_StorageBuffer_SSBO_Sgt StorageBuffer
-        %SGE = OpSpecConstantOp %bool SGreaterThanEqual %SMOD %int_1
-        %172 = OpSpecConstantOp %int Select %SGE %int_2 %int_1
-%_arr_float_172 = OpTypeArray %float %172
-   %SSBO_Sge = OpTypeStruct %_arr_float_172 %float
+        %SGE = OpSpecConstantOp %bool SGreaterThanEqual %SMOD %SREM
+        %183 = OpSpecConstantOp %int Select %SGE %int_2 %int_1
+%_arr_float_183 = OpTypeArray %float %183
+   %SSBO_Sge = OpTypeStruct %_arr_float_183 %float
 %_ptr_StorageBuffer_SSBO_Sge = OpTypePointer StorageBuffer %SSBO_Sge
         %Sge = OpVariable %_ptr_StorageBuffer_SSBO_Sge StorageBuffer
         %LOR = OpSpecConstantOp %bool LogicalOr %IEQ %SLT
-        %179 = OpSpecConstantOp %int Select %LOR %int_1 %int_2
-%_arr_float_179 = OpTypeArray %float %179
-   %SSBO_Lor = OpTypeStruct %_arr_float_179 %float
+        %190 = OpSpecConstantOp %int Select %LOR %int_1 %int_2
+%_arr_float_190 = OpTypeArray %float %190
+   %SSBO_Lor = OpTypeStruct %_arr_float_190 %float
 %_ptr_StorageBuffer_SSBO_Lor = OpTypePointer StorageBuffer %SSBO_Lor
         %Lor = OpVariable %_ptr_StorageBuffer_SSBO_Lor StorageBuffer
        %LAND = OpSpecConstantOp %bool LogicalAnd %IEQ %SLT
-        %186 = OpSpecConstantOp %int Select %LAND %int_2 %int_1
-%_arr_float_186 = OpTypeArray %float %186
-  %SSBO_Land = OpTypeStruct %_arr_float_186 %float
+        %197 = OpSpecConstantOp %int Select %LAND %int_2 %int_1
+%_arr_float_197 = OpTypeArray %float %197
+  %SSBO_Land = OpTypeStruct %_arr_float_197 %float
 %_ptr_StorageBuffer_SSBO_Land = OpTypePointer StorageBuffer %SSBO_Land
        %Land = OpVariable %_ptr_StorageBuffer_SSBO_Land StorageBuffer
        %LNOT = OpSpecConstantOp %bool LogicalNot %LOR
-        %193 = OpSpecConstantOp %int Select %LNOT %int_2 %int_1
-%_arr_float_193 = OpTypeArray %float %193
-  %SSBO_Lnot = OpTypeStruct %_arr_float_193 %float
+        %204 = OpSpecConstantOp %int Select %LNOT %int_2 %int_1
+%_arr_float_204 = OpTypeArray %float %204
+  %SSBO_Lnot = OpTypeStruct %_arr_float_204 %float
 %_ptr_StorageBuffer_SSBO_Lnot = OpTypePointer StorageBuffer %SSBO_Lnot
        %Lnot = OpVariable %_ptr_StorageBuffer_SSBO_Lnot StorageBuffer
         %AND = OpSpecConstantOp %uint BitwiseAnd %IADD %IADD
-        %200 = OpSpecConstantOp %uint ISub %AND %uint_5
-%_arr_float_200 = OpTypeArray %float %200
-   %SSBO_And = OpTypeStruct %_arr_float_200 %float
+        %211 = OpSpecConstantOp %uint ISub %AND %uint_5
+%_arr_float_211 = OpTypeArray %float %211
+   %SSBO_And = OpTypeStruct %_arr_float_211 %float
 %_ptr_StorageBuffer_SSBO_And = OpTypePointer StorageBuffer %SSBO_And
         %And = OpVariable %_ptr_StorageBuffer_SSBO_And StorageBuffer
-         %OR = OpSpecConstantOp %uint BitwiseOr %IADD %ISUB
+        %217 = OpSpecConstantOp %uint ISub %ISUB %uint_3
+         %OR = OpSpecConstantOp %uint BitwiseOr %IADD %217
      %uint_6 = OpConstant %uint 6
-        %208 = OpSpecConstantOp %uint ISub %OR %uint_6
-%_arr_float_208 = OpTypeArray %float %208
-    %SSBO_Or = OpTypeStruct %_arr_float_208 %float
+        %220 = OpSpecConstantOp %uint ISub %OR %uint_6
+%_arr_float_220 = OpTypeArray %float %220
+    %SSBO_Or = OpTypeStruct %_arr_float_220 %float
 %_ptr_StorageBuffer_SSBO_Or = OpTypePointer StorageBuffer %SSBO_Or
          %Or = OpVariable %_ptr_StorageBuffer_SSBO_Or StorageBuffer
         %XOR = OpSpecConstantOp %uint BitwiseXor %IADD %IADD
-        %215 = OpSpecConstantOp %uint IAdd %XOR %uint_1
-%_arr_float_215 = OpTypeArray %float %215
-   %SSBO_Xor = OpTypeStruct %_arr_float_215 %float
+        %227 = OpSpecConstantOp %uint IAdd %XOR %uint_1
+%_arr_float_227 = OpTypeArray %float %227
+   %SSBO_Xor = OpTypeStruct %_arr_float_227 %float
 %_ptr_StorageBuffer_SSBO_Xor = OpTypePointer StorageBuffer %SSBO_Xor
         %Xor = OpVariable %_ptr_StorageBuffer_SSBO_Xor StorageBuffer
         %NOT = OpSpecConstantOp %uint Not %XOR
 %uint_4294967294 = OpConstant %uint 4294967294
-        %223 = OpSpecConstantOp %uint ISub %NOT %uint_4294967294
-%_arr_float_223 = OpTypeArray %float %223
-   %SSBO_Not = OpTypeStruct %_arr_float_223 %float
+        %235 = OpSpecConstantOp %uint ISub %NOT %uint_4294967294
+%_arr_float_235 = OpTypeArray %float %235
+   %SSBO_Not = OpTypeStruct %_arr_float_235 %float
 %_ptr_StorageBuffer_SSBO_Not = OpTypePointer StorageBuffer %SSBO_Not
         %Not = OpVariable %_ptr_StorageBuffer_SSBO_Not StorageBuffer
         %LEQ = OpSpecConstantOp %bool LogicalEqual %LAND %LNOT
-        %230 = OpSpecConstantOp %int Select %LEQ %int_1 %int_2
-%_arr_float_230 = OpTypeArray %float %230
-   %SSBO_Leq = OpTypeStruct %_arr_float_230 %float
+        %242 = OpSpecConstantOp %int Select %LEQ %int_1 %int_2
+%_arr_float_242 = OpTypeArray %float %242
+   %SSBO_Leq = OpTypeStruct %_arr_float_242 %float
 %_ptr_StorageBuffer_SSBO_Leq = OpTypePointer StorageBuffer %SSBO_Leq
         %Leq = OpVariable %_ptr_StorageBuffer_SSBO_Leq StorageBuffer
        %LNEQ = OpSpecConstantOp %bool LogicalNotEqual %LAND %LNOT
-        %237 = OpSpecConstantOp %int Select %LNEQ %int_2 %int_1
-%_arr_float_237 = OpTypeArray %float %237
-  %SSBO_Lneq = OpTypeStruct %_arr_float_237 %float
+        %249 = OpSpecConstantOp %int Select %LNEQ %int_2 %int_1
+%_arr_float_249 = OpTypeArray %float %249
+  %SSBO_Lneq = OpTypeStruct %_arr_float_249 %float
 %_ptr_StorageBuffer_SSBO_Lneq = OpTypePointer StorageBuffer %SSBO_Lneq
        %Lneq = OpVariable %_ptr_StorageBuffer_SSBO_Lneq StorageBuffer
-        %SEL = OpSpecConstantOp %uint Select %IEQ %IADD %ISUB
+        %255 = OpSpecConstantOp %uint ISub %ISUB %uint_3
+        %SEL = OpSpecConstantOp %uint Select %IEQ %IADD %255
 %_arr_float_SEL = OpTypeArray %float %SEL
    %SSBO_Sel = OpTypeStruct %_arr_float_SEL %float
 %_ptr_StorageBuffer_SSBO_Sel = OpTypePointer StorageBuffer %SSBO_Sel
         %Sel = OpVariable %_ptr_StorageBuffer_SSBO_Sel StorageBuffer
-        %249 = OpSpecConstant %uint 1
+        %262 = OpSpecConstant %uint 1
      %v3uint = OpTypeVector %uint 3
-%gl_WorkGroupSize = OpSpecConstantComposite %v3uint %249 %uint_1 %uint_1
+%gl_WorkGroupSize = OpSpecConstantComposite %v3uint %262 %uint_1 %uint_1
        %TRUE = OpSpecConstantTrue %bool
       %FALSE = OpSpecConstantFalse %bool
        %main = OpFunction %void None %3
           %5 = OpLabel
          %27 = OpAccessChain %_ptr_StorageBuffer_float %IAdd %int_0 %int_0
                OpStore %27 %float_0
-         %34 = OpAccessChain %_ptr_StorageBuffer_float %ISub %int_0 %int_0
-               OpStore %34 %float_0
-         %42 = OpAccessChain %_ptr_StorageBuffer_float %IMul %int_0 %int_0
-               OpStore %42 %float_0
-         %48 = OpAccessChain %_ptr_StorageBuffer_float %UDiv %int_0 %int_0
-               OpStore %48 %float_0
-         %57 = OpAccessChain %_ptr_StorageBuffer_float %SDiv %int_0 %int_0
-               OpStore %57 %float_0
-         %63 = OpAccessChain %_ptr_StorageBuffer_float %SRem %int_0 %int_0
-               OpStore %63 %float_0
-         %71 = OpAccessChain %_ptr_StorageBuffer_float %SMod %int_0 %int_0
-               OpStore %71 %float_0
-         %78 = OpAccessChain %_ptr_StorageBuffer_float %UMod %int_0 %int_0
-               OpStore %78 %float_0
-         %86 = OpAccessChain %_ptr_StorageBuffer_float %LShl %int_0 %int_0
-               OpStore %86 %float_0
-         %94 = OpAccessChain %_ptr_StorageBuffer_float %RShl %int_0 %int_0
-               OpStore %94 %float_0
-        %105 = OpAccessChain %_ptr_StorageBuffer_float %RSha %int_0 %int_0
-               OpStore %105 %float_0
-        %114 = OpAccessChain %_ptr_StorageBuffer_float %IEq %int_0 %int_0
-               OpStore %114 %float_0
-        %121 = OpAccessChain %_ptr_StorageBuffer_float %INeq %int_0 %int_0
-               OpStore %121 %float_0
-        %128 = OpAccessChain %_ptr_StorageBuffer_float %Ult %int_0 %int_0
+         %37 = OpAccessChain %_ptr_StorageBuffer_float %ISub %int_0 %int_0
+               OpStore %37 %float_0
+         %44 = OpAccessChain %_ptr_StorageBuffer_float %IMul %int_0 %int_0
+               OpStore %44 %float_0
+         %50 = OpAccessChain %_ptr_StorageBuffer_float %UDiv %int_0 %int_0
+               OpStore %50 %float_0
+         %59 = OpAccessChain %_ptr_StorageBuffer_float %SDiv %int_0 %int_0
+               OpStore %59 %float_0
+         %66 = OpAccessChain %_ptr_StorageBuffer_float %SRem %int_0 %int_0
+               OpStore %66 %float_0
+         %74 = OpAccessChain %_ptr_StorageBuffer_float %SMod %int_0 %int_0
+               OpStore %74 %float_0
+         %82 = OpAccessChain %_ptr_StorageBuffer_float %UMod %int_0 %int_0
+               OpStore %82 %float_0
+         %91 = OpAccessChain %_ptr_StorageBuffer_float %LShl %int_0 %int_0
+               OpStore %91 %float_0
+        %100 = OpAccessChain %_ptr_StorageBuffer_float %RShl %int_0 %int_0
+               OpStore %100 %float_0
+        %111 = OpAccessChain %_ptr_StorageBuffer_float %RSha %int_0 %int_0
+               OpStore %111 %float_0
+        %120 = OpAccessChain %_ptr_StorageBuffer_float %IEq %int_0 %int_0
+               OpStore %120 %float_0
+        %128 = OpAccessChain %_ptr_StorageBuffer_float %INeq %int_0 %int_0
                OpStore %128 %float_0
-        %135 = OpAccessChain %_ptr_StorageBuffer_float %Ule %int_0 %int_0
-               OpStore %135 %float_0
-        %142 = OpAccessChain %_ptr_StorageBuffer_float %Ugt %int_0 %int_0
-               OpStore %142 %float_0
-        %149 = OpAccessChain %_ptr_StorageBuffer_float %Uge %int_0 %int_0
-               OpStore %149 %float_0
-        %156 = OpAccessChain %_ptr_StorageBuffer_float %Slt %int_0 %int_0
-               OpStore %156 %float_0
-        %163 = OpAccessChain %_ptr_StorageBuffer_float %Sle %int_0 %int_0
-               OpStore %163 %float_0
-        %170 = OpAccessChain %_ptr_StorageBuffer_float %Sgt %int_0 %int_0
-               OpStore %170 %float_0
-        %177 = OpAccessChain %_ptr_StorageBuffer_float %Sge %int_0 %int_0
-               OpStore %177 %float_0
-        %184 = OpAccessChain %_ptr_StorageBuffer_float %Lor %int_0 %int_0
-               OpStore %184 %float_0
-        %191 = OpAccessChain %_ptr_StorageBuffer_float %Land %int_0 %int_0
-               OpStore %191 %float_0
-        %198 = OpAccessChain %_ptr_StorageBuffer_float %Lnot %int_0 %int_0
-               OpStore %198 %float_0
-        %205 = OpAccessChain %_ptr_StorageBuffer_float %And %int_0 %int_0
-               OpStore %205 %float_0
-        %213 = OpAccessChain %_ptr_StorageBuffer_float %Or %int_0 %int_0
-               OpStore %213 %float_0
-        %220 = OpAccessChain %_ptr_StorageBuffer_float %Xor %int_0 %int_0
-               OpStore %220 %float_0
-        %228 = OpAccessChain %_ptr_StorageBuffer_float %Not %int_0 %int_0
-               OpStore %228 %float_0
-        %235 = OpAccessChain %_ptr_StorageBuffer_float %Leq %int_0 %int_0
-               OpStore %235 %float_0
-        %242 = OpAccessChain %_ptr_StorageBuffer_float %Lneq %int_0 %int_0
-               OpStore %242 %float_0
-        %248 = OpAccessChain %_ptr_StorageBuffer_float %Sel %int_0 %int_0
-               OpStore %248 %float_0
+        %136 = OpAccessChain %_ptr_StorageBuffer_float %Ult %int_0 %int_0
+               OpStore %136 %float_0
+        %144 = OpAccessChain %_ptr_StorageBuffer_float %Ule %int_0 %int_0
+               OpStore %144 %float_0
+        %152 = OpAccessChain %_ptr_StorageBuffer_float %Ugt %int_0 %int_0
+               OpStore %152 %float_0
+        %160 = OpAccessChain %_ptr_StorageBuffer_float %Uge %int_0 %int_0
+               OpStore %160 %float_0
+        %167 = OpAccessChain %_ptr_StorageBuffer_float %Slt %int_0 %int_0
+               OpStore %167 %float_0
+        %174 = OpAccessChain %_ptr_StorageBuffer_float %Sle %int_0 %int_0
+               OpStore %174 %float_0
+        %181 = OpAccessChain %_ptr_StorageBuffer_float %Sgt %int_0 %int_0
+               OpStore %181 %float_0
+        %188 = OpAccessChain %_ptr_StorageBuffer_float %Sge %int_0 %int_0
+               OpStore %188 %float_0
+        %195 = OpAccessChain %_ptr_StorageBuffer_float %Lor %int_0 %int_0
+               OpStore %195 %float_0
+        %202 = OpAccessChain %_ptr_StorageBuffer_float %Land %int_0 %int_0
+               OpStore %202 %float_0
+        %209 = OpAccessChain %_ptr_StorageBuffer_float %Lnot %int_0 %int_0
+               OpStore %209 %float_0
+        %216 = OpAccessChain %_ptr_StorageBuffer_float %And %int_0 %int_0
+               OpStore %216 %float_0
+        %225 = OpAccessChain %_ptr_StorageBuffer_float %Or %int_0 %int_0
+               OpStore %225 %float_0
+        %232 = OpAccessChain %_ptr_StorageBuffer_float %Xor %int_0 %int_0
+               OpStore %232 %float_0
+        %240 = OpAccessChain %_ptr_StorageBuffer_float %Not %int_0 %int_0
+               OpStore %240 %float_0
+        %247 = OpAccessChain %_ptr_StorageBuffer_float %Leq %int_0 %int_0
+               OpStore %247 %float_0
+        %254 = OpAccessChain %_ptr_StorageBuffer_float %Lneq %int_0 %int_0
+               OpStore %254 %float_0
+        %261 = OpAccessChain %_ptr_StorageBuffer_float %Sel %int_0 %int_0
+               OpStore %261 %float_0
                OpReturn
                OpFunctionEnd

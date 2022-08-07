@@ -27,6 +27,8 @@
   #include <stdlib.h>
 #endif
 
+#include <stdio.h>
+
 #if defined(SPIRV_REFLECT_ENABLE_ASSERTS)
   #define SPV_REFLECT_ASSERT(COND) \
     assert(COND);
@@ -3626,9 +3628,11 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
       default: continue;
       case SpvOpSpecConstantTrue: {
         p_module->specialization_constants[index].default_value.value.uint32_bool_value = 1;
+        p_module->specialization_constants[index].type = FindType(p_module, p_node->result_type_id);
       } break;
       case SpvOpSpecConstantFalse: {
         p_module->specialization_constants[index].default_value.value.uint32_bool_value = 0;
+        p_module->specialization_constants[index].type = FindType(p_module, p_node->result_type_id);
       } break;
       case SpvOpSpecConstant: {
         SpvReflectResult result = SPV_REFLECT_RESULT_SUCCESS;
@@ -5907,12 +5911,7 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
   }                                                                                                                                                     \
 }
 
-#define SHIFT_OP_32_BIT_HOOK_PRE
-#define SHIFT_OP_64_BIT_HOOK_PRE
-#define SHIFT_OP_32_BIT_HOOK_POST
-#define SHIFT_OP_64_BIT_HOOK_POST
-
-#define DO_SHIFT_OPERATION(mode, p_simple_op_parser,simple_op_eval, simple_op_node, operation, res, CLEANUP)                                    \
+#define DO_SHIFT_OPERATION(mode, p_simple_op_parser,simple_op_eval, simple_op_node, operation, _32bit_type, _64bit_type, _32bit_member, _64bit_member, res, CLEANUP)\
 {                                                                                                                                               \
   switch (mode) {                                                                                                                               \
     default:                                                                                                                                    \
@@ -5965,20 +5964,16 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
               goto CLEANUP;                                                                                                                     \
             case 32:                                                                                                                            \
               {                                                                                                                                 \
-                uint32_t data = operand1->value.data.numeric.vector.value[i].value.uint32_bool_value;                                           \
-                SHIFT_OP_32_BIT_HOOK_PRE                                                                                                        \
+                _32bit_type data = operand1->value.data.numeric.vector.value[i].value.##_32bit_member;                                          \
                 data operation##= shift_num;                                                                                                    \
-                SHIFT_OP_32_BIT_HOOK_POST                                                                                                       \
-                (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value = data;                                            \
+                (simple_op_node)->value.data.numeric.vector.value[i].value.##_32bit_member = data;                                              \
               }                                                                                                                                 \
               break;                                                                                                                            \
             case 64:                                                                                                                            \
               {                                                                                                                                 \
-                uint64_t data = operand1->value.data.numeric.vector.value[i].value.uint64_value;                                                \
-                SHIFT_OP_64_BIT_HOOK_PRE                                                                                                        \
+                _64bit_type data = operand1->value.data.numeric.vector.value[i].value.##_64bit_member;                                          \
                 data operation##= shift_num;                                                                                                    \
-                SHIFT_OP_64_BIT_HOOK_POST                                                                                                       \
-                (simple_op_node)->value.data.numeric.vector.value[i].value.uint64_value = data;                                                 \
+                (simple_op_node)->value.data.numeric.vector.value[i].value.##_64bit_member = data;                                              \
               }                                                                                                                                 \
               break;                                                                                                                            \
           }                                                                                                                                     \
@@ -6014,6 +6009,11 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
       break;                                                                                                                                    \
   }                                                                                                                                             \
 }
+
+#define DO_ARITHMETIC_SHIFT_OPERATION(mode, p_simple_op_parser,simple_op_eval, simple_op_node, operation, res, CLEANUP)\
+  DO_SHIFT_OPERATION(mode, p_simple_op_parser, simple_op_eval, simple_op_node, operation, int32_t, int64_t, sint32_value, sint64_value, res, CLEANUP)
+#define DO_LOGICAL_SHIFT_OPERATION(mode, p_simple_op_parser,simple_op_eval, simple_op_node, operation, res, CLEANUP)\
+  DO_SHIFT_OPERATION(mode, p_simple_op_parser, simple_op_eval, simple_op_node, operation, uint32_t, uint64_t, uint32_bool_value, uint64_value, res, CLEANUP)
 
 #define DO_BINARY_BOOLEAN_LOGICAL_OPERATION(mode, p_simple_op_parser,simple_op_eval, simple_op_node, operation, res, CLEANUP)                   \
 {                                                                                                                                               \
@@ -6300,7 +6300,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
             {
               for (uint32_t i = 0; i < p_node->num_id_operands; ++i) {
                 GET_OPERAND(p_parser, p_eval, p_node, 3 + i, p_node->id_operands[i], res, CLEANUP)
-                  // check type compatibility
+                // check type compatibility
                 if (p_node->id_operands[i]->value.type->id != p_node->value.type->component_type_id) {
                   res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
                   goto CLEANUP;
@@ -6756,39 +6756,15 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
             break;
           case SpvOpShiftRightLogical:
             // zero fill right shift. Just >> in c
-            DO_SHIFT_OPERATION(evaluation_mode, p_parser, p_eval, p_node, >> , res, CLEANUP)
+            DO_LOGICAL_SHIFT_OPERATION(evaluation_mode, p_parser, p_eval, p_node, >> , res, CLEANUP)
             break;
           case SpvOpShiftRightArithmetic:
             // fill with sign of original number.
-            #undef SHIFT_OP_32_BIT_HOOK_PRE
-            #undef SHIFT_OP_64_BIT_HOOK_PRE
-            #undef SHIFT_OP_32_BIT_HOOK_POST
-            #undef SHIFT_OP_64_BIT_HOOK_POST
-            #define SHIFT_OP_32_BIT_HOOK_PRE uint32_t sign_bit = data & 0x80000000;
-            #define SHIFT_OP_64_BIT_HOOK_PRE uint64_t sign_bit = data & 0x8000000000000000;
-            #define SHIFT_OP_32_BIT_HOOK_POST                           \
-              if (sign_bit) {                                           \
-                uint32_t fill = 0xffffffff << (32 - shift_num);         \
-                data |= fill;                                           \
-              }
-            #define SHIFT_OP_64_BIT_HOOK_POST                           \
-              if (sign_bit) {                                           \
-                uint64_t fill = 0xffffffffffffffff << (64 - shift_num); \
-                data |= fill;                                           \
-              }
-            DO_SHIFT_OPERATION(evaluation_mode, p_parser, p_eval, p_node, >> , res, CLEANUP)
-            #undef SHIFT_OP_32_BIT_HOOK_PRE
-            #undef SHIFT_OP_64_BIT_HOOK_PRE
-            #undef SHIFT_OP_32_BIT_HOOK_POST
-            #undef SHIFT_OP_64_BIT_HOOK_POST
-            #define SHIFT_OP_32_BIT_HOOK_PRE
-            #define SHIFT_OP_64_BIT_HOOK_PRE
-            #define SHIFT_OP_32_BIT_HOOK_POST
-            #define SHIFT_OP_64_BIT_HOOK_POST
+            DO_ARITHMETIC_SHIFT_OPERATION(evaluation_mode, p_parser, p_eval, p_node, >> , res, CLEANUP)
             break;
           case SpvOpShiftLeftLogical:
             // zero fill left shift. Just << in c
-            DO_SHIFT_OPERATION(evaluation_mode, p_parser, p_eval, p_node, << , res, CLEANUP)
+            DO_LOGICAL_SHIFT_OPERATION(evaluation_mode, p_parser, p_eval, p_node, << , res, CLEANUP)
             break;
           case SpvOpBitwiseOr:
             DO_SIMPLE_BINARY_INTEGER_OPERATION(evaluation_mode, p_parser, p_eval, p_node, | , res, CLEANUP)
