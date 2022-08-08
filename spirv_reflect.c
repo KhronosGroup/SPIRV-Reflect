@@ -1542,7 +1542,6 @@ static SpvReflectResult ParseDecorations(SpvReflectShaderModule* p_module, SpvRe
       case SpvDecorationBuiltIn: {
         p_target_decorations->is_built_in = true;
         uint32_t word_offset = p_node->word_offset + member_offset + 3;
-        // no rule specifies a result cannot be decorated twice. But let's assume this for now...
         SpvBuiltIn builtin_id;
         CHECKED_READU32_CAST(p_parser, word_offset, SpvBuiltIn, builtin_id);
         p_target_decorations->built_in = builtin_id;
@@ -3583,13 +3582,11 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
   p_module->specialization_constants = NULL;
 
   uint32_t constant_instruction_num = 0;
-  uint32_t instruction_size = 0;
   for (size_t i = 0; i < p_parser->node_count; ++i) {
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
     // constant types need to be tracked after parser is dead...
     if (IS_CONSTANT_OP(p_node->op)) {
         constant_instruction_num++;
-        instruction_size += p_node->word_count;
     }
     if (p_node->op == SpvOpSpecConstantTrue || p_node->op == SpvOpSpecConstantFalse || p_node->op == SpvOpSpecConstant) {
       p_module->specialization_constant_count++;
@@ -3646,7 +3643,7 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
     if (p_node->decorations.specialization_constant.value != (uint32_t)INVALID_VALUE) {
       for (uint32_t j = 0; j < index; ++j) {
         if (p_module->specialization_constants[j].constant_id == p_node->decorations.specialization_constant.value) {
-          return SPV_REFLECT_RESULT_ERROR_SPIRV_DUPLICATE_SPEC_CONSTANT_NAME;
+          return SPV_REFLECT_RESULT_ERROR_SPIRV_DUPLICATE_ID;
         }
       }
     }
@@ -6169,9 +6166,9 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
       {
         switch (p_node->evaluation_state) {
           case SPV_REFLECT_EVALUATION_NODE_STATE_UNINITIALIZED:
-            return  SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
+            return  SPV_REFLECT_RESULT_ERROR_SPIRV_EVAL_TREE_INIT_FAILED;
           case SPV_REFLECT_EVALUATION_NODE_STATE_INIT_FAILED:
-            return SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_EVAL_TREE_INIT_FAILED;
           case SPV_REFLECT_EVALUATION_NODE_STATE_PENDING:
             p_node->evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_WORKING;
             break;
@@ -6194,7 +6191,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
           case SPV_REFLECT_EVALUATION_NODE_STATE_UNINITIALIZED:
             break;
           case SPV_REFLECT_EVALUATION_NODE_STATE_INIT_FAILED:
-            return SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_EVAL_TREE_INIT_FAILED;
           case SPV_REFLECT_EVALUATION_NODE_STATE_PENDING:
           case SPV_REFLECT_EVALUATION_NODE_STATE_WORKING:
           case SPV_REFLECT_EVALUATION_NODE_STATE_DONE:
@@ -6210,7 +6207,7 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
           case SPV_REFLECT_EVALUATION_NODE_STATE_UNINITIALIZED:
             break;
           case SPV_REFLECT_EVALUATION_NODE_STATE_INIT_FAILED:
-            return SPV_REFLECT_RESULT_ERROR_INTERNAL_ERROR;
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
           case SPV_REFLECT_EVALUATION_NODE_STATE_PENDING:
           case SPV_REFLECT_EVALUATION_NODE_STATE_WORKING:
           case SPV_REFLECT_EVALUATION_NODE_STATE_DONE:
@@ -7406,10 +7403,28 @@ int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id
     return HaveNodeInTree(p_node, p_spec, false);
 }
 #else
+
 SpvReflectEvaluation* spvReflectGetEvaluationInterface(SpvReflectShaderModule* p_module)
 {
   (void)p_module;
   return NULL;
+}
+
+SpvReflectResult spvReflectSetSpecConstantValue(SpvReflectEvaluation* p_eval, uint32_t specId, SpvReflectScalarType type, const SpvReflectScalarValueData* value)
+{
+  (void)p_eval;
+  (void)specId;
+  (void)type;
+  (void)value;
+  return SPV_REFLECT_RESULT_ERROR_SPIRV_EVAL_TREE_INIT_FAILED;
+}
+
+SpvReflectResult spvReflectGetSpecConstantValue(SpvReflectEvaluation* p_eval, uint32_t specId, const SpvReflectValue** value)
+{
+  (void)p_eval;
+  (void)specId;
+  (void)value;
+  return SPV_REFLECT_RESULT_ERROR_SPIRV_EVAL_TREE_INIT_FAILED;
 }
 
 SpvReflectResult spvReflectEvaluateResult(SpvReflectEvaluation* p_eval, uint32_t result_id, const SpvReflectValue** result)
@@ -7417,7 +7432,7 @@ SpvReflectResult spvReflectEvaluateResult(SpvReflectEvaluation* p_eval, uint32_t
   (void)p_eval;
   (void)result_id;
   (void)result;
-  return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+  return SPV_REFLECT_RESULT_ERROR_SPIRV_EVAL_TREE_INIT_FAILED;
 }
 
 int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id, uint32_t specId)

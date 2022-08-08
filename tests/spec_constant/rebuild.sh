@@ -1,6 +1,6 @@
 #!/bin/bash
-# Creates multi_entrypoint.spv from multi_entrypoint.glsl and
-# multi_entrypoint.spv.dis.diff
+# Creates test spv for specialization constant evaluation.
+# Updating glsl may result in result id change, and patch file will need to update the number
 glslc -fshader-stage=comp --target-spv=spv1.5 test_orig.glsl -o test_32bit.spv
 spirv-dis test_32bit.spv > test_orig.spv.dis
 cp test_orig.spv.dis test_32bit.spv.dis

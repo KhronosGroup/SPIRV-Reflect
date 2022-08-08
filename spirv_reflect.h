@@ -80,9 +80,10 @@ typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_BLOCK_MEMBER_REFERENCE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ENTRY_POINT,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_EXECUTION_MODE,
-  SPV_REFLECT_RESULT_ERROR_SPIRV_DUPLICATE_SPEC_CONSTANT_NAME,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_DUPLICATE_ID,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION,
-  SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE
+  SPV_REFLECT_RESULT_ERROR_SPIRV_EVAL_TREE_INIT_FAILED
 } SpvReflectResult;
 
 /*! @enum SpvReflectModuleFlagBits
@@ -96,15 +97,10 @@ SPV_REFLECT_MODULE_FLAG_NO_COPY - Disables copying of SPIR-V code
   This is flag is intended for cases where the memory overhead of
   storing the copied SPIR-V is undesirable.
 
-SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT - copies constant 
-  instructions for use with later evaluation.
-
-SPV_REFLECT_MODULE_FLAG_EVALUATE_NO_COPY - use p_code for later
-  evaluation. User need to make sure not to free memory. Code
-  pointed to need to be valid upon re-evaluation. Re-evaluation
-  MAY happen after changing any spec constant, and when a op is
-  evaluated for the first time. (behavior may be changed to only
-  when related constants are changed)
+SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT - enables OpSpecXXX and 
+  OpConstantXXX result id evaluation. Used for evaluating specialized
+  array sizes, and compute shader specialized WorkGroupSize
+  (LocalSizeId and WorkGroupSize builtin)
 */
 typedef enum SpvReflectModuleFlagBits {
   SPV_REFLECT_MODULE_FLAG_NONE                   = 0x00000000,
@@ -271,7 +267,8 @@ typedef enum SpvReflectGenerator {
 } SpvReflectGenerator;
 
 enum {
-  SPV_REFLECT_MAX_VECTOR_DIMS                   =  4,
+  // Vector16 capability allows larger vectors
+  SPV_REFLECT_MAX_VECTOR_DIMS                   = 16,
   SPV_REFLECT_MAX_ARRAY_DIMS                    = 32,
   SPV_REFLECT_MAX_DESCRIPTOR_SETS               = 64,
 };

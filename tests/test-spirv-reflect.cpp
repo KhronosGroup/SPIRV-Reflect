@@ -1463,6 +1463,8 @@ TEST(SpirvReflectSpecializationConstantTest, TestSpecParsingFloat)
   spvReflectDestroyShaderModule(&module_);
 }
 
+#if SPIRV_REFLECT_ENABLE_CONSTANT_EVALUATION
+
 TEST(SpirvReflectSpecializationConstantTest, TestEvaluate32)
 {
   std::vector<uint8_t> spirv_;
@@ -1656,3 +1658,4 @@ TEST(SpirvReflectSpecializationConstantTest, TestConvert) {
     ASSERT_EQ(res->data.numeric.scalar.value.uint32_bool_value, 1);
   }
 }
+#endif
