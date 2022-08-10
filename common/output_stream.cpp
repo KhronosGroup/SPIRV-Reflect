@@ -600,8 +600,8 @@ std::string ToStringComponentType(const SpvReflectTypeDescription& type, uint32_
 }
 
 void ParseBlockMembersToTextLines(
-    spv_reflect::Evaluation obj,
-    const char* indent, int indent_depth, bool flatten_cbuffers, const std::string& parent_name, uint32_t member_count, const SpvReflectBlockVariable* p_members, std::vector<TextLine>* p_text_lines)
+  spv_reflect::Evaluation obj,
+  const char* indent, int indent_depth, bool flatten_cbuffers, const std::string& parent_name, uint32_t member_count, const SpvReflectBlockVariable* p_members, std::vector<TextLine>* p_text_lines)
 {
   const char* t = indent;
   for (uint32_t member_index = 0; member_index < member_count; ++member_index) {
@@ -663,14 +663,14 @@ void ParseBlockMembersToTextLines(
             // dim = 0 means it's an unbounded array 
             //
             if (dim > 0) {
-                if (dim == 0xFFFFFFFF) {
-                    const SpvReflectValue* val;
-                    SpvReflectResult res = obj.EvaluateResult(member.array.spec_constant_op_ids[array_dim_index], &val);
-                    if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
-                        dim = val->data.numeric.scalar.value.uint32_bool_value;
-                    }
+              if (dim == 0xFFFFFFFF) {
+                const SpvReflectValue* val;
+                SpvReflectResult res = obj.EvaluateResult(member.array.spec_constant_op_ids[array_dim_index], &val);
+                if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
+                  dim = val->data.numeric.scalar.value.uint32_bool_value;
                 }
-                ss_array << "[" << dim << "]";
+              }
+              ss_array << "[" << dim << "]";
             }
             else {
                 ss_array << "[]";
@@ -707,11 +707,11 @@ void ParseBlockMembersToTextLines(
         for (uint32_t array_dim_index = 0; array_dim_index < member.array.dims_count; ++array_dim_index) {
           uint32_t dim = member.array.dims[array_dim_index];
           if (dim == 0xFFFFFFFF) {
-              const SpvReflectValue* val;
-              SpvReflectResult res = obj.EvaluateResult(member.array.spec_constant_op_ids[array_dim_index], &val);
-              if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
-                  dim = val->data.numeric.scalar.value.uint32_bool_value;
-              }
+            const SpvReflectValue* val;
+            SpvReflectResult res = obj.EvaluateResult(member.array.spec_constant_op_ids[array_dim_index], &val);
+            if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
+              dim = val->data.numeric.scalar.value.uint32_bool_value;
+            }
           }
           ss_array << "[" << dim << "]"; 
         }
@@ -1038,7 +1038,7 @@ void StreamWriteInterfaceVariable(std::ostream& os, spv_reflect::Evaluation eval
     for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
       uint32_t dim = obj.array.dims[dim_index];
       if (dim == 0xFFFFFFFF) {
-          const SpvReflectValue* val;
+        const SpvReflectValue* val;
         SpvReflectResult res = eval.EvaluateResult(obj.array.spec_constant_op_ids[dim_index], &val);
         if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
           dim = val->data.numeric.scalar.value.uint32_bool_value;
@@ -1091,43 +1091,43 @@ void StreamWriteSpecializationConstant(std::ostream& os, const SpvReflectSpecial
         os << "signed ";
       }
       else {
-          os << "unsigned ";
+        os << "unsigned ";
       }
-      os<< obj.type->traits.numeric.scalar.width <<" bit integer\n";
+      os << obj.type->traits.numeric.scalar.width << " bit integer\n";
       os << t << "default    : ";
       // let's assume only 32 bit and 64 bit types (no 8 and 16 bit types here)
       if (obj.type->traits.numeric.scalar.width == 32) {
-          if (obj.type->traits.numeric.scalar.signedness) {
-              os << obj.default_value.value.sint32_value;
-          }
-          else {
-              os << obj.default_value.value.uint32_bool_value;
-          }
+        if (obj.type->traits.numeric.scalar.signedness) {
+          os << obj.default_value.value.sint32_value;
+        }
+        else {
+          os << obj.default_value.value.uint32_bool_value;
+        }
       }
-      else if(obj.type->traits.numeric.scalar.width == 64){
-          if (obj.type->traits.numeric.scalar.signedness) {
-              os << obj.default_value.value.sint64_value;
-          }
-          else {
-              os << obj.default_value.value.uint64_value;
-          }
+      else if (obj.type->traits.numeric.scalar.width == 64) {
+        if (obj.type->traits.numeric.scalar.signedness) {
+          os << obj.default_value.value.sint64_value;
+        }
+        else {
+          os << obj.default_value.value.uint64_value;
+        }
       }
       else {
-          os << "default value not native in c/cpp";
+        os << "default value not native in c/cpp";
       }
       break;
     case 3:
-        os << obj.type->traits.numeric.scalar.width << " bit floating point\n";
-        os << t << "default    : ";
-        if (obj.type->traits.numeric.scalar.width == 32) {
-            os << obj.default_value.value.float32_value;
-        }
-        else if (obj.type->traits.numeric.scalar.width == 64) {
-            os << obj.default_value.value.float64_value;
-        }
-        else {
-            os << "default value not native in c/cpp";
-        }
+      os << obj.type->traits.numeric.scalar.width << " bit floating point\n";
+      os << t << "default    : ";
+      if (obj.type->traits.numeric.scalar.width == 32) {
+        os << obj.default_value.value.float32_value;
+      }
+      else if (obj.type->traits.numeric.scalar.width == 64) {
+        os << obj.default_value.value.float64_value;
+      }
+      else {
+        os << "default value not native in c/cpp";
+      }
       break;
     default:
       os << "unknown type";
@@ -1146,18 +1146,18 @@ void StreamWriteEntryPoint(std::ostream& os, spv_reflect::Evaluation eval, const
     else {
       os << "local size hint : ";
     }
-    if(obj.local_size.flags & 4) {
-        const SpvReflectValue* val;
-        SpvReflectResult res = eval.EvaluateResult(obj.local_size.x, &val);
-        if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_VECTOR))
-            && (val->type->traits.numeric.scalar.width == 32)) {
-            os << "(" << val->data.numeric.vector.value[0].value.uint32_bool_value << ", "
-                << val->data.numeric.vector.value[1].value.uint32_bool_value << ", "
-                << val->data.numeric.vector.value[2].value.uint32_bool_value << ")";
-        }
-        else {
-            os << "(failed evaluation of WorkGroupSize Builtin)";
-        }
+    if (obj.local_size.flags & 4) {
+      const SpvReflectValue* val;
+      SpvReflectResult res = eval.EvaluateResult(obj.local_size.x, &val);
+      if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_VECTOR))
+        && (val->type->traits.numeric.scalar.width == 32)) {
+        os << "(" << val->data.numeric.vector.value[0].value.uint32_bool_value << ", "
+          << val->data.numeric.vector.value[1].value.uint32_bool_value << ", "
+          << val->data.numeric.vector.value[2].value.uint32_bool_value << ")";
+      }
+      else {
+        os << "(failed evaluation of WorkGroupSize Builtin)";
+      }
     }
     else if(obj.local_size.flags & 1) {
       os << "(";
@@ -1192,18 +1192,18 @@ void StreamWriteEntryPoint(std::ostream& os, spv_reflect::Evaluation eval, const
   }
 }
 
-void StreamWriteShaderModule(std::ostream& os, const spv_reflect::ShaderModule& obj, const char* indent)
+void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj, spv_reflect::Evaluation eval,const char* indent)
 {
   (void)indent;
-  os << "generator       : " << ToStringGenerator(obj.GetShaderModule().generator) << "\n";
-  os << "source lang     : " << spvReflectSourceLanguage(obj.GetShaderModule().source_language) << "\n";
-  os << "source lang ver : " << obj.GetShaderModule().source_language_version << "\n";
-  os << "source file     : " << (obj.GetShaderModule().source_file != NULL ? obj.GetShaderModule().source_file : "") << "\n";
+  os << "generator       : " << ToStringGenerator(obj.generator) << "\n";
+  os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
+  os << "source lang ver : " << obj.source_language_version << "\n";
+  os << "source file     : " << (obj.source_file != NULL ? obj.source_file : "") << "\n";
   //os << "shader stage    : " << ToStringShaderStage(obj.shader_stage) << "\n";
 
-  for (uint32_t i = 0; i < obj.GetShaderModule().entry_point_count; ++i) {
-    StreamWriteEntryPoint(os, obj.GetEvaluation(), obj.GetShaderModule().entry_points[i], "");
-    if (i < (obj.GetShaderModule().entry_point_count - 1)) {
+  for (uint32_t i = 0; i < obj.entry_point_count; ++i) {
+    StreamWriteEntryPoint(os, eval, obj.entry_points[i], "");
+    if (i < (obj.entry_point_count - 1)) {
         os << "\n";
     }
   }
@@ -1223,7 +1223,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
   const char* tt    = "    ";
   const char* ttt   = "      ";
 
-  StreamWriteShaderModule(os, obj, "");
+  StreamWriteShaderModule(os, obj.GetShaderModule(), obj.GetEvaluation(), "");
 
   uint32_t count = 0;
   std::vector<SpvReflectInterfaceVariable*> variables;

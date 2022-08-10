@@ -346,27 +346,27 @@ typedef struct SpvReflectTypeDescription {
 
 
 typedef struct SpvReflectScalarValueData {
-    union {
-        /* small types not implemented yet... */
-        /* also remember float16 */
-        uint8_t uint8_value;
-        int8_t sint8_value;
-        uint16_t uint16_value;
-        int16_t sint16_value;
-        /* types that are currently supported */
-        uint32_t uint32_bool_value;
-        int32_t sint32_value;
-        float float32_value;
-        uint64_t uint64_value;
-        int64_t sint64_value;
-        double float64_value;
-    } value;
-    // for use with OpUndef
-    int undefined_value;
+  union {
+    /* small types not implemented yet... */
+    /* also remember float16 */
+    uint8_t uint8_value;
+    int8_t sint8_value;
+    uint16_t uint16_value;
+    int16_t sint16_value;
+    /* types that are currently supported */
+    uint32_t uint32_bool_value;
+    int32_t sint32_value;
+    float float32_value;
+    uint64_t uint64_value;
+    int64_t sint64_value;
+    double float64_value;
+  } value;
+  // for use with OpUndef
+  int undefined_value;
 } SpvReflectScalarValueData;
 
 typedef struct SpvReflectVectorValueData {
-    SpvReflectScalarValueData value[SPV_REFLECT_MAX_VECTOR_DIMS];
+  SpvReflectScalarValueData value[SPV_REFLECT_MAX_VECTOR_DIMS];
 } SpvReflectVectorValueData;
 
 // only scalar, vector types can evaluate values for now...
@@ -1560,16 +1560,6 @@ typedef enum SpvReflectScalarType {
 } SpvReflectScalarType;
 
 /*! @fn spvReflectSetSpecConstantValue
- @brief  Sets the current value of specialization constant. Type must follow c/c++ type aliasing rules.
- @param  p_eval      Pointer to an instance of SpvReflectEvaluation.
- @param  specId      Specialization constant id of the constant.
- @param  type        Type of user specified value. For error checking.
- @param  value       User provided value.
- @return             If successful, returns SPV_REFLECT_RESULT_SUCCESS.
-                     Otherwise, the error code indicates the cause of
-                     the failure.
-*/
-/*! @fn spvReflectSetSpecConstantValue
 @brief  Sets the current value of specialization constant. Type must follow c/c++ type aliasing rules.
 @param  p_eval      Pointer to an instance of SpvReflectEvaluation.
 @param  specId      Specialization constant id of the constant.
@@ -1581,15 +1571,6 @@ the failure.
 */
 SpvReflectResult spvReflectSetSpecConstantValue(SpvReflectEvaluation* p_eval, uint32_t specId, SpvReflectScalarType type, const SpvReflectScalarValueData* value);
 
-/*! @fn spvReflectGetSpecConstantValue
- @brief  Get the current value of specialization constant. Type must follow c/c++ type aliasing rules.
- @param  p_eval      Pointer to an instance of SpvReflectEvaluation.
- @param  specId      Specialization constant id of the constant.
- @param  value       Current value.
- @return             If successful, returns SPV_REFLECT_RESULT_SUCCESS.
-                     Otherwise, the error code indicates the cause of
-                     the failure.
-*/
 /*! @fn spvReflectGetSpecConstantValue
 @brief  Get the current value of specialization constant. Type must follow c/c++ type aliasing rules.
 @param  p_eval      Pointer to an instance of SpvReflectEvaluation.

@@ -5599,7 +5599,7 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
   }                                                                                                                                               \
 }
 
-#define CHECK_IF_VECTOR_SIZE_MATCH_2OP(p_result_node, p_op1_node, p_op2_node, res, CLEANUP)                                             \
+#define CHECK_IF_VECTOR_SIZE_MATCH_2OP(p_result_node, p_op1_node, p_op2_node, res, CLEANUP)                                                       \
 {                                                                                                                                                 \
   if ((p_result_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR) {                                                                   \
     if (!((p_op1_node)->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)) {                                                                 \
@@ -5731,7 +5731,7 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
         CHECK_IS_INTEGER_TYPE((simple_op_node)->id_operands[0], res, CLEANUP)                                                       \
         CHECK_VECTOR_OR_SCALAR_TYPE((simple_op_node)->id_operands[0], res, CLEANUP)                                                 \
         CHECK_WIDTH_MATCH((simple_op_node), (simple_op_node)->id_operands[0], res, CLEANUP)                                         \
-        CHECK_IF_VECTOR_SIZE_MATCH_1OP((simple_op_node), (simple_op_node)->id_operands[0], res, CLEANUP)                  \
+        CHECK_IF_VECTOR_SIZE_MATCH_1OP((simple_op_node), (simple_op_node)->id_operands[0], res, CLEANUP)                            \
       }                                                                                                                             \
       break;                                                                                                                        \
   }                                                                                                                                 \
@@ -5814,7 +5814,7 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
         /* check agains result */                                                                                                               \
         CHECK_WIDTH_MATCH(simple_op_node, (simple_op_node)->id_operands[0], res, CLEANUP)                                                       \
         CHECK_WIDTH_MATCH(simple_op_node, (simple_op_node)->id_operands[1], res, CLEANUP)                                                       \
-        CHECK_IF_VECTOR_SIZE_MATCH_2OP(simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)  \
+        CHECK_IF_VECTOR_SIZE_MATCH_2OP(simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)            \
       }                                                                                                                                         \
       break;                                                                                                                                    \
   }                                                                                                                                             \
@@ -5897,7 +5897,7 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
           res = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;                                                                                            \
           goto CLEANUP;                                                                                                                                 \
         }                                                                                                                                               \
-        CHECK_IF_VECTOR_SIZE_MATCH_2OP((simple_op_node), (simple_op_node)->id_operands[0], (simple_op_node)->id_operands[1], res, CLEANUP)    \
+        CHECK_IF_VECTOR_SIZE_MATCH_2OP((simple_op_node), (simple_op_node)->id_operands[0], (simple_op_node)->id_operands[1], res, CLEANUP)              \
       }                                                                                                                                                 \
       break;                                                                                                                                            \
   }                                                                                                                                                     \
@@ -5956,16 +5956,16 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
               goto CLEANUP;                                                                                                                     \
             case 32:                                                                                                                            \
               {                                                                                                                                 \
-                _32bit_type data = operand1->value.data.numeric.vector.value[i].value. _32bit_member;                                          \
+                _32bit_type data = operand1->value.data.numeric.vector.value[i].value. _32bit_member;                                           \
                 data operation##= shift_num;                                                                                                    \
-                (simple_op_node)->value.data.numeric.vector.value[i].value. _32bit_member = data;                                              \
+                (simple_op_node)->value.data.numeric.vector.value[i].value. _32bit_member = data;                                               \
               }                                                                                                                                 \
               break;                                                                                                                            \
             case 64:                                                                                                                            \
               {                                                                                                                                 \
-                _64bit_type data = operand1->value.data.numeric.vector.value[i].value. _64bit_member;                                          \
+                _64bit_type data = operand1->value.data.numeric.vector.value[i].value. _64bit_member;                                           \
                 data operation##= shift_num;                                                                                                    \
-                (simple_op_node)->value.data.numeric.vector.value[i].value. _64bit_member = data;                                              \
+                (simple_op_node)->value.data.numeric.vector.value[i].value. _64bit_member = data;                                               \
               }                                                                                                                                 \
               break;                                                                                                                            \
           }                                                                                                                                     \
@@ -5995,7 +5995,7 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
                                                                                                                                                 \
         /* op1 and result must have same width */                                                                                               \
         CHECK_WIDTH_MATCH(simple_op_node, (simple_op_node)->id_operands[0], res, CLEANUP)                                                       \
-        CHECK_IF_VECTOR_SIZE_MATCH_2OP(simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)  \
+        CHECK_IF_VECTOR_SIZE_MATCH_2OP(simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)            \
       }                                                                                                                                         \
       break;                                                                                                                                    \
   }                                                                                                                                             \
@@ -6059,7 +6059,7 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
         CHECK_IS_BOOLEAN_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                                     \
         CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                               \
                                                                                                                                                 \
-        CHECK_IF_VECTOR_SIZE_MATCH_2OP(simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)  \
+        CHECK_IF_VECTOR_SIZE_MATCH_2OP(simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)            \
       }                                                                                                                                         \
       break;                                                                                                                                    \
   }                                                                                                                                             \
@@ -6092,13 +6092,13 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
               goto CLEANUP;                                                                                                                                 \
             case 32:                                                                                                                                        \
               (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value                                                                  \
-                = operand1->value.data.numeric.vector.value[i].value. _32bit_member                                                                        \
-                  operation operand2->value.data.numeric.vector.value[i].value. _32bit_member;                                                             \
+                = operand1->value.data.numeric.vector.value[i].value. _32bit_member                                                                         \
+                  operation operand2->value.data.numeric.vector.value[i].value. _32bit_member;                                                              \
               break;                                                                                                                                        \
             case 64:                                                                                                                                        \
               (simple_op_node)->value.data.numeric.vector.value[i].value.uint32_bool_value                                                                  \
-                = operand1->value.data.numeric.vector.value[i].value. _64bit_member                                                                        \
-                  operation operand2->value.data.numeric.vector.value[i].value. _64bit_member;                                                             \
+                = operand1->value.data.numeric.vector.value[i].value. _64bit_member                                                                         \
+                  operation operand2->value.data.numeric.vector.value[i].value. _64bit_member;                                                              \
               break;                                                                                                                                        \
           }                                                                                                                                                 \
         }                                                                                                                                                   \
@@ -6129,7 +6129,7 @@ SpvReflectResult CopyValueData(const SpvReflectTypeDescription* type, SpvReflect
         CHECK_IS_INTEGER_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                                                 \
         CHECK_VECTOR_OR_SCALAR_TYPE(simple_op_node->id_operands[1], res, CLEANUP)                                                                           \
                                                                                                                                                             \
-        CHECK_IF_VECTOR_SIZE_MATCH_2OP(simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)              \
+        CHECK_IF_VECTOR_SIZE_MATCH_2OP(simple_op_node, simple_op_node->id_operands[0], simple_op_node->id_operands[1], res, CLEANUP)                        \
       }                                                                                                                                                     \
       break;                                                                                                                                                \
   }                                                                                                                                                         \
@@ -7279,116 +7279,123 @@ static SpvReflectResult SPIRV_REFLECT_FORCEINLINE EvaluateResult_Impl(SpvReflect
 
 SpvReflectEvaluation* spvReflectGetEvaluationInterface(const SpvReflectShaderModule* p_module)
 {
-    // build ast here.
-    return p_module->_internal->evaluator;
+  if(!p_module) return NULL;
+  return p_module->_internal->evaluator;
 }
 
 bool HaveNodeInTree(SpvReflectPrvEvaluationNode* p_node_root, const SpvReflectPrvEvaluationNode* p_node_expected, bool flag_changed)
 {
-    if (p_node_root == p_node_expected) {
-        if (flag_changed) {
-            p_node_root->evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
-        }
-        return true;
+  if (p_node_root == p_node_expected) {
+    if (flag_changed) {
+      p_node_root->evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
     }
-    for (uint32_t i = 0; i < p_node_root->num_id_operands; ++i) {
-        if (HaveNodeInTree(p_node_root->id_operands[i], p_node_expected, flag_changed)) {
-            if (flag_changed) {
-                p_node_root->evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
-            }
-            return true;
-        }
+    return true;
+  }
+  for (uint32_t i = 0; i < p_node_root->num_id_operands; ++i) {
+    if (HaveNodeInTree(p_node_root->id_operands[i], p_node_expected, flag_changed)) {
+      if (flag_changed) {
+        p_node_root->evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
+      }
+      return true;
     }
-    return false;
+  }
+  return false;
 }
 
 SpvReflectResult spvReflectSetSpecConstantValue(SpvReflectEvaluation* p_eval, uint32_t specId, SpvReflectScalarType type, const SpvReflectScalarValueData* value)
 {
-    SpvReflectPrvEvaluationNode* p_node = FindSpecIdNode(p_eval, specId);
-    if (!p_node) {
-        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+  if (!p_eval || !value) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  SpvReflectPrvEvaluationNode* p_node = FindSpecIdNode(p_eval, specId);
+  if (!p_node) {
+    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+  }
+  switch (type) {
+    default:
+      return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+    case SPIRV_REFLECT_SCALAR_TYPE_BOOL:
+      if (p_node->value.type->type_flags != SPV_REFLECT_TYPE_FLAG_BOOL) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+      }
+      break;
+    case SPIRV_REFLECT_SCALAR_TYPE_I32:
+    case SPIRV_REFLECT_SCALAR_TYPE_I64:
+      if (p_node->value.type->type_flags != SPV_REFLECT_TYPE_FLAG_INT) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+      }
+      break;
+    case SPIRV_REFLECT_SCALAR_TYPE_F32:
+    case SPIRV_REFLECT_SCALAR_TYPE_F64:
+      if (p_node->value.type->type_flags != SPV_REFLECT_TYPE_FLAG_FLOAT) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+      }
+      break;
+  }
+  switch (type) {
+    default:
+      break;
+    case SPIRV_REFLECT_SCALAR_TYPE_I32:
+    case SPIRV_REFLECT_SCALAR_TYPE_F32:
+      if (p_node->value.type->traits.numeric.scalar.width != 32) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+      }
+      break;
+    case SPIRV_REFLECT_SCALAR_TYPE_I64:
+    case SPIRV_REFLECT_SCALAR_TYPE_F64:
+      if (p_node->value.type->traits.numeric.scalar.width != 64) {
+        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
+      }
+      break;
+  }
+  p_node->value.data.numeric.scalar = *value;
+  p_node->evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
+  // update state tracking here...
+  for (uint32_t i = 0; i < p_eval->node_count; ++i) {
+    if (p_eval->nodes[i].evaluation_state == SPV_REFLECT_EVALUATION_NODE_STATE_DONE
+      && HaveNodeInTree(&p_eval->nodes[i], p_node, true)) {
+      p_eval->nodes[i].evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
     }
-    switch (type) {
-        default:
-            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-        case SPIRV_REFLECT_SCALAR_TYPE_BOOL:
-            if (p_node->value.type->type_flags != SPV_REFLECT_TYPE_FLAG_BOOL) {
-                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-            }
-            break;
-        case SPIRV_REFLECT_SCALAR_TYPE_I32:
-        case SPIRV_REFLECT_SCALAR_TYPE_I64:
-            if (p_node->value.type->type_flags != SPV_REFLECT_TYPE_FLAG_INT) {
-                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-            }
-            break;
-        case SPIRV_REFLECT_SCALAR_TYPE_F32:
-        case SPIRV_REFLECT_SCALAR_TYPE_F64:
-            if (p_node->value.type->type_flags != SPV_REFLECT_TYPE_FLAG_FLOAT) {
-                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-            }
-            break;
-    }
-    switch (type) {
-        default:
-            break;
-        case SPIRV_REFLECT_SCALAR_TYPE_I32:
-        case SPIRV_REFLECT_SCALAR_TYPE_F32:
-            if (p_node->value.type->traits.numeric.scalar.width != 32) {
-                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-            }
-            break;
-        case SPIRV_REFLECT_SCALAR_TYPE_I64:
-        case SPIRV_REFLECT_SCALAR_TYPE_F64:
-            if (p_node->value.type->traits.numeric.scalar.width != 64) {
-                return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE;
-            }
-            break;
-    }
-    p_node->value.data.numeric.scalar = *value;
-    p_node->evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
-    // update state tracking here...
-    for (uint32_t i = 0; i < p_eval->node_count; ++i) {
-        if (p_eval->nodes[i].evaluation_state == SPV_REFLECT_EVALUATION_NODE_STATE_DONE
-            && HaveNodeInTree(&p_eval->nodes[i], p_node, true)) {
-            p_eval->nodes[i].evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
-        }
-    }
-    return SPV_REFLECT_RESULT_SUCCESS;
+  }
+  return SPV_REFLECT_RESULT_SUCCESS;
 }
 
 SpvReflectResult spvReflectGetSpecConstantValue(SpvReflectEvaluation* p_eval, uint32_t specId, const SpvReflectValue** value)
 {
-    SpvReflectPrvEvaluationNode* p_node = FindSpecIdNode(p_eval, specId);
-    if (!p_node) {
-        return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
-    }
-    *value = &p_node->value;
-    return SPV_REFLECT_RESULT_SUCCESS;
+  if(!p_eval || !value) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  SpvReflectPrvEvaluationNode* p_node = FindSpecIdNode(p_eval, specId);
+  if (!p_node) {
+    return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+  }
+  *value = &p_node->value;
+  return SPV_REFLECT_RESULT_SUCCESS;
 }
 
 SpvReflectResult spvReflectEvaluateResult(SpvReflectEvaluation* p_eval, uint32_t result_id, const SpvReflectValue** result)
 {
-    if (!result || !p_eval) {
-        return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
-    }
-    SpvReflectPrvEvaluationNode* p_node = FindEvaluationNode(p_eval, result_id);
-    SpvReflectResult res = EvaluateResult_Do(p_node);
-    *result = &p_node->value;
-    return res;
+  if (!result || !p_eval) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  SpvReflectPrvEvaluationNode* p_node = FindEvaluationNode(p_eval, result_id);
+  SpvReflectResult res = EvaluateResult_Do(p_node);
+  *result = &p_node->value;
+  return res;
 }
 
 int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id, uint32_t specId)
 {
-    SpvReflectPrvEvaluationNode* p_node = FindEvaluationNode(p_eval, result_id);
-    if (!p_node) {
-        return 0;
-    }
-    SpvReflectPrvEvaluationNode* p_spec = FindSpecIdNode(p_eval, specId);
-    if (!p_node) {
-        return 0;
-    }
-    return HaveNodeInTree(p_node, p_spec, false);
+  if (!p_eval) return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  SpvReflectPrvEvaluationNode* p_node = FindEvaluationNode(p_eval, result_id);
+  if (!p_node) {
+    return 0;
+  }
+  SpvReflectPrvEvaluationNode* p_spec = FindSpecIdNode(p_eval, specId);
+  if (!p_node) {
+    return 0;
+  }
+  return HaveNodeInTree(p_node, p_spec, false);
 }
 #else
 
