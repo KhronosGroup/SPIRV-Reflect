@@ -253,18 +253,18 @@ typedef struct SpvReflectPrvEvaluationNode {
   // add another 2 passes if need explicit initialization and free...
   union InstructionPrivate {
     // used only in preprocess passes to replace parser FindNode
-    SpvReflectPrvNode* uninitialized;
+    SpvReflectPrvNode*            uninitialized;
     struct VectorShuffle {
-      uint8_t idx[SPV_REFLECT_MAX_VECTOR_DIMS];
-    } vector_shuffle;
+      uint8_t                           idx[SPV_REFLECT_MAX_VECTOR_DIMS];
+    }                             vector_shuffle;
     struct CompositeExtract {
-      const SpvReflectTypeDescription* src_type;
-      SpvReflectValueData*       src_data;
-    } composite_extract;
+      const SpvReflectTypeDescription*  src_type;
+      SpvReflectValueData*              src_data;
+    }                             composite_extract;
     struct CompositeInsert {
-      const SpvReflectTypeDescription* dst_type;
-      SpvReflectValueData* dst_data;
-    }composite_insert;
+      const SpvReflectTypeDescription*  dst_type;
+      SpvReflectValueData*              dst_data;
+    }                             composite_insert;
   } instruction_private;
 } SpvReflectPrvEvaluationNode;
 // clang-format on

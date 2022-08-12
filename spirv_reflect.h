@@ -349,56 +349,56 @@ typedef struct SpvReflectScalarValueData {
   union {
     /* small types not implemented yet... */
     /* also remember float16 */
-    uint8_t uint8_value;
-    int8_t sint8_value;
-    uint16_t uint16_value;
-    int16_t sint16_value;
+    uint8_t                         uint8_value;
+    int8_t                          sint8_value;
+    uint16_t                        uint16_value;
+    int16_t                         sint16_value;
     /* types that are currently supported */
-    uint32_t uint32_bool_value;
-    int32_t sint32_value;
-    float float32_value;
-    uint64_t uint64_value;
-    int64_t sint64_value;
-    double float64_value;
+    uint32_t                        uint32_bool_value;
+    int32_t                         sint32_value;
+    float                           float32_value;
+    uint64_t                        uint64_value;
+    int64_t                         sint64_value;
+    double                          float64_value;
   } value;
   // for use with OpUndef
-  int undefined_value;
+  int                               undefined_value;
 } SpvReflectScalarValueData;
 
 typedef struct SpvReflectVectorValueData {
-  SpvReflectScalarValueData value[SPV_REFLECT_MAX_VECTOR_DIMS];
+  SpvReflectScalarValueData         value[SPV_REFLECT_MAX_VECTOR_DIMS];
 } SpvReflectVectorValueData;
 
 // only scalar, vector types can evaluate values for now...
 // this struct is not meant to be created on user stack,
 // instead in a internal dictionary and give user const ptr to read.
 typedef union SpvReflectValueNumericData {
-  SpvReflectScalarValueData scalar;
-  SpvReflectVectorValueData vector;
+  SpvReflectScalarValueData         scalar;
+  SpvReflectVectorValueData         vector;
 } SpvReflectValueNumericData;
 
 typedef union SpvReflectValueData {
-  SpvReflectValueNumericData numeric;
+  SpvReflectValueNumericData        numeric;
 } SpvReflectValueData;
 
 typedef struct SpvReflectValue {
   // never null in valid spirv
   // means result type id
-  SpvReflectTypeDescription* type;
-  SpvReflectValueData data;
+  SpvReflectTypeDescription*        type;
+  SpvReflectValueData               data;
 }SpvReflectValue;
 
 /*! @struct SpvReflectSpecializationConstant
 
 */
 typedef struct SpvReflectSpecializationConstant {
-  uint32_t spirv_id;
-  uint32_t constant_id;
+  uint32_t                          spirv_id;
+  uint32_t                          constant_id;
 
-  SpvReflectTypeDescription* type;
-  const char* name;
+  SpvReflectTypeDescription*        type;
+  const char*                       name;
 
-  SpvReflectScalarValueData default_value;
+  SpvReflectScalarValueData         default_value;
 } SpvReflectSpecializationConstant;
 
 /*! @struct SpvReflectInterfaceVariable
