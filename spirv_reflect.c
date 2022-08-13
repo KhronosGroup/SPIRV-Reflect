@@ -244,6 +244,7 @@ typedef struct SpvReflectPrvEvaluationNode {
   SpvReflectValue                 value;
 
   uint32_t                        specId;
+  bool                            specialized;
 
   uint32_t                        num_id_operands;
   SpvReflectPrvEvaluationNode**   id_operands;
@@ -596,7 +597,7 @@ static SpvReflectPrvNode* FindNode(
 }
 
 static SpvReflectPrvEvaluationNode* FindEvaluationNode(
-  SpvReflectEvaluation* p_eval,
+  const SpvReflectEvaluation* p_eval,
   uint32_t             result_id)
 {
   SpvReflectPrvEvaluationNode* p_node = NULL;
@@ -611,7 +612,7 @@ static SpvReflectPrvEvaluationNode* FindEvaluationNode(
 }
 
 static SpvReflectPrvEvaluationNode* FindSpecIdNode(
-  SpvReflectEvaluation* p_eval,
+  const SpvReflectEvaluation* p_eval,
   uint32_t             specid)
 {
   SpvReflectPrvEvaluationNode* p_node = NULL;
@@ -7400,6 +7401,7 @@ SpvReflectResult spvReflectSetSpecConstantValue(SpvReflectEvaluation* p_eval, ui
       break;
   }
   p_node->value.data.numeric.scalar = *value;
+  p_node->specialized = true;
   p_node->evaluation_state = SPV_REFLECT_EVALUATION_NODE_STATE_UPDATED;
   // update state tracking here...
   for (uint32_t i = 0; i < p_eval->node_count; ++i) {
@@ -7448,6 +7450,61 @@ int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id
   }
   return HaveNodeInTree(p_node, p_spec, false);
 }
+
+
+SpvReflectResult spvReflectGetSpecializationInfo(const SpvReflectEvaluation* p_eval, VkSpecializationInfo* info, VkSpecializationMapEntry* p_modifiable, uint32_t num_entries)
+{
+  if(!info || !p_eval) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  if (!p_modifiable) {
+    uint32_t count = 0;
+    for (uint32_t i = 0; i < p_eval->member_type_finder->specialization_constant_count; ++i) {
+      SpvReflectPrvEvaluationNode* p_node = FindSpecIdNode(p_eval, p_eval->member_type_finder->specialization_constants[i].constant_id);
+      if (p_node->specialized) {
+        ++count;
+      }
+    }
+    info->mapEntryCount = count;
+  }
+  else {
+    uint32_t count = 0;
+    uint32_t last_element = 0;
+    uint32_t first_element = 0xffffffff;
+    uint32_t last_element_size = 0;
+    for (uint32_t i = 0; i < p_eval->member_type_finder->specialization_constant_count && count < num_entries; ++i) {
+      SpvReflectPrvEvaluationNode* p_node = FindSpecIdNode(p_eval, p_eval->member_type_finder->specialization_constants[i].constant_id);
+      if (p_node->specialized) {
+        ++count;
+        p_modifiable[count].constantID = p_node->specId;
+        p_modifiable[count].size = p_node->value.type->traits.numeric.scalar.width / 8;
+        // VUID-VkSpecializationMapEntry-constantID-00776
+        // For a constantID specialization constant declared in a shader, size must match the byte size of the constantID.
+        // If the specialization constant is of type boolean, size must be the byte size of VkBool32
+        if(p_node->value.type->type_flags & SPV_REFLECT_TYPE_FLAG_BOOL){
+          p_modifiable[count].size = 4;
+        }
+        const uint32_t node_size = sizeof(*p_node);
+        uint32_t idx = (uint32_t)(p_node-p_eval->nodes);
+        p_modifiable[count].offset = idx * node_size;
+        if(idx > last_element) {
+          last_element = idx;
+          last_element_size = (uint32_t)p_modifiable[count].size;
+        }
+        if(idx < first_element){
+          first_element = idx;
+        }
+      }
+    }
+    info->mapEntryCount = count;
+    if(count){
+      info->pData = ((uint8_t*)(p_eval->nodes + first_element)) + offsetof(SpvReflectPrvEvaluationNode, value.data.numeric.scalar.value);
+      info->dataSize = sizeof(SpvReflectPrvEvaluationNode) * (last_element - first_element) + last_element_size;
+    }
+  }
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
 #else
 
 SpvReflectEvaluation* spvReflectGetEvaluationInterface(const SpvReflectShaderModule* p_module)
@@ -7487,6 +7544,15 @@ int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id
   (void)result_id;
   (void)specId;
   return 0;
+}
+
+SpvReflectResult spvReflectGetSpecializationInfo(const SpvReflectEvaluation* p_eval, VkSpecializationInfo* info, VkSpecializationMapEntry* p_modifiable, uint32_t num_entries)
+{
+  (void)p_eval;
+  (void)info;
+  (void)p_modifiable;
+  (void)num_entries;
+  return SPV_REFLECT_RESULT_ERROR_SPIRV_EVAL_TREE_INIT_FAILED;
 }
 
 #endif

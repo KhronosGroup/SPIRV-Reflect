@@ -1617,6 +1617,32 @@ SpvReflectResult spvReflectEvaluateResult(SpvReflectEvaluation* p_eval, uint32_t
 */
 int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id, uint32_t specId);
 
+/* need delaration compatible with vulkan.h, has to be const... */
+typedef struct VkSpecializationMapEntry {
+  uint32_t    constantID;
+  uint32_t    offset;
+  size_t      size;
+} VkSpecializationMapEntry;
+
+typedef struct VkSpecializationInfo {
+  uint32_t                           mapEntryCount;
+  const VkSpecializationMapEntry* pMapEntries;
+  size_t                             dataSize;
+  const void* pData;
+} VkSpecializationInfo;
+
+/* @fn spvReflectGetSpecializationInfo
+  @brief Call with nullptr to retrieve size of spec in entryCount, then allocate and call again.
+  @param p_eval         The evaluation interface
+  @param info           The info to be retrieved
+  @param p_modifiable   Pointer to modifiable entries allocated by user
+  @param num_entries    size of user supplied array
+  @return               If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                        Otherwise, the error code indicates the cause of
+                        the failure.
+*/
+
+SpvReflectResult spvReflectGetSpecializationInfo(const SpvReflectEvaluation* p_eval, VkSpecializationInfo* info, VkSpecializationMapEntry* p_modifiable, uint32_t num_entries);
 
 #if defined(__cplusplus)
 };
