@@ -1803,6 +1803,15 @@ public:
       return false;
     }
   }
+  SpvReflectResult GetSpecializationInfo(VkSpecializationInfo* info, VkSpecializationMapEntry* p_modifiable, uint32_t num_entries)
+  {
+    if (p_eval) {
+      return spvReflectGetSpecializationInfo(p_eval, info, p_modifiable, num_entries);
+    }
+    else{
+      return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
+    }
+  }
 private:
   SpvReflectEvaluation* p_eval;
 };
