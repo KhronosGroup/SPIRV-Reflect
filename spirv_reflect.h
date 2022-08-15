@@ -1553,10 +1553,27 @@ const char* spvReflectBlockVariableTypeName(
 /*! @fn spvReflectGetEvaluationInterface
  @brief  Retrieves the handle for evaluation
  @param  p_module      Pointer to an instance of SpvReflectShaderModule.
- @return               If successful, returns the evaluation instance.
+ @return               If successful, returns the internal evaluation instance.
                        Otherwise, returns NULL.
 */
 SpvReflectEvaluation* spvReflectGetEvaluationInterface(const SpvReflectShaderModule* p_module);
+
+/*! @fn spvReflectDuplicateEvaluation
+  @brief Duplicates the internal state of the handle for evaluation, useful when one needs
+         multiple instances of different specialization constant states. This handle needs
+         to be explicitly destroyed (not tied to module lifetime). This also cannot outlive
+         type info.
+  @param p_eval       The original handle to be duplicated
+  @return             If successful, returns a copied evaluation interface, with same state.
+                      Otherwise, returns NULL.
+*/
+SpvReflectEvaluation* spvReflectDuplicateEvaluation(const SpvReflectEvaluation* p_eval);
+
+/*! @fn spvReflectDuplicateEvaluation
+  @brief Destroys handle from spvReflectDuplicateEvaluation
+  @param p_eval       The handle to be destroyed.
+*/
+void spvReflectDestroyDuplicatedEvaluation(SpvReflectEvaluation* p_eval);
 
 typedef enum SpvReflectScalarType {
     SPIRV_REFLECT_SCALAR_TYPE_INVALID,
@@ -1617,19 +1634,11 @@ SpvReflectResult spvReflectEvaluateResult(SpvReflectEvaluation* p_eval, uint32_t
 */
 int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id, uint32_t specId);
 
-/* need delaration compatible with vulkan.h, has to be const... */
-typedef struct VkSpecializationMapEntry {
-  uint32_t    constantID;
-  uint32_t    offset;
-  size_t      size;
-} VkSpecializationMapEntry;
-
-typedef struct VkSpecializationInfo {
-  uint32_t                           mapEntryCount;
-  const VkSpecializationMapEntry* pMapEntries;
-  size_t                             dataSize;
-  const void* pData;
-} VkSpecializationInfo;
+/*
+    types used, but defined in vulkan.h
+*/
+typedef struct VkSpecializationInfo VkSpecializationInfo;
+typedef struct VkSpecializationMapEntry VkSpecializationMapEntry;
 
 /* @fn spvReflectGetSpecializationInfo
   @brief Call with nullptr to retrieve size of spec in entryCount, then allocate and call again.

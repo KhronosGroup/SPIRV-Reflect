@@ -281,8 +281,11 @@ typedef struct SpvReflectEvaluation {
   uint32_t                              node_count;
   SpvReflectPrvEvaluationNode*          nodes;
 
-  SpvReflectPrvEvaluationNode**         id_operand_buffer;
-  uint32_t*                             literal_word_buffer;
+  uint32_t                              id_operand_count;
+  SpvReflectPrvEvaluationNode**         id_operands;
+
+  uint32_t                              literal_word_count;
+  uint32_t*                             literal_words;
 
   // ohh I hope I could decouple this... But FindType uses this...
   // just a reference
@@ -3769,14 +3772,16 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
         }
     }
     if (id_operands) {
-      p_eval->id_operand_buffer = (SpvReflectPrvEvaluationNode**)malloc(id_operands * sizeof(SpvReflectPrvEvaluationNode*));
-      if (IsNull(p_eval->id_operand_buffer)) {
+      p_eval->id_operands = (SpvReflectPrvEvaluationNode**)malloc(id_operands * sizeof(SpvReflectPrvEvaluationNode*));
+      p_eval->id_operand_count = id_operands;
+      if (IsNull(p_eval->id_operands)) {
         return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
       }
     }
     if (literal_words) {
-      p_eval->literal_word_buffer = (uint32_t*)malloc(literal_words * sizeof(uint32_t));
-      if (IsNull(p_eval->literal_word_buffer)) {
+      p_eval->literal_words = (uint32_t*)malloc(literal_words * sizeof(uint32_t));
+      p_eval->literal_word_count = literal_words;
+      if (IsNull(p_eval->literal_words)) {
         return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
       }
     }
@@ -3785,8 +3790,8 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
     for (uint32_t i = 0; i < p_eval->node_count; ++i) {
       SpvReflectPrvEvaluationNode* p_ev_node = &p_eval->nodes[i];
       if (!IS_CONSTANT_LITERAL_OP(p_ev_node->op) && p_ev_node->evaluation_state == SPV_REFLECT_EVALUATION_NODE_STATE_UNINITIALIZED) {
-        p_ev_node->id_operands = p_eval->id_operand_buffer + id_offset;
-        p_ev_node->literal_words = p_eval->literal_word_buffer + literal_offset;
+        p_ev_node->id_operands = p_eval->id_operands + id_offset;
+        p_ev_node->literal_words = p_eval->literal_words + literal_offset;
         literal_offset += p_ev_node->num_literal_words;
         id_offset += p_ev_node->num_id_operands;
       }
@@ -3809,8 +3814,8 @@ static void DestroyEvaluator(SpvReflectEvaluation* evaluator)
 {
   SafeFree(evaluator->nodes);
 
-  SafeFree(evaluator->id_operand_buffer);
-  SafeFree(evaluator->literal_word_buffer);
+  SafeFree(evaluator->id_operands);
+  SafeFree(evaluator->literal_words);
 }
 
 
@@ -7451,6 +7456,24 @@ int spvReflectIsRelatedToSpecId(SpvReflectEvaluation* p_eval, uint32_t result_id
   return HaveNodeInTree(p_node, p_spec, false);
 }
 
+#if _SPIRV_REFLECT_USE_VULKAN_H_
+#include <vulkan/vulkan.h>
+#else
+// Provided by VK_VERSION_1_0
+typedef struct VkSpecializationInfo {
+  uint32_t                          mapEntryCount;
+  const VkSpecializationMapEntry*   pMapEntries;
+  size_t                            dataSize;
+  const void*                       pData;
+} VkSpecializationInfo;
+// Provided by VK_VERSION_1_0
+typedef struct VkSpecializationMapEntry {
+  uint32_t                          constantID;
+  uint32_t                          offset;
+  size_t                            size;
+} VkSpecializationMapEntry;
+#endif
+
 
 SpvReflectResult spvReflectGetSpecializationInfo(const SpvReflectEvaluation* p_eval, VkSpecializationInfo* info, VkSpecializationMapEntry* p_modifiable, uint32_t num_entries)
 {
@@ -7505,6 +7528,81 @@ SpvReflectResult spvReflectGetSpecializationInfo(const SpvReflectEvaluation* p_e
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+SpvReflectEvaluation* spvReflectDuplicateEvaluation(const SpvReflectEvaluation* p_eval)
+{
+  if(!p_eval) return NULL;
+  SpvReflectEvaluation* p_copied = (SpvReflectEvaluation*)calloc(1, sizeof(SpvReflectEvaluation));
+  if(!p_copied) return NULL;
+  if (p_eval->node_count) {
+    p_copied->nodes = (SpvReflectPrvEvaluationNode*)calloc(p_eval->node_count, sizeof(SpvReflectPrvEvaluationNode));
+    if (!p_copied->nodes) {
+      goto CLEANUP;
+    }
+    p_copied->node_count = p_eval->node_count;
+  }
+  if (p_eval->literal_word_count) {
+    p_copied->literal_words = (uint32_t*)malloc(p_eval->literal_word_count * sizeof(uint32_t));
+    if (!p_copied->literal_words) {
+      goto CLEANUP;
+    }
+    p_copied->literal_word_count = p_eval->literal_word_count;
+    memcpy(p_copied->literal_words, p_eval->literal_words, p_eval->literal_word_count*sizeof(uint32_t));
+  }
+  if (p_eval->id_operand_count) {
+    p_copied->id_operands = (SpvReflectPrvEvaluationNode**)malloc(p_eval->id_operand_count * sizeof(SpvReflectPrvEvaluationNode*));
+    if (!p_copied->id_operands) {
+      goto CLEANUP;
+    }
+    p_copied->id_operand_count = p_eval->id_operand_count;
+  }
+  // build the tree again...
+  memcpy(p_copied->nodes, p_eval->nodes, p_eval->node_count*sizeof(SpvReflectPrvEvaluationNode));
+  for (uint32_t i = 0; i < p_eval->node_count; ++i) {
+    SPV_REFLECT_ASSERT(p_copied->nodes[i].num_id_operands == p_eval->nodes[i].num_id_operands);
+    for (uint32_t j = 0; j < p_eval->nodes[i].num_id_operands; ++j) {
+      p_copied->nodes[i].id_operands[j] = &p_copied->nodes[p_eval->nodes[i].id_operands[j] - p_eval->nodes];
+    }
+    // need to copy instruction private too...
+    if(p_copied->nodes[i].op == SpvOpSpecConstantOp){
+      switch (p_copied->nodes[i].specOp) {
+        default: break;
+        case SpvOpVectorShuffle:
+          // literal does not need pointer update.
+          break;
+        case SpvOpCompositeExtract:
+          p_copied->nodes[i].instruction_private.composite_extract.src_data = 
+            (SpvReflectValueData*)(((uint8_t*)p_copied->nodes)
+              // plus offset of the original pointer
+            +(((uint8_t*)(p_eval->nodes[i].instruction_private.composite_extract.src_data))-(uint8_t*)p_eval->nodes));
+          break;
+        case SpvOpCompositeInsert:
+          p_copied->nodes[i].instruction_private.composite_insert.dst_data =
+            (SpvReflectValueData*)(((uint8_t*)p_copied->nodes)
+              // plus offset of the original pointer
+              + (((uint8_t*)(p_eval->nodes[i].instruction_private.composite_insert.dst_data)) - (uint8_t*)p_eval->nodes));
+          break;
+      }
+    }
+  }
+
+  return p_copied;
+
+  CLEANUP:
+  spvReflectDestroyDuplicatedEvaluation(p_copied);
+  return NULL;
+}
+
+void spvReflectDestroyDuplicatedEvaluation(SpvReflectEvaluation* p_eval)
+{
+  if(!p_eval) return;
+  if(p_eval->member_type_finder->_internal->evaluator == p_eval) {
+    return;
+  }
+  DestroyEvaluator(p_eval);
+  SafeFree(p_eval);
+}
+
+
 #else
 
 SpvReflectEvaluation* spvReflectGetEvaluationInterface(const SpvReflectShaderModule* p_module)
@@ -7555,5 +7653,15 @@ SpvReflectResult spvReflectGetSpecializationInfo(const SpvReflectEvaluation* p_e
   return SPV_REFLECT_RESULT_ERROR_SPIRV_EVAL_TREE_INIT_FAILED;
 }
 
+SpvReflectEvaluation* spvReflectDuplicateEvaluation(const SpvReflectEvaluation* p_eval)
+{
+  (void)p_eval;
+  return NULL;
+}
+
+void spvReflectDestroyDuplicatedEvaluation(SpvReflectEvaluation* p_eval)
+{
+  (void)p_eval;
+}
 #endif
 
