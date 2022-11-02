@@ -689,7 +689,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
           const char* p_source = (const char*)(p_parser->spirv_code + p_node->word_offset + 4);
 
           const size_t source_len = strlen(p_source);
-          char* p_source_temp = (char*)calloc(source_len + 1, sizeof(char*));
+          char* p_source_temp = (char*)calloc(source_len + 1, sizeof(char));
 
           if (IsNull(p_source_temp)) {
             return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
@@ -711,7 +711,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
 
         const size_t source_len = strlen(p_source);
         const size_t embedded_source_len = strlen(p_parser->source_embedded);
-        char* p_continued_source = (char*)calloc(source_len + embedded_source_len + 1, sizeof(char*));
+        char* p_continued_source = (char*)calloc(source_len + embedded_source_len + 1, sizeof(char));
 
         if (IsNull(p_continued_source)) {
           return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
@@ -1004,7 +1004,7 @@ static SpvReflectResult ParseSource(SpvReflectPrvParser* p_parser, SpvReflectSha
     if (IsNotNull(p_parser->source_embedded))
     {
       const size_t source_len = strlen(p_parser->source_embedded);
-      char* p_source = (char*)calloc(source_len + 1, sizeof(char*));
+      char* p_source = (char*)calloc(source_len + 1, sizeof(char));
 
       if (IsNull(p_source)) {
         return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
