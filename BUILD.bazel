@@ -17,6 +17,11 @@ exports_files([
 COMMON_COPTS = [
     "-ffunction-sections",
     "-fdata-sections",
+
+    "-Werror",
+    "-Wswitch",
+    "-Wimplicit-fallthrough",
+    "-Wunused-variable",
 ]
 
 COMMON_CPPOPTS = COMMON_COPTS + [

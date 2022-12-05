@@ -101,10 +101,14 @@ std::string ToStringSpvExecutionModel(SpvExecutionModel model) {
     case SpvExecutionModelClosestHitKHR          : return "ClosestHitKHR";
     case SpvExecutionModelMissKHR                : return "MissKHR";
     case SpvExecutionModelCallableKHR            : return "CallableKHR";
-    
+
     case SpvExecutionModelMax:
       break;
+
+    default:
+      break;
   }
+
   // unhandled SpvExecutionModel enum value
   return "???";
 }
@@ -126,7 +130,11 @@ std::string ToStringShaderStage(SpvReflectShaderStageFlagBits stage) {
     case SPV_REFLECT_SHADER_STAGE_MISS_BIT_KHR                : return "MISS";
     case SPV_REFLECT_SHADER_STAGE_INTERSECTION_BIT_KHR        : return "INTERSECTION";
     case SPV_REFLECT_SHADER_STAGE_CALLABLE_BIT_KHR            : return "CALLABLE";
+
+    default:
+        break;
   }
+
   // Unhandled SpvReflectShaderStageFlagBits enum value
   return "???";
 }
@@ -157,6 +165,9 @@ std::string ToStringSpvStorageClass(SpvStorageClass storage_class) {
     case SpvStorageClassDeviceOnlyINTEL         : return "DeviceOnlyINTEL";
     case SpvStorageClassHostOnlyINTEL           : return "HostOnlyINTEL";
     case SpvStorageClassMax:
+      break;
+    
+    default:
       break;
   }
 
@@ -479,6 +490,7 @@ static std::string ToStringScalarType(const SpvReflectTypeDescription& type)
         default:
           break;
       }
+      break;
     }
     case SpvOpTypeStruct: {
       return "struct";
