@@ -2272,6 +2272,7 @@ static SpvReflectResult ParseDescriptorBlockVariable(
         ApplyArrayTraits(p_member_type, &p_member_var->array);
       }
 
+      p_member_var->word_offset.offset = p_type_node->member_decorations[member_index].offset.word_offset;
       p_member_var->type_description = p_member_type;
     }
   }
