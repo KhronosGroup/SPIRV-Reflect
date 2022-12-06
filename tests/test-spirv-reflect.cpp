@@ -1,14 +1,13 @@
-#include "../common/output_stream.h"
-#include "spirv_reflect.h"
-
-#include "gtest/gtest.h"
-
 #include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <regex>
 #include <sstream>
 #include <string>
+
+#include "../common/output_stream.h"
+#include "gtest/gtest.h"
+#include "spirv_reflect.h"
 
 #if defined(_MSC_VER)
 #include <direct.h>
@@ -74,13 +73,13 @@ TEST(SpirvReflectTestCase, SourceLanguage) {
                "");
 }
 
-class SpirvReflectTest : public ::testing::TestWithParam<const char *> {
-public:
+class SpirvReflectTest : public ::testing::TestWithParam<const char*> {
+ public:
   // optional: initialize static data to be shared by all tests in this test
   // case. Note that for parameterized tests, the specific parameter value is a
   // non-static member data
   static void SetUpTestCase() {
-    FILE *f = fopen("tests/glsl/built_in_format.spv", "r");
+    FILE* f = fopen("tests/glsl/built_in_format.spv", "r");
     if (!f) {
       posix_chdir("..");
       f = fopen("tests/glsl/built_in_format.spv", "r");
@@ -92,7 +91,7 @@ public:
   }
   static void TearDownTestCase() {}
 
-protected:
+ protected:
   SpirvReflectTest() {
     // set-up work for each test
   }
@@ -111,7 +110,7 @@ protected:
     std::streampos spirv_file_nbytes = spirv_file.tellg();
     spirv_file.seekg(0);
     spirv_.resize(spirv_file_nbytes);
-    spirv_file.read(reinterpret_cast<char *>(spirv_.data()), spirv_.size());
+    spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
 
     SpvReflectResult result =
         spvReflectCreateShaderModule(spirv_.size(), spirv_.data(), &module_);
@@ -158,13 +157,13 @@ TEST_P(SpirvReflectTest, GetDescriptorBinding) {
   result =
       spvReflectEnumerateDescriptorBindings(&module_, &binding_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectDescriptorBinding *> bindings(binding_count);
+  std::vector<SpvReflectDescriptorBinding*> bindings(binding_count);
   result = spvReflectEnumerateDescriptorBindings(&module_, &binding_count,
                                                  bindings.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
 
-  for (const auto *db : bindings) {
-    const SpvReflectDescriptorBinding *also_db =
+  for (const auto* db : bindings) {
+    const SpvReflectDescriptorBinding* also_db =
         spvReflectGetDescriptorBinding(&module_, db->binding, db->set, &result);
     EXPECT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
     EXPECT_EQ(db, also_db);
@@ -177,18 +176,17 @@ TEST_P(SpirvReflectTest, EnumerateDescriptorBindings_Errors) {
       spvReflectEnumerateDescriptorBindings(nullptr, &binding_count, nullptr),
       SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // NULL binding count
-  EXPECT_EQ(
-    spvReflectEnumerateDescriptorBindings(&module_, nullptr, nullptr),
-    SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectEnumerateDescriptorBindings(&module_, nullptr, nullptr),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // binding count / module binding count mismatch
   EXPECT_EQ(
-    spvReflectEnumerateDescriptorBindings(&module_, &binding_count, nullptr),
-    SPV_REFLECT_RESULT_SUCCESS);
-  uint32_t bad_binding_count = binding_count+1;
+      spvReflectEnumerateDescriptorBindings(&module_, &binding_count, nullptr),
+      SPV_REFLECT_RESULT_SUCCESS);
+  uint32_t bad_binding_count = binding_count + 1;
   std::vector<SpvReflectDescriptorBinding*> bindings(bad_binding_count);
-  EXPECT_EQ(
-    spvReflectEnumerateDescriptorBindings(&module_, &bad_binding_count, bindings.data()),
-    SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
+  EXPECT_EQ(spvReflectEnumerateDescriptorBindings(&module_, &bad_binding_count,
+                                                  bindings.data()),
+            SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
 }
 TEST_P(SpirvReflectTest, GetDescriptorBinding_Errors) {
   SpvReflectResult result;
@@ -197,12 +195,16 @@ TEST_P(SpirvReflectTest, GetDescriptorBinding_Errors) {
   EXPECT_EQ(spvReflectGetDescriptorBinding(nullptr, 0, 0, &result), nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // Invalid binding number
-  EXPECT_EQ(spvReflectGetDescriptorBinding(&module_, 0xdeadbeef, 0, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetDescriptorBinding(&module_, 0xdeadbeef, 0, &result), nullptr);
+  EXPECT_EQ(spvReflectGetDescriptorBinding(&module_, 0xdeadbeef, 0, nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetDescriptorBinding(&module_, 0xdeadbeef, 0, &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
   // Invalid set number
-  EXPECT_EQ(spvReflectGetDescriptorBinding(&module_, 0, 0xdeadbeef, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetDescriptorBinding(&module_, 0, 0xdeadbeef, &result), nullptr);
+  EXPECT_EQ(spvReflectGetDescriptorBinding(&module_, 0, 0xdeadbeef, nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetDescriptorBinding(&module_, 0, 0xdeadbeef, &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
 }
 
@@ -211,12 +213,12 @@ TEST_P(SpirvReflectTest, GetDescriptorSet) {
   SpvReflectResult result;
   result = spvReflectEnumerateDescriptorSets(&module_, &set_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectDescriptorSet *> sets(set_count);
+  std::vector<SpvReflectDescriptorSet*> sets(set_count);
   result = spvReflectEnumerateDescriptorSets(&module_, &set_count, sets.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
 
-  for (const auto *ds : sets) {
-    const SpvReflectDescriptorSet *also_ds =
+  for (const auto* ds : sets) {
+    const SpvReflectDescriptorSet* also_ds =
         spvReflectGetDescriptorSet(&module_, ds->set, &result);
     EXPECT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
     EXPECT_EQ(ds, also_ds);
@@ -225,22 +227,19 @@ TEST_P(SpirvReflectTest, GetDescriptorSet) {
 TEST_P(SpirvReflectTest, EnumerateDescriptorSets_Errors) {
   uint32_t set_count = 0;
   // NULL module
-  EXPECT_EQ(
-    spvReflectEnumerateDescriptorSets(nullptr, &set_count, nullptr),
-    SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectEnumerateDescriptorSets(nullptr, &set_count, nullptr),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // NULL set count
-  EXPECT_EQ(
-    spvReflectEnumerateDescriptorSets(&module_, nullptr, nullptr),
-    SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectEnumerateDescriptorSets(&module_, nullptr, nullptr),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // set count / module set count mismatch
-  EXPECT_EQ(
-    spvReflectEnumerateDescriptorSets(&module_, &set_count, nullptr),
-    SPV_REFLECT_RESULT_SUCCESS);
-  uint32_t bad_set_count = set_count+1;
+  EXPECT_EQ(spvReflectEnumerateDescriptorSets(&module_, &set_count, nullptr),
+            SPV_REFLECT_RESULT_SUCCESS);
+  uint32_t bad_set_count = set_count + 1;
   std::vector<SpvReflectDescriptorSet*> sets(bad_set_count);
   EXPECT_EQ(
-    spvReflectEnumerateDescriptorSets(&module_, &bad_set_count, sets.data()),
-    SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
+      spvReflectEnumerateDescriptorSets(&module_, &bad_set_count, sets.data()),
+      SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
 }
 TEST_P(SpirvReflectTest, GetDescriptorSet_Errors) {
   SpvReflectResult result;
@@ -259,12 +258,12 @@ TEST_P(SpirvReflectTest, GetInputVariableByLocation) {
   SpvReflectResult result;
   result = spvReflectEnumerateInputVariables(&module_, &iv_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectInterfaceVariable *> ivars(iv_count);
+  std::vector<SpvReflectInterfaceVariable*> ivars(iv_count);
   result = spvReflectEnumerateInputVariables(&module_, &iv_count, ivars.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
 
-  for (const auto *iv : ivars) {
-    const SpvReflectInterfaceVariable *also_iv =
+  for (const auto* iv : ivars) {
+    const SpvReflectInterfaceVariable* also_iv =
         spvReflectGetInputVariableByLocation(&module_, iv->location, &result);
     if (iv->location == UINT32_MAX) {
       // Not all elements have valid locations.
@@ -279,36 +278,37 @@ TEST_P(SpirvReflectTest, GetInputVariableByLocation) {
 TEST_P(SpirvReflectTest, EnumerateInputVariables_Errors) {
   uint32_t var_count = 0;
   // NULL module
-  EXPECT_EQ(
-    spvReflectEnumerateInputVariables(nullptr, &var_count, nullptr),
-    SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectEnumerateInputVariables(nullptr, &var_count, nullptr),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // NULL var count
-  EXPECT_EQ(
-    spvReflectEnumerateInputVariables(&module_, nullptr, nullptr),
-    SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectEnumerateInputVariables(&module_, nullptr, nullptr),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // var count / module var count mismatch
-  EXPECT_EQ(
-    spvReflectEnumerateInputVariables(&module_, &var_count, nullptr),
-    SPV_REFLECT_RESULT_SUCCESS);
-  uint32_t bad_var_count = var_count+1;
+  EXPECT_EQ(spvReflectEnumerateInputVariables(&module_, &var_count, nullptr),
+            SPV_REFLECT_RESULT_SUCCESS);
+  uint32_t bad_var_count = var_count + 1;
   std::vector<SpvReflectInterfaceVariable*> vars(bad_var_count);
   EXPECT_EQ(
-    spvReflectEnumerateInputVariables(&module_, &bad_var_count, vars.data()),
-    SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
+      spvReflectEnumerateInputVariables(&module_, &bad_var_count, vars.data()),
+      SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
 }
 TEST_P(SpirvReflectTest, GetInputVariableByLocation_Errors) {
   SpvReflectResult result;
-    // NULL module
+  // NULL module
   EXPECT_EQ(spvReflectGetInputVariableByLocation(nullptr, 0, nullptr), nullptr);
   EXPECT_EQ(spvReflectGetInputVariableByLocation(nullptr, 0, &result), nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // explicitly invalid location (UINT32_MAX is *always* not found)
-  EXPECT_EQ(spvReflectGetInputVariableByLocation(&module_, UINT32_MAX, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetInputVariableByLocation(&module_, UINT32_MAX, &result), nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableByLocation(&module_, UINT32_MAX, nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableByLocation(&module_, UINT32_MAX, &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
   // implicitly invalid location (0xdeadbeef is potentially valid)
-  EXPECT_EQ(spvReflectGetInputVariableByLocation(&module_, 0xdeadbeef, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetInputVariableByLocation(&module_, 0xdeadbeef, &result), nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableByLocation(&module_, 0xdeadbeef, nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableByLocation(&module_, 0xdeadbeef, &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
 }
 
@@ -317,12 +317,12 @@ TEST_P(SpirvReflectTest, GetInputVariableBySemantic) {
   SpvReflectResult result;
   result = spvReflectEnumerateInputVariables(&module_, &iv_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectInterfaceVariable *> ivars(iv_count);
+  std::vector<SpvReflectInterfaceVariable*> ivars(iv_count);
   result = spvReflectEnumerateInputVariables(&module_, &iv_count, ivars.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
 
-  for (const auto *iv : ivars) {
-    const SpvReflectInterfaceVariable *also_iv =
+  for (const auto* iv : ivars) {
+    const SpvReflectInterfaceVariable* also_iv =
         spvReflectGetInputVariableBySemantic(&module_, iv->semantic, &result);
     if (iv->semantic == nullptr) {
       // Not all elements have valid semantics
@@ -341,20 +341,30 @@ TEST_P(SpirvReflectTest, GetInputVariableBySemantic) {
 TEST_P(SpirvReflectTest, GetInputVariableBySemantic_Errors) {
   SpvReflectResult result;
   // NULL module
-  EXPECT_EQ(spvReflectGetInputVariableBySemantic(nullptr, nullptr, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetInputVariableBySemantic(nullptr, nullptr, &result), nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableBySemantic(nullptr, nullptr, nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableBySemantic(nullptr, nullptr, &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // NULL semantic
-  EXPECT_EQ(spvReflectGetInputVariableBySemantic(&module_, nullptr, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetInputVariableBySemantic(&module_, nullptr, &result), nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableBySemantic(&module_, nullptr, nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableBySemantic(&module_, nullptr, &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // empty semantic ("" is explicitly not found)
-  EXPECT_EQ(spvReflectGetInputVariableBySemantic(&module_, "", nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetInputVariableBySemantic(&module_, "", &result), nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableBySemantic(&module_, "", nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableBySemantic(&module_, "", &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
   // implicitly invalid semantic
-  EXPECT_EQ(spvReflectGetInputVariableBySemantic(&module_, "SV_PLAUSIBLE_BUT_INVALID", nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetInputVariableBySemantic(&module_, "SV_PLAUSIBLE_BUT_INVALID", &result), nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableBySemantic(
+                &module_, "SV_PLAUSIBLE_BUT_INVALID", nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetInputVariableBySemantic(
+                &module_, "SV_PLAUSIBLE_BUT_INVALID", &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
 }
 
@@ -363,13 +373,13 @@ TEST_P(SpirvReflectTest, GetOutputVariableByLocation) {
   SpvReflectResult result;
   result = spvReflectEnumerateOutputVariables(&module_, &ov_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectInterfaceVariable *> ovars(ov_count);
+  std::vector<SpvReflectInterfaceVariable*> ovars(ov_count);
   result =
       spvReflectEnumerateOutputVariables(&module_, &ov_count, ovars.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
 
-  for (const auto *ov : ovars) {
-    const SpvReflectInterfaceVariable *also_ov =
+  for (const auto* ov : ovars) {
+    const SpvReflectInterfaceVariable* also_ov =
         spvReflectGetOutputVariableByLocation(&module_, ov->location, &result);
     if (ov->location == UINT32_MAX) {
       // Not all elements have valid locations.
@@ -384,36 +394,43 @@ TEST_P(SpirvReflectTest, GetOutputVariableByLocation) {
 TEST_P(SpirvReflectTest, EnumerateOutputVariables_Errors) {
   uint32_t var_count = 0;
   // NULL module
-  EXPECT_EQ(
-    spvReflectEnumerateOutputVariables(nullptr, &var_count, nullptr),
-    SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectEnumerateOutputVariables(nullptr, &var_count, nullptr),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // NULL var count
-  EXPECT_EQ(
-    spvReflectEnumerateOutputVariables(&module_, nullptr, nullptr),
-    SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectEnumerateOutputVariables(&module_, nullptr, nullptr),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // var count / module var count mismatch
-  EXPECT_EQ(
-    spvReflectEnumerateOutputVariables(&module_, &var_count, nullptr),
-    SPV_REFLECT_RESULT_SUCCESS);
-  uint32_t bad_var_count = var_count+1;
+  EXPECT_EQ(spvReflectEnumerateOutputVariables(&module_, &var_count, nullptr),
+            SPV_REFLECT_RESULT_SUCCESS);
+  uint32_t bad_var_count = var_count + 1;
   std::vector<SpvReflectInterfaceVariable*> vars(bad_var_count);
   EXPECT_EQ(
-    spvReflectEnumerateOutputVariables(&module_, &bad_var_count, vars.data()),
-    SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
+      spvReflectEnumerateOutputVariables(&module_, &bad_var_count, vars.data()),
+      SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
 }
 TEST_P(SpirvReflectTest, GetOutputVariableByLocation_Errors) {
   SpvReflectResult result;
   // NULL module
-  EXPECT_EQ(spvReflectGetOutputVariableByLocation(nullptr, 0, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetOutputVariableByLocation(nullptr, 0, &result), nullptr);
+  EXPECT_EQ(spvReflectGetOutputVariableByLocation(nullptr, 0, nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetOutputVariableByLocation(nullptr, 0, &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // explicitly invalid location (UINT32_MAX is *always* not found)
-  EXPECT_EQ(spvReflectGetOutputVariableByLocation(&module_, UINT32_MAX, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetOutputVariableByLocation(&module_, UINT32_MAX, &result), nullptr);
+  EXPECT_EQ(
+      spvReflectGetOutputVariableByLocation(&module_, UINT32_MAX, nullptr),
+      nullptr);
+  EXPECT_EQ(
+      spvReflectGetOutputVariableByLocation(&module_, UINT32_MAX, &result),
+      nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
   // implicitly invalid location (0xdeadbeef is potentially valid)
-  EXPECT_EQ(spvReflectGetOutputVariableByLocation(&module_, 0xdeadbeef, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetOutputVariableByLocation(&module_, 0xdeadbeef, &result), nullptr);
+  EXPECT_EQ(
+      spvReflectGetOutputVariableByLocation(&module_, 0xdeadbeef, nullptr),
+      nullptr);
+  EXPECT_EQ(
+      spvReflectGetOutputVariableByLocation(&module_, 0xdeadbeef, &result),
+      nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
 }
 
@@ -422,13 +439,13 @@ TEST_P(SpirvReflectTest, GetOutputVariableBySemantic) {
   SpvReflectResult result;
   result = spvReflectEnumerateOutputVariables(&module_, &ov_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectInterfaceVariable *> ovars(ov_count);
+  std::vector<SpvReflectInterfaceVariable*> ovars(ov_count);
   result =
       spvReflectEnumerateOutputVariables(&module_, &ov_count, ovars.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
 
-  for (const auto *ov : ovars) {
-    const SpvReflectInterfaceVariable *also_ov =
+  for (const auto* ov : ovars) {
+    const SpvReflectInterfaceVariable* also_ov =
         spvReflectGetOutputVariableBySemantic(&module_, ov->semantic, &result);
     if (ov->semantic == nullptr) {
       // Not all elements have valid semantics
@@ -447,20 +464,30 @@ TEST_P(SpirvReflectTest, GetOutputVariableBySemantic) {
 TEST_P(SpirvReflectTest, GetOutputVariableBySemantic_Errors) {
   SpvReflectResult result;
   // NULL module
-  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(nullptr, nullptr, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(nullptr, nullptr, &result), nullptr);
+  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(nullptr, nullptr, nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(nullptr, nullptr, &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // NULL semantic
-  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(&module_, nullptr, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(&module_, nullptr, &result), nullptr);
+  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(&module_, nullptr, nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(&module_, nullptr, &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // empty semantic ("" is explicitly not found)
-  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(&module_, "", nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(&module_, "", &result), nullptr);
+  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(&module_, "", nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(&module_, "", &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
   // implicitly invalid semantic
-  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(&module_, "SV_PLAUSIBLE_BUT_INVALID", nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(&module_, "SV_PLAUSIBLE_BUT_INVALID", &result), nullptr);
+  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(
+                &module_, "SV_PLAUSIBLE_BUT_INVALID", nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetOutputVariableBySemantic(
+                &module_, "SV_PLAUSIBLE_BUT_INVALID", &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
 }
 
@@ -470,14 +497,14 @@ TEST_P(SpirvReflectTest, GetPushConstantBlock) {
   result =
       spvReflectEnumeratePushConstantBlocks(&module_, &block_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
-  std::vector<SpvReflectBlockVariable *> blocks(block_count);
+  std::vector<SpvReflectBlockVariable*> blocks(block_count);
   result = spvReflectEnumeratePushConstantBlocks(&module_, &block_count,
                                                  blocks.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
 
   for (uint32_t i = 0; i < block_count; ++i) {
-    const SpvReflectBlockVariable *b = blocks[i];
-    const SpvReflectBlockVariable *also_b =
+    const SpvReflectBlockVariable* b = blocks[i];
+    const SpvReflectBlockVariable* also_b =
         spvReflectGetPushConstantBlock(&module_, i, &result);
     EXPECT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
     EXPECT_EQ(b, also_b);
@@ -487,35 +514,36 @@ TEST_P(SpirvReflectTest, EnumeratePushConstantBlocks_Errors) {
   uint32_t block_count = 0;
   // NULL module
   EXPECT_EQ(
-    spvReflectEnumeratePushConstantBlocks(nullptr, &block_count, nullptr),
-    SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+      spvReflectEnumeratePushConstantBlocks(nullptr, &block_count, nullptr),
+      SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // NULL var count
-  EXPECT_EQ(
-    spvReflectEnumeratePushConstantBlocks(&module_, nullptr, nullptr),
-    SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectEnumeratePushConstantBlocks(&module_, nullptr, nullptr),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // var count / module var count mismatch
   EXPECT_EQ(
-    spvReflectEnumeratePushConstantBlocks(&module_, &block_count, nullptr),
-    SPV_REFLECT_RESULT_SUCCESS);
-  uint32_t bad_block_count = block_count+1;
+      spvReflectEnumeratePushConstantBlocks(&module_, &block_count, nullptr),
+      SPV_REFLECT_RESULT_SUCCESS);
+  uint32_t bad_block_count = block_count + 1;
   std::vector<SpvReflectBlockVariable*> blocks(bad_block_count);
-  EXPECT_EQ(
-    spvReflectEnumeratePushConstantBlocks(&module_, &bad_block_count, blocks.data()),
-    SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
+  EXPECT_EQ(spvReflectEnumeratePushConstantBlocks(&module_, &bad_block_count,
+                                                  blocks.data()),
+            SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH);
 }
 TEST_P(SpirvReflectTest, GetPushConstantBlock_Errors) {
   uint32_t block_count = 0;
   SpvReflectResult result;
   result =
-    spvReflectEnumeratePushConstantBlocks(&module_, &block_count, nullptr);
+      spvReflectEnumeratePushConstantBlocks(&module_, &block_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   // NULL module
   EXPECT_EQ(spvReflectGetPushConstantBlock(nullptr, 0, nullptr), nullptr);
   EXPECT_EQ(spvReflectGetPushConstantBlock(nullptr, 0, &result), nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // invalid block index
-  EXPECT_EQ(spvReflectGetPushConstantBlock(&module_, block_count, nullptr), nullptr);
-  EXPECT_EQ(spvReflectGetPushConstantBlock(&module_, block_count, &result), nullptr);
+  EXPECT_EQ(spvReflectGetPushConstantBlock(&module_, block_count, nullptr),
+            nullptr);
+  EXPECT_EQ(spvReflectGetPushConstantBlock(&module_, block_count, &result),
+            nullptr);
   EXPECT_EQ(result, SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
 }
 
@@ -526,9 +554,9 @@ TEST_P(SpirvReflectTest, ChangeDescriptorBindingNumber) {
       spvReflectEnumerateDescriptorBindings(&module_, &binding_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   if (binding_count == 0) {
-    return; // can't change binding numbers if there are no bindings!
+    return;  // can't change binding numbers if there are no bindings!
   }
-  std::vector<SpvReflectDescriptorBinding *> bindings(binding_count);
+  std::vector<SpvReflectDescriptorBinding*> bindings(binding_count);
   result = spvReflectEnumerateDescriptorBindings(&module_, &binding_count,
                                                  bindings.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
@@ -537,11 +565,11 @@ TEST_P(SpirvReflectTest, ChangeDescriptorBindingNumber) {
   result = spvReflectEnumerateDescriptorSets(&module_, &set_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   EXPECT_GT(set_count, 0U);
-  std::vector<SpvReflectDescriptorSet *> sets(set_count);
+  std::vector<SpvReflectDescriptorSet*> sets(set_count);
   result = spvReflectEnumerateDescriptorSets(&module_, &set_count, sets.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
 
-  SpvReflectDescriptorBinding *b = bindings[0];
+  SpvReflectDescriptorBinding* b = bindings[0];
   const uint32_t new_binding_number = 1000;
   const uint32_t set_number = b->set;
   // Make sure no binding exists at the binding number we're about to change to.
@@ -554,7 +582,7 @@ TEST_P(SpirvReflectTest, ChangeDescriptorBindingNumber) {
       &module_, b, new_binding_number, SPV_REFLECT_SET_NUMBER_DONT_CHANGE);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   // We should now be able to retrieve the binding at the new number
-  const SpvReflectDescriptorBinding *new_binding =
+  const SpvReflectDescriptorBinding* new_binding =
       spvReflectGetDescriptorBinding(&module_, new_binding_number, set_number,
                                      &result);
   ASSERT_NE(new_binding, nullptr);
@@ -566,7 +594,7 @@ TEST_P(SpirvReflectTest, ChangeDescriptorBindingNumber) {
   result = spvReflectEnumerateDescriptorSets(&module_, &set_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   EXPECT_EQ(set_count, sets.size());
-  std::vector<SpvReflectDescriptorSet *> new_sets(set_count);
+  std::vector<SpvReflectDescriptorSet*> new_sets(set_count);
   result =
       spvReflectEnumerateDescriptorSets(&module_, &set_count, new_sets.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
@@ -577,9 +605,11 @@ TEST_P(SpirvReflectTest, ChangeDescriptorBindingNumber) {
 }
 TEST_P(SpirvReflectTest, ChangeDescriptorBindingNumbers_Errors) {
   // NULL module
-  EXPECT_EQ(spvReflectChangeDescriptorBindingNumbers(nullptr, nullptr, 0, 0), SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectChangeDescriptorBindingNumbers(nullptr, nullptr, 0, 0),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // NULL descriptor binding
-  EXPECT_EQ(spvReflectChangeDescriptorBindingNumbers(&module_, nullptr, 0, 0), SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectChangeDescriptorBindingNumbers(&module_, nullptr, 0, 0),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
 }
 
 TEST_P(SpirvReflectTest, ChangeDescriptorSetNumber) {
@@ -589,9 +619,9 @@ TEST_P(SpirvReflectTest, ChangeDescriptorSetNumber) {
       spvReflectEnumerateDescriptorBindings(&module_, &binding_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   if (binding_count == 0) {
-    return; // can't change set numbers if there are no bindings!
+    return;  // can't change set numbers if there are no bindings!
   }
-  std::vector<SpvReflectDescriptorBinding *> bindings(binding_count);
+  std::vector<SpvReflectDescriptorBinding*> bindings(binding_count);
   result = spvReflectEnumerateDescriptorBindings(&module_, &binding_count,
                                                  bindings.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
@@ -600,11 +630,11 @@ TEST_P(SpirvReflectTest, ChangeDescriptorSetNumber) {
   result = spvReflectEnumerateDescriptorSets(&module_, &set_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   EXPECT_GT(set_count, 0U);
-  std::vector<SpvReflectDescriptorSet *> sets(set_count);
+  std::vector<SpvReflectDescriptorSet*> sets(set_count);
   result = spvReflectEnumerateDescriptorSets(&module_, &set_count, sets.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
 
-  SpvReflectDescriptorSet *s = sets[0];
+  SpvReflectDescriptorSet* s = sets[0];
 
   const uint32_t new_set_number = 13;
   const uint32_t set_binding_count = s->binding_count;
@@ -616,7 +646,7 @@ TEST_P(SpirvReflectTest, ChangeDescriptorSetNumber) {
   result = spvReflectChangeDescriptorSetNumber(&module_, s, new_set_number);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   // We should now be able to retrieve the set at the new number
-  const SpvReflectDescriptorSet *new_set =
+  const SpvReflectDescriptorSet* new_set =
       spvReflectGetDescriptorSet(&module_, new_set_number, &result);
   ASSERT_NE(new_set, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
@@ -633,9 +663,11 @@ TEST_P(SpirvReflectTest, ChangeDescriptorSetNumber) {
 }
 TEST_P(SpirvReflectTest, ChangeDescriptorSetNumber_Errors) {
   // NULL module
-  EXPECT_EQ(spvReflectChangeDescriptorSetNumber(nullptr, nullptr, 0), SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectChangeDescriptorSetNumber(nullptr, nullptr, 0),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // NULL descriptor set
-  EXPECT_EQ(spvReflectChangeDescriptorSetNumber(&module_, nullptr, 0), SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectChangeDescriptorSetNumber(&module_, nullptr, 0),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
 }
 
 TEST_P(SpirvReflectTest, ChangeInputVariableLocation) {
@@ -644,13 +676,13 @@ TEST_P(SpirvReflectTest, ChangeInputVariableLocation) {
   result = spvReflectEnumerateInputVariables(&module_, &iv_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   if (iv_count == 0) {
-    return; // can't change variable locations if there are no variables!
+    return;  // can't change variable locations if there are no variables!
   }
-  std::vector<SpvReflectInterfaceVariable *> ivars(iv_count);
+  std::vector<SpvReflectInterfaceVariable*> ivars(iv_count);
   result = spvReflectEnumerateInputVariables(&module_, &iv_count, ivars.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
 
-  SpvReflectInterfaceVariable *iv = ivars[0];
+  SpvReflectInterfaceVariable* iv = ivars[0];
 
   const uint32_t new_location = 37;
   // Make sure no var exists at the location we're about to change to.
@@ -662,7 +694,7 @@ TEST_P(SpirvReflectTest, ChangeInputVariableLocation) {
   result = spvReflectChangeInputVariableLocation(&module_, iv, new_location);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   // We should now be able to retrieve the variable at its new location
-  const SpvReflectInterfaceVariable *new_iv =
+  const SpvReflectInterfaceVariable* new_iv =
       spvReflectGetInputVariableByLocation(&module_, new_location, &result);
   ASSERT_NE(new_iv, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
@@ -677,9 +709,11 @@ TEST_P(SpirvReflectTest, ChangeInputVariableLocation) {
 }
 TEST_P(SpirvReflectTest, ChangeInputVariableLocation_Errors) {
   // NULL module
-  EXPECT_EQ(spvReflectChangeInputVariableLocation(nullptr, nullptr, 0), SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectChangeInputVariableLocation(nullptr, nullptr, 0),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // NULL variable
-  EXPECT_EQ(spvReflectChangeInputVariableLocation(&module_, nullptr, 0), SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectChangeInputVariableLocation(&module_, nullptr, 0),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
 }
 
 TEST_P(SpirvReflectTest, ChangeOutputVariableLocation) {
@@ -688,14 +722,14 @@ TEST_P(SpirvReflectTest, ChangeOutputVariableLocation) {
   result = spvReflectEnumerateOutputVariables(&module_, &ov_count, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   if (ov_count == 0) {
-    return; // can't change variable locations if there are no variables!
+    return;  // can't change variable locations if there are no variables!
   }
-  std::vector<SpvReflectInterfaceVariable *> ovars(ov_count);
+  std::vector<SpvReflectInterfaceVariable*> ovars(ov_count);
   result =
       spvReflectEnumerateOutputVariables(&module_, &ov_count, ovars.data());
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
 
-  SpvReflectInterfaceVariable *ov = ovars[0];
+  SpvReflectInterfaceVariable* ov = ovars[0];
 
   const uint32_t new_location = 37;
   // Make sure no var exists at the location we're about to change to.
@@ -707,7 +741,7 @@ TEST_P(SpirvReflectTest, ChangeOutputVariableLocation) {
   result = spvReflectChangeOutputVariableLocation(&module_, ov, new_location);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
   // We should now be able to retrieve the variable at its new location
-  const SpvReflectInterfaceVariable *new_ov =
+  const SpvReflectInterfaceVariable* new_ov =
       spvReflectGetOutputVariableByLocation(&module_, new_location, &result);
   ASSERT_NE(new_ov, nullptr);
   ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
@@ -722,9 +756,11 @@ TEST_P(SpirvReflectTest, ChangeOutputVariableLocation) {
 }
 TEST_P(SpirvReflectTest, ChangeOutputVariableLocation_Errors) {
   // NULL module
-  EXPECT_EQ(spvReflectChangeOutputVariableLocation(nullptr, nullptr, 0), SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectChangeOutputVariableLocation(nullptr, nullptr, 0),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
   // NULL variable
-  EXPECT_EQ(spvReflectChangeOutputVariableLocation(&module_, nullptr, 0), SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
+  EXPECT_EQ(spvReflectChangeOutputVariableLocation(&module_, nullptr, 0),
+            SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
 }
 
 TEST_P(SpirvReflectTest, CheckYamlOutput) {
@@ -756,7 +792,7 @@ TEST_P(SpirvReflectTest, CheckYamlOutput) {
 }
 
 namespace {
-const std::vector<const char *> all_spirv_paths = {
+const std::vector<const char*> all_spirv_paths = {
     // clang-format off
     "../tests/cbuffer_unused/cbuffer_unused_001.spv",
     "../tests/glsl/built_in_format.spv",
@@ -804,9 +840,9 @@ const std::vector<const char *> all_spirv_paths = {
     "../tests/raytrace/raytracing.nv.miss.spv",
     "../tests/raytrace/raytracing.nv.raygen.spv",
     "../tests/spirv15/VertexShader.spv",
-     // clang-format on
+    // clang-format on
 };
-} // namespace
+}  // namespace
 INSTANTIATE_TEST_CASE_P(ForAllShaders, SpirvReflectTest,
                         ::testing::ValuesIn(all_spirv_paths));
 
@@ -818,7 +854,7 @@ TEST(SpirvReflectTestCase, TestComputeLocalSize) {
   std::streampos spirv_file_nbytes = spirv_file.tellg();
   spirv_file.seekg(0);
   spirv_.resize(spirv_file_nbytes);
-  spirv_file.read(reinterpret_cast<char *>(spirv_.data()), spirv_.size());
+  spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
 
   SpvReflectResult result =
       spvReflectCreateShaderModule(spirv_.size(), spirv_.data(), &module_);
@@ -826,7 +862,8 @@ TEST(SpirvReflectTestCase, TestComputeLocalSize) {
       << "spvReflectCreateShaderModule() failed";
 
   ASSERT_EQ(module_.entry_point_count, 1);
-  ASSERT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
+  ASSERT_EQ(module_.entry_points[0].shader_stage,
+            SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
   ASSERT_EQ(module_.entry_points[0].local_size.x, 1);
   ASSERT_EQ(module_.entry_points[0].local_size.y, 1);
   ASSERT_EQ(module_.entry_points[0].local_size.z, 1);
@@ -837,12 +874,13 @@ TEST(SpirvReflectTestCase, TestComputeLocalSize) {
 TEST(SpirvReflectTestCase, TestGeometryInvocationsOutputVertices) {
   std::vector<uint8_t> spirv_;
   SpvReflectShaderModule module_;
-  const std::string spirv_path = "../tests/entry_exec_mode/geom_inv_out_vert.spv";
+  const std::string spirv_path =
+      "../tests/entry_exec_mode/geom_inv_out_vert.spv";
   std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
   std::streampos spirv_file_nbytes = spirv_file.tellg();
   spirv_file.seekg(0);
   spirv_.resize(spirv_file_nbytes);
-  spirv_file.read(reinterpret_cast<char *>(spirv_.data()), spirv_.size());
+  spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
 
   SpvReflectResult result =
       spvReflectCreateShaderModule(spirv_.size(), spirv_.data(), &module_);
@@ -850,7 +888,8 @@ TEST(SpirvReflectTestCase, TestGeometryInvocationsOutputVertices) {
       << "spvReflectCreateShaderModule() failed";
 
   ASSERT_EQ(module_.entry_point_count, 1);
-  ASSERT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_GEOMETRY_BIT);
+  ASSERT_EQ(module_.entry_points[0].shader_stage,
+            SPV_REFLECT_SHADER_STAGE_GEOMETRY_BIT);
   ASSERT_EQ(module_.entry_points[0].invocations, 2);
   ASSERT_EQ(module_.entry_points[0].output_vertices, 2);
 
@@ -858,15 +897,16 @@ TEST(SpirvReflectTestCase, TestGeometryInvocationsOutputVertices) {
 }
 
 class SpirvReflectMultiEntryPointTest : public ::testing::TestWithParam<int> {
-protected:
+ protected:
   void SetUp() override {
     // called after constructor before each test
-    const std::string spirv_path = "../tests/multi_entrypoint/multi_entrypoint.spv";
+    const std::string spirv_path =
+        "../tests/multi_entrypoint/multi_entrypoint.spv";
     std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
     std::streampos spirv_file_nbytes = spirv_file.tellg();
     spirv_file.seekg(0);
     spirv_.resize(spirv_file_nbytes);
-    spirv_file.read(reinterpret_cast<char *>(spirv_.data()), spirv_.size());
+    spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
 
     SpvReflectResult result =
         spvReflectCreateShaderModule(spirv_.size(), spirv_.data(), &module_);
@@ -890,39 +930,29 @@ TEST_F(SpirvReflectMultiEntryPointTest, GetEntryPoint) {
             spvReflectGetEntryPoint(&module_, eps_[0]));
   ASSERT_EQ(&module_.entry_points[1],
             spvReflectGetEntryPoint(&module_, eps_[1]));
-  ASSERT_EQ(NULL,
-            spvReflectGetEntryPoint(&module_, "entry_tess"));
+  ASSERT_EQ(NULL, spvReflectGetEntryPoint(&module_, "entry_tess"));
 }
 
 TEST_F(SpirvReflectMultiEntryPointTest, GetDescriptorBindings0) {
   uint32_t binding_count = 0;
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
             spvReflectEnumerateEntryPointDescriptorBindings(
-                &module_,
-                eps_[0],
-                &binding_count,
-                NULL));
+                &module_, eps_[0], &binding_count, NULL));
   ASSERT_EQ(binding_count, 1);
   SpvReflectDescriptorBinding* binding;
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
             spvReflectEnumerateEntryPointDescriptorBindings(
-                &module_,
-                eps_[0],
-                &binding_count,
-                &binding));
+                &module_, eps_[0], &binding_count, &binding));
   ASSERT_EQ(binding->set, 0);
   ASSERT_EQ(binding->binding, 1);
   ASSERT_EQ(strcmp(binding->name, "ubo"), 0);
-  ASSERT_EQ(binding->descriptor_type, SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+  ASSERT_EQ(binding->descriptor_type,
+            SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
   SpvReflectResult result;
   ASSERT_EQ(binding,
             spvReflectGetEntryPointDescriptorBinding(
-                &module_,
-                eps_[0],
-                binding->binding,
-                binding->set,
-                &result));
+                &module_, eps_[0], binding->binding, binding->set, &result));
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
 }
 
@@ -930,37 +960,29 @@ TEST_F(SpirvReflectMultiEntryPointTest, GetDescriptorBindings1) {
   uint32_t binding_count = 0;
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
             spvReflectEnumerateEntryPointDescriptorBindings(
-                &module_,
-                eps_[1],
-                &binding_count,
-                NULL));
+                &module_, eps_[1], &binding_count, NULL));
   ASSERT_EQ(binding_count, 2);
   SpvReflectDescriptorBinding* bindings[2];
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
             spvReflectEnumerateEntryPointDescriptorBindings(
-                &module_,
-                eps_[1],
-                &binding_count,
-                bindings));
+                &module_, eps_[1], &binding_count, bindings));
   ASSERT_EQ(bindings[0]->set, 0);
   ASSERT_EQ(bindings[0]->binding, 0);
   ASSERT_EQ(strcmp(bindings[0]->name, "tex"), 0);
-  ASSERT_EQ(bindings[0]->descriptor_type, SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+  ASSERT_EQ(bindings[0]->descriptor_type,
+            SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
   ASSERT_EQ(bindings[1]->set, 0);
   ASSERT_EQ(bindings[1]->binding, 1);
   ASSERT_EQ(strcmp(bindings[1]->name, "ubo"), 0);
-  ASSERT_EQ(bindings[1]->descriptor_type, SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+  ASSERT_EQ(bindings[1]->descriptor_type,
+            SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
   for (size_t i = 0; i < 2; ++i) {
     SpvReflectResult result;
-    ASSERT_EQ(bindings[i],
-              spvReflectGetEntryPointDescriptorBinding(
-                  &module_,
-                  eps_[1],
-                  bindings[i]->binding,
-                  bindings[i]->set,
-                  &result));
+    ASSERT_EQ(bindings[i], spvReflectGetEntryPointDescriptorBinding(
+                               &module_, eps_[1], bindings[i]->binding,
+                               bindings[i]->set, &result));
     ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
   }
 }
@@ -973,76 +995,50 @@ TEST_F(SpirvReflectMultiEntryPointTest, GetDescriptorBindingsShared) {
   SpvReflectDescriptorBinding* frag_binding[2];
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
             spvReflectEnumerateEntryPointDescriptorBindings(
-                &module_,
-                eps_[0],
-                &vert_count,
-                &vert_binding));
+                &module_, eps_[0], &vert_count, &vert_binding));
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
             spvReflectEnumerateEntryPointDescriptorBindings(
-                &module_,
-                eps_[1],
-                &frag_count,
-                frag_binding));
+                &module_, eps_[1], &frag_count, frag_binding));
   ASSERT_EQ(vert_binding, frag_binding[1]);
 }
 
 TEST_F(SpirvReflectMultiEntryPointTest, GetDescriptorSets0) {
   uint32_t set_count;
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-            spvReflectEnumerateEntryPointDescriptorSets(
-                &module_,
-                eps_[0],
-                &set_count,
-                NULL));
+            spvReflectEnumerateEntryPointDescriptorSets(&module_, eps_[0],
+                                                        &set_count, NULL));
   ASSERT_EQ(set_count, 1);
-  SpvReflectDescriptorSet *set;
+  SpvReflectDescriptorSet* set;
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-            spvReflectEnumerateEntryPointDescriptorSets(
-                &module_,
-                eps_[0],
-                &set_count,
-                &set));
+            spvReflectEnumerateEntryPointDescriptorSets(&module_, eps_[0],
+                                                        &set_count, &set));
   ASSERT_EQ(set->set, 0);
   ASSERT_EQ(set->binding_count, 1);
   ASSERT_EQ(set, &module_.entry_points[0].descriptor_sets[0]);
 
   SpvReflectResult result;
-  ASSERT_EQ(set,
-            spvReflectGetEntryPointDescriptorSet(
-                &module_,
-                eps_[0],
-                set->set,
-                &result));
+  ASSERT_EQ(set, spvReflectGetEntryPointDescriptorSet(&module_, eps_[0],
+                                                      set->set, &result));
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
 }
 
 TEST_F(SpirvReflectMultiEntryPointTest, GetDescriptorSets1) {
   uint32_t set_count;
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-            spvReflectEnumerateEntryPointDescriptorSets(
-                &module_,
-                eps_[1],
-                &set_count,
-                NULL));
+            spvReflectEnumerateEntryPointDescriptorSets(&module_, eps_[1],
+                                                        &set_count, NULL));
   ASSERT_EQ(set_count, 1);
-  SpvReflectDescriptorSet *set;
+  SpvReflectDescriptorSet* set;
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-            spvReflectEnumerateEntryPointDescriptorSets(
-                &module_,
-                eps_[1],
-                &set_count,
-                &set));
+            spvReflectEnumerateEntryPointDescriptorSets(&module_, eps_[1],
+                                                        &set_count, &set));
   ASSERT_EQ(set->set, 0);
   ASSERT_EQ(set->binding_count, 2);
   ASSERT_EQ(set, &module_.entry_points[1].descriptor_sets[0]);
 
   SpvReflectResult result;
-  ASSERT_EQ(set,
-            spvReflectGetEntryPointDescriptorSet(
-                &module_,
-                eps_[1],
-                set->set,
-                &result));
+  ASSERT_EQ(set, spvReflectGetEntryPointDescriptorSet(&module_, eps_[1],
+                                                      set->set, &result));
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
 }
 
@@ -1052,21 +1048,15 @@ TEST_F(SpirvReflectMultiEntryPointTest, GetInputVariables) {
   for (size_t i = 0; i < 2; ++i) {
     uint32_t count = 0;
     ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-              spvReflectEnumerateEntryPointInputVariables(
-                  &module_,
-                  eps_[i],
-                  &count,
-                  NULL));
+              spvReflectEnumerateEntryPointInputVariables(&module_, eps_[i],
+                                                          &count, NULL));
     ASSERT_EQ(count, counts[i]);
 
     // 2 is the max count
     SpvReflectInterfaceVariable* vars[2];
     ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-              spvReflectEnumerateEntryPointInputVariables(
-                  &module_,
-                  eps_[i],
-                  &count,
-                  vars));
+              spvReflectEnumerateEntryPointInputVariables(&module_, eps_[i],
+                                                          &count, vars));
     for (size_t j = 0; j < counts[i]; ++j) {
       if (vars[j]->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
         // built-ins don't have reasonable locations
@@ -1075,10 +1065,7 @@ TEST_F(SpirvReflectMultiEntryPointTest, GetInputVariables) {
       SpvReflectResult result;
       const SpvReflectInterfaceVariable* var =
           spvReflectGetEntryPointInputVariableByLocation(
-              &module_,
-              eps_[i],
-              vars[j]->location,
-              &result);
+              &module_, eps_[i], vars[j]->location, &result);
       ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
       ASSERT_EQ(var, vars[j]);
       ASSERT_EQ(strcmp(var->name, names[i][var->location]), 0);
@@ -1094,21 +1081,15 @@ TEST_F(SpirvReflectMultiEntryPointTest, GetOutputVariables) {
   for (size_t i = 0; i < 2; ++i) {
     uint32_t count = 0;
     ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-              spvReflectEnumerateEntryPointOutputVariables(
-                  &module_,
-                  eps_[i],
-                  &count,
-                  NULL));
+              spvReflectEnumerateEntryPointOutputVariables(&module_, eps_[i],
+                                                           &count, NULL));
     ASSERT_EQ(count, counts[i]);
 
     // 2 is the max count
     SpvReflectInterfaceVariable* vars[2];
     ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-              spvReflectEnumerateEntryPointOutputVariables(
-                  &module_,
-                  eps_[i],
-                  &count,
-                  vars));
+              spvReflectEnumerateEntryPointOutputVariables(&module_, eps_[i],
+                                                           &count, vars));
     for (size_t j = 0; j < counts[i]; ++j) {
       if (vars[j]->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
         // built-ins don't have reasonable locations
@@ -1117,10 +1098,7 @@ TEST_F(SpirvReflectMultiEntryPointTest, GetOutputVariables) {
       SpvReflectResult result;
       const SpvReflectInterfaceVariable* var =
           spvReflectGetEntryPointOutputVariableByLocation(
-              &module_,
-              eps_[i],
-              vars[j]->location,
-              &result);
+              &module_, eps_[i], vars[j]->location, &result);
       ASSERT_EQ(result, SPV_REFLECT_RESULT_SUCCESS);
       ASSERT_EQ(var, vars[j]);
       ASSERT_EQ(strcmp(var->name, names[i][var->location]), 0);
@@ -1133,64 +1111,39 @@ TEST_F(SpirvReflectMultiEntryPointTest, GetPushConstants) {
     SpvReflectBlockVariable* var;
     uint32_t count = 0;
     ASSERT_EQ(SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH,
-              spvReflectEnumerateEntryPointPushConstantBlocks(
-                  &module_,
-                  eps_[i],
-                  &count,
-                  &var));
+              spvReflectEnumerateEntryPointPushConstantBlocks(&module_, eps_[i],
+                                                              &count, &var));
     ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-              spvReflectEnumerateEntryPointPushConstantBlocks(
-                  &module_,
-                  eps_[i],
-                  &count,
-                  NULL));
+              spvReflectEnumerateEntryPointPushConstantBlocks(&module_, eps_[i],
+                                                              &count, NULL));
     ASSERT_EQ(count, 1);
     ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-              spvReflectEnumerateEntryPointPushConstantBlocks(
-                  &module_,
-                  eps_[i],
-                  &count,
-                  &var));
+              spvReflectEnumerateEntryPointPushConstantBlocks(&module_, eps_[i],
+                                                              &count, &var));
     SpvReflectResult result;
-    ASSERT_EQ(var,
-              spvReflectGetEntryPointPushConstantBlock(
-                  &module_,
-                  eps_[i],
-                  &result));
+    ASSERT_EQ(var, spvReflectGetEntryPointPushConstantBlock(&module_, eps_[i],
+                                                            &result));
     ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
   }
 }
 
 TEST_F(SpirvReflectMultiEntryPointTest, ChangeDescriptorBindingNumber) {
-  const SpvReflectDescriptorBinding* binding = spvReflectGetEntryPointDescriptorBinding(
-      &module_,
-      eps_[0],
-      1,
-      0,
-      NULL);
+  const SpvReflectDescriptorBinding* binding =
+      spvReflectGetEntryPointDescriptorBinding(&module_, eps_[0], 1, 0, NULL);
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-            spvReflectChangeDescriptorBindingNumbers(&module_,
-                                                     binding,
-                                                     2,
-                                                     1));
+            spvReflectChangeDescriptorBindingNumbers(&module_, binding, 2, 1));
   // Change descriptor binding numbers doesn't currently resort so it won't
   // invalidate binding, but if that changes this test will need to be fixed.
   ASSERT_EQ(binding->set, 1);
   ASSERT_EQ(binding->binding, 2);
 
   SpvReflectResult result;
-  const SpvReflectDescriptorSet* set0 = spvReflectGetEntryPointDescriptorSet(
-      &module_,
-      eps_[0],
-      1,
-      &result);
+  const SpvReflectDescriptorSet* set0 =
+      spvReflectGetEntryPointDescriptorSet(&module_, eps_[0], 1, &result);
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
   ASSERT_EQ(set0->binding_count, 1);
-  const SpvReflectDescriptorSet* set1 = spvReflectGetEntryPointDescriptorSet(
-      &module_,
-      eps_[1],
-      1,
-      &result);
+  const SpvReflectDescriptorSet* set1 =
+      spvReflectGetEntryPointDescriptorSet(&module_, eps_[1], 1, &result);
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
   ASSERT_EQ(set1->binding_count, 1);
 
@@ -1198,31 +1151,21 @@ TEST_F(SpirvReflectMultiEntryPointTest, ChangeDescriptorBindingNumber) {
 }
 
 TEST_F(SpirvReflectMultiEntryPointTest, ChangeDescriptorSetNumber) {
-  const SpvReflectDescriptorSet* set = spvReflectGetDescriptorSet(
-      &module_,
-      0,
-      NULL);
+  const SpvReflectDescriptorSet* set =
+      spvReflectGetDescriptorSet(&module_, 0, NULL);
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS,
-            spvReflectChangeDescriptorSetNumber(&module_,
-                                                set,
-                                                1));
+            spvReflectChangeDescriptorSetNumber(&module_, set, 1));
   // Change descriptor binding numbers doesn't currently resort so it won't
   // invalidate binding, but if that changes this test will need to be fixed.
   ASSERT_EQ(set->set, 1);
 
   SpvReflectResult result;
-  const SpvReflectDescriptorSet* set0 = spvReflectGetEntryPointDescriptorSet(
-      &module_,
-      eps_[0],
-      1,
-      &result);
+  const SpvReflectDescriptorSet* set0 =
+      spvReflectGetEntryPointDescriptorSet(&module_, eps_[0], 1, &result);
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
   ASSERT_EQ(set0->binding_count, 1);
-  const SpvReflectDescriptorSet* set1 = spvReflectGetEntryPointDescriptorSet(
-      &module_,
-      eps_[1],
-      1,
-      &result);
+  const SpvReflectDescriptorSet* set1 =
+      spvReflectGetEntryPointDescriptorSet(&module_, eps_[1], 1, &result);
   ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result);
   ASSERT_EQ(set1->binding_count, 2);
 

@@ -1,70 +1,67 @@
 #include "arg_parser.h"
+
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
 
-ArgParser::ArgParser()
-{
-}
+ArgParser::ArgParser() {}
 
-ArgParser::~ArgParser()
-{
-}
+ArgParser::~ArgParser() {}
 
-ArgParser::Option* ArgParser::FindOptionByShortName(const std::string& short_name)
-{
+ArgParser::Option* ArgParser::FindOptionByShortName(
+    const std::string& short_name) {
   ArgParser::Option* p_option = nullptr;
-  auto it = std::find_if(std::begin(m_options),
-                         std::end(m_options),
+  auto it = std::find_if(std::begin(m_options), std::end(m_options),
                          [short_name](const ArgParser::Option& elem) -> bool {
-                             return elem.short_name == short_name; });
+                           return elem.short_name == short_name;
+                         });
   if (it != std::end(m_options)) {
     p_option = &(*it);
   }
   return p_option;
 }
 
-const ArgParser::Option* ArgParser::FindOptionByShortName(const std::string& short_name) const
-{
+const ArgParser::Option* ArgParser::FindOptionByShortName(
+    const std::string& short_name) const {
   const ArgParser::Option* p_option = nullptr;
-  auto it = std::find_if(std::begin(m_options),
-                         std::end(m_options),
+  auto it = std::find_if(std::begin(m_options), std::end(m_options),
                          [short_name](const ArgParser::Option& elem) -> bool {
-                             return elem.short_name == short_name; });
+                           return elem.short_name == short_name;
+                         });
   if (it != std::end(m_options)) {
     p_option = &(*it);
   }
   return p_option;
 }
 
-ArgParser::Option* ArgParser::FindOptionByLongName(const std::string& long_name)
-{
+ArgParser::Option* ArgParser::FindOptionByLongName(
+    const std::string& long_name) {
   ArgParser::Option* p_option = nullptr;
-  auto it = std::find_if(std::begin(m_options),
-                         std::end(m_options),
+  auto it = std::find_if(std::begin(m_options), std::end(m_options),
                          [long_name](const ArgParser::Option& elem) -> bool {
-                             return elem.long_name == long_name; });
+                           return elem.long_name == long_name;
+                         });
   if (it != std::end(m_options)) {
     p_option = &(*it);
   }
   return p_option;
 }
 
-const ArgParser::Option* ArgParser::FindOptionByLongName(const std::string& long_name) const
-{
+const ArgParser::Option* ArgParser::FindOptionByLongName(
+    const std::string& long_name) const {
   const ArgParser::Option* p_option = nullptr;
-  auto it = std::find_if(std::begin(m_options),
-                         std::end(m_options),
+  auto it = std::find_if(std::begin(m_options), std::end(m_options),
                          [long_name](const ArgParser::Option& elem) -> bool {
-                             return elem.long_name == long_name; });
+                           return elem.long_name == long_name;
+                         });
   if (it != std::end(m_options)) {
     p_option = &(*it);
   }
   return p_option;
 }
 
-bool ArgParser::AddFlag(const std::string& short_name, const std::string& long_name, const std::string& desc)
-{
+bool ArgParser::AddFlag(const std::string& short_name,
+                        const std::string& long_name, const std::string& desc) {
   Option option = {};
   option.short_name = short_name;
   option.long_name = long_name;
@@ -79,8 +76,10 @@ bool ArgParser::AddFlag(const std::string& short_name, const std::string& long_n
   return true;
 }
 
-bool ArgParser::AddOptionString(const std::string& short_name, const std::string& long_name, const std::string& desc, const std::string& default_value)
-{
+bool ArgParser::AddOptionString(const std::string& short_name,
+                                const std::string& long_name,
+                                const std::string& desc,
+                                const std::string& default_value) {
   Option option = {};
   option.short_name = short_name;
   option.long_name = long_name;
@@ -96,8 +95,9 @@ bool ArgParser::AddOptionString(const std::string& short_name, const std::string
   return true;
 }
 
-bool ArgParser::AddOptionInt(const std::string& short_name, const std::string& long_name, const std::string& desc, int default_value)
-{
+bool ArgParser::AddOptionInt(const std::string& short_name,
+                             const std::string& long_name,
+                             const std::string& desc, int default_value) {
   Option option = {};
   option.short_name = short_name;
   option.long_name = long_name;
@@ -113,8 +113,9 @@ bool ArgParser::AddOptionInt(const std::string& short_name, const std::string& l
   return true;
 }
 
-bool ArgParser::AddOptionFloat(const std::string& short_name, const std::string& long_name, const std::string& desc, float default_value)
-{
+bool ArgParser::AddOptionFloat(const std::string& short_name,
+                               const std::string& long_name,
+                               const std::string& desc, float default_value) {
   Option option = {};
   option.short_name = short_name;
   option.long_name = long_name;
@@ -130,8 +131,7 @@ bool ArgParser::AddOptionFloat(const std::string& short_name, const std::string&
   return true;
 }
 
-bool ArgParser::Parse(int argc, char** argv, std::ostream& os)
-{
+bool ArgParser::Parse(int argc, char** argv, std::ostream& os) {
   for (auto& opt : m_options) {
     opt.value = opt.default_value;
     opt.parsed = false;
@@ -145,8 +145,7 @@ bool ArgParser::Parse(int argc, char** argv, std::ostream& os)
       if ((s.length() >= 2) && ((s[0] == '-') && (s[1] == '-'))) {
         std::string long_name = s.substr(2);
         p_option = FindOptionByLongName(long_name);
-      }
-      else {
+      } else {
         std::string short_name = s.substr(1);
         p_option = FindOptionByShortName(short_name);
       }
@@ -160,8 +159,7 @@ bool ArgParser::Parse(int argc, char** argv, std::ostream& os)
         case OPTION_TYPE_FLAG: {
           p_option->parsed = true;
           i += 1;
-        }
-        break;
+        } break;
 
         case OPTION_TYPE_STRING: {
           if ((i + 1) >= argc) {
@@ -174,8 +172,7 @@ bool ArgParser::Parse(int argc, char** argv, std::ostream& os)
           p_option->parsed = true;
 
           i += 2;
-        }
-        break;
+        } break;
 
         case OPTION_TYPE_INT: {
           if ((i + 1) >= argc) {
@@ -188,8 +185,7 @@ bool ArgParser::Parse(int argc, char** argv, std::ostream& os)
           p_option->parsed = true;
 
           i += 2;
-        }
-        break;
+        } break;
 
         case OPTION_TYPE_FLOAT: {
           if ((i + 1) >= argc) {
@@ -202,30 +198,23 @@ bool ArgParser::Parse(int argc, char** argv, std::ostream& os)
           p_option->parsed = true;
 
           i += 2;
-        }
-        break;
+        } break;
 
         case OPTION_TYPE_UNDEFINED: {
-        }
-        break;
+        } break;
       }
-    }
-    else {
+    } else {
       m_args.push_back(s);
       i += 1;
-    }    
+    }
   }
 
   return true;
 }
 
-size_t ArgParser::GetArgCount() const
-{
-  return m_args.size();
-}
+size_t ArgParser::GetArgCount() const { return m_args.size(); }
 
-bool ArgParser::GetArg(size_t i, std::string* p_value) const
-{
+bool ArgParser::GetArg(size_t i, std::string* p_value) const {
   if ((GetArgCount() == 0) && (i >= GetArgCount())) {
     return false;
   }
@@ -237,13 +226,10 @@ bool ArgParser::GetArg(size_t i, std::string* p_value) const
   return true;
 }
 
-const std::vector<std::string>& ArgParser::GetArgs() const
-{
-  return m_args;
-}
+const std::vector<std::string>& ArgParser::GetArgs() const { return m_args; }
 
-bool ArgParser::GetFlag(const std::string& short_name, const std::string& long_name) const
-{
+bool ArgParser::GetFlag(const std::string& short_name,
+                        const std::string& long_name) const {
   auto p_short = FindOptionByShortName(short_name);
   auto p_long = FindOptionByLongName(long_name);
 
@@ -266,8 +252,9 @@ bool ArgParser::GetFlag(const std::string& short_name, const std::string& long_n
   return p_option->parsed;
 }
 
-bool ArgParser::GetString(const std::string& short_name, const std::string& long_name, std::string* p_value) const
-{
+bool ArgParser::GetString(const std::string& short_name,
+                          const std::string& long_name,
+                          std::string* p_value) const {
   auto p_short = FindOptionByShortName(short_name);
   auto p_long = FindOptionByLongName(long_name);
 
@@ -282,11 +269,11 @@ bool ArgParser::GetString(const std::string& short_name, const std::string& long
   if (p_option == nullptr) {
     return false;
   }
-  
+
   if (!p_option->parsed || (p_option->type != OPTION_TYPE_STRING)) {
     return false;
   }
-    
+
   if (p_value != nullptr) {
     *p_value = p_option->value.str;
   }
@@ -294,8 +281,8 @@ bool ArgParser::GetString(const std::string& short_name, const std::string& long
   return true;
 }
 
-bool ArgParser::GetInt(const std::string& short_name, const std::string& long_name, int* p_value) const
-{
+bool ArgParser::GetInt(const std::string& short_name,
+                       const std::string& long_name, int* p_value) const {
   auto p_short = FindOptionByShortName(short_name);
   auto p_long = FindOptionByLongName(long_name);
 
@@ -310,11 +297,11 @@ bool ArgParser::GetInt(const std::string& short_name, const std::string& long_na
   if (p_option == nullptr) {
     return false;
   }
-  
+
   if (!p_option->parsed || (p_option->type != OPTION_TYPE_INT)) {
     return false;
   }
-  
+
   if (p_value != nullptr) {
     *p_value = p_option->value.i32;
   }
@@ -322,8 +309,8 @@ bool ArgParser::GetInt(const std::string& short_name, const std::string& long_na
   return true;
 }
 
-bool ArgParser::GetFloat(const std::string& short_name, const std::string& long_name, float* p_value) const
-{
+bool ArgParser::GetFloat(const std::string& short_name,
+                         const std::string& long_name, float* p_value) const {
   auto p_short = FindOptionByShortName(short_name);
   auto p_long = FindOptionByLongName(long_name);
 
@@ -338,11 +325,11 @@ bool ArgParser::GetFloat(const std::string& short_name, const std::string& long_
   if (p_option == nullptr) {
     return false;
   }
-  
+
   if (!p_option->parsed || (p_option->type != OPTION_TYPE_FLOAT)) {
     return false;
   }
-  
+
   if (p_value != nullptr) {
     *p_value = p_option->value.f32;
   }
@@ -350,49 +337,48 @@ bool ArgParser::GetFloat(const std::string& short_name, const std::string& long_
   return true;
 }
 
-void ArgParser::PrintHelp(std::ostream& os)
-{
-	(void)os;
+void ArgParser::PrintHelp(std::ostream& os) {
+  (void)os;
 
-/*
-  if (m_options.empty()) {
-    return;
-  }
-
-  struct TextLine {
-    std::string   option;
-    std::string   desc;
-  };
-  std::vector<TextLine> text_lines;
-
-  size_t max_width = 0;
-  for (auto& it : m_options) {
-    std::stringstream ss;
-    ss << "--" << it.first;
-    switch (it.second.type) {
-      default: break;
-      case OPTION_TYPE_STRING : ss << " " << "[s]"; break;
-      case OPTION_TYPE_INT    : ss << " " << "[i]"; break;
-      case OPTION_TYPE_FLOAT  : ss << " " << "[f]"; break;
+  /*
+    if (m_options.empty()) {
+      return;
     }
 
-    std::string option = ss.str();
-    max_width = std::max(max_width, option.size());
+    struct TextLine {
+      std::string   option;
+      std::string   desc;
+    };
+    std::vector<TextLine> text_lines;
 
-    TextLine tl;
-    tl.option = option;
-    tl.desc = it.second.desc;
-    text_lines.push_back(tl);
-  }
-  max_width += 2;
+    size_t max_width = 0;
+    for (auto& it : m_options) {
+      std::stringstream ss;
+      ss << "--" << it.first;
+      switch (it.second.type) {
+        default: break;
+        case OPTION_TYPE_STRING : ss << " " << "[s]"; break;
+        case OPTION_TYPE_INT    : ss << " " << "[i]"; break;
+        case OPTION_TYPE_FLOAT  : ss << " " << "[f]"; break;
+      }
 
-  os << "\n";
-  os << "Options:" << "\n";
-  for (auto& tl : text_lines) {
-    os << "  ";
-    os << std::left << std::setw(max_width) << tl.option;
-    os << tl.desc;
+      std::string option = ss.str();
+      max_width = std::max(max_width, option.size());
+
+      TextLine tl;
+      tl.option = option;
+      tl.desc = it.second.desc;
+      text_lines.push_back(tl);
+    }
+    max_width += 2;
+
     os << "\n";
-  }
-*/
+    os << "Options:" << "\n";
+    for (auto& tl : text_lines) {
+      os << "  ";
+      os << std::left << std::setw(max_width) << tl.option;
+      os << tl.desc;
+      os << "\n";
+    }
+  */
 }
