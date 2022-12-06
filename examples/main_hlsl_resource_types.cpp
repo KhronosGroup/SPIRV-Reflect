@@ -70,8 +70,6 @@ void StreamWrite(std::ostream& os, const spv_reflect::ShaderModule& obj)
   const char* t     = "  ";
   const char* tt    = "    ";
   const char* ttt   = "      ";
-  const char* tttt  = "        ";
-  const char* ttttt = "          ";
 
   StreamWrite(os, obj.GetShaderModule(), "");
 
