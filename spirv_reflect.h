@@ -379,6 +379,11 @@ typedef struct SpvReflectBlockVariable {
   struct SpvReflectBlockVariable*   members;
 
   SpvReflectTypeDescription*        type_description;
+
+  struct {
+    uint32_t                          offset;
+  } word_offset;
+
 } SpvReflectBlockVariable;
 
 /*! @struct SpvReflectDescriptorBinding
