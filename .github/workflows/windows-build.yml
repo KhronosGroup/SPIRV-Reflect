@@ -1,0 +1,36 @@
+name: Windows build
+
+on:
+  pull_request:
+
+# Cancel previous runs if a more recent commit is pushed.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  windows-build:
+    name: Build and run unit tests on Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+      - name: Switch to pull request branch and clone submodules
+        run: |
+          git checkout ${GITHUB_SHA}
+          git submodule update --init --recursive
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake -G "Visual Studio 16 2019" -A x64 -DSPIRV_REFLECT_BUILD_TESTS=ON
+
+          cmake --build . --config Release -- /nologo /verbosity:minimal /maxcpucount
+      - name: Run unit tests
+        run: |
+          cd build
+          ./test-spirv-reflect.exe

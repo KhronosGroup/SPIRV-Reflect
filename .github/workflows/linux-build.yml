@@ -1,0 +1,35 @@
+name: Linux build
+
+on:
+  pull_request:
+
+# Cancel previous runs if a more recent commit is pushed.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  linux-build:
+    name: Build and run tests on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+      - name: Switch to pull request branch and clone submodules
+        run: |
+          git checkout ${GITHUB_SHA}
+          git submodule update --init --recursive
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DSPIRV_REFLECT_BUILD_TESTS=ON
+          make -j $(nproc)
+      - name: Run unit tests
+        run: |
+          cd build
+          ./test-spirv-reflect
