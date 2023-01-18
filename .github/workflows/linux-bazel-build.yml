@@ -12,7 +12,7 @@ permissions: read-all
 
 jobs:
   linux-build:
-    name: Build and run tests on Linux
+    name: Build and run tests on Linux using CMake
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
