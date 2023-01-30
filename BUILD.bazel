@@ -13,7 +13,15 @@ exports_files([
     "LICENSE",
 ])
 
-COMMON_COPTS = [
+COPTS_WINDOWS = [
+    "/Gy",
+    "/Gw",
+
+    "/W3",
+    "/WX",
+]
+
+COPTS_DEFAULT = [
     "-ffunction-sections",
     "-fdata-sections",
 
@@ -23,12 +31,23 @@ COMMON_COPTS = [
     "-Wunused-variable",
 ]
 
-COMMON_CPPOPTS = COMMON_COPTS + [
-    "-std=c++14",
-]
+COMMON_COPTS = select({
+    "@bazel_tools//src/conditions:windows": COPTS_WINDOWS,
+    "//conditions:default": COPTS_DEFAULT,
+})
+
+COMMON_CPPOPTS = select({
+    "@bazel_tools//src/conditions:windows": COPTS_WINDOWS + [
+        "/std:c++14"
+    ],
+    "//conditions:default": COPTS_DEFAULT + [
+        "-std=c++14",
+    ]
+})
 
 COMMON_LINKOPTS = select({
     "@bazel_tools//src/conditions:darwin": ["-Wl,--dead_strip"],
+    "@bazel_tools//src/conditions:windows": [],
     "//conditions:default": ["-Wl,--gc-sections"],
 })
 
