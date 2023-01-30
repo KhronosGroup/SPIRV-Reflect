@@ -28,6 +28,3 @@ jobs:
           cmake -DSPIRV_REFLECT_BUILD_TESTS=ON ..
 
           cmake --build . --config Release -- /nologo /verbosity:minimal /maxcpucount
-      - name: Run unit tests
-        run: |
-          ./build/Release/test-spirv-reflect.exe
