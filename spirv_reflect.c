@@ -27,6 +27,12 @@
   #include <stdlib.h>
 #endif
 
+#if defined(__clang__)
+  #define FALLTHROUGH __attribute__((fallthrough))
+#else
+  #define FALLTHROUGH
+#endif
+
 #if defined(SPIRV_REFLECT_ENABLE_ASSERTS)
   #define SPV_REFLECT_ASSERT(COND) \
     assert(COND);
@@ -753,6 +759,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
       case SpvOpTypeStruct:
       {
         p_node->member_count = p_node->word_count - 2;
+        FALLTHROUGH;
       } // Fall through
       case SpvOpTypeVoid:
       case SpvOpTypeBool:
@@ -919,6 +926,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
           CHECKED_READU32(p_parser, p_func_node->word_offset + 2, p_func_node->result_id);
           ++(p_parser->function_count);
         }
+        FALLTHROUGH;
       } // Fall through
 
       case SpvOpFunctionEnd:
