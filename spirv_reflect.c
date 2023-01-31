@@ -3156,8 +3156,9 @@ static SpvReflectResult ParseEntryPoints(
       case SpvExecutionModelFragment               : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT; break;
       case SpvExecutionModelGLCompute              : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT; break;
       case SpvExecutionModelTaskNV                 : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_TASK_BIT_NV; break;
+      case SpvExecutionModelTaskEXT                : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_TASK_BIT_EXT; break;
       case SpvExecutionModelMeshNV                 : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_MESH_BIT_NV; break;
-      case SpvExecutionModelMeshEXT                 : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_MESH_BIT_EXT; break;
+      case SpvExecutionModelMeshEXT                : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_MESH_BIT_EXT; break;
       case SpvExecutionModelRayGenerationKHR       : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_RAYGEN_BIT_KHR; break;
       case SpvExecutionModelIntersectionKHR        : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_INTERSECTION_BIT_KHR; break;
       case SpvExecutionModelAnyHitKHR              : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_ANY_HIT_BIT_KHR; break;
