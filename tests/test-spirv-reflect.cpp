@@ -840,6 +840,8 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/raytrace/raytracing.nv.miss.spv",
     "../tests/raytrace/raytracing.nv.raygen.spv",
     "../tests/spirv15/VertexShader.spv",
+    "../tests/mesh_shader_ext/mesh_shader_ext.task.hlsl.spv",
+    "../tests/mesh_shader_ext/mesh_shader_ext.mesh.hlsl.spv",
     // clang-format on
 };
 }  // namespace
@@ -867,6 +869,52 @@ TEST(SpirvReflectTestCase, TestComputeLocalSize) {
   ASSERT_EQ(module_.entry_points[0].local_size.x, 1);
   ASSERT_EQ(module_.entry_points[0].local_size.y, 1);
   ASSERT_EQ(module_.entry_points[0].local_size.z, 1);
+
+  spvReflectDestroyShaderModule(&module_);
+}
+
+TEST(SpirvReflectTestCase, TestTaskShaderEXT) {
+  std::vector<uint8_t> spirv_;
+  SpvReflectShaderModule module_;
+  const std::string spirv_path =
+      "../tests/mesh_shader_ext/mesh_shader_ext.task.hlsl.spv";
+  std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
+  std::streampos spirv_file_nbytes = spirv_file.tellg();
+  spirv_file.seekg(0);
+  spirv_.resize(spirv_file_nbytes);
+  spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
+
+  SpvReflectResult result =
+      spvReflectCreateShaderModule(spirv_.size(), spirv_.data(), &module_);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result)
+      << "spvReflectCreateShaderModule() failed";
+
+  ASSERT_EQ(module_.entry_point_count, 1);
+  ASSERT_EQ(module_.entry_points[0].shader_stage,
+            SPV_REFLECT_SHADER_STAGE_TASK_BIT_EXT);
+
+  spvReflectDestroyShaderModule(&module_);
+}
+
+TEST(SpirvReflectTestCase, TestMeshShaderEXT) {
+  std::vector<uint8_t> spirv_;
+  SpvReflectShaderModule module_;
+  const std::string spirv_path =
+      "../tests/mesh_shader_ext/mesh_shader_ext.mesh.hlsl.spv";
+  std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
+  std::streampos spirv_file_nbytes = spirv_file.tellg();
+  spirv_file.seekg(0);
+  spirv_.resize(spirv_file_nbytes);
+  spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
+
+  SpvReflectResult result =
+      spvReflectCreateShaderModule(spirv_.size(), spirv_.data(), &module_);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result)
+      << "spvReflectCreateShaderModule() failed";
+
+  ASSERT_EQ(module_.entry_point_count, 1);
+  ASSERT_EQ(module_.entry_points[0].shader_stage,
+            SPV_REFLECT_SHADER_STAGE_MESH_BIT_EXT);
 
   spvReflectDestroyShaderModule(&module_);
 }
