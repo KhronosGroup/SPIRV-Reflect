@@ -116,7 +116,7 @@ module:
   entry_point_id: 1
   source_language: 5 # HLSL
   source_language_version: 670
-  spirv_execution_model: 5364 # ???
+  spirv_execution_model: 5364 # TaskEXT
   shader_stage: 0x00000040 # TASK
   descriptor_binding_count: 0
   descriptor_bindings:
