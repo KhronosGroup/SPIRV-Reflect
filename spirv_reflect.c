@@ -27,7 +27,11 @@
   #include <stdlib.h>
 #endif
 
-#include <stdio.h>
+#if defined(__clang__)
+  #define FALLTHROUGH __attribute__((fallthrough))
+#else
+  #define FALLTHROUGH
+#endif
 
 #if defined(SPIRV_REFLECT_ENABLE_ASSERTS)
   #define SPV_REFLECT_ASSERT(COND) \
@@ -186,10 +190,10 @@ typedef struct SpvReflectPrvAccessChain {
   // Pointing to the base of a composite object.
   // Generally the id of descriptor block variable
   uint32_t                        base_id;
-  // 
+  //
   // From spec:
-  //   The first index in Indexes will select the 
-  //   top-level member/element/component/element 
+  //   The first index in Indexes will select the
+  //   top-level member/element/component/element
   //   of the base composite
   uint32_t                        index_count;
   uint32_t*                       indexes;
@@ -295,7 +299,7 @@ typedef struct SpvReflectEvaluation {
 
 
 static uint32_t Max(
-   uint32_t a, 
+   uint32_t a,
    uint32_t b)
 {
   return a > b ? a : b;
@@ -322,7 +326,7 @@ static uint32_t RoundUp(
   }
 
 static int SortCompareUint32(
-  const void* a, 
+  const void* a,
   const void* b)
 {
   const uint32_t* p_a = (const uint32_t*)a;
@@ -354,8 +358,8 @@ static size_t DedupSortedUint32(uint32_t* arr, size_t size)
 }
 
 static bool SearchSortedUint32(
-  const uint32_t* arr, 
-  size_t          size, 
+  const uint32_t* arr,
+  size_t          size,
   uint32_t        target)
 {
   size_t lo = 0;
@@ -374,9 +378,9 @@ static bool SearchSortedUint32(
 }
 
 static SpvReflectResult IntersectSortedUint32(
-  const uint32_t* p_arr0, 
+  const uint32_t* p_arr0,
   size_t          arr0_size,
-  const uint32_t* p_arr1, 
+  const uint32_t* p_arr1,
   size_t          arr1_size,
   uint32_t**      pp_res,
   size_t*         res_size
@@ -430,7 +434,7 @@ static SpvReflectResult IntersectSortedUint32(
 
 
 static bool InRange(
-  const SpvReflectPrvParser* p_parser, 
+  const SpvReflectPrvParser* p_parser,
   uint32_t                   index)
 {
   bool in_range = false;
@@ -492,11 +496,11 @@ static SpvReflectResult ReadU32(
   }
 
 static SpvReflectResult ReadStr(
-  SpvReflectPrvParser* p_parser, 
-  uint32_t             word_offset, 
-  uint32_t             word_index, 
+  SpvReflectPrvParser* p_parser,
+  uint32_t             word_offset,
+  uint32_t             word_index,
   uint32_t             word_count,
-  uint32_t*            p_buf_size, 
+  uint32_t*            p_buf_size,
   char*                p_buf
 )
 {
@@ -643,8 +647,8 @@ static SpvReflectTypeDescription* FindType(const SpvReflectShaderModule* p_modul
 }
 
 static SpvReflectResult CreateParser(
-  size_t               size, 
-  void*                p_code, 
+  size_t               size,
+  void*                p_code,
   SpvReflectPrvParser* p_parser)
 {
   if (p_code == NULL) {
@@ -796,7 +800,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
           const char* p_source = (const char*)(p_parser->spirv_code + p_node->word_offset + 4);
 
           const size_t source_len = strlen(p_source);
-          char* p_source_temp = (char*)calloc(source_len + 1, sizeof(char*));
+          char* p_source_temp = (char*)calloc(source_len + 1, sizeof(char));
 
           if (IsNull(p_source_temp)) {
             return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
@@ -817,8 +821,8 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
         const char* p_source = (const char*)(p_parser->spirv_code + p_node->word_offset + 1);
 
         const size_t source_len = strlen(p_source);
-        const size_t embedded_source_len = strlen(p_parser->source_embedded); 
-        char* p_continued_source = (char*)calloc(source_len + embedded_source_len + 1, sizeof(char*));
+        const size_t embedded_source_len = strlen(p_parser->source_embedded);
+        char* p_continued_source = (char*)calloc(source_len + embedded_source_len + 1, sizeof(char));
 
         if (IsNull(p_continued_source)) {
           return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
@@ -860,6 +864,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
       case SpvOpTypeStruct:
       {
         p_node->member_count = p_node->word_count - 2;
+        FALLTHROUGH;
       } // Fall through
       case SpvOpTypeVoid:
       case SpvOpTypeBool:
@@ -1021,6 +1026,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
           CHECKED_READU32(p_parser, p_func_node->word_offset + 2, p_func_node->result_id);
           ++(p_parser->function_count);
         }
+        FALLTHROUGH;
       } // Fall through
 
       case SpvOpFunctionEnd:
@@ -1083,7 +1089,7 @@ static SpvReflectResult ParseStrings(SpvReflectPrvParser* p_parser)
       ++string_index;
     }
   }
-  
+
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
@@ -1108,7 +1114,7 @@ static SpvReflectResult ParseSource(SpvReflectPrvParser* p_parser, SpvReflectSha
     if (IsNotNull(p_parser->source_embedded))
     {
       const size_t source_len = strlen(p_parser->source_embedded);
-      char* p_source = (char*)calloc(source_len + 1, sizeof(char*));
+      char* p_source = (char*)calloc(source_len + 1, sizeof(char));
 
       if (IsNull(p_source)) {
         return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
@@ -1128,9 +1134,9 @@ static SpvReflectResult ParseSource(SpvReflectPrvParser* p_parser, SpvReflectSha
 }
 
 static SpvReflectResult ParseFunction(
-  SpvReflectPrvParser*   p_parser, 
-  SpvReflectPrvNode*     p_func_node, 
-  SpvReflectPrvFunction* p_func, 
+  SpvReflectPrvParser*   p_parser,
+  SpvReflectPrvNode*     p_func_node,
+  SpvReflectPrvFunction* p_func,
   size_t                 first_label_index)
 {
   p_func->id = p_func_node->result_id;
@@ -1255,7 +1261,7 @@ static SpvReflectResult ParseFunction(
 }
 
 static int SortCompareFunctions(
-  const void* a, 
+  const void* a,
   const void* b)
 {
   const SpvReflectPrvFunction* af = (const SpvReflectPrvFunction*)a;
@@ -1484,13 +1490,13 @@ static SpvReflectResult ParseDecorations(SpvReflectShaderModule* p_module, SpvRe
       case SpvReflectDecorationHlslSemanticGOOGLE: {
         skip = false;
       }
-      break;    
+      break;
     }
     if (skip) {
       continue;
-    }  
-    
-    // Find target target node 
+    }
+
+    // Find target target node
     uint32_t target_id = 0;
     CHECKED_READU32(p_parser, p_node->word_offset + 1, target_id);
     SpvReflectPrvNode* p_target_node = FindNode(p_parser, target_id);
@@ -1650,7 +1656,7 @@ static SpvReflectResult ParseDecorations(SpvReflectShaderModule* p_module, SpvRe
 
 static SpvReflectResult EnumerateAllUniforms(
   SpvReflectShaderModule* p_module,
-  size_t*                 p_uniform_count, 
+  size_t*                 p_uniform_count,
   uint32_t**              pp_uniforms
 )
 {
@@ -1673,10 +1679,10 @@ static SpvReflectResult EnumerateAllUniforms(
 }
 
 static SpvReflectResult ParseType(
-  SpvReflectPrvParser*       p_parser, 
-  SpvReflectPrvNode*         p_node, 
-  SpvReflectPrvDecorations*  p_struct_member_decorations, 
-  SpvReflectShaderModule*    p_module, 
+  SpvReflectPrvParser*       p_parser,
+  SpvReflectPrvNode*         p_node,
+  SpvReflectPrvDecorations*  p_struct_member_decorations,
+  SpvReflectShaderModule*    p_module,
   SpvReflectTypeDescription* p_type
 )
 {
@@ -1813,7 +1819,7 @@ static SpvReflectResult ParseType(
           result = ParseType(p_parser, p_next_node, NULL, p_module, p_type);
         }
         else {
-          result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;          
+          result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
           SPV_REFLECT_ASSERT(false);
         }
       }
@@ -1917,7 +1923,7 @@ static SpvReflectResult ParseType(
           if (result != SPV_REFLECT_RESULT_SUCCESS) {
             break;
           }
-          // This looks wrong 
+          // This looks wrong
           //p_member_type->type_name = p_member_node->name;
           p_member_type->struct_member_name = p_node->member_names[member_index];
         }
@@ -2316,7 +2322,7 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
     else {
       const size_t descriptor_name_length = p_descriptor->name? strlen(p_descriptor->name): 0;
 
-      memset(name, 0, MAX_NODE_NAME_LENGTH);    
+      memset(name, 0, MAX_NODE_NAME_LENGTH);
       memcpy(name, p_descriptor->name, descriptor_name_length);
 #if defined(_WIN32)
       strcat_s(name, MAX_NODE_NAME_LENGTH, k_count_tag);
@@ -2345,9 +2351,9 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
 }
 
 static SpvReflectResult ParseDescriptorBlockVariable(
-  SpvReflectPrvParser*        p_parser, 
-  SpvReflectShaderModule*     p_module, 
-  SpvReflectTypeDescription*  p_type, 
+  SpvReflectPrvParser*        p_parser,
+  SpvReflectShaderModule*     p_module,
+  SpvReflectTypeDescription*  p_type,
   SpvReflectBlockVariable*    p_var
 )
 {
@@ -2382,7 +2388,7 @@ static SpvReflectResult ParseDescriptorBlockVariable(
         return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
       }
     }
-    
+
     // Parse members
     for (uint32_t member_index = 0; member_index < p_type->member_count; ++member_index) {
       SpvReflectTypeDescription* p_member_type = &p_type->members[member_index];
@@ -2407,6 +2413,7 @@ static SpvReflectResult ParseDescriptorBlockVariable(
         ApplyArrayTraits(p_member_type, &p_member_var->array);
       }
 
+      p_member_var->word_offset.offset = p_type_node->member_decorations[member_index].offset.word_offset;
       p_member_var->type_description = p_member_type;
     }
   }
@@ -2421,11 +2428,11 @@ static SpvReflectResult ParseDescriptorBlockVariable(
 }
 
 static SpvReflectResult ParseDescriptorBlockVariableSizes(
-  SpvReflectPrvParser*     p_parser, 
-  SpvReflectShaderModule*  p_module, 
-  bool                     is_parent_root, 
-  bool                     is_parent_aos, 
-  bool                     is_parent_rta, 
+  SpvReflectPrvParser*     p_parser,
+  SpvReflectShaderModule*  p_module,
+  bool                     is_parent_root,
+  bool                     is_parent_aos,
+  bool                     is_parent_rta,
   SpvReflectBlockVariable* p_var
 )
 {
@@ -2591,7 +2598,7 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
 
   // Clear the current variable's UNUSED flag
   p_var->flags &= ~SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
-  
+
   // Parsing arrays requires overriding the op type for
   // for the lowest dim's element type.
   SpvOp op_type = p_var->type_description->op;
@@ -2620,14 +2627,14 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
         // Next access chain index
         index_index += 1;
       }
-      
+
       // Only continue parsing if there's remaining indices in the access
       // chain. If the end of the access chain has been reach then all
       // remaining variables (including those in struct hierarchies)
       // are considered USED.
       //
       // See: https://github.com/KhronosGroup/SPIRV-Reflect/issues/78
-      //  
+      //
       if (index_index < p_access_chain->index_count) {
         // Parse current var again with a type override and advanced index index
         SpvReflectResult result = ParseDescriptorBlockVariableUsage(
@@ -2707,7 +2714,7 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
 }
 
 static SpvReflectResult ParseDescriptorBlocks(
-  SpvReflectPrvParser*    p_parser, 
+  SpvReflectPrvParser*    p_parser,
   SpvReflectShaderModule* p_module)
 {
   if (p_module->descriptor_binding_count == 0) {
@@ -2725,7 +2732,7 @@ static SpvReflectResult ParseDescriptorBlocks(
 
     // Mark UNUSED
     p_descriptor->block.flags |= SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
-    // Parse descriptor block 
+    // Parse descriptor block
     SpvReflectResult result = ParseDescriptorBlockVariable(p_parser, p_module, p_type, &p_descriptor->block);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
@@ -2748,7 +2755,7 @@ static SpvReflectResult ParseDescriptorBlocks(
         return result;
       }
     }
-    
+
     p_descriptor->block.name = p_descriptor->name;
 
     bool is_parent_rta = (p_descriptor->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -2786,7 +2793,7 @@ static SpvReflectResult ParseFormat(
           }
         }
         break;
-        
+
         case 64: {
           switch (component_count) {
             case 2: *p_format = SPV_REFLECT_FORMAT_R64G64_SFLOAT; break;
@@ -2807,7 +2814,7 @@ static SpvReflectResult ParseFormat(
           }
         }
         break;
-        
+
         case 64: {
           switch (component_count) {
             case 2: *p_format = signedness ? SPV_REFLECT_FORMAT_R64G64_SINT : SPV_REFLECT_FORMAT_R64G64_UINT; break;
@@ -2837,7 +2844,7 @@ static SpvReflectResult ParseFormat(
         break;
       case 64:
         *p_format = signedness ? SPV_REFLECT_FORMAT_R64_SINT : SPV_REFLECT_FORMAT_R64_UINT; break;
-    }        
+    }
     result = SPV_REFLECT_RESULT_SUCCESS;
   }
   else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT) {
@@ -2922,14 +2929,14 @@ static SpvReflectResult ParseInterfaceVariables(
 
   p_entry->interface_variable_count = interface_variable_count;
   p_entry->input_variable_count = 0;
-  p_entry->output_variable_count = 0;  
+  p_entry->output_variable_count = 0;
   for (size_t i = 0; i < interface_variable_count; ++i) {
     uint32_t var_result_id = *(p_interface_variable_ids + i);
     SpvReflectPrvNode* p_node = FindNode(p_parser, var_result_id);
     if (IsNull(p_node)) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     }
- 
+
     if (p_node->storage_class == SpvStorageClassInput) {
       p_entry->input_variable_count += 1;
     }
@@ -2937,14 +2944,14 @@ static SpvReflectResult ParseInterfaceVariables(
       p_entry->output_variable_count += 1;
     }
  }
- 
+
  if (p_entry->input_variable_count > 0) {
    p_entry->input_variables = (SpvReflectInterfaceVariable**)calloc(p_entry->input_variable_count, sizeof(*(p_entry->input_variables)));
    if (IsNull(p_entry->input_variables)) {
      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
    }
  }
- 
+
  if (p_entry->output_variable_count > 0) {
    p_entry->output_variables = (SpvReflectInterfaceVariable**)calloc(p_entry->output_variable_count, sizeof(*(p_entry->output_variables)));
    if (IsNull(p_entry->output_variables)) {
@@ -3150,8 +3157,8 @@ static SpvReflectResult ParseStaticallyUsedResources(
 
   if (called_function_count > 0) {
     qsort(
-      p_called_functions, 
-      called_function_count, 
+      p_called_functions,
+      called_function_count,
       sizeof(*p_called_functions),
       SortCompareUint32);
   }
@@ -3192,7 +3199,7 @@ static SpvReflectResult ParseStaticallyUsedResources(
     qsort(used_variables, used_variable_count, sizeof(*used_variables),
           SortCompareUint32);
   }
-  used_variable_count = (uint32_t)DedupSortedUint32(used_variables, 
+  used_variable_count = (uint32_t)DedupSortedUint32(used_variables,
                                                     used_variable_count);
 
   // Do set intersection to find the used uniform and push constants
@@ -3201,7 +3208,7 @@ static SpvReflectResult ParseStaticallyUsedResources(
   SpvReflectResult result0 = IntersectSortedUint32(
     used_variables,
     used_variable_count,
-    uniforms, 
+    uniforms,
     uniform_count,
     &p_entry->used_uniforms,
     &used_uniform_count);
@@ -3209,9 +3216,9 @@ static SpvReflectResult ParseStaticallyUsedResources(
   size_t used_push_constant_count = 0;
   //
   SpvReflectResult result1 = IntersectSortedUint32(
-    used_variables, 
+    used_variables,
     used_variable_count,
-    push_constants, 
+    push_constants,
     push_constant_count,
     &p_entry->used_push_constants,
     &used_push_constant_count);
@@ -3242,7 +3249,7 @@ static SpvReflectResult ParseStaticallyUsedResources(
 }
 
 static SpvReflectResult ParseEntryPoints(
-  SpvReflectPrvParser*    p_parser, 
+  SpvReflectPrvParser*    p_parser,
   SpvReflectShaderModule* p_module)
 {
   if (p_parser->entry_point_count == 0) {
@@ -3290,7 +3297,9 @@ static SpvReflectResult ParseEntryPoints(
       case SpvExecutionModelFragment               : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT; break;
       case SpvExecutionModelGLCompute              : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT; break;
       case SpvExecutionModelTaskNV                 : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_TASK_BIT_NV; break;
+      case SpvExecutionModelTaskEXT                : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_TASK_BIT_EXT; break;
       case SpvExecutionModelMeshNV                 : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_MESH_BIT_NV; break;
+      case SpvExecutionModelMeshEXT                : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_MESH_BIT_EXT; break;
       case SpvExecutionModelRayGenerationKHR       : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_RAYGEN_BIT_KHR; break;
       case SpvExecutionModelIntersectionKHR        : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_INTERSECTION_BIT_KHR; break;
       case SpvExecutionModelAnyHitKHR              : p_entry_point->shader_stage = SPV_REFLECT_SHADER_STAGE_ANY_HIT_BIT_KHR; break;
@@ -3504,11 +3513,13 @@ static SpvReflectResult ParseExecutionModes(
     }
     for (size_t entry_point_idx = 0; entry_point_idx < p_module->entry_point_count; ++entry_point_idx) {
       SpvReflectEntryPoint* p_entry_point = &p_module->entry_points[entry_point_idx];
-      p_entry_point->execution_modes =
-          (SpvExecutionMode*)calloc(p_entry_point->execution_mode_count, sizeof(*p_entry_point->execution_modes));
-      if (IsNull(p_entry_point->execution_modes)) {
-        SafeFree(indices);
-        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      if (p_entry_point->execution_mode_count > 0) {
+        p_entry_point->execution_modes =
+            (SpvExecutionMode*)calloc(p_entry_point->execution_mode_count, sizeof(*p_entry_point->execution_modes));
+        if (IsNull(p_entry_point->execution_modes)) {
+          SafeFree(indices);
+          return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+        }
       }
     }
 
@@ -3820,7 +3831,7 @@ static void DestroyEvaluator(SpvReflectEvaluation* evaluator)
 
 
 static SpvReflectResult ParsePushConstantBlocks(
-  SpvReflectPrvParser*    p_parser, 
+  SpvReflectPrvParser*    p_parser,
   SpvReflectShaderModule* p_module)
 {
   for (size_t i = 0; i < p_parser->node_count; ++i) {
@@ -4952,7 +4963,7 @@ const SpvReflectDescriptorBinding* spvReflectGetEntryPointDescriptorBinding(
     for (uint32_t index = 0; index < p_module->descriptor_binding_count; ++index) {
       const SpvReflectDescriptorBinding* p_potential = &p_module->descriptor_bindings[index];
       bool found = SearchSortedUint32(
-        p_entry->used_uniforms, 
+        p_entry->used_uniforms,
         p_entry->used_uniform_count,
         p_potential->spirv_id);
       if ((p_potential->binding == binding_number) && (p_potential->set == set_number) && found) {
@@ -5458,8 +5469,8 @@ SpvReflectResult spvReflectChangeDescriptorBindingNumber(
 )
 {
   return spvReflectChangeDescriptorBindingNumbers(
-    p_module,p_descriptor_binding, 
-    new_binding_number, 
+    p_module,p_descriptor_binding,
+    new_binding_number,
     optional_new_set_number);
 }
 

@@ -1,6 +1,8 @@
 #ifndef SAMPLE_SPV_H
 #define SAMPLE_SPV_H
 
+#include <stdint.h>
+
 /* Source from sample.hlsl
 
 Texture2D     MyTexture : register(t0, space0);

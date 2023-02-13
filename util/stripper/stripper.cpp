@@ -20,14 +20,12 @@ int SpvStripReflect(uint32_t* data, size_t len) {
   const uint32_t kUserTypeGOOGLEDecoration = 5636;
 
   // Make sure we at least have a header and the magic number is correct
-  if (!data || len < kHeaderLength || data[0] != kMagicNumber)
-    return -1;
+  if (!data || len < kHeaderLength || data[0] != kMagicNumber) return -1;
 
   std::vector<uint32_t> spirv;
   spirv.reserve(len);
 
-  for (uint32_t i = 0; i < kHeaderLength; ++i)
-    spirv.push_back(data[i]);
+  for (uint32_t i = 0; i < kHeaderLength; ++i) spirv.push_back(data[i]);
 
   for (uint32_t pos = kHeaderLength; pos < len;) {
     const uint32_t inst_len = (data[pos] >> 16);
@@ -36,23 +34,19 @@ int SpvStripReflect(uint32_t* data, size_t len) {
     bool skip = false;
     if (opcode == kDecorateStringOpcode ||
         opcode == kMemberDecorateStringOpcode ||
-        opcode == kSourceContinuedOpcode ||
-        opcode == kSourceOpcode ||
-        opcode == kStringOpcode ||
-        opcode == kLineOpcode ||
+        opcode == kSourceContinuedOpcode || opcode == kSourceOpcode ||
+        opcode == kStringOpcode || opcode == kLineOpcode ||
         opcode == kModuleProcessedOpcode) {
       skip = true;
     } else if (opcode == kDecorateIdOpcode) {
-      if (pos + 2 >= len)
-        return -1;
+      if (pos + 2 >= len) return -1;
       if (data[pos + 2] == kCounterBufferDecoration ||
           data[pos + 2] == kUserTypeGOOGLEDecoration) {
         skip = true;
       }
     } else if (opcode == kExtensionOpcode) {
-      if (pos + 1 >= len)
-        return -1;
-      const char *ext_name = reinterpret_cast<const char *>(&data[pos + 1]);
+      if (pos + 1 >= len) return -1;
+      const char* ext_name = reinterpret_cast<const char*>(&data[pos + 1]);
       if (0 == std::strcmp(ext_name, "SPV_GOOGLE_decorate_string") ||
           0 == std::strcmp(ext_name, "SPV_GOOGLE_hlsl_functionality1") ||
           0 == std::strcmp(ext_name, "SPV_GOOGLE_user_type"))
@@ -60,13 +54,11 @@ int SpvStripReflect(uint32_t* data, size_t len) {
     }
 
     if (!skip)
-      for (uint32_t i = 0; i < inst_len; ++i)
-        spirv.push_back(data[pos + i]);
+      for (uint32_t i = 0; i < inst_len; ++i) spirv.push_back(data[pos + i]);
     pos += inst_len;
   }
 
-  for (uint32_t i = 0; i < spirv.size(); ++i)
-    data[i] = spirv[i];
+  for (uint32_t i = 0; i < spirv.size(); ++i) data[i] = spirv[i];
 
   return static_cast<int>(spirv.size());
 }
