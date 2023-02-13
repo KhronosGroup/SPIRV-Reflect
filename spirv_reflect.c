@@ -309,7 +309,7 @@ static uint32_t RoundUp(
    uint32_t value,
    uint32_t multiple)
 {
-  SPV_REFLECT_ASSERT(multiple && ((multiple & (multiple - 1)) == 0));
+  assert(multiple && ((multiple & (multiple - 1)) == 0));
   return (value + multiple - 1) & ~(multiple - 1);
 }
 
@@ -445,13 +445,13 @@ static bool InRange(
 }
 
 static SpvReflectResult ReadU32(
-  const SpvReflectPrvParser* p_parser,
+  SpvReflectPrvParser* p_parser,
   uint32_t             word_offset,
   uint32_t*            p_value)
 {
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->spirv_code));
-  SPV_REFLECT_ASSERT(InRange(p_parser, word_offset));
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->spirv_code));
+  assert(InRange(p_parser, word_offset));
   SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_EOF;
   if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && InRange(p_parser, word_offset)) {
     *p_value = *(p_parser->spirv_code + word_offset);
@@ -505,9 +505,9 @@ static SpvReflectResult ReadStr(
 )
 {
   uint32_t limit = (word_offset + word_count);
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->spirv_code));
-  SPV_REFLECT_ASSERT(InRange(p_parser, limit));
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->spirv_code));
+  assert(InRange(p_parser, limit));
   SpvReflectResult result = SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_EOF;
   if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && InRange(p_parser, limit)) {
     const char* c_str = (const char*)(p_parser->spirv_code + word_offset + word_index);
@@ -589,7 +589,7 @@ static void ApplyArrayTraits(const SpvReflectTypeDescription* p_type, SpvReflect
 }
 
 static SpvReflectPrvNode* FindNode(
-  const SpvReflectPrvParser* p_parser,
+  SpvReflectPrvParser* p_parser,
   uint32_t             result_id)
 {
   SpvReflectPrvNode* p_node = NULL;
@@ -633,6 +633,7 @@ static SpvReflectPrvEvaluationNode* FindSpecIdNode(
   return p_node;
 }
 
+// const required for evaluation calls that need type info
 static SpvReflectTypeDescription* FindType(const SpvReflectShaderModule* p_module, uint32_t type_id)
 {
   SpvReflectTypeDescription* p_type = NULL;
@@ -709,8 +710,8 @@ static void DestroyParser(SpvReflectPrvParser* p_parser)
 
 static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
 {
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->spirv_code));
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->spirv_code));
 
   uint32_t* p_spirv = p_parser->spirv_code;
   uint32_t spirv_word_index = SPIRV_STARTING_WORD_INDEX;
@@ -998,7 +999,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
               // Read index value
               uint32_t index_value = UINT32_MAX;
               CHECKED_READU32(p_parser, p_index_value_node->word_offset + 3, index_value);
-              SPV_REFLECT_ASSERT(index_value != UINT32_MAX);
+              assert(index_value != UINT32_MAX);
               // Write index value to array
               p_access_chain->indexes[index_index] = index_value;
             }
@@ -1049,9 +1050,9 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
 
 static SpvReflectResult ParseStrings(SpvReflectPrvParser* p_parser)
 {
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->spirv_code));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->nodes));
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->spirv_code));
+  assert(IsNotNull(p_parser->nodes));
 
   // Early out
   if (p_parser->string_count == 0) {
@@ -1072,7 +1073,7 @@ static SpvReflectResult ParseStrings(SpvReflectPrvParser* p_parser)
       }
 
       // Paranoid check against string count
-      SPV_REFLECT_ASSERT(string_index < p_parser->string_count);
+      assert(string_index < p_parser->string_count);
       if (string_index >= p_parser->string_count) {
         return SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH;
       }
@@ -1095,8 +1096,8 @@ static SpvReflectResult ParseStrings(SpvReflectPrvParser* p_parser)
 
 static SpvReflectResult ParseSource(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module)
 {
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->spirv_code));
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->spirv_code));
 
   if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code)) {
     // Source file
@@ -1271,9 +1272,9 @@ static int SortCompareFunctions(
 
 static SpvReflectResult ParseFunctions(SpvReflectPrvParser* p_parser)
 {
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->spirv_code));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->nodes));
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->spirv_code));
+  assert(IsNotNull(p_parser->nodes));
 
   if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && IsNotNull(p_parser->nodes)) {
     if (p_parser->function_count == 0) {
@@ -1353,9 +1354,9 @@ static SpvReflectResult ParseFunctions(SpvReflectPrvParser* p_parser)
 
 static SpvReflectResult ParseMemberCounts(SpvReflectPrvParser* p_parser)
 {
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->spirv_code));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->nodes));
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->spirv_code));
+  assert(IsNotNull(p_parser->nodes));
 
   if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && IsNotNull(p_parser->nodes)) {
     for (size_t i = 0; i < p_parser->node_count; ++i) {
@@ -1403,9 +1404,9 @@ static SpvReflectResult ParseMemberCounts(SpvReflectPrvParser* p_parser)
 
 static SpvReflectResult ParseNames(SpvReflectPrvParser* p_parser)
 {
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->spirv_code));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->nodes));
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->spirv_code));
+  assert(IsNotNull(p_parser->nodes));
 
   if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && IsNotNull(p_parser->nodes)) {
     for (size_t i = 0; i < p_parser->node_count; ++i) {
@@ -1914,7 +1915,7 @@ static SpvReflectResult ParseType(
           // Member decorations
           SpvReflectPrvDecorations* p_member_decorations = &p_node->member_decorations[member_index];
 
-          SPV_REFLECT_ASSERT(member_index < p_type->member_count);
+          assert(member_index < p_type->member_count);
           // Parse member type
           SpvReflectTypeDescription* p_member_type = &(p_type->members[member_index]);
           p_member_type->id = member_id;
@@ -2052,7 +2053,7 @@ static int SortCompareDescriptorBinding(const void* a, const void* b)
   if (value == 0) {
     // use spirv-id as a tiebreaker to ensure a stable ordering, as they're guaranteed
     // unique.
-    SPV_REFLECT_ASSERT(p_elem_a->spirv_id != p_elem_b->spirv_id);
+    assert(p_elem_a->spirv_id != p_elem_b->spirv_id);
     value = (int)(p_elem_a->spirv_id) - (int)(p_elem_b->spirv_id);
   }
   return value;
@@ -2210,12 +2211,12 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
 
     if ((int)p_descriptor->descriptor_type == (int)INVALID_VALUE) {
       switch (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK) {
-        default: SPV_REFLECT_ASSERT(false && "unknown type flag"); break;
+        default: assert(false && "unknown type flag"); break;
 
         case SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE: {
           if (p_descriptor->image.dim == SpvDimBuffer) {
             switch (p_descriptor->image.sampled) {
-              default: SPV_REFLECT_ASSERT(false && "unknown texel buffer sampled value"); break;
+              default: assert(false && "unknown texel buffer sampled value"); break;
               case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
               case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
             }
@@ -2225,7 +2226,7 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
           }
           else {
             switch (p_descriptor->image.sampled) {
-              default: SPV_REFLECT_ASSERT(false && "unknown image sampled value"); break;
+              default: assert(false && "unknown image sampled value"); break;
               case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE; break;
               case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE; break;
             }
@@ -2242,7 +2243,7 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
           // This is a workaround for: https://github.com/KhronosGroup/glslang/issues/1096
           if (p_descriptor->image.dim == SpvDimBuffer) {
             switch (p_descriptor->image.sampled) {
-              default: SPV_REFLECT_ASSERT(false && "unknown texel buffer sampled value"); break;
+              default: assert(false && "unknown texel buffer sampled value"); break;
               case IMAGE_SAMPLED: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
               case IMAGE_STORAGE: p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
             }
@@ -2261,7 +2262,7 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module)
             p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER;
           }
           else {
-            SPV_REFLECT_ASSERT(false && "unknown struct");
+            assert(false && "unknown struct");
           }
         }
         break;
@@ -2656,7 +2657,7 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
     break;
 
     case SpvOpTypeStruct: {
-        SPV_REFLECT_ASSERT(p_var->member_count > 0);
+      assert(p_var->member_count > 0);
       if (p_var->member_count == 0) {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_BLOCK_DATA;
       }
@@ -3370,9 +3371,9 @@ static SpvReflectResult ParseExecutionModes(
   SpvReflectPrvParser*    p_parser,
   SpvReflectShaderModule* p_module)
 {
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser));
-  SPV_REFLECT_ASSERT(IsNotNull(p_parser->nodes));
-  SPV_REFLECT_ASSERT(IsNotNull(p_module));
+  assert(IsNotNull(p_parser));
+  assert(IsNotNull(p_parser->nodes));
+  assert(IsNotNull(p_module));
 
   if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && IsNotNull(p_parser->nodes)) {
     for (size_t node_idx = 0; node_idx < p_parser->node_count; ++node_idx) {
@@ -3906,7 +3907,7 @@ static int SortCompareDescriptorSet(const void* a, const void* b)
   int value = (int)(p_elem_a->set) - (int)(p_elem_b->set);
   // We should never see duplicate descriptor set numbers in a shader; if so, a tiebreaker
   // would be needed here.
-  SPV_REFLECT_ASSERT(value != 0);
+  assert(value != 0);
   return value;
 }
 
@@ -4042,7 +4043,7 @@ static SpvReflectResult ParseDescriptorSets(SpvReflectShaderModule* p_module)
     for (uint32_t j = 0; j < p_module->descriptor_binding_count; ++j) {
       SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[j]);
       if (p_descriptor->set == p_set->set) {
-        SPV_REFLECT_ASSERT(descriptor_index < p_set->binding_count);
+        assert(descriptor_index < p_set->binding_count);
         p_set->bindings[descriptor_index] = p_descriptor;
         ++descriptor_index;
       }
@@ -7509,7 +7510,6 @@ SpvReflectResult spvReflectGetSpecializationInfo(const SpvReflectEvaluation* p_e
     for (uint32_t i = 0; i < p_eval->member_type_finder->specialization_constant_count && count < num_entries; ++i) {
       SpvReflectPrvEvaluationNode* p_node = FindSpecIdNode(p_eval, p_eval->member_type_finder->specialization_constants[i].constant_id);
       if (p_node->specialized) {
-        ++count;
         p_modifiable[count].constantID = p_node->specId;
         p_modifiable[count].size = p_node->value.type->traits.numeric.scalar.width / 8;
         // VUID-VkSpecializationMapEntry-constantID-00776
@@ -7528,12 +7528,18 @@ SpvReflectResult spvReflectGetSpecializationInfo(const SpvReflectEvaluation* p_e
         if(idx < first_element){
           first_element = idx;
         }
+        ++count;
       }
     }
     info->mapEntryCount = count;
     if(count){
       info->pData = ((uint8_t*)(p_eval->nodes + first_element)) + offsetof(SpvReflectPrvEvaluationNode, value.data.numeric.scalar.value);
+      for (uint32_t i = 0; i < count; ++i) {
+        p_modifiable[i].offset -=
+            first_element * sizeof(SpvReflectPrvEvaluationNode);
+      }
       info->dataSize = sizeof(SpvReflectPrvEvaluationNode) * (last_element - first_element) + last_element_size;
+      info->pMapEntries = p_modifiable;
     }
   }
   return SPV_REFLECT_RESULT_SUCCESS;
@@ -7570,6 +7576,9 @@ SpvReflectEvaluation* spvReflectDuplicateEvaluation(const SpvReflectEvaluation* 
   memcpy(p_copied->nodes, p_eval->nodes, p_eval->node_count*sizeof(SpvReflectPrvEvaluationNode));
   for (uint32_t i = 0; i < p_eval->node_count; ++i) {
     SPV_REFLECT_ASSERT(p_copied->nodes[i].num_id_operands == p_eval->nodes[i].num_id_operands);
+    p_copied->nodes[i].id_operands =
+        p_copied->id_operands +
+        (p_eval->nodes[i].id_operands - p_eval->id_operands);
     for (uint32_t j = 0; j < p_eval->nodes[i].num_id_operands; ++j) {
       p_copied->nodes[i].id_operands[j] = &p_copied->nodes[p_eval->nodes[i].id_operands[j] - p_eval->nodes];
     }
@@ -7595,6 +7604,8 @@ SpvReflectEvaluation* spvReflectDuplicateEvaluation(const SpvReflectEvaluation* 
       }
     }
   }
+
+  p_copied->member_type_finder = p_eval->member_type_finder;
 
   return p_copied;
 

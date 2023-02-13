@@ -550,7 +550,12 @@ typedef struct SpvReflectCapability {
 } SpvReflectCapability;
 
 /*! @struct SpvReflectEvaluation
-    @brief Opaque type that stores evaluation state and information
+    @brief Opaque type that stores evaluation state and information.
+        There are two types of evaluator: the one that is parsed from
+        spv code, and the duplicated instances that can have different
+        spec-constant specified. Duplicated ones need to be freed manually.
+        Freeing the original one does nothing. Type info is stored in
+        shader module struct reference, and thus have to have a longer lifetime.
 */
 typedef struct SpvReflectEvaluation SpvReflectEvaluation;
 
@@ -1769,6 +1774,11 @@ public:
   SpvReflectResult ChangeDescriptorSetNumber(const SpvReflectDescriptorSet* p_set, uint32_t new_set_number = SPV_REFLECT_SET_NUMBER_DONT_CHANGE);
   SpvReflectResult ChangeInputVariableLocation(const SpvReflectInterfaceVariable* p_input_variable, uint32_t new_location);
   SpvReflectResult ChangeOutputVariableLocation(const SpvReflectInterfaceVariable* p_output_variable, uint32_t new_location);
+
+  SpvReflectEvaluation* GetEvaluationInterface() const
+  {
+    return spvReflectGetEvaluationInterface(&m_module);
+  }
 
 private:
   // Make noncopyable
