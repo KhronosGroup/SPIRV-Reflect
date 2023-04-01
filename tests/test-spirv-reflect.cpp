@@ -796,6 +796,7 @@ const std::vector<const char*> all_spirv_paths = {
     // clang-format off
     "../tests/cbuffer_unused/cbuffer_unused_001.spv",
     "../tests/glsl/built_in_format.spv",
+    "../tests/glsl/buffer_pointer.spv",
     "../tests/glsl/fn_struct_param.spv",
     "../tests/glsl/input_attachment.spv",
     "../tests/glsl/io_vars_vs.spv",
