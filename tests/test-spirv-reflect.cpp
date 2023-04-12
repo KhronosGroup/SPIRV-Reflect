@@ -812,6 +812,7 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/hlsl/counter_buffers.spv",
     "../tests/hlsl/localsize.spv",
     "../tests/hlsl/matrix_major_order_hlsl.spv",
+    "../tests/hlsl/pushconstant.spv",
     "../tests/hlsl/semantics.spv",
     "../tests/hlsl/structuredbuffer.spv",
     "../tests/issues/77/hlsl/array_from_ubo.spv",

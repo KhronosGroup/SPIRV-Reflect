@@ -255,7 +255,7 @@ all_block_variables:
     members:
     type_description: *td3
   - &bv4
-    name: "PushConstantVert"
+    name: "push_constant_vert"
     offset: 0
     absolute_offset: 0
     size: 16
@@ -286,7 +286,7 @@ all_block_variables:
     members:
     type_description: *td5
   - &bv6
-    name: "PushConstantFrag"
+    name: "push_constant_frag"
     offset: 0
     absolute_offset: 0
     size: 16
@@ -455,6 +455,6 @@ module:
     - *iv4 # "oUV"
   push_constant_count: 2,
   push_constants:
-    - *bv4 # "PushConstantVert"
-    - *bv6 # "PushConstantFrag"
+    - *bv4 # "push_constant_vert"
+    - *bv6 # "push_constant_frag"
 ...
