@@ -279,6 +279,8 @@ std::string ToStringSpvDim(SpvDim dim) {
       return "Buffer";
     case SpvDimSubpassData:
       return "SubpassData";
+    case SpvDimTileImageDataEXT:
+      return "SpvDimTileImageDataEXT";
 
     case SpvDimMax:
       break;
