@@ -1,3 +1,4 @@
+/* clang-format off: This file is imported verbatim from upstream.  */
 /*
 ** Copyright (c) 2014-2020 The Khronos Group Inc.
 ** 
@@ -2703,4 +2704,5 @@ inline void SpvHasResultAndType(SpvOp opcode, bool *hasResult, bool *hasResultTy
 #endif /* SPV_ENABLE_UTILITY_CODE */
 
 #endif
+/* clang-format on  */
 
