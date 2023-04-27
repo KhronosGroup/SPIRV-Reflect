@@ -1479,6 +1479,10 @@ public:
   const char*                   GetEntryPointName(uint32_t index) const;
   SpvReflectShaderStageFlagBits GetEntryPointShaderStage(uint32_t index) const;
 
+  SpvReflectEntryPoint::LocalSize GetEntryPointLocalSize(uint32_t index) const {
+    return m_module.entry_points[index].local_size;
+  }
+
   SpvReflectShaderStageFlagBits GetShaderStage() const;
   SPV_REFLECT_DEPRECATED("Renamed to GetShaderStage")
   SpvReflectShaderStageFlagBits GetVulkanShaderStage() const {
