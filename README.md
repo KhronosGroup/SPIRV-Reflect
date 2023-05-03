@@ -1,5 +1,9 @@
 # SPIRV-Reflect
 
+**NOTE: the `master` branch has been renamed to `main` (see #164
+for details).  Please update your fork as per instructions in
+that issue.**
+
 SPIRV-Reflect is a lightweight library that provides a C/C++ reflection API for
 [SPIR-V](https://www.khronos.org/spir/) shader bytecode in
 [Vulkan](https://www.khronos.org/vulkan/) applications.
