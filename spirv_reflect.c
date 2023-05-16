@@ -3719,7 +3719,7 @@ static SpvReflectResult CreateShaderModule(
   }
 
   // Initialize everything to zero
-  SpvReflectPrvParser parser = {};
+  SpvReflectPrvParser parser;
   memset(&parser, 0, sizeof(SpvReflectPrvParser));
 
   // Create parser
