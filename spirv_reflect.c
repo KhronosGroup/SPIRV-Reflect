@@ -726,7 +726,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
 
     #ifdef _WIN32
         strcpy_s(p_continued_source, embedded_source_len + 1, p_parser->source_embedded);
-        strcat_s(p_continued_source, source_len + 1, p_source);
+        strcat_s(p_continued_source, embedded_source_len + source_len + 1, p_source);
     #else
         strcpy(p_continued_source, p_parser->source_embedded);
         strcat(p_continued_source, p_source);
