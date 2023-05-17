@@ -707,6 +707,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
           strcpy(p_source_temp, p_source);
       #endif
 
+          SafeFree(p_parser->source_embedded);
           p_parser->source_embedded = p_source_temp;
         }
       }
