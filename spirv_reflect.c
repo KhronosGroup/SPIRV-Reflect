@@ -3260,7 +3260,9 @@ static SpvReflectResult ParseEntryPoints(
   p_module->entry_point_count = p_parser->entry_point_count;
   p_module->entry_points = (SpvReflectEntryPoint*)calloc(p_module->entry_point_count,
                                                          sizeof(*(p_module->entry_points)));
-  if (IsNull(p_module->entry_points)) {
+  p_module->_internal->entry_point_mode_flags = (int*)calloc(p_module->entry_point_count,
+                                                  sizeof(*(p_module->_internal->entry_point_mode_flags)));
+  if (IsNull(p_module->entry_points) || IsNull(p_module->_internal->entry_point_mode_flags)) {
     return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
   }
 
@@ -3392,9 +3394,11 @@ static SpvReflectResult ParseExecutionModes(
 
       // Find entry point
       SpvReflectEntryPoint* p_entry_point = NULL;
+      int*                  p_entry_mode_flag = NULL;
       for (size_t entry_point_idx = 0; entry_point_idx < p_module->entry_point_count; ++entry_point_idx) {
         if (p_module->entry_points[entry_point_idx].id == entry_point_id) {
           p_entry_point = &p_module->entry_points[entry_point_idx];
+          p_entry_mode_flag = &p_module->_internal->entry_point_mode_flags[entry_point_idx];
           break;
         }
       }
@@ -3441,7 +3445,7 @@ static SpvReflectResult ParseExecutionModes(
           break;
 
         case SpvExecutionModeLocalSize: {
-          p_entry_point->local_size.flags = 0;
+          *p_entry_mode_flag = 0;
           CHECKED_READU32(p_parser, p_node->word_offset + 3, p_entry_point->local_size.x);
           CHECKED_READU32(p_parser, p_node->word_offset + 4, p_entry_point->local_size.y);
           CHECKED_READU32(p_parser, p_node->word_offset + 5, p_entry_point->local_size.z);
@@ -3449,7 +3453,7 @@ static SpvReflectResult ParseExecutionModes(
         break;
 
         case SpvExecutionModeLocalSizeId: {
-          p_entry_point->local_size.flags = 1;
+          *p_entry_mode_flag = 1;
           CHECKED_READU32(p_parser, p_node->word_offset + 3, p_entry_point->local_size.x);
           CHECKED_READU32(p_parser, p_node->word_offset + 4, p_entry_point->local_size.y);
           CHECKED_READU32(p_parser, p_node->word_offset + 5, p_entry_point->local_size.z);
@@ -3457,7 +3461,7 @@ static SpvReflectResult ParseExecutionModes(
         break;
 
         case SpvExecutionModeLocalSizeHint:{
-          p_entry_point->local_size.flags = 2;
+          *p_entry_mode_flag = 2;
           CHECKED_READU32(p_parser, p_node->word_offset + 3, p_entry_point->local_size.x);
           CHECKED_READU32(p_parser, p_node->word_offset + 4, p_entry_point->local_size.y);
           CHECKED_READU32(p_parser, p_node->word_offset + 5, p_entry_point->local_size.z);
@@ -3465,7 +3469,7 @@ static SpvReflectResult ParseExecutionModes(
         break;
 
         case SpvExecutionModeLocalSizeHintId: {
-          p_entry_point->local_size.flags = 3;
+          *p_entry_mode_flag = 3;
           CHECKED_READU32(p_parser, p_node->word_offset + 3, p_entry_point->local_size.x);
           CHECKED_READU32(p_parser, p_node->word_offset + 4, p_entry_point->local_size.y);
           CHECKED_READU32(p_parser, p_node->word_offset + 5, p_entry_point->local_size.z);
@@ -3670,7 +3674,7 @@ static SpvReflectResult ParseSpecializationConstants(SpvReflectPrvParser* p_pars
     for (uint32_t j = 0; j < p_module->entry_point_count; ++j) {
       if (p_module->entry_points[j].spirv_execution_model == SpvExecutionModelKernel ||
         p_module->entry_points[j].spirv_execution_model == SpvExecutionModelGLCompute) {
-        p_module->entry_points[j].local_size.flags = 4;
+        p_module->_internal->entry_point_mode_flags[j] = 4;
         p_module->entry_points[j].local_size.x = p_node->result_id;
       }
     }
@@ -4455,6 +4459,21 @@ const SpvReflectEntryPoint* spvReflectGetEntryPoint(
     }
   }
   return NULL;
+}
+
+int spvReflectGetEntryModeFlag(
+    const SpvReflectShaderModule* p_module,
+    const SpvReflectEntryPoint* p_entry
+){
+  if(IsNull(p_module) || IsNull(p_entry)){
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  // signed
+  intptr_t index = p_entry - p_module->entry_points;
+  if(index < 0 || index >= p_module->entry_point_count){
+    return SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
+  }
+  return p_module->_internal->entry_point_mode_flags[index];
 }
 
 SpvReflectResult spvReflectEnumerateDescriptorBindings(

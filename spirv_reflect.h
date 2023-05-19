@@ -80,6 +80,11 @@ typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_BLOCK_MEMBER_REFERENCE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ENTRY_POINT,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_EXECUTION_MODE,
+  /* 
+    Evaluation needs to validate spirv input to have no duplicate result ids.
+    Currently other parts of spirv-reflect does not take care of validating
+    the spirv, but this can go wrong with hand-written assembly
+  */
   SPV_REFLECT_RESULT_ERROR_SPIRV_DUPLICATE_ID,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_TYPE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION,
@@ -269,10 +274,9 @@ typedef enum SpvReflectGenerator {
 } SpvReflectGenerator;
 
 enum {
-  // Vector16 capability allows larger vectors
-  SPV_REFLECT_MAX_VECTOR_DIMS                   = 16,
   SPV_REFLECT_MAX_ARRAY_DIMS                    = 32,
   SPV_REFLECT_MAX_DESCRIPTOR_SETS               = 64,
+  SPV_REFLECT_MAX_VECTOR_DIMS                   = 16,     // Vector16 capability allows larger vectors
 };
 
 enum {
@@ -342,20 +346,22 @@ typedef struct SpvReflectTypeDescription {
   uint32_t                          member_count;
   struct SpvReflectTypeDescription* members;
 
-  // for vector, array and matrix types
-  uint32_t                          component_type_id;
+  uint32_t                          component_type_id;   // for vector, array and matrix types
 } SpvReflectTypeDescription;
 
+/*! @struct SpvReflectScalarValueData
 
+*/
 typedef struct SpvReflectScalarValueData {
+  /* 
+    Small types of size less than 32 bit are not implemented yet.
+    half float of 16 bit size not declared here yet.
+  */
   union {
-    /* small types not implemented yet... */
-    /* also remember float16 */
     uint8_t                         uint8_value;
     int8_t                          sint8_value;
     uint16_t                        uint16_value;
     int16_t                         sint16_value;
-    /* types that are currently supported */
     uint32_t                        uint32_bool_value;
     int32_t                         sint32_value;
     float                           float32_value;
@@ -363,29 +369,51 @@ typedef struct SpvReflectScalarValueData {
     int64_t                         sint64_value;
     double                          float64_value;
   } value;
-  // for use with OpUndef
+  /* 
+    for use with OpUndef. OpUndef gives undefined value. This tracks whether the ast have came through
+    a node with OpUndef or Op with parameters that gives undefined value.
+    Do note that:
+      x = Undef, 0 + x -x is always 0, but the undefined flag is set anyway.
+    Use as feature.
+  */
   int                               undefined_value;
 } SpvReflectScalarValueData;
 
+/*! @struct SpvReflectVectorValueData
+
+*/
 typedef struct SpvReflectVectorValueData {
   SpvReflectScalarValueData         value[SPV_REFLECT_MAX_VECTOR_DIMS];
 } SpvReflectVectorValueData;
 
-// only scalar, vector types can evaluate values for now...
-// this struct is not meant to be created on user stack,
-// instead in a internal dictionary and give user const ptr to read.
+/*! @union SpvReflectValueNumericData
+
+  Currently evaluation only supports scalar and vector types.
+  This struct is not meant to be created on user stack,
+  instead in a internal dictionary and give user const ptr to read.
+  User supplies const SpvReflectValueData** and recieve internal
+  const SpvReflectValueData*
+*/
 typedef union SpvReflectValueNumericData {
   SpvReflectScalarValueData         scalar;
   SpvReflectVectorValueData         vector;
 } SpvReflectValueNumericData;
 
+/*! @union SpvReflectValueData
+
+*/
 typedef union SpvReflectValueData {
   SpvReflectValueNumericData        numeric;
 } SpvReflectValueData;
 
+/*! @struct SpvReflectValue
+
+*/
 typedef struct SpvReflectValue {
-  // never null in valid spirv
-  // means result type id
+  /*
+    This will never be null in valid spirv, which will have
+    corrctly parsed result type operand result.
+  */
   SpvReflectTypeDescription*        type;
   SpvReflectValueData               data;
 }SpvReflectValue;
@@ -529,13 +557,6 @@ typedef struct SpvReflectEntryPoint {
     uint32_t                        x;
     uint32_t                        y;
     uint32_t                        z;
-    int                             flags; // 0 if just fixed local size
-                                           // 1 bit set if is instruction id of spec constant
-                                           // 2 bit set if is hint (kernel mode not supported in vulkan, though)
-                                           // 4 bit is set if x is result_id decorated with WorkGroupSize
-                                           // this change may break abi
-                                           // if using specialization constants,
-                                           // xyz refers to evaluated result, not just constant_id
   } local_size;
   uint32_t                          invocations; // valid for geometry
   uint32_t                          output_vertices; // valid for geometry, tesselation
@@ -606,8 +627,17 @@ typedef struct SpvReflectShaderModule {
     // stored as result id
     uint32_t                        builtin_WorkGroupSize;
     SpvReflectEvaluation*           evaluator;
+    /*
+    Array of `entry_point_count` flags each extending SpvReflectEntryPoint
+      0 if just fixed local size
+      1 bit set if is instruction id of spec constant
+      2 bit set if is hint (kernel mode not supported in vulkan, though)
+      4 bit is set if x is result_id decorated with WorkGroupSize
+    if using specialization constants,
+      xyz refers to evaluated result, not just constant_id
+    */
+    int* entry_point_mode_flags;
   } * _internal;
-
 } SpvReflectShaderModule;
 
 #if defined(__cplusplus)
@@ -687,6 +717,21 @@ const uint32_t* spvReflectGetCode(const SpvReflectShaderModule* p_module);
 const SpvReflectEntryPoint* spvReflectGetEntryPoint(
   const SpvReflectShaderModule* p_module,
   const char*                   entry_point
+);
+
+/*! @fn spvReflectGetEntryModeFlag
+
+ @param  p_module     Pointer to an instance of SpvReflectShaderModule.
+ @param  p_entry      entry point.pointer obtained from this p_module
+ @return              Returns the flag if successful, or
+                        SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND
+                          if p_entry is not from p_module;
+                        SPV_REFLECT_RESULT_ERROR_NULL_POINTER
+                          if p_module or p_module is NULL
+*/
+int spvReflectGetEntryModeFlag(
+    const SpvReflectShaderModule* p_module,
+    const SpvReflectEntryPoint* p_entry
 );
 
 /*! @fn spvReflectEnumerateDescriptorBindings
@@ -1677,8 +1722,6 @@ SpvReflectResult spvReflectGetSpecializationInfo(const SpvReflectEvaluation* p_e
 namespace spv_reflect {
 
 // separate evaluation, so that module can be const.
-class Evaluation;
-
 /*! \class ShaderModule
 
 */
@@ -1696,7 +1739,6 @@ public:
   SpvReflectResult GetResult() const;
 
   const SpvReflectShaderModule& GetShaderModule() const;
-  Evaluation GetEvaluation() const;
 
   uint32_t        GetCodeSize() const;
   const uint32_t* GetCode() const;
@@ -1775,11 +1817,6 @@ public:
   SpvReflectResult ChangeInputVariableLocation(const SpvReflectInterfaceVariable* p_input_variable, uint32_t new_location);
   SpvReflectResult ChangeOutputVariableLocation(const SpvReflectInterfaceVariable* p_output_variable, uint32_t new_location);
 
-  SpvReflectEvaluation* GetEvaluationInterface() const
-  {
-    return spvReflectGetEvaluationInterface(&m_module);
-  }
-
 private:
   // Make noncopyable
   ShaderModule(const ShaderModule&);
@@ -1789,59 +1826,6 @@ private:
   mutable SpvReflectResult  m_result = SPV_REFLECT_RESULT_NOT_READY;
   SpvReflectShaderModule    m_module = {};
 };
-
-class Evaluation {
-public:
-  Evaluation(SpvReflectEvaluation* eval) :p_eval(eval){}
-  SpvReflectResult SetSpecConstantValue(uint32_t specId, SpvReflectScalarType type, const SpvReflectScalarValueData* value)
-  {
-    if (p_eval) {
-      return spvReflectSetSpecConstantValue(p_eval, specId, type, value);
-    }
-    else {
-      return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
-    }
-  }
-  SpvReflectResult GetSpecConstantValue(uint32_t specId, const SpvReflectValue** value)
-  {
-    if (p_eval) {
-      return spvReflectGetSpecConstantValue(p_eval, specId, value);
-    }
-    else {
-      return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
-    }
-  }
-  SpvReflectResult EvaluateResult(uint32_t result_id, const SpvReflectValue** result)
-  {
-    if (p_eval) {
-      return spvReflectEvaluateResult(p_eval, result_id, result);
-    }
-    else {
-      return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
-    }
-  }
-  bool IsRelatedToSpecId(uint32_t result_id, uint32_t specId)
-  {
-    if (p_eval) {
-      return spvReflectIsRelatedToSpecId(p_eval, result_id, specId);
-    }
-    else {
-      return false;
-    }
-  }
-  SpvReflectResult GetSpecializationInfo(VkSpecializationInfo* info, VkSpecializationMapEntry* p_modifiable, uint32_t num_entries)
-  {
-    if (p_eval) {
-      return spvReflectGetSpecializationInfo(p_eval, info, p_modifiable, num_entries);
-    }
-    else{
-      return SPV_REFLECT_RESULT_ERROR_SPIRV_UNRESOLVED_EVALUATION;
-    }
-  }
-private:
-  SpvReflectEvaluation* p_eval;
-};
-
 
 // =================================================================================================
 // ShaderModule
@@ -1933,12 +1917,6 @@ inline SpvReflectResult ShaderModule::GetResult() const {
 inline const SpvReflectShaderModule& ShaderModule::GetShaderModule() const {
   return m_module;
 }
-
-inline Evaluation ShaderModule::GetEvaluation() const
-{
-  return Evaluation(spvReflectGetEvaluationInterface(&m_module));
-}
-
 
 /*! @fn GetCodeSize
 

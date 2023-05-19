@@ -882,7 +882,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
                                   const std::string& parent_name,
                                   uint32_t member_count,
                                   const SpvReflectBlockVariable* p_members,
-                                  SpvReflectEvaluation* evaluator,
+                                  SpvReflectEvaluation* p_evaluator,
                                   std::vector<TextLine>* p_text_lines) {
   const char* t = indent;
   for (uint32_t member_index = 0; member_index < member_count; ++member_index) {
@@ -928,7 +928,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
           flatten_cbuffers ? p_text_lines : &tl.lines;
       ParseBlockMembersToTextLines(t, indent_depth + 1, flatten_cbuffers,
                                    current_parent_name, member.member_count,
-                                   member.members, evaluator, p_target_text_line);
+                                   member.members, p_evaluator, p_target_text_line);
       tl.text_line_flags = TEXT_LINE_TYPE_LINES;
       p_text_lines->push_back(tl);
 
@@ -958,6 +958,13 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
             // dim = 0 means it's an unbounded array
             //
             if (dim > 0) {
+              if (dim == 0xFFFFFFFF) {
+                const SpvReflectValue* val;
+                SpvReflectResult res = spvReflectEvaluateResult(p_evaluator, member.array.spec_constant_op_ids[array_dim_index], &val);
+                if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
+                  dim = val->data.numeric.scalar.value.uint32_bool_value;
+                }
+              }
               ss_array << "[" << dim << "]";
             } else {
               ss_array << "[]";
@@ -996,7 +1003,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
           uint32_t dim = member.array.dims[array_dim_index];
           if (dim == 0xFFFFFFFF) {
             const SpvReflectValue* val;
-            SpvReflectResult res = spvReflectEvaluateResult(evaluator, member.array.spec_constant_op_ids[array_dim_index], &val);
+            SpvReflectResult res = spvReflectEvaluateResult(p_evaluator, member.array.spec_constant_op_ids[array_dim_index], &val);
             if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
               dim = val->data.numeric.scalar.value.uint32_bool_value;
             }
@@ -1018,7 +1025,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
 
 void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers,
                                    const SpvReflectBlockVariable& block_var,
-                                   SpvReflectEvaluation* evaluator,
+                                   SpvReflectEvaluation* p_evaluator,
                                    std::vector<TextLine>* p_text_lines) {
   // Begin block
   TextLine tl = {};
@@ -1035,7 +1042,7 @@ void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers,
   tl = {};
   ParseBlockMembersToTextLines(indent, 2, flatten_cbuffers, "",
                                block_var.member_count, block_var.members,
-                               evaluator, &tl.lines);
+                               p_evaluator, &tl.lines);
   tl.text_line_flags = TEXT_LINE_TYPE_LINES;
   p_text_lines->push_back(tl);
 
@@ -1250,7 +1257,7 @@ void StreamWriteTextLines(std::ostream& os, const char* indent,
 
 void StreamWritePushConstantsBlock(std::ostream& os,
                                    const SpvReflectBlockVariable& obj,
-                                   SpvReflectEvaluation* evaluator,
+                                   SpvReflectEvaluation* p_evaluator,
                                    bool flatten_cbuffers, const char* indent) {
   const char* t = indent;
   os << t << "spirv id : " << obj.spirv_id << "\n";
@@ -1263,7 +1270,7 @@ void StreamWritePushConstantsBlock(std::ostream& os,
   }
 
   std::vector<TextLine> text_lines;
-  ParseBlockVariableToTextLines("    ", flatten_cbuffers, obj, evaluator,
+  ParseBlockVariableToTextLines("    ", flatten_cbuffers, obj, p_evaluator,
                                 &text_lines);
   if (!text_lines.empty()) {
     os << "\n";
@@ -1274,7 +1281,7 @@ void StreamWritePushConstantsBlock(std::ostream& os,
 
 void StreamWriteDescriptorBinding(std::ostream& os,
                                   const SpvReflectDescriptorBinding& obj,
-                                  SpvReflectEvaluation* evaluator,
+                                  SpvReflectEvaluation* p_evaluator,
                                   bool write_set, bool flatten_cbuffers,
                                   const char* indent) {
   const char* t = indent;
@@ -1326,7 +1333,7 @@ void StreamWriteDescriptorBinding(std::ostream& os,
       obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
     std::vector<TextLine> text_lines;
     ParseBlockVariableToTextLines("    ", flatten_cbuffers, obj.block,
-                                  evaluator, &text_lines);
+                                  p_evaluator, &text_lines);
     if (!text_lines.empty()) {
       os << "\n";
       StreamWriteTextLines(os, t, flatten_cbuffers, text_lines);
@@ -1441,21 +1448,66 @@ void StreamWriteSpecializationConstant(
   }
 }
 
-void StreamWriteEntryPoint(std::ostream& os, const SpvReflectEntryPoint& obj,
-                           const char* indent) {
+void StreamWriteEntryPoint(std::ostream& os, SpvReflectEvaluation* p_eval, const SpvReflectEntryPoint& obj, int entry_flag, const char* indent)
+{
   os << indent << "entry point     : " << obj.name;
   os << " (stage=" << ToStringShaderStage(obj.shader_stage) << ")";
   if (obj.shader_stage == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT) {
     os << "\n";
-    os << "local size      : "
-       << "(" << obj.local_size.x << ", " << obj.local_size.y << ", "
-       << obj.local_size.z << ")";
+    if (entry_flag & 2) {
+      os << "local size      : ";
+    }
+    else {
+      os << "local size hint : ";
+    }
+    if (entry_flag & 4) {
+      const SpvReflectValue* val;
+      SpvReflectResult res = spvReflectEvaluateResult(p_eval, obj.local_size.x, &val);
+      if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_VECTOR))
+        && (val->type->traits.numeric.scalar.width == 32)) {
+        os << "(" << val->data.numeric.vector.value[0].value.uint32_bool_value << ", "
+          << val->data.numeric.vector.value[1].value.uint32_bool_value << ", "
+          << val->data.numeric.vector.value[2].value.uint32_bool_value << ")";
+      }
+      else {
+        os << "(failed evaluation of WorkGroupSize Builtin)";
+      }
+    }
+    else if(entry_flag & 1) {
+      os << "(";
+      const SpvReflectValue* val;
+      SpvReflectResult res = spvReflectEvaluateResult(p_eval, obj.local_size.x, &val);
+      if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
+        os << val->data.numeric.scalar.value.uint32_bool_value;
+      }
+      else {
+        os << "unknown";
+      }
+      os << ", ";
+      res = spvReflectEvaluateResult(p_eval, obj.local_size.y, &val);
+      if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
+        os << val->data.numeric.scalar.value.uint32_bool_value;
+      }
+      else {
+        os << "unknown";
+      }        os << ", ";
+      res = spvReflectEvaluateResult(p_eval, obj.local_size.z, &val);
+      if ((res == SPV_REFLECT_RESULT_SUCCESS) && val->type && (val->type->type_flags == SPV_REFLECT_TYPE_FLAG_INT) && (val->type->traits.numeric.scalar.width == 32)) {
+        os << val->data.numeric.vector.value[2].value.uint32_bool_value;
+      }
+      else {
+        os << "unknown";
+      }
+      os  << ")";
+    }
+    else{
+      os << "(" << obj.local_size.x << ", " << obj.local_size.y << ", " << obj.local_size.z << ")";
+    } 
   }
 }
 
-void StreamWriteShaderModule(std::ostream& os,
-                             const SpvReflectShaderModule& obj,
-                             const char* indent) {
+void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj, SpvReflectEvaluation* p_eval,const char* indent)
+{
   (void)indent;
   os << "generator       : " << ToStringGenerator(obj.generator) << "\n";
   os << "source lang     : " << spvReflectSourceLanguage(obj.source_language)
@@ -1467,7 +1519,8 @@ void StreamWriteShaderModule(std::ostream& os,
   // "\n";
 
   for (uint32_t i = 0; i < obj.entry_point_count; ++i) {
-    StreamWriteEntryPoint(os, obj.entry_points[i], "");
+    int mode_flag = spvReflectGetEntryModeFlag(&obj, &obj.entry_points[i]);
+    StreamWriteEntryPoint(os, p_eval, obj.entry_points[i], mode_flag,"");
     if (i < (obj.entry_point_count - 1)) {
       os << "\n";
     }
@@ -1487,7 +1540,9 @@ void WriteReflection(const spv_reflect::ShaderModule& obj,
   const char* tt = "    ";
   const char* ttt = "      ";
 
-  StreamWriteShaderModule(os, obj.GetShaderModule(), "");
+  const SpvReflectShaderModule& ref_module = obj.GetShaderModule();
+  SpvReflectEvaluation* p_eval = spvReflectGetEvaluationInterface(&ref_module);
+  StreamWriteShaderModule(os, ref_module, p_eval, "");
 
   uint32_t count = 0;
   std::vector<SpvReflectInterfaceVariable*> variables;
