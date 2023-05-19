@@ -4146,7 +4146,6 @@ static SpvReflectResult CreateShaderModule(
     memcpy(p_module->_internal->spirv_code, p_code, size);
   }
 
-  // parser now works in internal field of p_module.
   // Initialize everything to zero
   SpvReflectPrvParser parser;
   memset(&parser, 0, sizeof(SpvReflectPrvParser));
