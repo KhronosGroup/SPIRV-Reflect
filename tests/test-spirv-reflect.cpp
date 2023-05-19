@@ -869,7 +869,7 @@ TEST(SpirvReflectTestCase, TestComputeLocalSize) {
   ASSERT_EQ(module_.entry_points[0].local_size.x, 1);
   ASSERT_EQ(module_.entry_points[0].local_size.y, 1);
   ASSERT_EQ(module_.entry_points[0].local_size.z, 1);
-  ASSERT_EQ(module_.entry_points[0].local_size.flags, 0);
+  ASSERT_EQ(spvReflectGetEntryModeFlag(&module_, &module_.entry_points[0]), 0);
 
   spvReflectDestroyShaderModule(&module_);
 }
@@ -1239,7 +1239,7 @@ TEST(SpirvReflectSpecializationConstantTest, TestSpecParsing32) {
 
   EXPECT_EQ(module_.entry_point_count, 1);
   EXPECT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
-  EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+  EXPECT_EQ(spvReflectGetEntryModeFlag(&module_, &module_.entry_points[0]), 4);
   ASSERT_EQ(module_.specialization_constant_count, 9);
   for (uint32_t i = 0; i < 9; ++i) {
     const SpvReflectSpecializationConstant* p_constant = &module_.specialization_constants[i];
@@ -1327,7 +1327,7 @@ TEST(SpirvReflectSpecializationConstantTest, TestSpecParsing64)
 
   EXPECT_EQ(module_.entry_point_count, 1);
   EXPECT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
-  EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+  EXPECT_EQ(spvReflectGetEntryModeFlag(&module_, &module_.entry_points[0]), 4);
   ASSERT_EQ(module_.specialization_constant_count, 9);
   for (uint32_t i = 0; i < 9; ++i) {
     const SpvReflectSpecializationConstant* p_constant = &module_.specialization_constants[i];
@@ -1473,7 +1473,7 @@ TEST(SpirvReflectSpecializationConstantTest, TestEvaluate32)
 
   EXPECT_EQ(module_.entry_point_count, 1);
   EXPECT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
-  EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+  EXPECT_EQ(spvReflectGetEntryModeFlag(&module_, &module_.entry_points[0]), 4);
   ASSERT_EQ(module_.specialization_constant_count, 9);
   SpvReflectEvaluation* p_eval = spvReflectGetEvaluationInterface(&module_);
   ASSERT_NE(p_eval, nullptr);
@@ -1542,7 +1542,7 @@ TEST(SpirvReflectSpecializationConstantTest, TestEvaluate64)
 
   EXPECT_EQ(module_.entry_point_count, 1);
   EXPECT_EQ(module_.entry_points[0].shader_stage, SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
-  EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+  EXPECT_EQ(spvReflectGetEntryModeFlag(&module_, &module_.entry_points[0]), 4);
   ASSERT_EQ(module_.specialization_constant_count, 9);
   SpvReflectEvaluation* p_eval = spvReflectGetEvaluationInterface(&module_);
   ASSERT_NE(p_eval, nullptr);
@@ -1669,7 +1669,7 @@ TEST(SpirvReflectSpecializationConstantTest, TestInstancing) {
   EXPECT_EQ(module_.entry_point_count, 1);
   EXPECT_EQ(module_.entry_points[0].shader_stage,
             SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
-  EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+  EXPECT_EQ(spvReflectGetEntryModeFlag(&module_, &module_.entry_points[0]), 4);
   ASSERT_EQ(module_.specialization_constant_count, 9);
   SpvReflectEvaluation* p_eval_orig =
       spvReflectGetEvaluationInterface(&module_);
@@ -1732,7 +1732,8 @@ TEST(SpirvReflectSpecializationConstantTest, TestRelations) {
   EXPECT_EQ(module_.entry_point_count, 1);
   EXPECT_EQ(module_.entry_points[0].shader_stage,
             SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
-  EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+    
+  EXPECT_EQ(spvReflectGetEntryModeFlag(&module_, &module_.entry_points[0]), 4);
   ASSERT_EQ(module_.specialization_constant_count, 9);
   SpvReflectEvaluation* p_eval = spvReflectGetEvaluationInterface(&module_);
   ASSERT_NE(p_eval, nullptr);
@@ -1807,7 +1808,7 @@ TEST(SpirvReflectSpecializationConstantTest, TestMapEntry) {
   EXPECT_EQ(module_.entry_point_count, 1);
   EXPECT_EQ(module_.entry_points[0].shader_stage,
             SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
-  EXPECT_EQ(module_.entry_points[0].local_size.flags, 4);
+  EXPECT_EQ(spvReflectGetEntryModeFlag(&module_, &module_.entry_points[0]), 4);
   ASSERT_EQ(module_.specialization_constant_count, 9);
   SpvReflectEvaluation* p_eval = spvReflectGetEvaluationInterface(&module_);
   ASSERT_NE(p_eval, nullptr);
