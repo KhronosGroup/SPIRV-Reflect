@@ -1541,8 +1541,8 @@ void WriteReflection(const spv_reflect::ShaderModule& obj,
   const char* ttt = "      ";
 
   const SpvReflectShaderModule& ref_module = obj.GetShaderModule();
-  SpvReflectEvaluation* p_eval = spvReflectGetEvaluationInterface(&ref_module);
-  StreamWriteShaderModule(os, ref_module, p_eval, "");
+  SpvReflectEvaluation* p_evaluator = spvReflectGetEvaluationInterface(&ref_module);
+  StreamWriteShaderModule(os, ref_module, p_evaluator, "");
 
   uint32_t count = 0;
   std::vector<SpvReflectInterfaceVariable*> variables;
@@ -1634,7 +1634,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj,
       auto p_block = push_constant_bocks[i];
       os << tt << i << ":"
          << "\n";
-      StreamWritePushConstantsBlock(os, *p_block, obj.GetEvaluationInterface(),
+      StreamWritePushConstantsBlock(os, *p_block, p_evaluator,
                                     flatten_cbuffers, ttt);
     }
   }
@@ -1664,7 +1664,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj,
       os << tt << "Binding"
          << " " << p_binding->set << "." << p_binding->binding << ""
          << "\n";
-      StreamWriteDescriptorBinding(os, *p_binding, obj.GetEvaluationInterface(),
+      StreamWriteDescriptorBinding(os, *p_binding, p_evaluator,
                                    true, flatten_cbuffers, ttt);
       if (i < (count - 1)) {
         os << "\n\n";
