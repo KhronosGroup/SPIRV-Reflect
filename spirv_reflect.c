@@ -2527,6 +2527,12 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
       if (p_var->member_count == 0) {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_BLOCK_DATA;
       }
+
+      // The access chain can have zero indexes, if used for a runtime array
+      if (p_access_chain->index_count == 0) {
+        return SPV_REFLECT_RESULT_SUCCESS;
+      }
+
       // Get member variable at the access's chain current index
       uint32_t index = p_access_chain->indexes[index_index];
       if (index >= p_var->member_count) {

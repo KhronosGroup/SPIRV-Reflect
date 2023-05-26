@@ -794,6 +794,7 @@ TEST_P(SpirvReflectTest, CheckYamlOutput) {
 namespace {
 const std::vector<const char*> all_spirv_paths = {
     // clang-format off
+    "../tests/access_chains/array_length_from_access_chain.spv",
     "../tests/cbuffer_unused/cbuffer_unused_001.spv",
     "../tests/glsl/built_in_format.spv",
     "../tests/glsl/fn_struct_param.spv",
