@@ -5117,6 +5117,7 @@ const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang)
     case SpvSourceLanguageHLSL           : return "HLSL";
     case SpvSourceLanguageCPP_for_OpenCL : return "CPP_for_OpenCL";
     case SpvSourceLanguageSYCL           : return "SYCL";
+    case SpvSourceLanguageHERO_C         : return "Hero C";
     case SpvSourceLanguageMax:
       break;
   }
