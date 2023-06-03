@@ -3341,6 +3341,10 @@ static SpvReflectResult ParseExecutionModes(
         case SpvExecutionModeOutputLinesNV:
         case SpvExecutionModeOutputPrimitivesNV:
         case SpvExecutionModeOutputTrianglesNV:
+        case SpvExecutionModePixelInterlockOrderedEXT:
+        case SpvExecutionModePixelInterlockUnorderedEXT:
+        case SpvExecutionModeSampleInterlockOrderedEXT:
+        case SpvExecutionModeSampleInterlockUnorderedEXT:
           break;
       }
       p_entry_point->execution_mode_count++;
