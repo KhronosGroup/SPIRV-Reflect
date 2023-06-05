@@ -2748,6 +2748,10 @@ static SpvReflectResult ParseInterfaceVariable(
       SpvReflectPrvDecorations* p_member_decorations = &p_type_node->member_decorations[member_index];
       SpvReflectTypeDescription* p_member_type = &p_type->members[member_index];
       SpvReflectInterfaceVariable* p_member_var = &p_var->members[member_index];
+
+      // Storage class is the same throughout the whole struct
+      p_member_var->storage_class = p_var->storage_class;
+
       SpvReflectResult result = ParseInterfaceVariable(p_parser, NULL, p_member_decorations, p_module, p_member_type, p_member_var, p_has_built_in);
       if (result != SPV_REFLECT_RESULT_SUCCESS) {
         SPV_REFLECT_ASSERT(false);
@@ -2760,7 +2764,11 @@ static SpvReflectResult ParseInterfaceVariable(
   p_var->decoration_flags = ApplyDecorations(p_type_node_decorations);
   if (p_var_node_decorations != NULL) {
     p_var->decoration_flags |= ApplyDecorations(p_var_node_decorations);
+  } else {
+    // Apply member decoration values to struct members
+    p_var->location = p_type_node_decorations->location.value;
   }
+
   p_var->built_in = p_type_node_decorations->built_in;
   ApplyNumericTraits(p_type, &p_var->numeric);
   if (p_type->op == SpvOpTypeArray) {
