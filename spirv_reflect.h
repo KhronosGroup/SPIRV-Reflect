@@ -339,6 +339,7 @@ typedef struct SpvReflectInterfaceVariable {
   uint32_t                            spirv_id;
   const char*                         name;
   uint32_t                            location;
+  uint32_t                            component;
   SpvStorageClass                     storage_class;
   const char*                         semantic;
   SpvReflectDecorationFlags           decoration_flags;
