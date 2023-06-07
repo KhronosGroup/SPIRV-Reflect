@@ -130,6 +130,7 @@ typedef struct SpvReflectPrvDecorations {
   SpvReflectPrvNumberDecoration   binding;
   SpvReflectPrvNumberDecoration   input_attachment_index;
   SpvReflectPrvNumberDecoration   location;
+  SpvReflectPrvNumberDecoration   component;
   SpvReflectPrvNumberDecoration   offset;
   SpvReflectPrvNumberDecoration   uav_counter_buffer;
   SpvReflectPrvStringDecoration   semantic;
@@ -644,6 +645,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
     p_parser->nodes[i].decorations.set.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.binding.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.location.value = (uint32_t)INVALID_VALUE;
+    p_parser->nodes[i].decorations.component.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.offset.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.uav_counter_buffer.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.built_in = (SpvBuiltIn)INVALID_VALUE;
@@ -1376,6 +1378,7 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
       case SpvDecorationNonWritable:
       case SpvDecorationNonReadable:
       case SpvDecorationLocation:
+      case SpvDecorationComponent:
       case SpvDecorationBinding:
       case SpvDecorationDescriptorSet:
       case SpvDecorationOffset:
@@ -1484,6 +1487,13 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
         p_target_decorations->location.word_offset = word_offset;
       }
       break;
+
+      case SpvDecorationComponent: {
+        uint32_t word_offset = p_node->word_offset + member_offset + 3;
+        CHECKED_READU32(p_parser, word_offset,
+                        p_target_decorations->component.value);
+        p_target_decorations->component.word_offset = word_offset;
+      } break;
 
       case SpvDecorationBinding: {
         uint32_t word_offset = p_node->word_offset + member_offset+ 3;
@@ -2773,6 +2783,7 @@ static SpvReflectResult ParseInterfaceVariable(
   } else {
     // Apply member decoration values to struct members
     p_var->location = p_type_node_decorations->location.value;
+    p_var->component = p_type_node_decorations->component.value;
   }
 
   p_var->built_in = p_type_node_decorations->built_in;
@@ -2921,6 +2932,7 @@ static SpvReflectResult ParseInterfaceVariables(
 
     // Location is decorated on OpVariable node, not the type node.
     p_var->location = p_node->decorations.location.value;
+    p_var->component = p_node->decorations.component.value;
     p_var->word_offset.location = p_node->decorations.location.word_offset;
 
     // Built in
