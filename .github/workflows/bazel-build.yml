@@ -10,7 +10,8 @@ jobs:
     name: Build and run tests using Bazel
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Workaround for https://github.com/actions/runner-images/issues/7675. 
+        os: [ubuntu-latest, macos-latest, windows-2019]
     runs-on: ${{matrix.os}}
     steps:
       - name: Checkout repository
