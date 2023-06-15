@@ -781,6 +781,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
       case SpvOpTypeAccelerationStructureKHR:
       case SpvOpTypeRayQueryKHR:
       case SpvOpTypeCooperativeMatrixNV:
+      case SpvOpTypeHitObjectNV:
       {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_id);
         p_node->is_type = true;
