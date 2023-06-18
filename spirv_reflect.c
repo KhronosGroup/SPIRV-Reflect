@@ -225,12 +225,8 @@ typedef struct SpvReflectPrvParser {
 } SpvReflectPrvParser;
 // clang-format on
 
-static uint32_t Max(
-   uint32_t a,
-   uint32_t b)
-{
-  return a > b ? a : b;
-}
+static uint32_t Max(uint32_t a, uint32_t b) { return a > b ? a : b; }
+static uint32_t Min(uint32_t a, uint32_t b) { return a < b ? a : b; }
 
 static uint32_t RoundUp(
    uint32_t value,
@@ -3504,6 +3500,14 @@ static SpvReflectResult ParsePushConstantBlocks(
     result = ParseDescriptorBlockVariableSizes(p_parser, p_module, true, false, false, p_push_constant);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
+    }
+
+    // Get minimum offset for whole Push Constant block
+    // It is not valid SPIR-V to have an empty Push Constant Block
+    p_push_constant->offset = UINT32_MAX;
+    for (uint32_t k = 0; k < p_push_constant->member_count; ++k) {
+      const uint32_t member_offset = p_push_constant->members[k].offset;
+      p_push_constant->offset = Min(p_push_constant->offset, member_offset);
     }
 
     ++push_constant_index;

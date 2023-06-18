@@ -369,6 +369,7 @@ typedef struct SpvReflectInterfaceVariable {
 typedef struct SpvReflectBlockVariable {
   uint32_t                          spirv_id;
   const char*                       name;
+  // For Push Constants, this is the lowest offset of all memebers
   uint32_t                          offset;           // Measured in bytes
   uint32_t                          absolute_offset;  // Measured in bytes
   uint32_t                          size;             // Measured in bytes
