@@ -40,6 +40,13 @@ To integrate SPIRV-Reflect into a project, simply add `spirv_reflect.h` and
 `spirv_reflect.c` in the project's build, and include `spirv_reflect.h` from
 the necessary source files.
 
+If the project wants to use it's own SPIRV-Header path, it can set `SPIRV_REFLECT_USE_SYSTEM_SPIRV_H`
+
+```cmake
+# CMake example
+target_compile_definitions(project_name PUBLIC SPIRV_REFLECT_USE_SYSTEM_SPIRV_H)
+```
+
 ## Building Samples
 
 **This step is only necessary when building/running SPIRV-Reflect's example applications.**
