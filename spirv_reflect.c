@@ -554,9 +554,11 @@ static SpvReflectTypeDescription* FindType(SpvReflectShaderModule* p_module, uin
 static SpvReflectPrvAccessChain* FindAccessChain(SpvReflectPrvParser* p_parser,
                                                  uint32_t id) {
   uint32_t ac_cnt = p_parser->access_chain_count;
-  for (uint32_t i = 0; i < ac_cnt; i++)
-    if (p_parser->access_chains[i].result_id == id)
+  for (uint32_t i = 0; i < ac_cnt; i++) {
+    if (p_parser->access_chains[i].result_id == id) {
       return &p_parser->access_chains[i];
+    }
+  }
   return 0;
 }
 
@@ -568,7 +570,9 @@ static uint32_t FindBaseId(SpvReflectPrvParser* p_parser,
     assert(base_node->op == SpvOpLoad);
     UNCHECKED_READU32(p_parser, base_node->word_offset + 3, base_id);
     SpvReflectPrvAccessChain* base_ac = FindAccessChain(p_parser, base_id);
-    if (base_ac == 0) return 0;
+    if (base_ac == 0) {
+      return 0;
+    }
     base_id = base_ac->base_id;
     base_node = FindNode(p_parser, base_id);
   }
@@ -590,7 +594,9 @@ static SpvReflectBlockVariable* GetRefBlkVar(SpvReflectPrvParser* p_parser,
 
 bool IsPointerToPointer(SpvReflectPrvParser* p_parser, uint32_t type_id) {
   SpvReflectPrvNode* ptr_node = FindNode(p_parser, type_id);
-  if (ptr_node->op != SpvOpTypePointer) return false;
+  if (ptr_node->op != SpvOpTypePointer) {
+    return false;
+  }
   uint32_t pte_id;
   UNCHECKED_READU32(p_parser, ptr_node->word_offset + 3, pte_id);
   SpvReflectPrvNode* pte_node = FindNode(p_parser, pte_id);
@@ -879,7 +885,9 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
         CHECKED_READU32(p_parser, p_node->word_offset + 1, result_id);
         // Look for forward pointer. Clear result id if found
         SpvReflectPrvNode* p_fwd_node = FindNode(p_parser, result_id);
-        if (p_fwd_node) p_fwd_node->result_id = 0;
+        if (p_fwd_node) {
+          p_fwd_node->result_id = 0;
+        }
         // Register pointer type
         p_node->result_id = result_id;
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->storage_class);
@@ -2638,7 +2646,9 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
       if (IsNull(p_type)) {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
       }
-      if (p_type->op != SpvOpTypeStruct) break;
+      if (p_type->op != SpvOpTypeStruct) {
+        break;
+      }
       FALLTHROUGH;
     }
 
