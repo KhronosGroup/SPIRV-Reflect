@@ -6,3 +6,5 @@ bazel-out
 bazel-spirv-reflect
 bazel-SPIRV-Reflect
 bazel-testlogs
+/.vs
+/.vscode
