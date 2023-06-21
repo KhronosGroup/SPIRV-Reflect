@@ -83,11 +83,11 @@ typedef enum SpvReflectResult {
 
 /*! @enum SpvReflectModuleFlagBits
 
-SPV_REFLECT_MODULE_FLAG_NO_COPY - Disables copying of SPIR-V code 
-  when a SPIRV-Reflect shader module is created. It is the 
+SPV_REFLECT_MODULE_FLAG_NO_COPY - Disables copying of SPIR-V code
+  when a SPIRV-Reflect shader module is created. It is the
   responsibility of the calling program to ensure that the pointer
   remains valid and the memory it's pointing to is not freed while
-  SPIRV-Reflect operations are taking place. Freeing the backing 
+  SPIRV-Reflect operations are taking place. Freeing the backing
   memory will cause undefined behavior or most likely a crash.
   This is flag is intended for cases where the memory overhead of
   storing the copied SPIR-V is undesirable.
@@ -340,6 +340,7 @@ typedef struct SpvReflectInterfaceVariable {
   uint32_t                            spirv_id;
   const char*                         name;
   uint32_t                            location;
+  uint32_t                            component;
   SpvStorageClass                     storage_class;
   const char*                         semantic;
   SpvReflectDecorationFlags           decoration_flags;
@@ -369,6 +370,7 @@ typedef struct SpvReflectInterfaceVariable {
 typedef struct SpvReflectBlockVariable {
   uint32_t                          spirv_id;
   const char*                       name;
+  // For Push Constants, this is the lowest offset of all memebers
   uint32_t                          offset;           // Measured in bytes
   uint32_t                          absolute_offset;  // Measured in bytes
   uint32_t                          size;             // Measured in bytes
@@ -437,10 +439,10 @@ typedef struct SpvReflectEntryPoint {
   SpvExecutionModel                 spirv_execution_model;
   SpvReflectShaderStageFlagBits     shader_stage;
 
-  uint32_t                          input_variable_count;  
-  SpvReflectInterfaceVariable**     input_variables;       
-  uint32_t                          output_variable_count; 
-  SpvReflectInterfaceVariable**     output_variables;      
+  uint32_t                          input_variable_count;
+  SpvReflectInterfaceVariable**     input_variables;
+  uint32_t                          output_variable_count;
+  SpvReflectInterfaceVariable**     output_variables;
   uint32_t                          interface_variable_count;
   SpvReflectInterfaceVariable*      interface_variables;
 
@@ -1580,7 +1582,7 @@ inline ShaderModule::ShaderModule(size_t size, const void* p_code, SpvReflectMod
 /*! @fn ShaderModule
 
   @param  code
-  
+
 */
 inline ShaderModule::ShaderModule(const std::vector<uint8_t>& code, SpvReflectModuleFlags flags) {
   m_result = spvReflectCreateShaderModule2(
@@ -1593,7 +1595,7 @@ inline ShaderModule::ShaderModule(const std::vector<uint8_t>& code, SpvReflectMo
 /*! @fn ShaderModule
 
   @param  code
-  
+
 */
 inline ShaderModule::ShaderModule(const std::vector<uint32_t>& code, SpvReflectModuleFlags flags) {
   m_result = spvReflectCreateShaderModule2(

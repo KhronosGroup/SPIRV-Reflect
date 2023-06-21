@@ -131,6 +131,7 @@ typedef struct SpvReflectPrvDecorations {
   SpvReflectPrvNumberDecoration   binding;
   SpvReflectPrvNumberDecoration   input_attachment_index;
   SpvReflectPrvNumberDecoration   location;
+  SpvReflectPrvNumberDecoration   component;
   SpvReflectPrvNumberDecoration   offset;
   SpvReflectPrvNumberDecoration   uav_counter_buffer;
   SpvReflectPrvStringDecoration   semantic;
@@ -228,12 +229,8 @@ typedef struct SpvReflectPrvParser {
 } SpvReflectPrvParser;
 // clang-format on
 
-static uint32_t Max(
-   uint32_t a,
-   uint32_t b)
-{
-  return a > b ? a : b;
-}
+static uint32_t Max(uint32_t a, uint32_t b) { return a > b ? a : b; }
+static uint32_t Min(uint32_t a, uint32_t b) { return a < b ? a : b; }
 
 static uint32_t RoundUp(
    uint32_t value,
@@ -705,6 +702,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
     p_parser->nodes[i].decorations.set.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.binding.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.location.value = (uint32_t)INVALID_VALUE;
+    p_parser->nodes[i].decorations.component.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.offset.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.uav_counter_buffer.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.built_in = (SpvBuiltIn)INVALID_VALUE;
@@ -839,6 +837,8 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
       case SpvOpTypePipe:
       case SpvOpTypeAccelerationStructureKHR:
       case SpvOpTypeRayQueryKHR:
+      case SpvOpTypeCooperativeMatrixNV:
+      case SpvOpTypeHitObjectNV:
       {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_id);
         p_node->is_type = true;
@@ -1445,6 +1445,7 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
       case SpvDecorationNonWritable:
       case SpvDecorationNonReadable:
       case SpvDecorationLocation:
+      case SpvDecorationComponent:
       case SpvDecorationBinding:
       case SpvDecorationDescriptorSet:
       case SpvDecorationOffset:
@@ -1553,6 +1554,13 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
         p_target_decorations->location.word_offset = word_offset;
       }
       break;
+
+      case SpvDecorationComponent: {
+        uint32_t word_offset = p_node->word_offset + member_offset + 3;
+        CHECKED_READU32(p_parser, word_offset,
+                        p_target_decorations->component.value);
+        p_target_decorations->component.word_offset = word_offset;
+      } break;
 
       case SpvDecorationBinding: {
         uint32_t word_offset = p_node->word_offset + member_offset+ 3;
@@ -2657,6 +2665,12 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
       if (p_var->member_count == 0) {
         return SPV_REFLECT_RESULT_ERROR_SPIRV_UNEXPECTED_BLOCK_DATA;
       }
+
+      // The access chain can have zero indexes, if used for a runtime array
+      if (p_access_chain->index_count == 0) {
+        return SPV_REFLECT_RESULT_SUCCESS;
+      }
+
       // Get member variable at the access's chain current index
       uint32_t index = p_access_chain->indexes[index_index];
       if (index >= p_var->member_count) {
@@ -2868,6 +2882,10 @@ static SpvReflectResult ParseInterfaceVariable(
       SpvReflectPrvDecorations* p_member_decorations = &p_type_node->member_decorations[member_index];
       SpvReflectTypeDescription* p_member_type = &p_type->members[member_index];
       SpvReflectInterfaceVariable* p_member_var = &p_var->members[member_index];
+
+      // Storage class is the same throughout the whole struct
+      p_member_var->storage_class = p_var->storage_class;
+
       SpvReflectResult result = ParseInterfaceVariable(p_parser, NULL, p_member_decorations, p_module, p_member_type, p_member_var, p_has_built_in);
       if (result != SPV_REFLECT_RESULT_SUCCESS) {
         SPV_REFLECT_ASSERT(false);
@@ -2880,7 +2898,12 @@ static SpvReflectResult ParseInterfaceVariable(
   p_var->decoration_flags = ApplyDecorations(p_type_node_decorations);
   if (p_var_node_decorations != NULL) {
     p_var->decoration_flags |= ApplyDecorations(p_var_node_decorations);
+  } else {
+    // Apply member decoration values to struct members
+    p_var->location = p_type_node_decorations->location.value;
+    p_var->component = p_type_node_decorations->component.value;
   }
+
   p_var->built_in = p_type_node_decorations->built_in;
   ApplyNumericTraits(p_type, &p_var->numeric);
   if (p_type->op == SpvOpTypeArray) {
@@ -3027,6 +3050,7 @@ static SpvReflectResult ParseInterfaceVariables(
 
     // Location is decorated on OpVariable node, not the type node.
     p_var->location = p_node->decorations.location.value;
+    p_var->component = p_node->decorations.component.value;
     p_var->word_offset.location = p_node->decorations.location.word_offset;
 
     // Built in
@@ -3461,6 +3485,10 @@ static SpvReflectResult ParseExecutionModes(
         case SpvExecutionModeOutputLinesNV:
         case SpvExecutionModeOutputPrimitivesNV:
         case SpvExecutionModeOutputTrianglesNV:
+        case SpvExecutionModePixelInterlockOrderedEXT:
+        case SpvExecutionModePixelInterlockUnorderedEXT:
+        case SpvExecutionModeSampleInterlockOrderedEXT:
+        case SpvExecutionModeSampleInterlockUnorderedEXT:
           break;
       }
       p_entry_point->execution_mode_count++;
@@ -3595,6 +3623,14 @@ static SpvReflectResult ParsePushConstantBlocks(
     result = ParseDescriptorBlockVariableSizes(p_parser, p_module, true, false, false, p_push_constant);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
+    }
+
+    // Get minimum offset for whole Push Constant block
+    // It is not valid SPIR-V to have an empty Push Constant Block
+    p_push_constant->offset = UINT32_MAX;
+    for (uint32_t k = 0; k < p_push_constant->member_count; ++k) {
+      const uint32_t member_offset = p_push_constant->members[k].offset;
+      p_push_constant->offset = Min(p_push_constant->offset, member_offset);
     }
 
     ++push_constant_index;
@@ -5240,6 +5276,7 @@ const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang)
     case SpvSourceLanguageHLSL           : return "HLSL";
     case SpvSourceLanguageCPP_for_OpenCL : return "CPP_for_OpenCL";
     case SpvSourceLanguageSYCL           : return "SYCL";
+    case SpvSourceLanguageHERO_C         : return "Hero C";
     case SpvSourceLanguageMax:
       break;
   }

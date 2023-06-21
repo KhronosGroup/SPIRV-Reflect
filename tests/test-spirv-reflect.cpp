@@ -794,6 +794,7 @@ TEST_P(SpirvReflectTest, CheckYamlOutput) {
 namespace {
 const std::vector<const char*> all_spirv_paths = {
     // clang-format off
+    "../tests/access_chains/array_length_from_access_chain.spv",
     "../tests/cbuffer_unused/cbuffer_unused_001.spv",
     "../tests/glsl/built_in_format.spv",
     "../tests/glsl/buffer_pointer.spv",
@@ -819,6 +820,8 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/issues/77/hlsl/array_from_ubo.spv",
     "../tests/issues/77/hlsl/array_from_ubo_with_O0.spv",
     "../tests/issues/77/hlsl/rocketz.spv",
+    "../tests/issues/178/vertex_input_struct.spv",
+    "../tests/issues/178/vertex_input_struct2.spv",
     "../tests/multi_entrypoint/multi_entrypoint.spv",
     "../tests/raytrace/rayquery_equal.cs.spv",
     "../tests/raytrace/rayquery_init_ds.spv",

@@ -149,7 +149,7 @@ all_interface_variables:
     spirv_id: 0
     name: 
     location: 0
-    storage_class: 0 # UniformConstant
+    storage_class: 3 # Output
     semantic: 
     decoration_flags: 0x00000010 # BUILT_IN 
     built_in: 0 # Position
@@ -160,14 +160,14 @@ all_interface_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    format: 0 # VK_FORMAT_UNDEFINED
+    format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td1
     word_offset: { location: 0 }
   - &iv2
     spirv_id: 0
     name: 
     location: 0
-    storage_class: 0 # UniformConstant
+    storage_class: 3 # Output
     semantic: 
     decoration_flags: 0x00000010 # BUILT_IN 
     built_in: 1 # PointSize
@@ -178,14 +178,14 @@ all_interface_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    format: 0 # VK_FORMAT_UNDEFINED
+    format: 100 # VK_FORMAT_R32_SFLOAT
     type_description: *td2
     word_offset: { location: 0 }
   - &iv3
     spirv_id: 0
     name: 
     location: 0
-    storage_class: 0 # UniformConstant
+    storage_class: 3 # Output
     semantic: 
     decoration_flags: 0x00000010 # BUILT_IN 
     built_in: 3 # ClipDistance
@@ -196,14 +196,14 @@ all_interface_variables:
     array: { dims_count: 1, dims: [1,], stride: 0 }
     member_count: 0
     members:
-    format: 0 # VK_FORMAT_UNDEFINED
+    format: 100 # VK_FORMAT_R32_SFLOAT
     type_description: *td3
     word_offset: { location: 0 }
   - &iv4
     spirv_id: 0
     name: 
     location: 0
-    storage_class: 0 # UniformConstant
+    storage_class: 3 # Output
     semantic: 
     decoration_flags: 0x00000010 # BUILT_IN 
     built_in: 4 # CullDistance
@@ -214,7 +214,7 @@ all_interface_variables:
     array: { dims_count: 1, dims: [1,], stride: 0 }
     member_count: 0
     members:
-    format: 0 # VK_FORMAT_UNDEFINED
+    format: 100 # VK_FORMAT_R32_SFLOAT
     type_description: *td4
     word_offset: { location: 0 }
   - &iv5

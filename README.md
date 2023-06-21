@@ -1,14 +1,21 @@
 # SPIRV-Reflect
 
-**NOTE: the `master` branch has been renamed to `main` (see #164
-for details).  Please update your fork as per instructions in
-that issue.**
-
 SPIRV-Reflect is a lightweight library that provides a C/C++ reflection API for
 [SPIR-V](https://www.khronos.org/spir/) shader bytecode in
 [Vulkan](https://www.khronos.org/vulkan/) applications.
 
 SPIRV-Reflect has been tested on Linux and Windows.
+
+## NEWS
+
+- **2023-06-07** -  We are planning to remove support for
+  [Bazel](https://bazel.build/).  If you rely on Bazel for
+  building this code, please let us know in
+  https://github.com/KhronosGroup/SPIRV-Reflect/issues/188.
+- **2023-05-03** -  The `master` branch has been renamed to `main` (see
+  https://github.com/KhronosGroup/SPIRV-Reflect/issues/164 for
+  details).  Please update your fork as per instructions in that
+  issue.
 
 ## Features
 
@@ -32,6 +39,13 @@ external dependency is the [Vulkan SDK](https://vulkan.lunarg.com/sdk/home).
 To integrate SPIRV-Reflect into a project, simply add `spirv_reflect.h` and
 `spirv_reflect.c` in the project's build, and include `spirv_reflect.h` from
 the necessary source files.
+
+If the project wants to use it's own SPIRV-Header path, it can set `SPIRV_REFLECT_USE_SYSTEM_SPIRV_H`
+
+```cmake
+# CMake example
+target_compile_definitions(project_name PUBLIC SPIRV_REFLECT_USE_SYSTEM_SPIRV_H)
+```
 
 ## Building Samples
 

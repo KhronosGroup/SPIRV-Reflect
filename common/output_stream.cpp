@@ -105,6 +105,8 @@ std::string ToStringSpvSourceLanguage(SpvSourceLanguage lang) {
       return "CPP_for_OpenCL";
     case SpvSourceLanguageSYCL:
       return "SYCL";
+    case SpvSourceLanguageHERO_C:
+      return "Hero C";
 
     case SpvSourceLanguageMax:
       break;
