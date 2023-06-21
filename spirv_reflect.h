@@ -1446,7 +1446,7 @@ const char* spvReflectBlockVariableTypeName(
 };
 #endif
 
-#if defined(__cplusplus)
+#if defined(__cplusplus) && !defined(SPIRV_REFLECT_DISABLE_CPP_BINDINGS)
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -2298,5 +2298,5 @@ inline SpvReflectResult ShaderModule::ChangeOutputVariableLocation(
 }
 
 } // namespace spv_reflect
-#endif // defined(__cplusplus)
+#endif // defined(__cplusplus) && !defined(SPIRV_REFLECT_DISABLE_CPP_WRAPPER)
 #endif // SPIRV_REFLECT_H
