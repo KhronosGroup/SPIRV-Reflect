@@ -119,6 +119,7 @@ typedef enum SpvReflectTypeFlagBits {
   SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK                   = 0x00FF0000,
   SPV_REFLECT_TYPE_FLAG_STRUCT                          = 0x10000000,
   SPV_REFLECT_TYPE_FLAG_ARRAY                           = 0x20000000,
+  SPV_REFLECT_TYPE_FLAG_REF                             = 0x40000000,
 } SpvReflectTypeFlagBits;
 
 typedef uint32_t SpvReflectTypeFlags;

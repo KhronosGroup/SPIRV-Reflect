@@ -21,6 +21,7 @@ def my_which(cmd):
 
 shaders = [
   {'source':"glsl/built_in_format.glsl", 'entry':"main", 'stage':'vert'},
+  {'source':"glsl/buffer_pointer.glsl", 'entry':"main", 'stage':'frag', 'target-env':'vulkan1.3'},
   {'source':"glsl/input_attachment.glsl", 'entry':"main", 'stage':'frag'},
   {'source':"glsl/texel_buffer.glsl", 'entry':"main", 'stage':'vert'},
   {'source':"glsl/storage_buffer.glsl", 'entry':"main", 'stage':'comp', 'target-env':'vulkan1.1'},

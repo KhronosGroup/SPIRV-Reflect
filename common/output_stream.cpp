@@ -12,7 +12,9 @@ enum TextLineType {
   TEXT_LINE_TYPE_BLOCK_END = 0x02,
   TEXT_LINE_TYPE_STRUCT_BEGIN = 0x04,
   TEXT_LINE_TYPE_STRUCT_END = 0x08,
-  TEXT_LINE_TYPE_LINES = 0x10,
+  TEXT_LINE_TYPE_REF_BEGIN = 0x10,
+  TEXT_LINE_TYPE_REF_END = 0x20,
+  TEXT_LINE_TYPE_LINES = 0x40,
 };
 
 struct TextLine {
@@ -753,6 +755,9 @@ static std::string ToStringScalarType(const SpvReflectTypeDescription& type) {
     case SpvOpTypeStruct: {
       return "struct";
     }
+    case SpvOpTypePointer: {
+      return "ptr";
+    }
     default: {
       break;
     }
@@ -900,6 +905,9 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
     bool is_struct =
         ((member.type_description->type_flags &
           static_cast<SpvReflectTypeFlags>(SPV_REFLECT_TYPE_FLAG_STRUCT)) != 0);
+    bool is_ref =
+        ((member.type_description->type_flags &
+          static_cast<SpvReflectTypeFlags>(SPV_REFLECT_TYPE_FLAG_REF)) != 0);
     if (is_struct) {
       const std::string name = (member.name == nullptr ? "" : member.name);
 
@@ -915,7 +923,8 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
       tl.padded_size = member.padded_size;
       tl.array_stride = member.array.stride;
       tl.block_variable_flags = member.flags;
-      tl.text_line_flags = TEXT_LINE_TYPE_STRUCT_BEGIN;
+      tl.text_line_flags =
+          is_ref ? TEXT_LINE_TYPE_REF_BEGIN : TEXT_LINE_TYPE_STRUCT_BEGIN;
       if (!flatten_cbuffers) {
         p_text_lines->push_back(tl);
       }
@@ -975,7 +984,8 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
       tl.padded_size = member.padded_size;
       tl.array_stride = member.array.stride;
       tl.block_variable_flags = member.flags;
-      tl.text_line_flags = TEXT_LINE_TYPE_STRUCT_END;
+      tl.text_line_flags =
+          is_ref ? TEXT_LINE_TYPE_REF_END : TEXT_LINE_TYPE_STRUCT_END;
       if (!flatten_cbuffers) {
         p_text_lines->push_back(tl);
       }
@@ -1070,14 +1080,17 @@ void FormatTextLines(const std::vector<TextLine>& text_lines,
 
     std::stringstream ss;
     if ((tl.text_line_flags == TEXT_LINE_TYPE_BLOCK_BEGIN) ||
-        (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_BEGIN)) {
+        (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_BEGIN) ||
+        (tl.text_line_flags == TEXT_LINE_TYPE_REF_BEGIN)) {
       ss << indent;
       ss << tl.indent;
+      if (tl.text_line_flags == TEXT_LINE_TYPE_REF_BEGIN) ss << "ref ";
       ss << "struct ";
       ss << tl.type_name;
       ss << " {";
     } else if ((tl.text_line_flags == TEXT_LINE_TYPE_BLOCK_END) ||
-               (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_END)) {
+               (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_END) ||
+               (tl.text_line_flags == TEXT_LINE_TYPE_REF_END)) {
       ss << indent;
       ss << tl.indent;
       ss << "} ";
@@ -1176,7 +1189,8 @@ void StreamWriteTextLines(std::ostream& os, const char* indent,
       if (i < (n - 1)) {
         os << "\n";
       }
-    } else if (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_BEGIN) {
+    } else if (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_BEGIN ||
+               tl.text_line_flags == TEXT_LINE_TYPE_REF_BEGIN) {
       if (!flatten_cbuffers) {
         if (i > 0) {
           os << "\n";
@@ -1204,7 +1218,8 @@ void StreamWriteTextLines(std::ostream& os, const char* indent,
 
         os << std::setw(line_width) << std::left << tl.formatted_line;
       }
-    } else if (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_END) {
+    } else if (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_END ||
+               tl.text_line_flags == TEXT_LINE_TYPE_REF_END) {
       if (!flatten_cbuffers) {
         os << std::setw(line_width) << std::left << tl.formatted_line;
         if (i < (n - 1)) {
