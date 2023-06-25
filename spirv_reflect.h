@@ -332,6 +332,26 @@ typedef struct SpvReflectTypeDescription {
   struct SpvReflectTypeDescription* members;
 } SpvReflectTypeDescription;
 
+/*! @struct SpvReflectSpecializationConstant
+*/
+
+typedef enum SpvReflectSpecializationConstantType {
+    SPV_REFLECT_SPECIALIZATION_CONSTANT_BOOL = 0,
+    SPV_REFLECT_SPECIALIZATION_CONSTANT_INT = 1,
+    SPV_REFLECT_SPECIALIZATION_CONSTANT_FLOAT = 2,
+} SpvReflectSpecializationConstantType;
+
+typedef struct SpvReflectSpecializationConstant {
+    const char* name;
+    uint32_t spirv_id;
+    uint32_t constant_id;
+    uint32_t size;
+    SpvReflectSpecializationConstantType constant_type;
+    union {
+        float float_value;
+        uint32_t int_bool_value;
+    } default_value;
+} SpvReflectSpecializationConstant;
 
 /*! @struct SpvReflectInterfaceVariable
 
@@ -503,6 +523,9 @@ typedef struct SpvReflectShaderModule {
   SpvReflectInterfaceVariable*      interface_variables;                              // Uses value(s) from first entry point
   uint32_t                          push_constant_block_count;                        // Uses value(s) from first entry point
   SpvReflectBlockVariable*          push_constant_blocks;                             // Uses value(s) from first entry point
+  uint32_t                          specialization_constant_count;                    // Uses value(s) from first entry point
+  SpvReflectSpecializationConstant* specialization_constants;                         // Uses value(s) from first entry point
+
 
   struct Internal {
     SpvReflectModuleFlags           module_flags;
@@ -911,6 +934,33 @@ SpvReflectResult spvReflectEnumerateEntryPointPushConstantBlocks(
   const char*                   entry_point,
   uint32_t*                     p_count,
   SpvReflectBlockVariable**     pp_blocks
+);
+
+
+/*! @fn spvReflectEnumerateSpecializationConstants
+ @brief  Note: If the module contains multiple entry points, this will only get
+         the specialization constant blocks for the first one.
+ @param  p_module                    Pointer to an instance of SpvReflectShaderModule.
+ @param  p_count                     If pp_blocks is NULL, the module's specialization constant
+                                     count will be stored here.
+                                     If pp_blocks is not NULL, *p_count must
+                                     contain the module's specialization constant count.
+ @param  pp_constants  If NULL, the module's specialization constant count
+                                     will be written to *p_count.
+                                     If non-NULL, pp_blocks must point to an
+                                     array with *p_count entries, where pointers to
+                                     the module's specialization constant blocks will be written.
+                                     The caller must not free the  variables written
+                                     to this array.
+ @return                             If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                                     Otherwise, the error code indicates the cause of the
+                                     failure.
+
+*/
+SpvReflectResult spvReflectEnumerateSpecializationConstants(
+  const SpvReflectShaderModule*      p_module,
+  uint32_t*                          p_count,
+  SpvReflectSpecializationConstant** pp_constants
 );
 
 
@@ -1504,6 +1554,7 @@ public:
   SpvReflectResult  EnumeratePushConstants(uint32_t* p_count, SpvReflectBlockVariable** pp_blocks) const {
     return EnumeratePushConstantBlocks(p_count, pp_blocks);
   }
+  SpvReflectResult  EnumerateSpecializationConstants(uint32_t* p_count, SpvReflectSpecializationConstant** pp_constants) const;
 
   const SpvReflectDescriptorBinding*  GetDescriptorBinding(uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
   const SpvReflectDescriptorBinding*  GetEntryPointDescriptorBinding(const char* entry_point, uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
@@ -1950,6 +2001,27 @@ inline SpvReflectResult ShaderModule::EnumeratePushConstantBlocks(
     pp_blocks);
   return m_result;
 }
+
+/*! @fn EnumerateSpecializationConstants
+
+  @param  p_count
+  @param  pp_constants
+  @return
+
+*/
+inline SpvReflectResult ShaderModule::EnumerateSpecializationConstants(
+    uint32_t*                          p_count,
+    SpvReflectSpecializationConstant** pp_constants
+) const
+{
+  m_result = spvReflectEnumerateSpecializationConstants(
+    &m_module,
+    p_count,
+    pp_constants
+  );
+  return m_result;
+}
+
 
 /*! @fn EnumerateEntryPointPushConstantBlocks
 
