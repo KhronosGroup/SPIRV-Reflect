@@ -564,9 +564,22 @@ static uint32_t FindBaseId(SpvReflectPrvParser* p_parser,
   uint32_t base_id = ac->base_id;
   SpvReflectPrvNode* base_node = FindNode(p_parser, base_id);
   while (base_node->op != SpvOpVariable) {
-    assert(base_node->op == SpvOpLoad);
-    UNCHECKED_READU32(p_parser, base_node->word_offset + 3, base_id);
-    SpvReflectPrvAccessChain* base_ac = FindAccessChain(p_parser, base_id);
+	switch (base_node->op) {
+	  case SpvOpLoad: {
+		UNCHECKED_READU32(p_parser, base_node->word_offset + 3, base_id);
+	  }
+	  break;
+	  case SpvOpFunctionParameter: {
+		UNCHECKED_READU32(p_parser, base_node->word_offset + 2, base_id);
+	  }
+	  break;
+	  default: {
+	    assert(false);
+	  }
+	  break;
+	}
+
+	SpvReflectPrvAccessChain* base_ac = FindAccessChain(p_parser, base_id);
     if (base_ac == 0) {
       return 0;
     }
@@ -1004,6 +1017,11 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
         function_node = (uint32_t)INVALID_VALUE;
       }
       break;
+	  case SpvOpFunctionParameter:
+	  {
+		CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
+	  }
+	  break;
     }
 
     if (p_node->is_type) {
