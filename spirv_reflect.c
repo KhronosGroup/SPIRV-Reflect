@@ -821,6 +821,10 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
         p_node->member_count = p_node->word_count - 2;
         FALLTHROUGH;
       } // Fall through
+
+      // This is all the rest of OpType* that need to be tracked
+      // Possible new extensions might expose new type, will need to be added
+      // here
       case SpvOpTypeVoid:
       case SpvOpTypeBool:
       case SpvOpTypeInt:
@@ -837,13 +841,12 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
       case SpvOpTypePipe:
       case SpvOpTypeAccelerationStructureKHR:
       case SpvOpTypeRayQueryKHR:
-      case SpvOpTypeCooperativeMatrixNV:
       case SpvOpTypeHitObjectNV:
-      {
+      case SpvOpTypeCooperativeMatrixNV:
+      case SpvOpTypeCooperativeMatrixKHR: {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_id);
         p_node->is_type = true;
-      }
-      break;
+      } break;
 
       case SpvOpTypeImage: {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_id);
@@ -2703,8 +2706,7 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
       else if (IsPointerToPointer(p_parser, p_access_chain->result_type_id)) {
         // Remember block var for this access chain for downstream dereference
         p_access_chain->block_var = p_member_var;
-      } 
-      else {
+      } else {
         // Clear UNUSED flag for remaining variables
         MarkSelfAndAllMemberVarsAsUsed(p_member_var);
       }
