@@ -364,6 +364,8 @@ typedef enum SpvImageChannelDataType_ {
   SpvImageChannelDataTypeFloat = 14,
   SpvImageChannelDataTypeUnormInt24 = 15,
   SpvImageChannelDataTypeUnormInt101010_2 = 16,
+  SpvImageChannelDataTypeUnsignedIntRaw10EXT = 19,
+  SpvImageChannelDataTypeUnsignedIntRaw12EXT = 20,
   SpvImageChannelDataTypeMax = 0x7fffffff,
 } SpvImageChannelDataType;
 
@@ -1160,6 +1162,7 @@ typedef enum SpvCapability_ {
   SpvCapabilityDotProduct = 6019,
   SpvCapabilityDotProductKHR = 6019,
   SpvCapabilityRayCullMaskKHR = 6020,
+  SpvCapabilityCooperativeMatrixKHR = 6022,
   SpvCapabilityBitInstructions = 6025,
   SpvCapabilityGroupNonUniformRotateKHR = 6026,
   SpvCapabilityAtomicFloat32AddEXT = 6033,
@@ -1282,6 +1285,37 @@ typedef enum SpvPackedVectorFormat_ {
   SpvPackedVectorFormatPackedVectorFormat4x8BitKHR = 0,
   SpvPackedVectorFormatMax = 0x7fffffff,
 } SpvPackedVectorFormat;
+
+typedef enum SpvCooperativeMatrixOperandsShift_ {
+  SpvCooperativeMatrixOperandsMatrixASignedComponentsShift = 0,
+  SpvCooperativeMatrixOperandsMatrixBSignedComponentsShift = 1,
+  SpvCooperativeMatrixOperandsMatrixCSignedComponentsShift = 2,
+  SpvCooperativeMatrixOperandsMatrixResultSignedComponentsShift = 3,
+  SpvCooperativeMatrixOperandsSaturatingAccumulationShift = 4,
+  SpvCooperativeMatrixOperandsMax = 0x7fffffff,
+} SpvCooperativeMatrixOperandsShift;
+
+typedef enum SpvCooperativeMatrixOperandsMask_ {
+  SpvCooperativeMatrixOperandsMaskNone = 0,
+  SpvCooperativeMatrixOperandsMatrixASignedComponentsMask = 0x00000001,
+  SpvCooperativeMatrixOperandsMatrixBSignedComponentsMask = 0x00000002,
+  SpvCooperativeMatrixOperandsMatrixCSignedComponentsMask = 0x00000004,
+  SpvCooperativeMatrixOperandsMatrixResultSignedComponentsMask = 0x00000008,
+  SpvCooperativeMatrixOperandsSaturatingAccumulationMask = 0x00000010,
+} SpvCooperativeMatrixOperandsMask;
+
+typedef enum SpvCooperativeMatrixLayout_ {
+  SpvCooperativeMatrixLayoutRowMajorKHR = 0,
+  SpvCooperativeMatrixLayoutColumnMajorKHR = 1,
+  SpvCooperativeMatrixLayoutMax = 0x7fffffff,
+} SpvCooperativeMatrixLayout;
+
+typedef enum SpvCooperativeMatrixUse_ {
+  SpvCooperativeMatrixUseMatrixAKHR = 0,
+  SpvCooperativeMatrixUseMatrixBKHR = 1,
+  SpvCooperativeMatrixUseMatrixAccumulatorKHR = 2,
+  SpvCooperativeMatrixUseMax = 0x7fffffff,
+} SpvCooperativeMatrixUse;
 
 typedef enum SpvOp_ {
   SpvOpNop = 0,
@@ -1656,6 +1690,11 @@ typedef enum SpvOp_ {
   SpvOpUDotAccSatKHR = 4454,
   SpvOpSUDotAccSat = 4455,
   SpvOpSUDotAccSatKHR = 4455,
+  SpvOpTypeCooperativeMatrixKHR = 4456,
+  SpvOpCooperativeMatrixLoadKHR = 4457,
+  SpvOpCooperativeMatrixStoreKHR = 4458,
+  SpvOpCooperativeMatrixMulAddKHR = 4459,
+  SpvOpCooperativeMatrixLengthKHR = 4460,
   SpvOpTypeRayQueryKHR = 4472,
   SpvOpRayQueryInitializeKHR = 4473,
   SpvOpRayQueryTerminateKHR = 4474,
@@ -3476,6 +3515,26 @@ inline void SpvHasResultAndType(SpvOp opcode, bool* hasResult,
       *hasResultType = true;
       break;
     case SpvOpSUDotAccSat:
+      *hasResult = true;
+      *hasResultType = true;
+      break;
+    case SpvOpTypeCooperativeMatrixKHR:
+      *hasResult = true;
+      *hasResultType = false;
+      break;
+    case SpvOpCooperativeMatrixLoadKHR:
+      *hasResult = true;
+      *hasResultType = true;
+      break;
+    case SpvOpCooperativeMatrixStoreKHR:
+      *hasResult = false;
+      *hasResultType = false;
+      break;
+    case SpvOpCooperativeMatrixMulAddKHR:
+      *hasResult = true;
+      *hasResultType = true;
+      break;
+    case SpvOpCooperativeMatrixLengthKHR:
       *hasResult = true;
       *hasResultType = true;
       break;
