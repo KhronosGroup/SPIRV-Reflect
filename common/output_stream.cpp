@@ -2201,6 +2201,19 @@ void SpvReflectToYaml::Write(std::ostream& os) {
        << SafeString(sm_.push_constant_blocks[i].name) << std::endl;
   }
 
+  // uint32_t                            specialization_constant_count;
+  os << t1 << "specialization_constant_count: " << sm_.specialization_constant_count << ",\n";
+  // SpvReflectSpecializationConstant*   specialization_constants;
+  os << t1 << "specialization_constants:" << std::endl;
+  for (uint32_t i = 0; i < sm_.specialization_constant_count; ++i) {
+    os << t2 << "- *sc" << i << " # " << SafeString(sm_.specialization_constants[i].name) << std::endl;
+    os << t3 << "spirv_id: " << sm_.specialization_constants[i].spirv_id << std::endl;
+    os << t3 << "constant_id: " << sm_.specialization_constants[i].constant_id << std::endl;
+    os << t3 << "size: " << sm_.specialization_constants[i].size << std::endl;
+    os << t3 << "default_value (as float): " << sm_.specialization_constants[i].default_value.float_value << std::endl;
+    os << t3 << "default_value (as int): " << sm_.specialization_constants[i].default_value.int_bool_value << std::endl;
+  }
+
   if (verbosity_ >= 2) {
     // struct Internal {
     os << t1 << "_internal:" << std::endl;
