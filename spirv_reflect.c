@@ -2807,6 +2807,15 @@ static SpvReflectResult ParseFormat(
     uint32_t component_count = p_type->traits.numeric.vector.component_count;
     if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
       switch (bit_width) {
+        case 16: {
+          switch (component_count) {
+            case 2: *p_format = SPV_REFLECT_FORMAT_R16G16_SFLOAT; break;
+            case 3: *p_format = SPV_REFLECT_FORMAT_R16G16B16_SFLOAT; break;
+            case 4: *p_format = SPV_REFLECT_FORMAT_R16G16B16A16_SFLOAT; break;
+          }
+        }
+        break;
+
         case 32: {
           switch (component_count) {
             case 2: *p_format = SPV_REFLECT_FORMAT_R32G32_SFLOAT; break;
@@ -2828,6 +2837,15 @@ static SpvReflectResult ParseFormat(
     }
     else if (p_type->type_flags & (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_BOOL)) {
       switch (bit_width) {
+        case 16: {
+          switch (component_count) {
+            case 2: *p_format = signedness ? SPV_REFLECT_FORMAT_R16G16_SINT : SPV_REFLECT_FORMAT_R16G16_UINT; break;
+            case 3: *p_format = signedness ? SPV_REFLECT_FORMAT_R16G16B16_SINT : SPV_REFLECT_FORMAT_R16G16B16_UINT; break;
+            case 4: *p_format = signedness ? SPV_REFLECT_FORMAT_R16G16B16A16_SINT : SPV_REFLECT_FORMAT_R16G16B16A16_UINT; break;
+          }
+        }
+        break;
+
         case 32: {
           switch (component_count) {
             case 2: *p_format = signedness ? SPV_REFLECT_FORMAT_R32G32_SINT : SPV_REFLECT_FORMAT_R32G32_UINT; break;
@@ -2850,6 +2868,9 @@ static SpvReflectResult ParseFormat(
   }
   else if (p_type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) {
     switch(bit_width) {
+      case 16:
+        *p_format = SPV_REFLECT_FORMAT_R16_SFLOAT;
+        break;
       case 32:
         *p_format = SPV_REFLECT_FORMAT_R32_SFLOAT;
         break;
@@ -2861,6 +2882,9 @@ static SpvReflectResult ParseFormat(
   }
   else if (p_type->type_flags & (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_BOOL)) {
     switch(bit_width) {
+      case 16:
+        *p_format = signedness ? SPV_REFLECT_FORMAT_R16_SINT : SPV_REFLECT_FORMAT_R16_UINT; break;
+        break;
       case 32:
         *p_format = signedness ? SPV_REFLECT_FORMAT_R32_SINT : SPV_REFLECT_FORMAT_R32_UINT; break;
         break;
