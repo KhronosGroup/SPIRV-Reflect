@@ -77,6 +77,7 @@ typedef enum SpvSourceLanguage_ {
   SpvSourceLanguageCPP_for_OpenCL = 6,
   SpvSourceLanguageSYCL = 7,
   SpvSourceLanguageHERO_C = 8,
+  SpvSourceLanguageNZSL = 9,
   SpvSourceLanguageMax = 0x7fffffff,
 } SpvSourceLanguage;
 
