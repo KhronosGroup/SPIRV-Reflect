@@ -607,7 +607,7 @@ bool IsPointerToPointer(SpvReflectPrvParser* p_parser, uint32_t type_id) {
   if (ptr_node->op != SpvOpTypePointer) {
     return false;
   }
-  uint32_t pte_id;
+  uint32_t pte_id = 0;
   UNCHECKED_READU32(p_parser, ptr_node->word_offset + 3, pte_id);
   SpvReflectPrvNode* pte_node = FindNode(p_parser, pte_id);
   return pte_node->op == SpvOpTypePointer;
@@ -2602,10 +2602,6 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(
   SpvReflectBlockVariable*  p_var
 )
 {
-  (void)p_parser;
-  (void)p_access_chain;
-  (void)p_var;
-
   // Clear the current variable's UNUSED flag
   p_var->flags &= ~SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
 
