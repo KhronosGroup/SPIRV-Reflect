@@ -307,10 +307,17 @@ typedef struct SpvReflectImageTraits {
   SpvImageFormat                    image_format;
 } SpvReflectImageTraits;
 
+typedef enum SpvReflectArrayDimType {
+  SPV_REFLECT_ARRAY_DIM_RUNTIME       = 0,         // OpTypeRuntimeArray
+  SPV_REFLECT_ARRAY_DIM_SPEC_CONSTANT = 0xFFFFFFFF // specialization constant
+} SpvReflectArrayDimType;
+
 typedef struct SpvReflectArrayTraits {
   uint32_t                          dims_count;
-  // Each entry is: 0xFFFFFFFF for a specialization constant dimension,
-  // 0 for a runtime array dimension, and the array length otherwise.
+  // Each entry is either:
+  // - specialization constant dimension
+  // - OpTypeRuntimeArray
+  // - the array length otherwise
   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
   // Stores Ids for dimensions that are specialization constants
   uint32_t                          spec_constant_op_ids[SPV_REFLECT_MAX_ARRAY_DIMS];
@@ -340,6 +347,7 @@ typedef struct SpvReflectTypeDescription {
     SpvReflectArrayTraits           array;
   } traits;
 
+  // if 'op' is OpTypeStruct, list members
   uint32_t                          member_count;
   struct SpvReflectTypeDescription* members;
 } SpvReflectTypeDescription;
