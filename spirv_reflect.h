@@ -1722,7 +1722,6 @@ typedef struct VkSpecializationMapEntry VkSpecializationMapEntry;
                         Otherwise, the error code indicates the cause of
                         the failure.
 */
-
 SpvReflectResult spvReflectGetSpecializationInfo(const SpvReflectEvaluation* p_eval, VkSpecializationInfo* info, VkSpecializationMapEntry* p_modifiable, uint32_t num_entries);
 
 #if defined(__cplusplus)
