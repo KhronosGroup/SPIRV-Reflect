@@ -1,9 +1,8 @@
 # Usage:
-#   cd $SPIRV_REFLECT_ROOT/tests
-#   python build_all_shaders.py
+#   python tests/build_all_shaders.py
 import argparse
 import os
-import os.path
+import pathlib
 import shutil
 import subprocess
 import sys
@@ -22,6 +21,7 @@ def my_which(cmd):
 
 shaders = [
   {'source':"glsl/built_in_format.glsl", 'entry':"main", 'stage':'vert'},
+  {'source':"glsl/buffer_pointer.glsl", 'entry':"main", 'stage':'frag', 'target-env':'vulkan1.3'},
   {'source':"glsl/input_attachment.glsl", 'entry':"main", 'stage':'frag'},
   {'source':"glsl/texel_buffer.glsl", 'entry':"main", 'stage':'vert'},
   {'source':"glsl/storage_buffer.glsl", 'entry':"main", 'stage':'comp', 'target-env':'vulkan1.1'},
@@ -42,12 +42,15 @@ if __name__ == "__main__":
   parser.add_argument("--verbose", "-v", help="enable verbose output", action='store_true')
   args = parser.parse_args()
 
+  test_dir = pathlib.Path(__file__).parent.resolve()
+  root_dir = test_dir.parent.resolve()
+
   if not args.dxc:
     print("WARNING: dxc not found in PATH; HLSL shaders will be compiled with glslc.")
   if not args.glslc:
     print("WARNING: glslc not found in PATH. This is a bad sign.")
   for shader in shaders:
-    src_path = shader['source']
+    src_path = os.path.join(test_dir, shader['source'])
     base, ext = os.path.splitext(src_path)
     spv_path = base + ".spv"
     if ext.lower() == ".glsl" or (ext.lower() == ".hlsl" and not args.dxc):
@@ -66,4 +69,4 @@ if __name__ == "__main__":
     except subprocess.CalledProcessError as error:
       print("Compilation failed for %s with error code %d:\n%s" % (src_path, error.returncode, error.output.decode('utf-8')))
 
-    print("")      
+    print("")

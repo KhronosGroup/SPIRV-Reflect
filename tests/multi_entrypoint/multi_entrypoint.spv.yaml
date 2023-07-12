@@ -255,7 +255,7 @@ all_block_variables:
     members:
     type_description: *td3
   - &bv4
-    name: "PushConstantVert"
+    name: "push_constant_vert"
     offset: 0
     absolute_offset: 0
     size: 16
@@ -286,7 +286,7 @@ all_block_variables:
     members:
     type_description: *td5
   - &bv6
-    name: "PushConstantFrag"
+    name: "push_constant_frag"
     offset: 0
     absolute_offset: 0
     size: 16
@@ -375,7 +375,7 @@ all_interface_variables:
     spirv_id: 0
     name: 
     location: 0
-    storage_class: 0 # UniformConstant
+    storage_class: 3 # Output
     semantic: 
     decoration_flags: 0x00000010 # BUILT_IN 
     built_in: 0 # Position
@@ -386,7 +386,7 @@ all_interface_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 0
     members:
-    format: 0 # VK_FORMAT_UNDEFINED
+    format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
     type_description: *td9
     word_offset: { location: 0 }
   - &iv3
@@ -455,6 +455,6 @@ module:
     - *iv4 # "oUV"
   push_constant_count: 2,
   push_constants:
-    - *bv4 # "PushConstantVert"
-    - *bv6 # "PushConstantFrag"
+    - *bv4 # "push_constant_vert"
+    - *bv6 # "push_constant_frag"
 ...
