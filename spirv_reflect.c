@@ -4395,6 +4395,9 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module)
   }
   SafeFree(p_module->capabilities);
   SafeFree(p_module->entry_points);
+  if (p_module->_internal) {
+    SafeFree(p_module->_internal->entry_point_mode_flags);
+  }
 
   // Push constants
   for (size_t i = 0; i < p_module->push_constant_block_count; ++i) {
