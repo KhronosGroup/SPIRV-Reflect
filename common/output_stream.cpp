@@ -1500,10 +1500,10 @@ void StreamWriteEntryPoint(std::ostream& os, SpvReflectEvaluation* p_eval, const
   if (obj.shader_stage == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT) {
     os << "\n";
     if (entry_flag & 2) {
-      os << "local size      : ";
+      os << "local size hint : ";
     }
     else {
-      os << "local size hint : ";
+      os << "local size      : ";
     }
     if (entry_flag & 4) {
       const SpvReflectValue* val;
