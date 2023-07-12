@@ -20,6 +20,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <stddef.h>   // for offsetof as defined in c spec
+
 #if defined(WIN32)
   #define _CRTDBG_MAP_ALLOC
   #include <stdlib.h>
