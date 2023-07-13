@@ -1713,7 +1713,10 @@ typedef struct VkSpecializationInfo VkSpecializationInfo;
 typedef struct VkSpecializationMapEntry VkSpecializationMapEntry;
 
 /* @fn spvReflectGetSpecializationInfo
-  @brief Call with nullptr to retrieve size of spec in entryCount, then allocate and call again.
+  @brief                Helper function to fill VkSpecializationInfo with current SpvReflectEvaluation's state.
+                        Specialization data is filled with SpvReflectEvaluation internal memory.
+                        Call with nullptr to retrieve required count of VkSpecializationMapEntry in info->entryCount,
+                        then allocate and call again.
   @param p_eval         The evaluation interface
   @param info           The info to be retrieved
   @param p_modifiable   Pointer to modifiable entries allocated by user
