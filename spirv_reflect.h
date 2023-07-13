@@ -330,12 +330,13 @@ typedef struct SpvReflectBindingArrayTraits {
 } SpvReflectBindingArrayTraits;
 
 /*! @struct SpvReflectTypeDescription
-
+    @brief Information about an OpType* instruction
 */
 typedef struct SpvReflectTypeDescription {
   uint32_t                          id;
   SpvOp                             op;
   const char*                       type_name;
+  // Non-Null if type is member of a struct
   const char*                       struct_member_name;
   SpvStorageClass                   storage_class;
   SpvReflectTypeFlags               type_flags;
@@ -347,14 +348,19 @@ typedef struct SpvReflectTypeDescription {
     SpvReflectArrayTraits           array;
   } traits;
 
-  // if 'op' is OpTypeStruct, list members
+  // If underlying type is a struct (ex. array of structs)
+  // This gives access to the OpTypeStruct
+  struct SpvReflectTypeDescription* struct_type_description;
+
+  // @deprecated use struct_type_description instead
   uint32_t                          member_count;
+  // @deprecated use struct_type_description instead
   struct SpvReflectTypeDescription* members;
 } SpvReflectTypeDescription;
 
 
 /*! @struct SpvReflectInterfaceVariable
-
+    @brief The OpVariable that is either an Input or Output to the module
 */
 typedef struct SpvReflectInterfaceVariable {
   uint32_t                            spirv_id;
