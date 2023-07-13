@@ -563,6 +563,12 @@ static uint32_t FindBaseId(SpvReflectPrvParser* p_parser,
                            SpvReflectPrvAccessChain* ac) {
   uint32_t base_id = ac->base_id;
   SpvReflectPrvNode* base_node = FindNode(p_parser, base_id);
+  // TODO - This is just a band-aid to fix crashes.
+  // Need to understand why here and hopefully remove
+  // https://github.com/KhronosGroup/SPIRV-Reflect/pull/206
+  if (IsNull(base_node)) {
+    return 0;
+  }
   while (base_node->op != SpvOpVariable) {
 	switch (base_node->op) {
 	  case SpvOpLoad: {
