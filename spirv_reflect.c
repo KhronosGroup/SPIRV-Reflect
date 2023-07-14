@@ -1816,7 +1816,8 @@ static SpvReflectResult ParseType(
             uint32_t dim_index = p_type->traits.array.dims_count;
             if (p_length_node->op == SpvOpSpecConstant ||
                 p_length_node->op == SpvOpSpecConstantOp) {
-              p_type->traits.array.dims[dim_index] = 0xFFFFFFFF;
+              p_type->traits.array.dims[dim_index] =
+                  (uint32_t)SPV_REFLECT_ARRAY_DIM_SPEC_CONSTANT;
               p_type->traits.array.spec_constant_op_ids[dim_index] = length_id;
               p_type->traits.array.dims_count += 1;
             } else {
@@ -1825,7 +1826,8 @@ static SpvReflectResult ParseType(
               if (result == SPV_REFLECT_RESULT_SUCCESS) {
                 // Write the array dim and increment the count and offset
                 p_type->traits.array.dims[dim_index] = length;
-                p_type->traits.array.spec_constant_op_ids[dim_index] = 0xFFFFFFFF;
+                p_type->traits.array.spec_constant_op_ids[dim_index] =
+                    (uint32_t)SPV_REFLECT_ARRAY_DIM_SPEC_CONSTANT;
                 p_type->traits.array.dims_count += 1;
               } else {
                 result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
@@ -1852,7 +1854,8 @@ static SpvReflectResult ParseType(
         IF_READU32(result, p_parser, p_node->word_offset + 2, element_type_id);
         p_type->traits.array.stride = p_node->decorations.array_stride;
         uint32_t dim_index = p_type->traits.array.dims_count;
-        p_type->traits.array.dims[dim_index] = 0;
+        p_type->traits.array.dims[dim_index] =
+            (uint32_t)SPV_REFLECT_ARRAY_DIM_RUNTIME;
         p_type->traits.array.spec_constant_op_ids[dim_index] = 0;
         p_type->traits.array.dims_count += 1;
         // Parse next dimension or element type
