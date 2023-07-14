@@ -5327,7 +5327,7 @@ const char* spvReflectSourceLanguage(SpvSourceLanguage source_lang)
     case SpvSourceLanguageSYCL           : return "SYCL";
     case SpvSourceLanguageHERO_C         : return "Hero C";
     case SpvSourceLanguageNZSL           : return "NZSL";
-    case SpvSourceLanguageMax:
+    default:
       break;
   }
   return "";

@@ -110,7 +110,7 @@ std::string ToStringSpvSourceLanguage(SpvSourceLanguage lang) {
     case SpvSourceLanguageNZSL:
       return "NZSL";
 
-    case SpvSourceLanguageMax:
+    default:
       break;
   }
   // unhandled SpvSourceLanguage enum value
