@@ -336,7 +336,7 @@ typedef struct SpvReflectTypeDescription {
   uint32_t                          id;
   SpvOp                             op;
   const char*                       type_name;
-  // Non-Null if type is member of a struct
+  // Non-NULL if type is member of a struct
   const char*                       struct_member_name;
   SpvStorageClass                   storage_class;
   SpvReflectTypeFlags               type_flags;
@@ -349,7 +349,7 @@ typedef struct SpvReflectTypeDescription {
   } traits;
 
   // If underlying type is a struct (ex. array of structs)
-  // This gives access to the OpTypeStruct
+  // this gives access to the OpTypeStruct
   struct SpvReflectTypeDescription* struct_type_description;
 
   // @deprecated use struct_type_description instead
