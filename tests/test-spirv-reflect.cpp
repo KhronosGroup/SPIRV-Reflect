@@ -67,10 +67,10 @@ TEST(SpirvReflectTestCase, SourceLanguage) {
 
   EXPECT_STREQ(spvReflectSourceLanguage(SpvSourceLanguageUnknown), "Unknown");
   // Invalid inputs
-  EXPECT_STREQ(spvReflectSourceLanguage(SpvSourceLanguageMax), "");
+  EXPECT_STREQ(spvReflectSourceLanguage(SpvSourceLanguageMax), "Unknown");
   EXPECT_STREQ(spvReflectSourceLanguage(
                    static_cast<SpvSourceLanguage>(SpvSourceLanguageMax - 1)),
-               "");
+               "Unknown");
 }
 
 class SpirvReflectTest : public ::testing::TestWithParam<const char*> {

@@ -89,8 +89,6 @@ std::string ToStringGenerator(SpvReflectGenerator generator) {
 
 std::string ToStringSpvSourceLanguage(SpvSourceLanguage lang) {
   switch (lang) {
-    case SpvSourceLanguageUnknown:
-      return "Unknown";
     case SpvSourceLanguageESSL:
       return "ESSL";
     case SpvSourceLanguageGLSL:
@@ -110,11 +108,12 @@ std::string ToStringSpvSourceLanguage(SpvSourceLanguage lang) {
     case SpvSourceLanguageNZSL:
       return "NZSL";
 
-    case SpvSourceLanguageMax:
+    default:
       break;
   }
-  // unhandled SpvSourceLanguage enum value
-  return "???";
+  // SpvSourceLanguageUnknown, SpvSourceLanguageMax, or another value that does
+  // not correspond to a known language.
+  return "Unknown";
 }
 
 std::string ToStringSpvExecutionModel(SpvExecutionModel model) {
