@@ -31,3 +31,24 @@ jobs:
         run: |
           cd build
           ./test-spirv-reflect
+      - name: Clone SPIRV-Database
+        run: |
+          git clone https://github.com/LunarG/SPIRV-Database.git build/SPIRV-Database
+      - name: Test - SaschaWillemsVulkan
+        run: |
+          for spv in $(find build/SPIRV-Database/vulkan/SaschaWillemsVulkan/ -type f); do bin/spirv-reflect $spv -ci; done
+      - name: Test - clspv
+        run: |
+          for spv in $(find build/SPIRV-Database/vulkan/clspv/ -type f); do bin/spirv-reflect $spv -ci; done
+      - name: Test - dawn
+        run: |
+          for spv in $(find build/SPIRV-Database/vulkan/dawn/ -type f); do bin/spirv-reflect $spv -ci; done
+      - name: Test - gl_cts
+        run: |
+          for spv in $(find build/SPIRV-Database/vulkan/gl_cts/ -type f); do bin/spirv-reflect $spv -ci; done
+      - name: Test - naga
+        run: |
+          for spv in $(find build/SPIRV-Database/vulkan/naga/remaps/ -type f); do bin/spirv-reflect $spv -ci; done
+      - name: Test - tint
+        run: |
+          for spv in $(find build/SPIRV-Database/vulkan/tint/ -type f); do bin/spirv-reflect $spv -ci; done

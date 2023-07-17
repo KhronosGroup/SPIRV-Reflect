@@ -89,6 +89,7 @@ int main(int argn, char** argv) {
   arg_parser.AddFlag("s", "stage", "");
   arg_parser.AddFlag("f", "file", "");
   arg_parser.AddFlag("fcb", "flatten_cbuffers", "");
+  arg_parser.AddFlag("ci", "ci", "");  // Not advertised
   if (!arg_parser.Parse(argn, argv, std::cerr)) {
     PrintUsage();
     return EXIT_FAILURE;
@@ -108,6 +109,7 @@ int main(int argn, char** argv) {
   bool print_shader_stage = arg_parser.GetFlag("s", "stage");
   bool print_source_file = arg_parser.GetFlag("f", "file");
   bool flatten_cbuffers = arg_parser.GetFlag("fcb", "flatten_cbuffers");
+  bool ci_mode = arg_parser.GetFlag("ci", "ci");
 
   std::string input_spv_path;
   if (!arg_parser.GetArg(0, &input_spv_path)) {
@@ -135,6 +137,15 @@ int main(int argn, char** argv) {
       std::cerr << "ERROR: could not process '" << input_spv_path
                 << "' (is it a valid SPIR-V bytecode?)" << std::endl;
       return EXIT_FAILURE;
+    }
+
+    if (ci_mode) {
+      // When running CI we want to just test that SPIRV-Reflect doesn't crash,
+      // The output is not important (as there is nothing to compare it too)
+      // This hidden flag is here to allow a way to suppress the logging in CI
+      // to only the shader name (otherwise the logs noise and GBs large)
+      std::cout << input_spv_path << std::endl;
+      return EXIT_SUCCESS;
     }
 
     if (print_entry_point || print_shader_stage || print_source_file) {
