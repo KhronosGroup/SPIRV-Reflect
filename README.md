@@ -8,6 +8,8 @@ SPIRV-Reflect has been tested on Linux and Windows.
 
 ## NEWS
 
+- **2023-07-04** -  We have removed support for
+  [Bazel](https://bazel.build).
 - **2023-06-07** -  We are planning to remove support for
   [Bazel](https://bazel.build/).  If you rely on Bazel for
   building this code, please let us know in
@@ -113,13 +115,6 @@ To run the self-tests:
 - `git submodule update`
 - Enable `SPIRV_REFLECT_BUILD_TESTS` in CMake
 - Build and run the `test-spirv-reflect` project.
-
-## Bazel build
-
-We tested the following bazel build command using Linux Bazel 1.2.1.
-```
-bazel build :all
-```
 
 ## License
 
