@@ -520,6 +520,10 @@ static void ApplyArrayTraits(const SpvReflectTypeDescription* p_type, SpvReflect
   memcpy(p_array_traits, &p_type->traits.array, sizeof(p_type->traits.array));
 }
 
+static bool IsSpecConstant(const SpvReflectPrvNode* p_node) {
+  return (p_node->op == SpvOpSpecConstant || p_node->op == SpvOpSpecConstantOp);
+}
+
 static SpvReflectPrvNode* FindNode(
   SpvReflectPrvParser* p_parser,
   uint32_t             result_id)
@@ -1815,8 +1819,7 @@ static SpvReflectResult ParseType(
           SpvReflectPrvNode* p_length_node = FindNode(p_parser, length_id);
           if (IsNotNull(p_length_node)) {
             uint32_t dim_index = p_type->traits.array.dims_count;
-            if (p_length_node->op == SpvOpSpecConstant ||
-                p_length_node->op == SpvOpSpecConstantOp) {
+            if (IsSpecConstant(p_length_node)) {
               p_type->traits.array.dims[dim_index] =
                   (uint32_t)SPV_REFLECT_ARRAY_DIM_SPEC_CONSTANT;
               p_type->traits.array.spec_constant_op_ids[dim_index] = length_id;
@@ -3439,7 +3442,8 @@ static SpvReflectResult ParseExecutionModes(
   if (IsNotNull(p_parser) && IsNotNull(p_parser->spirv_code) && IsNotNull(p_parser->nodes)) {
     for (size_t node_idx = 0; node_idx < p_parser->node_count; ++node_idx) {
       SpvReflectPrvNode* p_node = &(p_parser->nodes[node_idx]);
-      if (p_node->op != SpvOpExecutionMode) {
+      if (p_node->op != SpvOpExecutionMode &&
+          p_node->op != SpvOpExecutionModeId) {
         continue;
       }
 
@@ -3477,6 +3481,43 @@ static SpvReflectResult ParseExecutionModes(
           CHECKED_READU32(p_parser, p_node->word_offset + 5, p_entry_point->local_size.z);
         }
         break;
+        case SpvExecutionModeLocalSizeId: {
+          uint32_t local_size_x_id = 0;
+          uint32_t local_size_y_id = 0;
+          uint32_t local_size_z_id = 0;
+          CHECKED_READU32(p_parser, p_node->word_offset + 3, local_size_x_id);
+          CHECKED_READU32(p_parser, p_node->word_offset + 4, local_size_y_id);
+          CHECKED_READU32(p_parser, p_node->word_offset + 5, local_size_z_id);
+
+          SpvReflectPrvNode* x_node = FindNode(p_parser, local_size_x_id);
+          SpvReflectPrvNode* y_node = FindNode(p_parser, local_size_y_id);
+          SpvReflectPrvNode* z_node = FindNode(p_parser, local_size_z_id);
+          if (IsNotNull(x_node) && IsNotNull(y_node) && IsNotNull(z_node)) {
+            if (IsSpecConstant(x_node)) {
+              p_entry_point->local_size.x =
+                  (uint32_t)SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT;
+            } else {
+              CHECKED_READU32(p_parser, x_node->word_offset + 3,
+                              p_entry_point->local_size.x);
+            }
+
+            if (IsSpecConstant(y_node)) {
+              p_entry_point->local_size.y =
+                  (uint32_t)SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT;
+            } else {
+              CHECKED_READU32(p_parser, x_node->word_offset + 3,
+                              p_entry_point->local_size.y);
+            }
+
+            if (IsSpecConstant(z_node)) {
+              p_entry_point->local_size.z =
+                  (uint32_t)SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT;
+            } else {
+              CHECKED_READU32(p_parser, x_node->word_offset + 3,
+                              p_entry_point->local_size.z);
+            }
+          }
+        } break;
 
         case SpvExecutionModeInputPoints:
         case SpvExecutionModeInputLines:
