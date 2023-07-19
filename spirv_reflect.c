@@ -3466,32 +3466,10 @@ static SpvReflectResult ParseExecutionModes(
 
       // Parse execution mode
       switch (execution_mode) {
-        default: {
-          return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_EXECUTION_MODE;
-        }
-        break;
-
         case SpvExecutionModeInvocations: {
           CHECKED_READU32(p_parser, p_node->word_offset + 3, p_entry_point->invocations);
         }
         break;
-
-        case SpvExecutionModeSpacingEqual:
-        case SpvExecutionModeSpacingFractionalEven:
-        case SpvExecutionModeSpacingFractionalOdd:
-        case SpvExecutionModeVertexOrderCw:
-        case SpvExecutionModeVertexOrderCcw:
-        case SpvExecutionModePixelCenterInteger:
-        case SpvExecutionModeOriginUpperLeft:
-        case SpvExecutionModeOriginLowerLeft:
-        case SpvExecutionModeEarlyFragmentTests:
-        case SpvExecutionModePointMode:
-        case SpvExecutionModeXfb:
-        case SpvExecutionModeDepthReplacing:
-        case SpvExecutionModeDepthGreater:
-        case SpvExecutionModeDepthLess:
-        case SpvExecutionModeDepthUnchanged:
-          break;
 
         case SpvExecutionModeLocalSize: {
           CHECKED_READU32(p_parser, p_node->word_offset + 3, p_entry_point->local_size.x);
@@ -3500,7 +3478,6 @@ static SpvReflectResult ParseExecutionModes(
         }
         break;
 
-        case SpvExecutionModeLocalSizeHint:
         case SpvExecutionModeInputPoints:
         case SpvExecutionModeInputLines:
         case SpvExecutionModeInputLinesAdjacency:
@@ -3513,32 +3490,7 @@ static SpvReflectResult ParseExecutionModes(
         }
         break;
 
-        case SpvExecutionModeOutputPoints:
-        case SpvExecutionModeOutputLineStrip:
-        case SpvExecutionModeOutputTriangleStrip:
-        case SpvExecutionModeVecTypeHint:
-        case SpvExecutionModeContractionOff:
-        case SpvExecutionModeInitializer:
-        case SpvExecutionModeFinalizer:
-        case SpvExecutionModeSubgroupSize:
-        case SpvExecutionModeSubgroupsPerWorkgroup:
-        case SpvExecutionModeSubgroupsPerWorkgroupId:
-        case SpvExecutionModeLocalSizeId:
-        case SpvExecutionModeLocalSizeHintId:
-        case SpvExecutionModePostDepthCoverage:
-        case SpvExecutionModeDenormPreserve:
-        case SpvExecutionModeDenormFlushToZero:
-        case SpvExecutionModeSignedZeroInfNanPreserve:
-        case SpvExecutionModeRoundingModeRTE:
-        case SpvExecutionModeRoundingModeRTZ:
-        case SpvExecutionModeStencilRefReplacingEXT:
-        case SpvExecutionModeOutputLinesNV:
-        case SpvExecutionModeOutputPrimitivesNV:
-        case SpvExecutionModeOutputTrianglesNV:
-        case SpvExecutionModePixelInterlockOrderedEXT:
-        case SpvExecutionModePixelInterlockUnorderedEXT:
-        case SpvExecutionModeSampleInterlockOrderedEXT:
-        case SpvExecutionModeSampleInterlockUnorderedEXT:
+        default:
           break;
       }
       p_entry_point->execution_mode_count++;
