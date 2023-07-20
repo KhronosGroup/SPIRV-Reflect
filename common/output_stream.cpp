@@ -927,6 +927,10 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
     std::string expanded_indent = ss_indent.str();
 
     const auto& member = p_members[member_index];
+    if (!member.type_description) {
+      // TODO 212 - If a buffer ref has an array of itself, all members are null
+      continue;
+    }
     bool is_struct =
         ((member.type_description->type_flags &
           static_cast<SpvReflectTypeFlags>(SPV_REFLECT_TYPE_FLAG_STRUCT)) != 0);
