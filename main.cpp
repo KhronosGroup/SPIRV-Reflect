@@ -132,7 +132,7 @@ int main(int argn, char** argv) {
     std::vector<char> spv_data(size);
     spv_ifstream.read(spv_data.data(), size);
 
-    spv_reflect::ShaderModule reflection(spv_data.size(), spv_data.data());
+    spv_reflect::ShaderModule reflection(spv_data.size(), spv_data.data(), SPV_REFLECT_MODULE_FLAG_EVALUATE_CONSTANT);
     if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
       std::cerr << "ERROR: could not process '" << input_spv_path
                 << "' (is it a valid SPIR-V bytecode?)" << std::endl;

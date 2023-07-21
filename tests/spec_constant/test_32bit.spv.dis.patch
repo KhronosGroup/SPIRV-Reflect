@@ -1,0 +1,14 @@
+10c10,11
+<                OpExecutionMode %main LocalSize 1 1 1
+---
+>                ; should ignore this if working with WorkGroupSize builtin
+>                OpExecutionMode %main LocalSize 2 3 4
+425c426
+<        %SREM = OpSpecConstantOp %int SMod %STWO %SNEG_THREE
+---
+>        %SREM = OpSpecConstantOp %int SRem %STWO %SNEG_THREE
+601c602,603
+<         %262 = OpSpecConstant %uint 1
+---
+>         ; default value should be respected, even if no compiler write things other than 1
+>         %262 = OpSpecConstant %uint 4

@@ -1,0 +1,24 @@
+37c37
+<                OpName %F_ONE2 "F_ONE2"
+---
+>                OpName %9999 "F_ONE2"
+43c43
+<                OpName %D_ONE2 "D_ONE2"
+---
+>                OpName %10000 "D_ONE2"
+104c104
+<      %F_ONE2 = OpSpecConstantOp %float FConvert %D_ONE
+---
+>      %9999 = OpSpecConstantOp %float FConvert %D_ONE
+114c114
+<      %D_ONE2 = OpSpecConstantOp %double FConvert %F_ONE
+---
+>      %10000 = OpSpecConstantOp %double FConvert %F_ONE
+122c122
+<                OpStore %38 %F_ONE2
+---
+>                OpStore %38 %9999
+124c124
+<                OpStore %45 %F_ONE2
+---
+>                OpStore %45 %9999

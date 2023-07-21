@@ -1,0 +1,37 @@
+6a7
+>                OpCapability Int64
+10c11,12
+<                OpExecutionMode %main LocalSize 1 1 1
+---
+>                ; should ignore this if working with WorkGroupSize builtin
+>                OpExecutionMode %main LocalSize 2 3 4
+377c379
+<         %int = OpTypeInt 32 1
+---
+>         %int = OpTypeInt 64 1
+381c383,384
+<        %uint = OpTypeInt 32 0
+---
+>   %uint_orig = OpTypeInt 32 0
+>        %uint = OpTypeInt 64 0
+422a426
+> %uint_orig_1 = OpConstant %uint_orig 1
+425c430
+<        %SREM = OpSpecConstantOp %int SMod %STWO %SNEG_THREE
+---
+>        %SREM = OpSpecConstantOp %int SRem %STWO %SNEG_THREE
+577,578c582,583
+< %uint_4294967294 = OpConstant %uint 4294967294
+<         %235 = OpSpecConstantOp %uint ISub %NOT %uint_4294967294
+---
+> %uint_18446744073709551614 = OpConstant %uint 18446744073709551614
+>         %235 = OpSpecConstantOp %uint ISub %NOT %uint_18446744073709551614
+601,603c605,608
+<         %262 = OpSpecConstant %uint 1
+<      %v3uint = OpTypeVector %uint 3
+< %gl_WorkGroupSize = OpSpecConstantComposite %v3uint %262 %uint_1 %uint_1
+---
+>         ; default value should be respected, even if no compiler write things other than 1
+>         %262 = OpSpecConstant %uint_orig 4
+> %v3uint_orig = OpTypeVector %uint_orig 3
+> %gl_WorkGroupSize = OpSpecConstantComposite %v3uint_orig %262 %uint_orig_1 %uint_orig_1

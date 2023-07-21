@@ -1,0 +1,126 @@
+; SPIR-V
+; Version: 1.5
+; Generator: Google Shaderc over Glslang; 10
+; Bound: 50
+; Schema: 0
+               OpCapability Shader
+               OpCapability Float64
+               OpCapability Int64
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %U_Sone %U_Uone %S_Sone %S_Uone
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpSourceExtension "GL_EXT_shader_explicit_arithmetic_types_int64"
+               OpSourceExtension "GL_GOOGLE_cpp_style_line_directive"
+               OpSourceExtension "GL_GOOGLE_include_directive"
+               OpName %main "main"
+               OpName %SONE "SONE"
+               OpName %U_SONE "U_SONE"
+               OpName %SSBO_U_Sone "SSBO_U_Sone"
+               OpMemberName %SSBO_U_Sone 0 "val"
+               OpMemberName %SSBO_U_Sone 1 "dummy"
+               OpName %U_Sone "U_Sone"
+               OpName %F_ONE "F_ONE"
+               OpName %UONE "UONE"
+               OpName %U_UONE "U_UONE"
+               OpName %SSBO_U_Uone "SSBO_U_Uone"
+               OpMemberName %SSBO_U_Uone 0 "val"
+               OpMemberName %SSBO_U_Uone 1 "dummy"
+               OpName %U_Uone "U_Uone"
+               OpName %S_SONE "S_SONE"
+               OpName %SSBO_S_Sone "SSBO_S_Sone"
+               OpMemberName %SSBO_S_Sone 0 "val"
+               OpMemberName %SSBO_S_Sone 1 "dummy"
+               OpName %S_Sone "S_Sone"
+               OpName %D_ONE "D_ONE"
+               OpName %9999 "F_ONE2"
+               OpName %S_UONE "S_UONE"
+               OpName %SSBO_S_Uone "SSBO_S_Uone"
+               OpMemberName %SSBO_S_Uone 0 "val"
+               OpMemberName %SSBO_S_Uone 1 "dummy"
+               OpName %S_Uone "S_Uone"
+               OpName %10000 "D_ONE2"
+               OpDecorate %SONE SpecId 0
+               OpDecorate %_arr_float_U_SONE ArrayStride 4
+               OpMemberDecorate %SSBO_U_Sone 0 Offset 0
+               OpMemberDecorate %SSBO_U_Sone 1 Offset 4
+               OpDecorate %SSBO_U_Sone Block
+               OpDecorate %U_Sone DescriptorSet 0
+               OpDecorate %U_Sone Binding 0
+               OpDecorate %F_ONE SpecId 2
+               OpDecorate %UONE SpecId 1
+               OpDecorate %_arr_float_U_UONE ArrayStride 4
+               OpMemberDecorate %SSBO_U_Uone 0 Offset 0
+               OpMemberDecorate %SSBO_U_Uone 1 Offset 4
+               OpDecorate %SSBO_U_Uone Block
+               OpDecorate %U_Uone DescriptorSet 0
+               OpDecorate %U_Uone Binding 1
+               OpDecorate %_arr_float_S_SONE ArrayStride 4
+               OpMemberDecorate %SSBO_S_Sone 0 Offset 0
+               OpMemberDecorate %SSBO_S_Sone 1 Offset 4
+               OpDecorate %SSBO_S_Sone Block
+               OpDecorate %S_Sone DescriptorSet 0
+               OpDecorate %S_Sone Binding 2
+               OpDecorate %D_ONE SpecId 3
+               OpDecorate %_arr_float_S_UONE ArrayStride 4
+               OpMemberDecorate %SSBO_S_Uone 0 Offset 0
+               OpMemberDecorate %SSBO_S_Uone 1 Offset 4
+               OpDecorate %SSBO_S_Uone Block
+               OpDecorate %S_Uone DescriptorSet 0
+               OpDecorate %S_Uone Binding 3
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %long = OpTypeInt 64 1
+       %SONE = OpSpecConstant %long 1
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+         %11 = OpSpecConstantOp %int SConvert %SONE
+     %uint_0 = OpConstant %uint 0
+     %U_SONE = OpSpecConstantOp %uint IAdd %11 %uint_0
+%_arr_float_U_SONE = OpTypeArray %float %U_SONE
+%SSBO_U_Sone = OpTypeStruct %_arr_float_U_SONE %float
+%_ptr_StorageBuffer_SSBO_U_Sone = OpTypePointer StorageBuffer %SSBO_U_Sone
+     %U_Sone = OpVariable %_ptr_StorageBuffer_SSBO_U_Sone StorageBuffer
+      %int_0 = OpConstant %int 0
+      %F_ONE = OpSpecConstant %float 1
+%_ptr_StorageBuffer_float = OpTypePointer StorageBuffer %float
+      %ulong = OpTypeInt 64 0
+       %UONE = OpSpecConstant %ulong 1
+     %U_UONE = OpSpecConstantOp %uint UConvert %UONE
+%_arr_float_U_UONE = OpTypeArray %float %U_UONE
+%SSBO_U_Uone = OpTypeStruct %_arr_float_U_UONE %float
+%_ptr_StorageBuffer_SSBO_U_Uone = OpTypePointer StorageBuffer %SSBO_U_Uone
+     %U_Uone = OpVariable %_ptr_StorageBuffer_SSBO_U_Uone StorageBuffer
+     %S_SONE = OpSpecConstantOp %int SConvert %SONE
+%_arr_float_S_SONE = OpTypeArray %float %S_SONE
+%SSBO_S_Sone = OpTypeStruct %_arr_float_S_SONE %float
+%_ptr_StorageBuffer_SSBO_S_Sone = OpTypePointer StorageBuffer %SSBO_S_Sone
+     %S_Sone = OpVariable %_ptr_StorageBuffer_SSBO_S_Sone StorageBuffer
+     %double = OpTypeFloat 64
+      %D_ONE = OpSpecConstant %double 1
+     %9999 = OpSpecConstantOp %float FConvert %D_ONE
+         %39 = OpSpecConstantOp %uint UConvert %UONE
+     %S_UONE = OpSpecConstantOp %int IAdd %39 %uint_0
+%_arr_float_S_UONE = OpTypeArray %float %S_UONE
+%SSBO_S_Uone = OpTypeStruct %_arr_float_S_UONE %float
+%_ptr_StorageBuffer_SSBO_S_Uone = OpTypePointer StorageBuffer %SSBO_S_Uone
+     %S_Uone = OpVariable %_ptr_StorageBuffer_SSBO_S_Uone StorageBuffer
+     %v3uint = OpTypeVector %uint 3
+     %uint_1 = OpConstant %uint 1
+%gl_WorkGroupSize = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+     %10000 = OpSpecConstantOp %double FConvert %F_ONE
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %21 = OpAccessChain %_ptr_StorageBuffer_float %U_Sone %int_0 %int_0
+               OpStore %21 %F_ONE
+         %29 = OpAccessChain %_ptr_StorageBuffer_float %U_Uone %int_0 %int_0
+               OpStore %29 %F_ONE
+         %38 = OpAccessChain %_ptr_StorageBuffer_float %S_Sone %int_0 %int_0
+               OpStore %38 %9999
+         %45 = OpAccessChain %_ptr_StorageBuffer_float %S_Uone %int_0 %int_0
+               OpStore %45 %9999
+               OpReturn
+               OpFunctionEnd
