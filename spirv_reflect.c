@@ -3565,7 +3565,7 @@ static SpvReflectResult ParseExecutionModes(
               p_entry_point->local_size.y =
                   (uint32_t)SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT;
             } else {
-              CHECKED_READU32(p_parser, x_node->word_offset + 3,
+              CHECKED_READU32(p_parser, y_node->word_offset + 3,
                               p_entry_point->local_size.y);
             }
 
@@ -3573,7 +3573,7 @@ static SpvReflectResult ParseExecutionModes(
               p_entry_point->local_size.z =
                   (uint32_t)SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT;
             } else {
-              CHECKED_READU32(p_parser, x_node->word_offset + 3,
+              CHECKED_READU32(p_parser, z_node->word_offset + 3,
                               p_entry_point->local_size.z);
             }
           }
