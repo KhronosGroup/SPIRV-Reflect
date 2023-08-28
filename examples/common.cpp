@@ -122,6 +122,12 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang,
     os << "flat";
   } else if (obj.decoration_flags & SPV_REFLECT_DECORATION_NOPERSPECTIVE) {
     os << "noperspective";
+  } else if (obj.decoration_flags & SPV_REFLECT_DECORATION_PATCH) {
+    os << "patch";
+  } else if (obj.decoration_flags & SPV_REFLECT_DECORATION_PER_VERTEX) {
+    os << "pervertex";
+  } else if (obj.decoration_flags & SPV_REFLECT_DECORATION_PER_TASK) {
+    os << "pertask";
   }
   os << "\n";
 

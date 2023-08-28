@@ -143,7 +143,7 @@ all_interface_variables:
     location: 4294967295
     storage_class: 1 # Input
     semantic: 
-    decoration_flags: 0x00000010 # BUILT_IN 
+    decoration_flags: 0x00000410 # BUILT_IN PATCH 
     built_in: 13 # TessCoord
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -179,7 +179,7 @@ all_interface_variables:
     location: 4294967295
     storage_class: 1 # Input
     semantic: 
-    decoration_flags: 0x00000010 # BUILT_IN 
+    decoration_flags: 0x00000410 # BUILT_IN PATCH 
     built_in: 11 # TessLevelOuter
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -197,7 +197,7 @@ all_interface_variables:
     location: 4294967295
     storage_class: 1 # Input
     semantic: 
-    decoration_flags: 0x00000010 # BUILT_IN 
+    decoration_flags: 0x00000410 # BUILT_IN PATCH 
     built_in: 12 # TessLevelInner
     numeric:
       scalar: { width: 32, signedness: 0 }

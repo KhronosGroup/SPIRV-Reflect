@@ -661,6 +661,9 @@ std::string ToStringDecorationFlags(
   PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, ROW_MAJOR);
   PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, BUFFER_BLOCK);
   PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, BLOCK);
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, PATCH);
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, PER_VERTEX);
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, PER_TASK);
 #undef PRINT_AND_CLEAR_DECORATION_FLAG
   if (decoration_flags != 0) {
     // Unhandled SpvReflectDecorationFlags bit
