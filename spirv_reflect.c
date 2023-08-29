@@ -129,6 +129,9 @@ typedef struct SpvReflectPrvDecorations {
   bool                            is_flat;
   bool                            is_non_writable;
   bool                            is_non_readable;
+  bool                            is_patch;
+  bool                            is_per_vertex;
+  bool                            is_per_task;
   SpvReflectPrvNumberDecoration   set;
   SpvReflectPrvNumberDecoration   binding;
   SpvReflectPrvNumberDecoration   input_attachment_index;
@@ -511,6 +514,15 @@ static SpvReflectDecorationFlags ApplyDecorations(const SpvReflectPrvDecorations
   }
   if (p_decoration_fields->is_non_readable) {
     decorations |= SPV_REFLECT_DECORATION_NON_READABLE;
+  }
+  if (p_decoration_fields->is_patch) {
+    decorations |= SPV_REFLECT_DECORATION_PATCH;
+  }
+  if (p_decoration_fields->is_per_vertex) {
+    decorations |= SPV_REFLECT_DECORATION_PER_VERTEX;
+  }
+  if (p_decoration_fields->is_per_task) {
+    decorations |= SPV_REFLECT_DECORATION_PER_TASK;
   }
   return decorations;
 }
@@ -1480,6 +1492,9 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
       case SpvDecorationFlat:
       case SpvDecorationNonWritable:
       case SpvDecorationNonReadable:
+      case SpvDecorationPatch:
+      case SpvDecorationPerVertexKHR:
+      case SpvDecorationPerTaskNV:
       case SpvDecorationLocation:
       case SpvDecorationComponent:
       case SpvDecorationBinding:
@@ -1583,6 +1598,18 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser)
         p_target_decorations->is_non_readable = true;
       }
       break;
+
+      case SpvDecorationPatch: {
+        p_target_decorations->is_patch = true;
+      } break;
+
+      case SpvDecorationPerVertexKHR: {
+        p_target_decorations->is_per_vertex = true;
+      } break;
+
+      case SpvDecorationPerTaskNV: {
+        p_target_decorations->is_per_task = true;
+      } break;
 
       case SpvDecorationLocation: {
         uint32_t word_offset = p_node->word_offset + member_offset + 3;
