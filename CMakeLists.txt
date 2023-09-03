@@ -3,8 +3,7 @@ cmake_minimum_required(VERSION 3.1)
 project(spirv-reflect)
 
 OPTION(SPIRV_REFLECT_EXECUTABLE     "Build spirv-reflect executable" ON)
-OPTION(SPIRV_REFLECT_EXAMPLES       "Build stripper examples" ON)
-OPTION(SPIRV_REFLECT_STRIPPER       "Build stripper utility" OFF)
+
 OPTION(SPIRV_REFLECT_STATIC_LIB     "Build a SPIRV-Reflect static library" OFF)
 OPTION(SPIRV_REFLECT_BUILD_TESTS    "Build the SPIRV-Reflect test suite" OFF)
 OPTION(SPIRV_REFLECT_ENABLE_ASSERTS "Enable asserts for debugging" OFF)
@@ -81,10 +80,6 @@ endif()
 
 if (SPIRV_REFLECT_EXAMPLES)
     add_subdirectory(examples)
-endif()
-
-if (SPIRV_REFLECT_STRIPPER)
-    add_subdirectory(util/stripper)
 endif()
 
 if (SPIRV_REFLECT_BUILD_TESTS)
