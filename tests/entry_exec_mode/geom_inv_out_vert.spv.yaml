@@ -355,7 +355,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: 
     decoration_flags: 0x00000011 # BUILT_IN BLOCK 
-    built_in: -1 # ??? (-1)
+    built_in: 0, 1, 3, 4 # [Position, PointSize, ClipDistance, CullDistance]
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }

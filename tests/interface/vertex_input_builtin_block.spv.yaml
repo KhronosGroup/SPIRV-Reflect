@@ -153,7 +153,7 @@ all_interface_variables:
     storage_class: 1 # Input
     semantic: 
     decoration_flags: 0x00000011 # BUILT_IN BLOCK 
-    built_in: -1 # ??? (-1)
+    built_in: 42, 43 # [VertexIndex, InstanceIndex]
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }
@@ -209,7 +209,7 @@ all_interface_variables:
     storage_class: 3 # Output
     semantic: 
     decoration_flags: 0x00000011 # BUILT_IN BLOCK 
-    built_in: -1 # ??? (-1)
+    built_in: 0, 1 # [Position, PointSize]
     numeric:
       scalar: { width: 0, signedness: 0 }
       vector: { component_count: 0 }

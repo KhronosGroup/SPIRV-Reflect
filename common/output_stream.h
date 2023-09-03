@@ -10,7 +10,8 @@ std::string ToStringSpvSourceLanguage(SpvSourceLanguage lang);
 std::string ToStringSpvExecutionModel(SpvExecutionModel model);
 std::string ToStringSpvStorageClass(SpvStorageClass storage_class);
 std::string ToStringSpvDim(SpvDim dim);
-std::string ToStringSpvBuiltIn(SpvBuiltIn value);
+std::string ToStringSpvBuiltIn(const SpvReflectInterfaceVariable& variable,
+                               bool preface);
 std::string ToStringSpvImageFormat(SpvImageFormat fmt);
 
 std::string ToStringGenerator(SpvReflectGenerator generator);
