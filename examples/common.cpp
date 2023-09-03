@@ -105,8 +105,7 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang,
   const char* t = indent;
   os << t << "location  : ";
   if (obj.decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
-    os << ToStringSpvBuiltIn(obj.built_in) << " "
-       << "(built-in)";
+    os << ToStringSpvBuiltIn(obj, true);
   } else {
     os << obj.location;
   }

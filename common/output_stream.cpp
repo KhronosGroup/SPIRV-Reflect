@@ -342,7 +342,7 @@ std::string ToStringDescriptorType(SpvReflectDescriptorType value) {
   return "VK_DESCRIPTOR_TYPE_???";
 }
 
-std::string ToStringSpvBuiltIn(SpvBuiltIn built_in) {
+static std::string ToStringSpvBuiltIn(SpvBuiltIn built_in) {
   switch (built_in) {
     case SpvBuiltInPosition:
       return "Position";
@@ -510,6 +510,30 @@ std::string ToStringSpvBuiltIn(SpvBuiltIn built_in) {
   // unhandled SpvBuiltIn enum value
   std::stringstream ss;
   ss << "??? (" << built_in << ")";
+  return ss.str();
+}
+
+std::string ToStringSpvBuiltIn(const SpvReflectInterfaceVariable& variable,
+                               bool preface) {
+  std::stringstream ss;
+  if (variable.decoration_flags & SPV_REFLECT_DECORATION_BLOCK) {
+    if (preface) {
+      ss << "(built-in block) ";
+    }
+    ss << "[";
+    for (uint32_t i = 0; i < variable.member_count; i++) {
+      ss << ToStringSpvBuiltIn(variable.members[i].built_in);
+      if (i < (variable.member_count - 1)) {
+        ss << ", ";
+      }
+    }
+    ss << "]";
+  } else {
+    if (preface) {
+      ss << "(built-in) ";
+    }
+    ss << ToStringSpvBuiltIn(variable.built_in);
+  }
   return ss.str();
 }
 
@@ -1381,9 +1405,7 @@ void StreamWriteInterfaceVariable(std::ostream& os,
   os << t << "spirv id  : " << obj.spirv_id << "\n";
   os << t << "location  : ";
   if (obj.decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
-    os << "(built-in)"
-       << " ";
-    os << ToStringSpvBuiltIn(obj.built_in);
+    os << ToStringSpvBuiltIn(obj, true);
   } else {
     os << obj.location;
   }
@@ -1965,8 +1987,18 @@ void SpvReflectToYaml::WriteInterfaceVariable(
   os << t1 << "decoration_flags: " << AsHexString(iv.decoration_flags) << " # "
      << ToStringDecorationFlags(iv.decoration_flags) << std::endl;
   //   SpvBuiltIn                          built_in;
-  os << t1 << "built_in: " << iv.built_in << " # "
-     << ToStringSpvBuiltIn(iv.built_in) << std::endl;
+  os << t1 << "built_in: ";
+  if (iv.decoration_flags & SPV_REFLECT_DECORATION_BLOCK) {
+    for (uint32_t i = 0; i < iv.member_count; i++) {
+      os << iv.members[i].built_in;
+      if (i < (iv.member_count - 1)) {
+        os << ", ";
+      }
+    }
+  } else {
+    os << iv.built_in;
+  }
+  os << " # " << ToStringSpvBuiltIn(iv, false) << std::endl;
   //   SpvReflectNumericTraits             numeric;
   // typedef struct SpvReflectNumericTraits {
   os << t1 << "numeric:" << std::endl;
