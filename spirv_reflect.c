@@ -178,6 +178,22 @@ typedef struct SpvReflectPrvString {
 // clang-format on
 
 // clang-format off
+// There are a limit set of instructions that can touch an OpVariable,
+// these are represented here with how it was accessed
+// Examples:
+//    OpImageRead  -> OpLoad              -> OpVariable
+//    OpImageWrite -> OpLoad              -> OpVariable
+//    OpStore      -> OpAccessChain       -> OpVariable
+//    OpAtomicIAdd -> OpAccessChain       -> OpVariable
+//    OpAtomicLoad -> OpImageTexelPointer -> OpVariable
+typedef struct SpvReflectPrvAccessedVariable {
+  uint32_t               result_id;
+  uint32_t               variable_ptr;
+  SpvReflectAccessFlags  access_flags;
+} SpvReflectPrvAccessedVariable;
+// clang-format on
+
+// clang-format off
 typedef struct SpvReflectPrvFunction {
   uint32_t                        id;
   uint32_t                        callee_count;
@@ -185,6 +201,8 @@ typedef struct SpvReflectPrvFunction {
   struct SpvReflectPrvFunction**  callee_ptrs;
   uint32_t                        accessed_ptr_count;
   uint32_t*                       accessed_ptrs;
+  uint32_t                        accessed_variable_ptr_count;
+  SpvReflectPrvAccessedVariable*  accessed_variable_ptrs;
 } SpvReflectPrvFunction;
 // clang-format on
 
@@ -691,6 +709,7 @@ static void DestroyParser(SpvReflectPrvParser* p_parser)
       SafeFree(p_parser->functions[i].callees);
       SafeFree(p_parser->functions[i].callee_ptrs);
       SafeFree(p_parser->functions[i].accessed_ptrs);
+      SafeFree(p_parser->functions[i].accessed_variable_ptrs);
     }
 
     // Free access chains
@@ -1166,6 +1185,7 @@ static SpvReflectResult ParseFunction(
   p_func->callee_count = 0;
   p_func->accessed_ptr_count = 0;
 
+  // First get count to know how much to allocate
   for (size_t i = first_label_index; i < p_parser->node_count; ++i) {
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
     if (p_node->op == SpvOpFunctionEnd) {
@@ -1213,10 +1233,17 @@ static SpvReflectResult ParseFunction(
     if (IsNull(p_func->accessed_ptrs)) {
       return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
     }
+
+    p_func->accessed_variable_ptrs = (SpvReflectPrvAccessedVariable*)calloc(
+        p_func->accessed_ptr_count, sizeof(*(p_func->accessed_variable_ptrs)));
+    if (IsNull(p_func->accessed_variable_ptrs)) {
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
   }
 
   p_func->callee_count = 0;
   p_func->accessed_ptr_count = 0;
+  // Now have allocation, fill in values
   for (size_t i = first_label_index; i < p_parser->node_count; ++i) {
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
     if (p_node->op == SpvOpFunctionEnd) {
@@ -1227,19 +1254,60 @@ static SpvReflectResult ParseFunction(
         CHECKED_READU32(p_parser, p_node->word_offset + 3,
                         p_func->callees[p_func->callee_count]);
         (++p_func->callee_count);
-      }
-      break;
-      case SpvOpLoad:
+      } break;
       case SpvOpAccessChain:
       case SpvOpInBoundsAccessChain:
       case SpvOpPtrAccessChain:
       case SpvOpArrayLength:
       case SpvOpGenericPtrMemSemantics:
-      case SpvOpInBoundsPtrAccessChain:
+      case SpvOpInBoundsPtrAccessChain: {
+        CHECKED_READU32(p_parser, p_node->word_offset + 3,
+                        p_func->accessed_ptrs[p_func->accessed_ptr_count]);
+
+        CHECKED_READU32(
+            p_parser, p_node->word_offset + 3,
+            p_func->accessed_variable_ptrs[p_func->accessed_ptr_count]
+                .variable_ptr);
+        // Need to track Result ID as not sure there has been any memory access
+        // through here yet
+        CHECKED_READU32(
+            p_parser, p_node->word_offset + 2,
+            p_func->accessed_variable_ptrs[p_func->accessed_ptr_count]
+                .result_id);
+        (++p_func->accessed_ptr_count);
+      } break;
+      case SpvOpLoad: {
+        CHECKED_READU32(p_parser, p_node->word_offset + 3,
+                        p_func->accessed_ptrs[p_func->accessed_ptr_count]);
+
+        CHECKED_READU32(
+            p_parser, p_node->word_offset + 3,
+            p_func->accessed_variable_ptrs[p_func->accessed_ptr_count]
+                .variable_ptr);
+        CHECKED_READU32(
+            p_parser, p_node->word_offset + 2,
+            p_func->accessed_variable_ptrs[p_func->accessed_ptr_count]
+                .result_id);
+        p_func->accessed_variable_ptrs[p_func->accessed_ptr_count]
+            .access_flags = SPV_REFLECT_ACCESS_READ;
+        (++p_func->accessed_ptr_count);
+      } break;
       case SpvOpImageTexelPointer:
       {
         CHECKED_READU32(p_parser, p_node->word_offset + 3,
                         p_func->accessed_ptrs[p_func->accessed_ptr_count]);
+
+        CHECKED_READU32(
+            p_parser, p_node->word_offset + 3,
+            p_func->accessed_variable_ptrs[p_func->accessed_ptr_count]
+                .variable_ptr);
+        CHECKED_READU32(
+            p_parser, p_node->word_offset + 2,
+            p_func->accessed_variable_ptrs[p_func->accessed_ptr_count]
+                .result_id);
+        p_func->accessed_variable_ptrs[p_func->accessed_ptr_count]
+            .access_flags = SPV_REFLECT_ACCESS_ATOMIC |
+                            SPV_REFLECT_ACCESS_READ | SPV_REFLECT_ACCESS_WRITE;
         (++p_func->accessed_ptr_count);
       }
       break;
@@ -1247,6 +1315,13 @@ static SpvReflectResult ParseFunction(
       {
         CHECKED_READU32(p_parser, p_node->word_offset + 2,
                         p_func->accessed_ptrs[p_func->accessed_ptr_count]);
+
+        CHECKED_READU32(
+            p_parser, p_node->word_offset + 2,
+            p_func->accessed_variable_ptrs[p_func->accessed_ptr_count]
+                .variable_ptr);
+        p_func->accessed_variable_ptrs[p_func->accessed_ptr_count]
+            .access_flags = SPV_REFLECT_ACCESS_WRITE;
         (++p_func->accessed_ptr_count);
       }
       break;
@@ -1265,6 +1340,66 @@ static SpvReflectResult ParseFunction(
     }
   }
 
+  // Apply the SpvReflectAccessFlags to all things touching an OpVariable
+  for (size_t i = first_label_index; i < p_parser->node_count; ++i) {
+    SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
+    if (p_node->op == SpvOpFunctionEnd) {
+      break;
+    }
+    // These are memory accesses instruction
+    uint32_t memory_access_ptr = 0;
+    SpvReflectAccessFlags memory_access_type = SPV_REFLECT_ACCESS_NONE;
+    switch (p_node->op) {
+      case SpvOpLoad: {
+        CHECKED_READU32(p_parser, p_node->word_offset + 3, memory_access_ptr);
+        memory_access_type = SPV_REFLECT_ACCESS_READ;
+      } break;
+      case SpvOpImageWrite:
+      case SpvOpStore: {
+        CHECKED_READU32(p_parser, p_node->word_offset + 1, memory_access_ptr);
+        memory_access_type = SPV_REFLECT_ACCESS_WRITE;
+      } break;
+      case SpvOpImageTexelPointer:
+      case SpvOpAtomicLoad:
+      case SpvOpAtomicExchange:
+      case SpvOpAtomicCompareExchange:
+      case SpvOpAtomicIIncrement:
+      case SpvOpAtomicIDecrement:
+      case SpvOpAtomicIAdd:
+      case SpvOpAtomicISub:
+      case SpvOpAtomicSMin:
+      case SpvOpAtomicUMin:
+      case SpvOpAtomicSMax:
+      case SpvOpAtomicUMax:
+      case SpvOpAtomicAnd:
+      case SpvOpAtomicOr:
+      case SpvOpAtomicXor:
+      case SpvOpAtomicFMinEXT:
+      case SpvOpAtomicFMaxEXT:
+      case SpvOpAtomicFAddEXT: {
+        CHECKED_READU32(p_parser, p_node->word_offset + 3, memory_access_ptr);
+        memory_access_type = SPV_REFLECT_ACCESS_ATOMIC |
+                             SPV_REFLECT_ACCESS_READ | SPV_REFLECT_ACCESS_WRITE;
+      } break;
+      case SpvOpAtomicStore: {
+        CHECKED_READU32(p_parser, p_node->word_offset + 1, memory_access_ptr);
+        memory_access_type = SPV_REFLECT_ACCESS_ATOMIC |
+                             SPV_REFLECT_ACCESS_READ | SPV_REFLECT_ACCESS_WRITE;
+      } break;
+      default:
+        break;
+    }
+
+    if (memory_access_ptr == 0) {
+      continue;
+    }
+    for (uint32_t k = 0; k < p_func->accessed_ptr_count; k++) {
+      if (p_func->accessed_variable_ptrs[k].result_id == memory_access_ptr) {
+        p_func->accessed_variable_ptrs[k].access_flags |= memory_access_type;
+      }
+    }
+  }
+
   if (p_func->callee_count > 0) {
     qsort(p_func->callees, p_func->callee_count,
           sizeof(*(p_func->callees)), SortCompareUint32);
@@ -1276,6 +1411,7 @@ static SpvReflectResult ParseFunction(
     qsort(p_func->accessed_ptrs, p_func->accessed_ptr_count,
           sizeof(*(p_func->accessed_ptrs)), SortCompareUint32);
   }
+  p_func->accessed_variable_ptr_count = p_func->accessed_ptr_count;
   p_func->accessed_ptr_count = (uint32_t)DedupSortedUint32(p_func->accessed_ptrs,
                                                            p_func->accessed_ptr_count);
 
@@ -3323,6 +3459,7 @@ static SpvReflectResult ParseStaticallyUsedResources(
   called_function_count = DedupSortedUint32(p_called_functions, called_function_count);
 
   uint32_t used_variable_count = 0;
+  uint32_t used_acessed_count = 0;
   for (size_t i = 0, j = 0; i < called_function_count; ++i) {
     // No need to bounds check j because a missing ID issue would have been
     // found during TraverseCallGraph
@@ -3330,8 +3467,10 @@ static SpvReflectResult ParseStaticallyUsedResources(
       ++j;
     }
     used_variable_count += p_parser->functions[j].accessed_ptr_count;
+    used_acessed_count += p_parser->functions[j].accessed_variable_ptr_count;
   }
   uint32_t* used_variables = NULL;
+  SpvReflectPrvAccessedVariable* used_accesses = NULL;
   if (used_variable_count > 0) {
     used_variables = (uint32_t*)calloc(used_variable_count,
                                        sizeof(*used_variables));
@@ -3339,8 +3478,16 @@ static SpvReflectResult ParseStaticallyUsedResources(
       SafeFree(p_called_functions);
       return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
     }
+
+    used_accesses = (SpvReflectPrvAccessedVariable*)calloc(
+        used_acessed_count, sizeof(SpvReflectPrvAccessedVariable));
+    if (IsNull(used_accesses)) {
+      SafeFree(p_called_functions);
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
   }
   used_variable_count = 0;
+  used_acessed_count = 0;
   for (size_t i = 0, j = 0; i < called_function_count; ++i) {
     while (p_parser->functions[j].id != p_called_functions[i]) {
       ++j;
@@ -3350,6 +3497,12 @@ static SpvReflectResult ParseStaticallyUsedResources(
            p_parser->functions[j].accessed_ptrs,
            p_parser->functions[j].accessed_ptr_count * sizeof(*used_variables));
     used_variable_count += p_parser->functions[j].accessed_ptr_count;
+
+    memcpy(&used_accesses[used_acessed_count],
+           p_parser->functions[j].accessed_variable_ptrs,
+           p_parser->functions[j].accessed_variable_ptr_count *
+               sizeof(SpvReflectPrvAccessedVariable));
+    used_acessed_count += p_parser->functions[j].accessed_variable_ptr_count;
   }
   SafeFree(p_called_functions);
 
@@ -3381,18 +3534,18 @@ static SpvReflectResult ParseStaticallyUsedResources(
     &p_entry->used_push_constants,
     &used_push_constant_count);
 
-  for (uint32_t j = 0; j < p_module->descriptor_binding_count; ++j) {
-    SpvReflectDescriptorBinding* p_binding = &p_module->descriptor_bindings[j];
-    bool found = SearchSortedUint32(
-      used_variables,
-      used_variable_count,
-      p_binding->spirv_id);
-    if (found) {
-      p_binding->accessed = 1;
+  for (uint32_t i = 0; i < p_module->descriptor_binding_count; ++i) {
+    SpvReflectDescriptorBinding* p_binding = &p_module->descriptor_bindings[i];
+    for (uint32_t j = 0; j < used_acessed_count; j++) {
+      if (used_accesses[j].variable_ptr == p_binding->spirv_id) {
+        p_binding->accessed = 1;
+        p_binding->access_flags |= used_accesses[j].access_flags;
+      }
     }
   }
 
   SafeFree(used_variables);
+  SafeFree(used_accesses);
   if (result0 != SPV_REFLECT_RESULT_SUCCESS) {
     return result0;
   }

@@ -164,6 +164,7 @@ all_descriptor_bindings:
     block: *bv1 # ""
     array: { dims_count: 0, dims: [] }
     accessed: 1
+    access_flags: 0x00000001 # READ 
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
@@ -180,6 +181,7 @@ all_descriptor_bindings:
     block: *bv3 # ""
     array: { dims_count: 0, dims: [] }
     accessed: 1
+    access_flags: 0x00000002 # WRITE 
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td3

@@ -3309,6 +3309,7 @@ all_descriptor_bindings:
     block: *bv63 # "MyParams"
     array: { dims_count: 0, dims: [] }
     accessed: 1
+    access_flags: 0x00000001 # READ 
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td63
@@ -3325,6 +3326,7 @@ all_descriptor_bindings:
     block: *bv95 # "MyParams2"
     array: { dims_count: 0, dims: [] }
     accessed: 1
+    access_flags: 0x00000001 # READ 
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td95

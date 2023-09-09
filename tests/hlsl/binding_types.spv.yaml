@@ -1332,6 +1332,7 @@ all_descriptor_bindings:
     block: *bv1 # "MyCBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
@@ -1348,6 +1349,7 @@ all_descriptor_bindings:
     block: *bv3 # "MyConstantBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td3
@@ -1364,6 +1366,7 @@ all_descriptor_bindings:
     block: *bv4 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td4
@@ -1380,6 +1383,7 @@ all_descriptor_bindings:
     block: *bv5 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td5
@@ -1396,6 +1400,7 @@ all_descriptor_bindings:
     block: *bv6 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td6
@@ -1412,6 +1417,7 @@ all_descriptor_bindings:
     block: *bv7 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td7
@@ -1428,6 +1434,7 @@ all_descriptor_bindings:
     block: *bv8 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td8
@@ -1444,6 +1451,7 @@ all_descriptor_bindings:
     block: *bv9 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td9
@@ -1460,6 +1468,7 @@ all_descriptor_bindings:
     block: *bv10 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td10
@@ -1476,6 +1485,7 @@ all_descriptor_bindings:
     block: *bv11 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td11
@@ -1492,6 +1502,7 @@ all_descriptor_bindings:
     block: *bv12 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td12
@@ -1508,6 +1519,7 @@ all_descriptor_bindings:
     block: *bv13 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td13
@@ -1524,6 +1536,7 @@ all_descriptor_bindings:
     block: *bv14 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td14
@@ -1540,6 +1553,7 @@ all_descriptor_bindings:
     block: *bv15 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td15
@@ -1556,6 +1570,7 @@ all_descriptor_bindings:
     block: *bv16 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td16
@@ -1572,6 +1587,7 @@ all_descriptor_bindings:
     block: *bv17 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td17
@@ -1588,6 +1604,7 @@ all_descriptor_bindings:
     block: *bv19 # "MyTBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td19
@@ -1604,6 +1621,7 @@ all_descriptor_bindings:
     block: *bv21 # "MyTextureBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td21
@@ -1620,6 +1638,7 @@ all_descriptor_bindings:
     block: *bv22 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td22
@@ -1636,6 +1655,7 @@ all_descriptor_bindings:
     block: *bv23 # 
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td23
@@ -1652,6 +1672,7 @@ all_descriptor_bindings:
     block: *bv25 # "MyStructuredBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td25
@@ -1668,6 +1689,7 @@ all_descriptor_bindings:
     block: *bv29 # "counter.var.MyRWStructuredBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td29
@@ -1684,6 +1706,7 @@ all_descriptor_bindings:
     block: *bv27 # "MyRWStructuredBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 74
     uav_counter_binding: *db21 # "counter.var.MyRWStructuredBuffer"
     type_description: *td27
@@ -1701,6 +1724,7 @@ all_descriptor_bindings:
     block: *bv33 # "counter.var.MyAppendStructuredBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td29
@@ -1717,6 +1741,7 @@ all_descriptor_bindings:
     block: *bv31 # "MyAppendStructuredBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 78
     uav_counter_binding: *db23 # "counter.var.MyAppendStructuredBuffer"
     type_description: *td31
@@ -1734,6 +1759,7 @@ all_descriptor_bindings:
     block: *bv37 # "counter.var.MyConsumeStructuredBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td29
@@ -1750,6 +1776,7 @@ all_descriptor_bindings:
     block: *bv35 # "MyConsumeStructuredBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 82
     uav_counter_binding: *db25 # "counter.var.MyConsumeStructuredBuffer"
     type_description: *td33
@@ -1767,6 +1794,7 @@ all_descriptor_bindings:
     block: *bv39 # "MyByteAddressBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td35
@@ -1783,6 +1811,7 @@ all_descriptor_bindings:
     block: *bv41 # "MyRWByteAddressBuffer"
     array: { dims_count: 0, dims: [] }
     accessed: 0
+    access_flags: 0x00000000 # NONE
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td37

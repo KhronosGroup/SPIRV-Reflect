@@ -696,6 +696,28 @@ std::string ToStringDecorationFlags(
   return sstream.str();
 }
 
+std::string ToStringAccessFlags(SpvReflectAccessFlags access_flags) {
+  if (access_flags == SPV_REFLECT_ACCESS_NONE) {
+    return "NONE";
+  }
+
+#define PRINT_AND_CLEAR_ACCESS_FLAG(stream, flags, bit)                       \
+  if (((flags) & (SPV_REFLECT_ACCESS_##bit)) == (SPV_REFLECT_ACCESS_##bit)) { \
+    stream << #bit << " ";                                                    \
+    flags ^= SPV_REFLECT_ACCESS_##bit;                                        \
+  }
+  std::stringstream sstream;
+  PRINT_AND_CLEAR_ACCESS_FLAG(sstream, access_flags, READ);
+  PRINT_AND_CLEAR_ACCESS_FLAG(sstream, access_flags, WRITE);
+  PRINT_AND_CLEAR_ACCESS_FLAG(sstream, access_flags, ATOMIC);
+#undef PRINT_AND_CLEAR_ACCESS_FLAG
+  if (access_flags != 0) {
+    // Unhandled SpvReflectAccessFlags bit
+    sstream << "???";
+  }
+  return sstream.str();
+}
+
 std::string ToStringFormat(SpvReflectFormat fmt) {
   switch (fmt) {
     case SPV_REFLECT_FORMAT_UNDEFINED:
@@ -1921,6 +1943,9 @@ void SpvReflectToYaml::WriteDescriptorBinding(
 
   //   uint32_t                            accessed;
   os << t1 << "accessed: " << db.accessed << std::endl;
+  //   SpvReflectAccessFlags               access_flags;
+  os << t1 << "access_flags: " << AsHexString(db.access_flags) << " # "
+     << ToStringAccessFlags(db.access_flags) << std::endl;
 
   //   uint32_t                            uav_counter_id;
   os << t1 << "uav_counter_id: " << db.uav_counter_id << std::endl;
