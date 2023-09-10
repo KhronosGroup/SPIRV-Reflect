@@ -35,12 +35,13 @@ if (SPIRV_REFLECT_EXECUTABLE)
     if (SPIRV_REFLECT_ENABLE_ASSERTS)
         target_compile_definitions(spirv-reflect PRIVATE SPIRV_REFLECT_ENABLE_ASSERTS)
     endif()
+
     set_target_properties(spirv-reflect PROPERTIES CXX_STANDARD 11)
     target_include_directories(spirv-reflect PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     if(WIN32)
         target_compile_definitions(spirv-reflect PRIVATE _CRT_SECURE_NO_WARNINGS)
     endif()
-    
+
     install(TARGETS spirv-reflect RUNTIME DESTINATION bin)
 
     # ==========================================================================
@@ -68,7 +69,7 @@ if (SPIRV_REFLECT_EXECUTABLE)
     if(WIN32)
         target_compile_definitions(spirv-reflect-pp PRIVATE _CRT_SECURE_NO_WARNINGS)
     endif()
-    
+
     install(TARGETS spirv-reflect-pp RUNTIME DESTINATION bin)
 endif()
 
