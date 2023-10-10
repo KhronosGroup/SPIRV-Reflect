@@ -612,6 +612,9 @@ static uint32_t FindBaseId(SpvReflectPrvParser* p_parser,
     }
     base_id = base_ac->base_id;
     base_node = FindNode(p_parser, base_id);
+    if (IsNull(base_node)) {
+      return 0;
+    }
   }
   return base_id;
 }
@@ -631,12 +634,15 @@ static SpvReflectBlockVariable* GetRefBlkVar(SpvReflectPrvParser* p_parser,
 
 bool IsPointerToPointer(SpvReflectPrvParser* p_parser, uint32_t type_id) {
   SpvReflectPrvNode* ptr_node = FindNode(p_parser, type_id);
-  if (ptr_node->op != SpvOpTypePointer) {
+  if (IsNull(ptr_node) || ptr_node->op != SpvOpTypePointer) {
     return false;
   }
   uint32_t pte_id = 0;
   UNCHECKED_READU32(p_parser, ptr_node->word_offset + 3, pte_id);
   SpvReflectPrvNode* pte_node = FindNode(p_parser, pte_id);
+  if (IsNull(pte_node)) {
+    return false;
+  }
   return pte_node->op == SpvOpTypePointer;
 }
 

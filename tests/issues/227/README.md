@@ -1,0 +1,1 @@
+Note that null_pointer_dereference.spv is not a valid SPIR-V input, can not be decompiled into GLSL, and is solely provided to prevent regressions for a specific null pointer dereference bug (https://github.com/KhronosGroup/SPIRV-Reflect/issues/227).
