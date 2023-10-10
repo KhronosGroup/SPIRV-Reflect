@@ -3133,7 +3133,7 @@ static SpvReflectResult ParseInterfaceVariables(
     }
 
     SpvReflectTypeDescription* p_type = FindType(p_module, p_node->type_id);
-    if (IsNull(p_node)) {
+    if (IsNull(p_node) || IsNull(p_type)) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     }
     // If the type is a pointer, resolve it
@@ -3706,7 +3706,7 @@ static SpvReflectResult ParsePushConstantBlocks(
     }
 
     SpvReflectTypeDescription* p_type = FindType(p_module, p_node->type_id);
-    if (IsNull(p_node)) {
+    if (IsNull(p_node) || IsNull(p_type)) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
     }
     // If the type is a pointer, resolve it
