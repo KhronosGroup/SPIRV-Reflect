@@ -634,7 +634,7 @@ static SpvReflectBlockVariable* GetRefBlkVar(SpvReflectPrvParser* p_parser,
 
 bool IsPointerToPointer(SpvReflectPrvParser* p_parser, uint32_t type_id) {
   SpvReflectPrvNode* ptr_node = FindNode(p_parser, type_id);
-  if (IsNull(ptr_node) || ptr_node->op != SpvOpTypePointer) {
+  if (IsNull(ptr_node) || (ptr_node->op != SpvOpTypePointer)) {
     return false;
   }
   uint32_t pte_id = 0;
