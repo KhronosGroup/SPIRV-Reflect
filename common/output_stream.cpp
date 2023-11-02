@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 enum TextLineType {
@@ -643,6 +644,7 @@ std::string ToStringTypeFlags(SpvReflectTypeFlags type_flags) {
   std::stringstream sstream;
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, ARRAY);
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, STRUCT);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, REF);
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_MASK);
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_BLOCK);
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_SAMPLED_IMAGE);
@@ -934,7 +936,7 @@ std::string ToStringComponentType(const SpvReflectTypeDescription& type, uint32_
 
 void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool flatten_cbuffers, const std::string& parent_name,
                                   uint32_t member_count, const SpvReflectBlockVariable* p_members,
-                                  std::vector<TextLine>* p_text_lines) {
+                                  std::vector<TextLine>* p_text_lines, std::unordered_set<uint32_t>& physical_pointer_spirv_id) {
   const char* t = indent;
   for (uint32_t member_index = 0; member_index < member_count; ++member_index) {
     indent_depth = flatten_cbuffers ? 2 : indent_depth;
@@ -949,8 +951,10 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool fla
       // TODO 212 - If a buffer ref has an array of itself, all members are null
       continue;
     }
+
     bool is_struct = ((member.type_description->type_flags & static_cast<SpvReflectTypeFlags>(SPV_REFLECT_TYPE_FLAG_STRUCT)) != 0);
     bool is_ref = ((member.type_description->type_flags & static_cast<SpvReflectTypeFlags>(SPV_REFLECT_TYPE_FLAG_REF)) != 0);
+    bool is_array = ((member.type_description->type_flags & static_cast<SpvReflectTypeFlags>(SPV_REFLECT_TYPE_FLAG_ARRAY)) != 0);
     if (is_struct) {
       const std::string name = (member.name == nullptr ? "" : member.name);
 
@@ -969,17 +973,29 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool fla
         p_text_lines->push_back(tl);
       }
 
-      // Members
-      tl = {};
-      std::string current_parent_name;
-      if (flatten_cbuffers) {
-        current_parent_name = parent_name.empty() ? name : (parent_name + "." + name);
+      const bool array_of_structs = is_array && member.type_description->struct_type_description;
+      const uint32_t struct_id =
+          array_of_structs ? member.type_description->struct_type_description->id : member.type_description->id;
+
+      if (physical_pointer_spirv_id.count(struct_id) == 0) {
+        physical_pointer_spirv_id.insert(member.type_description->id);
+        if (array_of_structs) {
+          physical_pointer_spirv_id.insert(member.type_description->struct_type_description->id);
+        }
+
+        // Members
+        tl = {};
+        std::string current_parent_name;
+        if (flatten_cbuffers) {
+          current_parent_name = parent_name.empty() ? name : (parent_name + "." + name);
+        }
+        std::vector<TextLine>* p_target_text_line = flatten_cbuffers ? p_text_lines : &tl.lines;
+        ParseBlockMembersToTextLines(t, indent_depth + 1, flatten_cbuffers, current_parent_name, member.member_count,
+                                     member.members, p_target_text_line, physical_pointer_spirv_id);
+        tl.text_line_flags = TEXT_LINE_TYPE_LINES;
+        p_text_lines->push_back(tl);
       }
-      std::vector<TextLine>* p_target_text_line = flatten_cbuffers ? p_text_lines : &tl.lines;
-      ParseBlockMembersToTextLines(t, indent_depth + 1, flatten_cbuffers, current_parent_name, member.member_count, member.members,
-                                   p_target_text_line);
-      tl.text_line_flags = TEXT_LINE_TYPE_LINES;
-      p_text_lines->push_back(tl);
+      physical_pointer_spirv_id.erase(member.type_description->id);
 
       // End struct
       tl = {};
@@ -1064,7 +1080,9 @@ void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers, co
 
   // Members
   tl = {};
-  ParseBlockMembersToTextLines(indent, 2, flatten_cbuffers, "", block_var.member_count, block_var.members, &tl.lines);
+  std::unordered_set<uint32_t> physical_pointer_spirv_id;
+  ParseBlockMembersToTextLines(indent, 2, flatten_cbuffers, "", block_var.member_count, block_var.members, &tl.lines,
+                               physical_pointer_spirv_id);
   tl.text_line_flags = TEXT_LINE_TYPE_LINES;
   p_text_lines->push_back(tl);
 
@@ -1534,8 +1552,10 @@ SpvReflectToYaml::SpvReflectToYaml(const SpvReflectShaderModule& shader_module, 
 void SpvReflectToYaml::WriteTypeDescription(std::ostream& os, const SpvReflectTypeDescription& td, uint32_t indent_level) {
   // YAML anchors can only refer to points earlier in the doc, so child type
   // descriptions must be processed before the parent.
-  for (uint32_t i = 0; i < td.member_count; ++i) {
-    WriteTypeDescription(os, td.members[i], indent_level);
+  if (!td.copied) {
+    for (uint32_t i = 0; i < td.member_count; ++i) {
+      WriteTypeDescription(os, td.members[i], indent_level);
+    }
   }
   const std::string t0 = Indent(indent_level);
   const std::string t1 = Indent(indent_level + 1);
@@ -1544,7 +1564,6 @@ void SpvReflectToYaml::WriteTypeDescription(std::ostream& os, const SpvReflectTy
   const std::string t4 = Indent(indent_level + 4);
 
   // Determine the index of this type within the shader module's list.
-  assert(type_description_to_index_.find(&td) == type_description_to_index_.end());
   uint32_t type_description_index = static_cast<uint32_t>(type_description_to_index_.size());
   type_description_to_index_[&td] = type_description_index;
 
@@ -1638,13 +1657,21 @@ void SpvReflectToYaml::WriteTypeDescription(std::ostream& os, const SpvReflectTy
   os << t1 << "member_count: " << td.member_count << std::endl;
   //   struct SpvReflectTypeDescription* members;
   os << t1 << "members:" << std::endl;
-  for (uint32_t i_member = 0; i_member < td.member_count; ++i_member) {
-    os << t2 << "- *td" << type_description_to_index_[&(td.members[i_member])] << std::endl;
+  if (td.copied) {
+    os << t1 << "- [forward pointer]" << std::endl;
+  } else {
+    for (uint32_t i_member = 0; i_member < td.member_count; ++i_member) {
+      os << t2 << "- *td" << type_description_to_index_[&(td.members[i_member])] << std::endl;
+    }
   }
   // } SpvReflectTypeDescription;
 }
 
 void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBlockVariable& bv, uint32_t indent_level) {
+  if ((bv.flags & SPV_REFLECT_VARIABLE_FLAGS_PHYSICAL_POINTER_COPY)) {
+    return;  // catches recursive buffer references
+  }
+
   for (uint32_t i = 0; i < bv.member_count; ++i) {
     WriteBlockVariable(os, bv.members[i], indent_level);
   }
@@ -1722,8 +1749,11 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBloc
   os << t1 << "members:" << std::endl;
   for (uint32_t i = 0; i < bv.member_count; ++i) {
     auto itor = block_variable_to_index_.find(&bv.members[i]);
-    assert(itor != block_variable_to_index_.end());
-    os << t2 << "- *bv" << itor->second << std::endl;
+    if (itor != block_variable_to_index_.end()) {
+      os << t2 << "- *bv" << itor->second << std::endl;
+    } else {
+      os << t2 << "- [recursive]" << std::endl;
+    }
   }
   if (verbosity_ >= 1) {
     //   SpvReflectTypeDescription*        type_description;
@@ -1974,6 +2004,9 @@ void SpvReflectToYaml::WriteBlockVariableTypes(std::ostream& os, const SpvReflec
     WriteTypeDescription(os, *td, indent_level);
   }
 
+  if (bv.flags & SPV_REFLECT_VARIABLE_FLAGS_PHYSICAL_POINTER_COPY) {
+    return;
+  }
   for (uint32_t i = 0; i < bv.member_count; ++i) {
     WriteBlockVariableTypes(os, bv.members[i], indent_level);
   }

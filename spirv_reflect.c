@@ -196,6 +196,15 @@ typedef struct SpvReflectPrvAccessChain {
   SpvReflectBlockVariable*        block_var;
 } SpvReflectPrvAccessChain;
 
+// To prevent infinite recursion, we never walk down a
+// PhysicalStorageBuffer struct twice, but incase a 2nd variable
+// needs to use that struct, save a copy
+typedef struct SpvReflectPrvPhysicalPointerStruct {
+    uint32_t struct_id;
+    // first variable to see the PhysicalStorageBuffer struct
+    SpvReflectBlockVariable* p_var;
+} SpvReflectPrvPhysicalPointerStruct;
+
 typedef struct SpvReflectPrvParser {
   size_t                          spirv_word_count;
   uint32_t*                       spirv_code;
@@ -218,8 +227,11 @@ typedef struct SpvReflectPrvParser {
   uint32_t                        descriptor_count;
   uint32_t                        push_constant_count;
 
-  uint32_t                        physical_pointer_check[MAX_RECURSIVE_PHYSICAL_POINTER_CHECK];
+  SpvReflectTypeDescription*      physical_pointer_check[MAX_RECURSIVE_PHYSICAL_POINTER_CHECK];
   uint32_t                        physical_pointer_count;
+
+  SpvReflectPrvPhysicalPointerStruct* physical_pointer_structs;
+  uint32_t                            physical_pointer_struct_count;
 } SpvReflectPrvParser;
 // clang-format on
 
@@ -644,6 +656,7 @@ static void DestroyParser(SpvReflectPrvParser* p_parser) {
     SafeFree(p_parser->source_embedded);
     SafeFree(p_parser->functions);
     SafeFree(p_parser->access_chains);
+    SafeFree(p_parser->physical_pointer_structs);
     p_parser->node_count = 0;
   }
 }
@@ -1801,13 +1814,16 @@ static SpvReflectResult ParseType(SpvReflectPrvParser* p_parser, SpvReflectPrvNo
         if (p_type->storage_class == SpvStorageClassPhysicalStorageBuffer) {
           // Need to make sure we haven't started an infinite recursive loop
           for (uint32_t i = 0; i < p_parser->physical_pointer_count; i++) {
-            if (p_type->id == p_parser->physical_pointer_check[i]) {
+            if (p_type->id == p_parser->physical_pointer_check[i]->id) {
               found_recursion = true;
-              break;  // still need to fill in p_type values
+              memcpy(p_type, p_parser->physical_pointer_check[i], sizeof(SpvReflectTypeDescription));
+              p_type->copied = 1;
+              return SPV_REFLECT_RESULT_SUCCESS;
             }
           }
           if (!found_recursion) {
-            p_parser->physical_pointer_check[p_parser->physical_pointer_count] = p_type->id;
+            p_parser->physical_pointer_struct_count++;
+            p_parser->physical_pointer_check[p_parser->physical_pointer_count] = p_type;
             p_parser->physical_pointer_count++;
             if (p_parser->physical_pointer_count >= MAX_RECURSIVE_PHYSICAL_POINTER_CHECK) {
               return SPV_REFLECT_RESULT_ERROR_SPIRV_MAX_RECURSIVE_EXCEEDED;
@@ -1815,14 +1831,16 @@ static SpvReflectResult ParseType(SpvReflectPrvParser* p_parser, SpvReflectPrvNo
           }
         }
 
-        uint32_t type_id = (uint32_t)INVALID_VALUE;
-        IF_READU32(result, p_parser, p_node->word_offset + 3, type_id);
         // Parse type
-        SpvReflectPrvNode* p_next_node = FindNode(p_parser, type_id);
+        SpvReflectPrvNode* p_next_node = FindNode(p_parser, p_node->type_id);
         if (IsNull(p_next_node)) {
           result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
           SPV_REFLECT_ASSERT(false);
         } else if (!found_recursion) {
+          if (p_next_node->op == SpvOpTypeStruct) {
+            p_type->struct_type_description = FindType(p_module, p_next_node->result_id);
+          }
+
           result = ParseType(p_parser, p_next_node, NULL, p_module, p_type);
         }
       } break;
@@ -1878,6 +1896,13 @@ static SpvReflectResult ParseTypes(SpvReflectPrvParser* p_parser, SpvReflectShad
       return result;
     }
     ++type_index;
+  }
+
+  // allocate now and fill in when parsing struct variable later
+  p_parser->physical_pointer_structs = (SpvReflectPrvPhysicalPointerStruct*)calloc(p_parser->physical_pointer_struct_count,
+                                                                                   sizeof(*(p_parser->physical_pointer_structs)));
+  if (IsNull(p_parser->physical_pointer_structs)) {
+    return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
   }
   return SPV_REFLECT_RESULT_SUCCESS;
 }
@@ -2286,26 +2311,44 @@ static SpvReflectResult ParseDescriptorBlockVariable(SpvReflectPrvParser* p_pars
       SpvReflectTypeDescription* p_member_ptr_type = 0;
       bool found_recursion = false;
 
-      if (p_member_type->op == SpvOpTypePointer) {
-        if (p_member_type->storage_class == SpvStorageClassPhysicalStorageBuffer) {
-          // Need to make sure we haven't started an infinite recursive loop
-          for (uint32_t i = 0; i < p_parser->physical_pointer_count; i++) {
-            if (p_member_type->id == p_parser->physical_pointer_check[i]) {
-              found_recursion = true;
-              break;  // still need to fill in p_member_type values
-            }
+      if ((p_member_type->storage_class == SpvStorageClassPhysicalStorageBuffer) &&
+          (p_member_type->type_flags & SPV_REFLECT_TYPE_FLAG_REF)) {
+        // Remember the original type
+        p_member_ptr_type = p_member_type;
+
+        // strip array
+        if (p_member_type->op == SpvOpTypeArray) {
+          SpvReflectPrvNode* p_node = FindNode(p_parser, p_member_type->id);
+          if (p_node == NULL) {
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
           }
-          if (!found_recursion) {
-            p_parser->physical_pointer_check[p_parser->physical_pointer_count] = p_member_type->id;
-            p_parser->physical_pointer_count++;
-            if (p_parser->physical_pointer_count >= MAX_RECURSIVE_PHYSICAL_POINTER_CHECK) {
-              return SPV_REFLECT_RESULT_ERROR_SPIRV_MAX_RECURSIVE_EXCEEDED;
-            }
+          uint32_t element_type_id = p_node->array_traits.element_type_id;
+          p_member_type = FindType(p_module, element_type_id);
+          if (p_member_type == NULL) {
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
           }
         }
 
-        // Remember the original type
-        p_member_ptr_type = p_member_type;
+        // Need to make sure we haven't started an infinite recursive loop
+        for (uint32_t i = 0; i < p_parser->physical_pointer_count; i++) {
+          if (p_member_type->id == p_parser->physical_pointer_check[i]->id) {
+            found_recursion = true;
+            break;  // still need to fill in p_member_type values
+          }
+        }
+        if (!found_recursion) {
+          uint32_t struct_id = FindType(p_module, p_member_type->id)->struct_type_description->id;
+          p_parser->physical_pointer_structs[p_parser->physical_pointer_struct_count].struct_id = struct_id;
+          p_parser->physical_pointer_structs[p_parser->physical_pointer_struct_count].p_var = p_member_var;
+          p_parser->physical_pointer_struct_count++;
+
+          p_parser->physical_pointer_check[p_parser->physical_pointer_count] = p_member_type;
+          p_parser->physical_pointer_count++;
+          if (p_parser->physical_pointer_count >= MAX_RECURSIVE_PHYSICAL_POINTER_CHECK) {
+            return SPV_REFLECT_RESULT_ERROR_SPIRV_MAX_RECURSIVE_EXCEEDED;
+          }
+        }
+
         SpvReflectPrvNode* p_member_type_node = FindNode(p_parser, p_member_type->id);
         if (IsNull(p_member_type_node)) {
           return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
@@ -2317,10 +2360,23 @@ static SpvReflectResult ParseDescriptorBlockVariable(SpvReflectPrvParser* p_pars
         }
       }
       bool is_struct = (p_member_type->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT) == SPV_REFLECT_TYPE_FLAG_STRUCT;
-      if (is_struct && !found_recursion) {
-        SpvReflectResult result = ParseDescriptorBlockVariable(p_parser, p_module, p_member_type, p_member_var);
-        if (result != SPV_REFLECT_RESULT_SUCCESS) {
-          return result;
+      if (is_struct) {
+        if (!found_recursion) {
+          SpvReflectResult result = ParseDescriptorBlockVariable(p_parser, p_module, p_member_type, p_member_var);
+          if (result != SPV_REFLECT_RESULT_SUCCESS) {
+            return result;
+          }
+        } else {
+          // if 2 member of structs are same PhysicalPointer type, copy the
+          // members values that aren't found skipping the recursion call
+          for (uint32_t i = 0; i < p_parser->physical_pointer_struct_count; i++) {
+            if (p_parser->physical_pointer_structs[i].struct_id == p_member_type->id) {
+              p_member_var->members = p_parser->physical_pointer_structs[i].p_var->members;
+              p_member_var->member_count = p_parser->physical_pointer_structs[i].p_var->member_count;
+              // Set here as it is the first time we need to walk down structs
+              p_member_var->flags |= SPV_REFLECT_VARIABLE_FLAGS_PHYSICAL_POINTER_COPY;
+            }
+          }
         }
       }
 
@@ -2353,6 +2409,15 @@ static SpvReflectResult ParseDescriptorBlockVariable(SpvReflectPrvParser* p_pars
   }
 
   return SPV_REFLECT_RESULT_SUCCESS;
+}
+
+static uint32_t GetPhysicalPointerStructSize(SpvReflectPrvParser* p_parser, uint32_t id) {
+  for (uint32_t i = 0; i < p_parser->physical_pointer_struct_count; i++) {
+    if (p_parser->physical_pointer_structs[i].struct_id == id) {
+      return p_parser->physical_pointer_structs[i].p_var->size;
+    }
+  }
+  return 0;
 }
 
 static SpvReflectResult ParseDescriptorBlockVariableSizes(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module,
@@ -2412,9 +2477,14 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(SpvReflectPrvParser* p
         // If array of structs, parse members first...
         bool is_struct = (p_member_type->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT) == SPV_REFLECT_TYPE_FLAG_STRUCT;
         if (is_struct) {
-          SpvReflectResult result = ParseDescriptorBlockVariableSizes(p_parser, p_module, false, true, is_parent_rta, p_member_var);
-          if (result != SPV_REFLECT_RESULT_SUCCESS) {
-            return result;
+          if (p_member_var->flags & SPV_REFLECT_VARIABLE_FLAGS_PHYSICAL_POINTER_COPY) {
+            p_member_var->size = GetPhysicalPointerStructSize(p_parser, p_member_type->id);
+          } else {
+            SpvReflectResult result =
+                ParseDescriptorBlockVariableSizes(p_parser, p_module, false, true, is_parent_rta, p_member_var);
+            if (result != SPV_REFLECT_RESULT_SUCCESS) {
+              return result;
+            }
           }
         }
         // ...then array
@@ -2451,10 +2521,14 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(SpvReflectPrvParser* p
       }
 
       case SpvOpTypeStruct: {
-        SpvReflectResult result =
-            ParseDescriptorBlockVariableSizes(p_parser, p_module, false, is_parent_aos, is_parent_rta, p_member_var);
-        if (result != SPV_REFLECT_RESULT_SUCCESS) {
-          return result;
+        if (p_member_var->flags & SPV_REFLECT_VARIABLE_FLAGS_PHYSICAL_POINTER_COPY) {
+          p_member_var->size = GetPhysicalPointerStructSize(p_parser, p_member_type->id);
+        } else {
+          SpvReflectResult result =
+              ParseDescriptorBlockVariableSizes(p_parser, p_module, false, is_parent_aos, is_parent_rta, p_member_var);
+          if (result != SPV_REFLECT_RESULT_SUCCESS) {
+            return result;
+          }
         }
       } break;
 
@@ -2613,6 +2687,12 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(SpvReflectPrvParser* p
       }
       SpvReflectBlockVariable* p_member_var = &p_var->members[index];
 
+      bool is_pointer_to_pointer = IsPointerToPointer(p_parser, p_access_chain->result_type_id);
+      if (is_pointer_to_pointer) {
+        // Remember block var for this access chain for downstream dereference
+        p_access_chain->block_var = p_member_var;
+      }
+
       // Next access chain index
       index_index += 1;
 
@@ -2629,10 +2709,7 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(SpvReflectPrvParser* p
         if (result != SPV_REFLECT_RESULT_SUCCESS) {
           return result;
         }
-      } else if (IsPointerToPointer(p_parser, p_access_chain->result_type_id)) {
-        // Remember block var for this access chain for downstream dereference
-        p_access_chain->block_var = p_member_var;
-      } else {
+      } else if (!is_pointer_to_pointer) {
         // Clear UNUSED flag for remaining variables
         MarkSelfAndAllMemberVarsAsUsed(p_member_var);
       }
@@ -2646,6 +2723,8 @@ static SpvReflectResult ParseDescriptorBlocks(SpvReflectPrvParser* p_parser, Spv
   if (p_module->descriptor_binding_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
   }
+
+  p_parser->physical_pointer_struct_count = 0;
 
   for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
@@ -3458,6 +3537,7 @@ static SpvReflectResult ParsePushConstantBlocks(SpvReflectPrvParser* p_parser, S
     return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
   }
 
+  p_parser->physical_pointer_struct_count = 0;
   uint32_t push_constant_index = 0;
   for (size_t i = 0; i < p_parser->node_count; ++i) {
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
@@ -3880,7 +3960,7 @@ SpvReflectResult spvReflectGetShaderModule(size_t size, const void* p_code, SpvR
 }
 
 static void SafeFreeTypes(SpvReflectTypeDescription* p_type) {
-  if (IsNull(p_type)) {
+  if (IsNull(p_type) || p_type->copied) {
     return;
   }
 
@@ -3897,6 +3977,11 @@ static void SafeFreeTypes(SpvReflectTypeDescription* p_type) {
 
 static void SafeFreeBlockVariables(SpvReflectBlockVariable* p_block) {
   if (IsNull(p_block)) {
+    return;
+  }
+
+  // We share pointers to Physical Pointer structs and don't want to double free
+  if (p_block->flags & SPV_REFLECT_VARIABLE_FLAGS_PHYSICAL_POINTER_COPY) {
     return;
   }
 
