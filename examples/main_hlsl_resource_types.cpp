@@ -31,8 +31,7 @@
 #include "examples/common.h"
 #include "spirv_reflect.h"
 
-void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj,
-                 bool write_set, const char* indent = "") {
+void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, const char* indent = "") {
   const char* t = indent;
 
   os << " " << obj.name;
@@ -43,10 +42,8 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj,
      << "(" << ToStringResourceType(obj.resource_type) << ")";
   if ((obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE) ||
       (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
-      (obj.descriptor_type ==
-       SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) ||
-      (obj.descriptor_type ==
-       SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
+      (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) ||
+      (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
     os << "\n";
     os << t;
     os << "dim=" << obj.image.dim << ", ";
@@ -57,17 +54,13 @@ void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj,
   }
 }
 
-void StreamWrite(std::ostream& os, const SpvReflectShaderModule& obj,
-                 const char* indent = "") {
+void StreamWrite(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent = "") {
   os << "entry point     : " << obj.entry_point_name << "\n";
-  os << "source lang     : " << spvReflectSourceLanguage(obj.source_language)
-     << "\n";
+  os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
   os << "source lang ver : " << obj.source_language_version;
 }
 
-void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj) {
-  StreamWrite(os, obj, true, "  ");
-}
+void StreamWrite(std::ostream& os, const SpvReflectDescriptorBinding& obj) { StreamWrite(os, obj, true, "  "); }
 
 // Specialized stream-writer that only includes descriptor bindings.
 void StreamWrite(std::ostream& os, const spv_reflect::ShaderModule& obj) {
@@ -109,12 +102,10 @@ void StreamWrite(std::ostream& os, const spv_reflect::ShaderModule& obj) {
 // PrintUsage()
 // =================================================================================================
 void PrintUsage() {
-  std::cout
-      << "Usage: hlsl_resource_types [OPTIONS] path/to/SPIR-V/bytecode.spv"
-      << std::endl
-      << "Options:" << std::endl
-      << " --help:               Display this message" << std::endl
-      << std::endl;
+  std::cout << "Usage: hlsl_resource_types [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
+            << "Options:" << std::endl
+            << " --help:               Display this message" << std::endl
+            << std::endl;
 }
 
 // =================================================================================================
@@ -132,8 +123,7 @@ int main(int argn, char** argv) {
 
   std::ifstream spv_ifstream(input_spv_path.c_str(), std::ios::binary);
   if (!spv_ifstream.is_open()) {
-    std::cerr << "ERROR: could not open '" << input_spv_path << "' for reading"
-              << std::endl;
+    std::cerr << "ERROR: could not open '" << input_spv_path << "' for reading" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -147,8 +137,7 @@ int main(int argn, char** argv) {
 
     spv_reflect::ShaderModule reflection(spv_data.size(), spv_data.data());
     if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
-      std::cerr << "ERROR: could not process '" << input_spv_path
-                << "' (is it a valid SPIR-V bytecode?)" << std::endl;
+      std::cerr << "ERROR: could not process '" << input_spv_path << "' (is it a valid SPIR-V bytecode?)" << std::endl;
       return EXIT_FAILURE;
     }
 

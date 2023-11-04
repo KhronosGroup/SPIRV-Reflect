@@ -22,6 +22,7 @@ VERSION HISTORY
 
 */
 
+// clang-format off
 /*!
 
  @file spirv_reflect.h
@@ -2337,3 +2338,5 @@ inline SpvReflectResult ShaderModule::ChangeOutputVariableLocation(
 } // namespace spv_reflect
 #endif // defined(__cplusplus) && !defined(SPIRV_REFLECT_DISABLE_CPP_WRAPPER)
 #endif // SPIRV_REFLECT_H
+
+// clang-format on

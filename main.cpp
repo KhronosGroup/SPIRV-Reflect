@@ -33,48 +33,44 @@
 // PrintUsage()
 // =================================================================================================
 void PrintUsage() {
-  std::cout
-      << "Usage: spirv-reflect [OPTIONS] path/to/SPIR-V/bytecode.spv"
-      << std::endl
-      << "Prints a summary of the reflection data extracted from SPIR-V "
-         "bytecode."
-      << std::endl
-      << "Options:" << std::endl
-      << " --help                   Display this message" << std::endl
-      << " -y,--yaml                Format output as YAML. [default: disabled]"
-      << std::endl
-      << " -v VERBOSITY             Specify output verbosity (YAML output "
-         "only):"
-      << std::endl
-      << "                          0: shader info, block variables, interface "
-         "variables,"
-      << std::endl
-      << "                             descriptor bindings. No type "
-         "descriptions. [default]"
-      << std::endl
-      << "                          1: Everything above, plus type "
-         "descriptions."
-      << std::endl
-      << "                          2: Everything above, plus SPIR-V bytecode "
-         "and all internal"
-      << std::endl
-      << "                             type descriptions. If you're not "
-         "working on SPIRV-Reflect"
-      << std::endl
-      << "                             itself, you probably don't want this."
-      << std::endl
-      << "-e,--entrypoint           Prints the entry point found in shader "
-         "module."
-      << std::endl
-      << "-s,--stage                Prints the Vulkan shader stage found in "
-         "shader module."
-      << std::endl
-      << "-f,--file                 Prints the source file found in shader "
-         "module."
-      << std::endl
-      << "-fcb,--flatten_cbuffers   Flatten constant buffers on non-YAML "
-         "output."
-      << std::endl;
+  std::cout << "Usage: spirv-reflect [OPTIONS] path/to/SPIR-V/bytecode.spv" << std::endl
+            << "Prints a summary of the reflection data extracted from SPIR-V "
+               "bytecode."
+            << std::endl
+            << "Options:" << std::endl
+            << " --help                   Display this message" << std::endl
+            << " -y,--yaml                Format output as YAML. [default: disabled]" << std::endl
+            << " -v VERBOSITY             Specify output verbosity (YAML output "
+               "only):"
+            << std::endl
+            << "                          0: shader info, block variables, interface "
+               "variables,"
+            << std::endl
+            << "                             descriptor bindings. No type "
+               "descriptions. [default]"
+            << std::endl
+            << "                          1: Everything above, plus type "
+               "descriptions."
+            << std::endl
+            << "                          2: Everything above, plus SPIR-V bytecode "
+               "and all internal"
+            << std::endl
+            << "                             type descriptions. If you're not "
+               "working on SPIRV-Reflect"
+            << std::endl
+            << "                             itself, you probably don't want this." << std::endl
+            << "-e,--entrypoint           Prints the entry point found in shader "
+               "module."
+            << std::endl
+            << "-s,--stage                Prints the Vulkan shader stage found in "
+               "shader module."
+            << std::endl
+            << "-f,--file                 Prints the source file found in shader "
+               "module."
+            << std::endl
+            << "-fcb,--flatten_cbuffers   Flatten constant buffers on non-YAML "
+               "output."
+            << std::endl;
 }
 
 // =================================================================================================
@@ -119,8 +115,7 @@ int main(int argn, char** argv) {
 
   std::ifstream spv_ifstream(input_spv_path.c_str(), std::ios::binary);
   if (!spv_ifstream.is_open()) {
-    std::cerr << "ERROR: could not open '" << input_spv_path << "' for reading"
-              << std::endl;
+    std::cerr << "ERROR: could not open '" << input_spv_path << "' for reading" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -134,8 +129,7 @@ int main(int argn, char** argv) {
 
     spv_reflect::ShaderModule reflection(spv_data.size(), spv_data.data());
     if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
-      std::cerr << "ERROR: could not process '" << input_spv_path
-                << "' (is it a valid SPIR-V bytecode?)" << std::endl;
+      std::cerr << "ERROR: could not process '" << input_spv_path << "' (is it a valid SPIR-V bytecode?)" << std::endl;
       return EXIT_FAILURE;
     }
 
@@ -166,9 +160,7 @@ int main(int argn, char** argv) {
         if (printed_count > 0) {
           std::cout << ";";
         }
-        std::cout << (reflection.GetSourceFile() != NULL
-                          ? reflection.GetSourceFile()
-                          : "");
+        std::cout << (reflection.GetSourceFile() != NULL ? reflection.GetSourceFile() : "");
       }
 
       std::cout << std::endl;

@@ -394,8 +394,7 @@ static uint32_t FormatSize(VkFormat format) {
 
 int main(int argn, char** argv) {
   SpvReflectShaderModule module = {};
-  SpvReflectResult result =
-      spvReflectCreateShaderModule(sizeof(k_sample_spv), k_sample_spv, &module);
+  SpvReflectResult result = spvReflectCreateShaderModule(sizeof(k_sample_spv), k_sample_spv, &module);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   uint32_t count = 0;
@@ -403,8 +402,7 @@ int main(int argn, char** argv) {
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   std::vector<SpvReflectInterfaceVariable*> input_vars(count);
-  result =
-      spvReflectEnumerateInputVariables(&module, &count, input_vars.data());
+  result = spvReflectEnumerateInputVariables(&module, &count, input_vars.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   count = 0;
@@ -412,8 +410,7 @@ int main(int argn, char** argv) {
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   std::vector<SpvReflectInterfaceVariable*> output_vars(count);
-  result =
-      spvReflectEnumerateOutputVariables(&module, &count, output_vars.data());
+  result = spvReflectEnumerateOutputVariables(&module, &count, output_vars.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
 #if defined(SPIRV_REFLECT_HAS_VULKAN_H)
@@ -452,10 +449,8 @@ int main(int argn, char** argv) {
       attribute_descriptions.push_back(attr_desc);
     }
     // Sort attributes by location
-    std::sort(std::begin(attribute_descriptions),
-              std::end(attribute_descriptions),
-              [](const VkVertexInputAttributeDescription& a,
-                 const VkVertexInputAttributeDescription& b) {
+    std::sort(std::begin(attribute_descriptions), std::end(attribute_descriptions),
+              [](const VkVertexInputAttributeDescription& a, const VkVertexInputAttributeDescription& b) {
                 return a.location < b.location;
               });
     // Compute final offsets of each attribute, and total vertex stride.
@@ -486,8 +481,7 @@ int main(int argn, char** argv) {
     // input variables can also be retrieved directly from the module, by
     // location (unless the location is (uint32_t)-1, as is the case with
     // built-in inputs)
-    auto p_var2 =
-        spvReflectGetInputVariableByLocation(&module, p_var->location, &result);
+    auto p_var2 = spvReflectGetInputVariableByLocation(&module, p_var->location, &result);
     if (p_var->location == UINT32_MAX) {
       assert(result == SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
       assert(p_var2 == nullptr);
@@ -499,8 +493,7 @@ int main(int argn, char** argv) {
 
     // input variables can also be retrieved directly from the module, by
     // semantic (if present)
-    p_var2 =
-        spvReflectGetInputVariableBySemantic(&module, p_var->semantic, &result);
+    p_var2 = spvReflectGetInputVariableBySemantic(&module, p_var->semantic, &result);
     if (!p_var->semantic) {
       assert(result == SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
       assert(p_var2 == nullptr);
@@ -527,8 +520,7 @@ int main(int argn, char** argv) {
     // output variables can also be retrieved directly from the module, by
     // location (unless the location is (uint32_t)-1, as is the case with
     // built-in outputs)
-    auto p_var2 = spvReflectGetOutputVariableByLocation(
-        &module, p_var->location, &result);
+    auto p_var2 = spvReflectGetOutputVariableByLocation(&module, p_var->location, &result);
     if (p_var->location == UINT32_MAX) {
       assert(result == SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND);
       assert(p_var2 == nullptr);
@@ -540,8 +532,7 @@ int main(int argn, char** argv) {
 
     // output variables can also be retrieved directly from the module, by
     // semantic (if present)
-    p_var2 = spvReflectGetOutputVariableBySemantic(&module, p_var->semantic,
-                                                   &result);
+    p_var2 = spvReflectGetOutputVariableBySemantic(&module, p_var->semantic, &result);
     if (!p_var->semantic) {
       assert(result == SPV_REFLECT_RESULT_ERROR_NULL_POINTER);
       assert(p_var2 == nullptr);
