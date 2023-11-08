@@ -105,6 +105,14 @@ int SpirvReflectExample(const void* spirv_code, size_t spirv_nbytes)
 
 A C++ wrapper is also provided.
 
+## Building Examples
+
+By adding `-DSPIRV_REFLECT_EXAMPLES=ON` in CMake you can see the use of the API used in action.
+
+The `main_explorer.cpp` file is designed to allow an user to use their debugger of choice to breakpoint
+and explorer the contents of the `SpvReflectShaderModule` object. Just build with `-DCMAKE_BUILD_TYPE=Debug`
+and setup a debugger to run `./bin/explorer path/to/shader.spv`
+
 ## Building Self-Test Suite
 
 SPIRV-Reflect uses [googletest](https://github.com/google/googletest) for self-testing.

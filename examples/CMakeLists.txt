@@ -59,3 +59,18 @@ if(WIN32)
     target_compile_definitions(hlsl_resource_types PRIVATE _CRT_SECURE_NO_WARNINGS)
     set_target_properties(hlsl_resource_types PROPERTIES FOLDER "examples")
 endif()
+
+################################################################################
+# explororer
+################################################################################
+add_executable(explorer ${CMAKE_CURRENT_SOURCE_DIR}/main_explorer.cpp ${COMMON_FILES} ${SPIRV_REFLECT_FILES})
+target_include_directories(explorer PRIVATE ${CMAKE_SOURCE_DIR})
+if (${VULKAN_DIR_FOUND})
+    target_compile_definitions(explorer PRIVATE SPIRV_REFLECT_HAS_VULKAN_H)
+    target_include_directories(explorer PRIVATE ${VULKAN_DIR}/include)
+    set_target_properties(explorer PROPERTIES CXX_STANDARD 11)
+endif()
+if(WIN32)
+    target_compile_definitions(explorer PRIVATE _CRT_SECURE_NO_WARNINGS)
+    set_target_properties(explorer PROPERTIES FOLDER "examples")
+endif()
