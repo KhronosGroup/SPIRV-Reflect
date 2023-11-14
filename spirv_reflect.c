@@ -187,6 +187,7 @@ typedef struct SpvReflectPrvString {
 //    OpAtomicIAdd -> OpAccessChain       -> OpVariable
 //    OpAtomicLoad -> OpImageTexelPointer -> OpVariable
 typedef struct SpvReflectPrvAccessedVariable {
+  SpvReflectPrvNode*     node;
   uint32_t               result_id;
   uint32_t               variable_ptr;
   SpvReflectAccessFlags  access_flags;
@@ -1077,6 +1078,11 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser)
 		CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
 	  }
 	  break;
+          case SpvOpIAdd:
+          case SpvOpSDiv: {
+            CHECKED_READU32(p_parser, p_node->word_offset + 2,
+                            p_node->result_id);
+          } break;
     }
 
     if (p_node->is_type) {
@@ -1274,6 +1280,9 @@ static SpvReflectResult ParseFunction(
             p_parser, p_node->word_offset + 2,
             p_func->accessed_variable_ptrs[p_func->accessed_ptr_count]
                 .result_id);
+
+        p_func->accessed_variable_ptrs[p_func->accessed_ptr_count].node =
+            p_node;
         (++p_func->accessed_ptr_count);
       } break;
       case SpvOpLoad: {
@@ -2319,6 +2328,12 @@ static SpvReflectResult ParseDescriptorBindings(
     p_descriptor->uav_counter_id = p_node->decorations.uav_counter_buffer.value;
     p_descriptor->type_description = p_type;
     p_descriptor->decoration_flags = ApplyDecorations(&p_node->decorations);
+
+    // TODO - Add some debug reflection in SPIR-V to better identity this
+    if (p_descriptor->name &&
+        strncmp(p_descriptor->name, "g_MaterialData", 14) == 0) {
+      p_descriptor->is_byte_address_buffer = 1;
+    }
 
     // If this is in the StorageBuffer storage class, it's for sure a storage
     // buffer descriptor. We need to handle this case earlier because in SPIR-V
@@ -3397,6 +3412,15 @@ static SpvReflectResult TraverseCallGraph(
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+static uint32_t GetUint32Constant(SpvReflectPrvParser* p_parser,
+                                  SpvReflectPrvNode* node) {
+  uint32_t result = INVALID_VALUE;
+  if (node && node->op == SpvOpConstant) {
+    UNCHECKED_READU32(p_parser, node->word_offset + 3, result);
+  }
+  return result;
+}
+
 static SpvReflectResult ParseStaticallyUsedResources(
   SpvReflectPrvParser*    p_parser,
   SpvReflectShaderModule* p_module,
@@ -3540,6 +3564,39 @@ static SpvReflectResult ParseStaticallyUsedResources(
       if (used_accesses[j].variable_ptr == p_binding->spirv_id) {
         p_binding->accessed = 1;
         p_binding->access_flags |= used_accesses[j].access_flags;
+
+        if (p_binding->is_byte_address_buffer &&
+            used_accesses[j].node->op == SpvOpAccessChain &&
+            used_accesses[j].node->word_count == 6) {
+          uint32_t base_id = 0;
+          uint32_t divisor = 1;
+          UNCHECKED_READU32(p_parser, used_accesses[j].node->word_offset + 5,
+                            base_id);
+          SpvReflectPrvNode* next_node = FindNode(p_parser, base_id);
+          if (next_node && next_node->op == SpvOpSDiv) {
+            UNCHECKED_READU32(p_parser, next_node->word_offset + 4, base_id);
+            SpvReflectPrvNode* constant_node = FindNode(p_parser, base_id);
+            uint32_t value = GetUint32Constant(p_parser, constant_node);
+            if (value != INVALID_VALUE) {
+              divisor = value;
+            }
+
+            UNCHECKED_READU32(p_parser, next_node->word_offset + 3, base_id);
+            next_node = FindNode(p_parser, base_id);
+          }
+
+          if (next_node && next_node->op == SpvOpIAdd) {
+            UNCHECKED_READU32(p_parser, next_node->word_offset + 4, base_id);
+            SpvReflectPrvNode* constant_node = FindNode(p_parser, base_id);
+            uint32_t value = GetUint32Constant(p_parser, constant_node);
+            if (value != INVALID_VALUE) {
+              p_binding->byte_address_buffer_offsets
+                  [p_binding->byte_address_buffer_offset_count] =
+                  (value / divisor);
+              p_binding->byte_address_buffer_offset_count++;
+            }
+          }
+        }
       }
     }
   }

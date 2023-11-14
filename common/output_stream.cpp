@@ -1400,6 +1400,17 @@ void StreamWriteDescriptorBinding(std::ostream& os,
   // accessed
   os << t << "accessed : " << (obj.accessed ? "true" : "false") << "\n";
 
+  if (obj.is_byte_address_buffer) {
+    os << t << "ByteAddressBuffer offset: [";
+    for (uint32_t i = 0; i < obj.byte_address_buffer_offset_count; i++) {
+      os << obj.byte_address_buffer_offsets[i];
+      if (i < (obj.byte_address_buffer_offset_count - 1)) {
+        os << ", ";
+      }
+    }
+    os << "]\n";
+  }
+
   os << t << "name     : " << ((obj.name != nullptr) ? obj.name : "<unnamed>");
   if ((obj.type_description->type_name != nullptr) &&
       (strlen(obj.type_description->type_name) > 0)) {
@@ -1958,6 +1969,18 @@ void SpvReflectToYaml::WriteDescriptorBinding(
     os << t1 << "uav_counter_binding: *db" << itor->second << " # "
        << SafeString(db.uav_counter_binding->name) << std::endl;
   }
+
+  if (db.is_byte_address_buffer) {
+    os << t1 << "ByteAddressBuffer offset: [";
+    for (uint32_t i = 0; i < db.byte_address_buffer_offset_count; i++) {
+      os << db.byte_address_buffer_offsets[i];
+      if (i < (db.byte_address_buffer_offset_count - 1)) {
+        os << ", ";
+      }
+    }
+    os << "]\n";
+  }
+
   if (verbosity_ >= 1) {
     //   SpvReflectTypeDescription*        type_description;
     if (db.type_description == nullptr) {

@@ -297,6 +297,7 @@ typedef enum SpvReflectGenerator {
 enum {
   SPV_REFLECT_MAX_ARRAY_DIMS                    = 32,
   SPV_REFLECT_MAX_DESCRIPTOR_SETS               = 64,
+  SPV_REFLECT_MAX_BYTE_ADDRESS_BUFFER           = 64,
 };
 
 enum {
@@ -461,6 +462,10 @@ typedef struct SpvReflectDescriptorBinding {
   struct SpvReflectDescriptorBinding* uav_counter_binding;
 
   SpvReflectTypeDescription*          type_description;
+
+  uint32_t                            is_byte_address_buffer;
+  uint32_t                            byte_address_buffer_offset_count;
+  uint32_t                            byte_address_buffer_offsets[SPV_REFLECT_MAX_BYTE_ADDRESS_BUFFER];
 
   struct {
     uint32_t                          binding;
