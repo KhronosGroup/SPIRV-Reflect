@@ -61,7 +61,7 @@ if(WIN32)
 endif()
 
 ################################################################################
-# explororer
+# explorer
 ################################################################################
 add_executable(explorer ${CMAKE_CURRENT_SOURCE_DIR}/main_explorer.cpp ${COMMON_FILES} ${SPIRV_REFLECT_FILES})
 target_include_directories(explorer PRIVATE ${CMAKE_SOURCE_DIR})
