@@ -397,6 +397,7 @@ all_descriptor_bindings:
     block: *bv1 # "counter.var.MyBufferIn"
     array: { dims_count: 0, dims: [] }
     accessed: 1
+    access_flags: 0x00000007 # READ WRITE ATOMIC 
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
@@ -413,6 +414,7 @@ all_descriptor_bindings:
     block: *bv3 # "counter.var.MyBufferOut"
     array: { dims_count: 0, dims: [] }
     accessed: 1
+    access_flags: 0x00000007 # READ WRITE ATOMIC 
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
@@ -429,6 +431,7 @@ all_descriptor_bindings:
     block: *bv7 # "MyBufferIn"
     array: { dims_count: 0, dims: [] }
     accessed: 1
+    access_flags: 0x00000001 # READ 
     uav_counter_id: 12
     uav_counter_binding: *db0 # "counter.var.MyBufferIn"
     type_description: *td5
@@ -445,6 +448,7 @@ all_descriptor_bindings:
     block: *bv11 # "MyBufferOut"
     array: { dims_count: 0, dims: [] }
     accessed: 1
+    access_flags: 0x00000002 # WRITE 
     uav_counter_id: 16
     uav_counter_binding: *db1 # "counter.var.MyBufferOut"
     type_description: *td9

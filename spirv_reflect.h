@@ -262,6 +262,22 @@ typedef enum SpvReflectShaderStageFlagBits {
 
 } SpvReflectShaderStageFlagBits;
 
+/*! @enum SpvReflectAccessBits
+
+NOTE: A variable may be "accessed" but still have SPV_REFLECT_ACCESS_NONE
+      Example is if there is a OpAccessChain, but then it is never used
+
+*/
+typedef enum SpvReflectAccessFlagBits {
+  SPV_REFLECT_ACCESS_NONE   = 0x00000000,
+  SPV_REFLECT_ACCESS_READ   = 0x00000001,
+  SPV_REFLECT_ACCESS_WRITE  = 0x00000002,
+  // Atomic will always also be marked as READ and WRITE
+  SPV_REFLECT_ACCESS_ATOMIC = 0x00000004,
+} SpvReflectAccessFlagBits;
+
+typedef uint32_t SpvReflectAccessFlags;
+
 /*! @enum SpvReflectGenerator
 
 */
@@ -440,6 +456,7 @@ typedef struct SpvReflectDescriptorBinding {
   SpvReflectBindingArrayTraits        array;
   uint32_t                            count;
   uint32_t                            accessed;
+  SpvReflectAccessFlags               access_flags;
   uint32_t                            uav_counter_id;
   struct SpvReflectDescriptorBinding* uav_counter_binding;
 
