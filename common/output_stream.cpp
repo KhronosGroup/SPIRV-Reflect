@@ -513,8 +513,7 @@ static std::string ToStringSpvBuiltIn(SpvBuiltIn built_in) {
   return ss.str();
 }
 
-std::string ToStringSpvBuiltIn(const SpvReflectInterfaceVariable& variable,
-                               bool preface) {
+std::string ToStringSpvBuiltIn(const SpvReflectInterfaceVariable& variable, bool preface) {
   std::stringstream ss;
   if (variable.decoration_flags & SPV_REFLECT_DECORATION_BLOCK) {
     if (preface) {
@@ -636,11 +635,10 @@ std::string ToStringTypeFlags(SpvReflectTypeFlags type_flags) {
     return "UNDEFINED";
   }
 
-#define PRINT_AND_CLEAR_TYPE_FLAG(stream, flags, bit) \
-  if (((flags) & (SPV_REFLECT_TYPE_FLAG_##bit)) ==    \
-      (SPV_REFLECT_TYPE_FLAG_##bit)) {                \
-    stream << #bit << " ";                            \
-    flags ^= SPV_REFLECT_TYPE_FLAG_##bit;             \
+#define PRINT_AND_CLEAR_TYPE_FLAG(stream, flags, bit)                               \
+  if (((flags) & (SPV_REFLECT_TYPE_FLAG_##bit)) == (SPV_REFLECT_TYPE_FLAG_##bit)) { \
+    stream << #bit << " ";                                                          \
+    flags ^= SPV_REFLECT_TYPE_FLAG_##bit;                                           \
   }
   std::stringstream sstream;
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, ARRAY);
@@ -664,17 +662,15 @@ std::string ToStringTypeFlags(SpvReflectTypeFlags type_flags) {
   return sstream.str();
 }
 
-std::string ToStringDecorationFlags(
-    SpvReflectDecorationFlags decoration_flags) {
+std::string ToStringDecorationFlags(SpvReflectDecorationFlags decoration_flags) {
   if (decoration_flags == SPV_REFLECT_DECORATION_NONE) {
     return "NONE";
   }
 
-#define PRINT_AND_CLEAR_DECORATION_FLAG(stream, flags, bit) \
-  if (((flags) & (SPV_REFLECT_DECORATION_##bit)) ==         \
-      (SPV_REFLECT_DECORATION_##bit)) {                     \
-    stream << #bit << " ";                                  \
-    flags ^= SPV_REFLECT_DECORATION_##bit;                  \
+#define PRINT_AND_CLEAR_DECORATION_FLAG(stream, flags, bit)                           \
+  if (((flags) & (SPV_REFLECT_DECORATION_##bit)) == (SPV_REFLECT_DECORATION_##bit)) { \
+    stream << #bit << " ";                                                            \
+    flags ^= SPV_REFLECT_DECORATION_##bit;                                            \
   }
   std::stringstream sstream;
   PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, NON_WRITABLE);
@@ -884,8 +880,7 @@ static std::string ToStringHlslType(const SpvReflectTypeDescription& type) {
   return ToStringScalarType(type);
 }
 
-std::string ToStringType(SpvSourceLanguage src_lang,
-                         const SpvReflectTypeDescription& type) {
+std::string ToStringType(SpvSourceLanguage src_lang, const SpvReflectTypeDescription& type) {
   if (src_lang == SpvSourceLanguageHLSL) {
     return ToStringHlslType(type);
   }
@@ -893,8 +888,7 @@ std::string ToStringType(SpvSourceLanguage src_lang,
   return ToStringGlslType(type);
 }
 
-std::string ToStringComponentType(const SpvReflectTypeDescription& type,
-                                  uint32_t member_decoration_flags) {
+std::string ToStringComponentType(const SpvReflectTypeDescription& type, uint32_t member_decoration_flags) {
   uint32_t masked_type = type.type_flags & 0xF;
   if (masked_type == 0) {
     return "";
@@ -938,11 +932,8 @@ std::string ToStringComponentType(const SpvReflectTypeDescription& type,
   return ss.str();
 }
 
-void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
-                                  bool flatten_cbuffers,
-                                  const std::string& parent_name,
-                                  uint32_t member_count,
-                                  const SpvReflectBlockVariable* p_members,
+void ParseBlockMembersToTextLines(const char* indent, int indent_depth, bool flatten_cbuffers, const std::string& parent_name,
+                                  uint32_t member_count, const SpvReflectBlockVariable* p_members,
                                   std::vector<TextLine>* p_text_lines) {
   const char* t = indent;
   for (uint32_t member_index = 0; member_index < member_count; ++member_index) {
@@ -958,29 +949,22 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
       // TODO 212 - If a buffer ref has an array of itself, all members are null
       continue;
     }
-    bool is_struct =
-        ((member.type_description->type_flags &
-          static_cast<SpvReflectTypeFlags>(SPV_REFLECT_TYPE_FLAG_STRUCT)) != 0);
-    bool is_ref =
-        ((member.type_description->type_flags &
-          static_cast<SpvReflectTypeFlags>(SPV_REFLECT_TYPE_FLAG_REF)) != 0);
+    bool is_struct = ((member.type_description->type_flags & static_cast<SpvReflectTypeFlags>(SPV_REFLECT_TYPE_FLAG_STRUCT)) != 0);
+    bool is_ref = ((member.type_description->type_flags & static_cast<SpvReflectTypeFlags>(SPV_REFLECT_TYPE_FLAG_REF)) != 0);
     if (is_struct) {
       const std::string name = (member.name == nullptr ? "" : member.name);
 
       // Begin struct
       TextLine tl = {};
       tl.indent = expanded_indent;
-      tl.type_name = (member.type_description->type_name == nullptr
-                          ? ""
-                          : member.type_description->type_name);
+      tl.type_name = (member.type_description->type_name == nullptr ? "" : member.type_description->type_name);
       tl.absolute_offset = member.absolute_offset;
       tl.relative_offset = member.offset;
       tl.size = member.size;
       tl.padded_size = member.padded_size;
       tl.array_stride = member.array.stride;
       tl.block_variable_flags = member.flags;
-      tl.text_line_flags =
-          is_ref ? TEXT_LINE_TYPE_REF_BEGIN : TEXT_LINE_TYPE_STRUCT_BEGIN;
+      tl.text_line_flags = is_ref ? TEXT_LINE_TYPE_REF_BEGIN : TEXT_LINE_TYPE_STRUCT_BEGIN;
       if (!flatten_cbuffers) {
         p_text_lines->push_back(tl);
       }
@@ -989,14 +973,11 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
       tl = {};
       std::string current_parent_name;
       if (flatten_cbuffers) {
-        current_parent_name =
-            parent_name.empty() ? name : (parent_name + "." + name);
+        current_parent_name = parent_name.empty() ? name : (parent_name + "." + name);
       }
-      std::vector<TextLine>* p_target_text_line =
-          flatten_cbuffers ? p_text_lines : &tl.lines;
-      ParseBlockMembersToTextLines(t, indent_depth + 1, flatten_cbuffers,
-                                   current_parent_name, member.member_count,
-                                   member.members, p_target_text_line);
+      std::vector<TextLine>* p_target_text_line = flatten_cbuffers ? p_text_lines : &tl.lines;
+      ParseBlockMembersToTextLines(t, indent_depth + 1, flatten_cbuffers, current_parent_name, member.member_count, member.members,
+                                   p_target_text_line);
       tl.text_line_flags = TEXT_LINE_TYPE_LINES;
       p_text_lines->push_back(tl);
 
@@ -1004,23 +985,18 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
       tl = {};
       tl.indent = expanded_indent;
       tl.name = name;
-      if ((member.array.dims_count > 0) ||
-          (member.type_description->traits.array.dims[0] > 0)) {
-        const SpvReflectArrayTraits* p_array_info =
-            (member.array.dims_count > 0) ? &member.array : nullptr;
+      if ((member.array.dims_count > 0) || (member.type_description->traits.array.dims[0] > 0)) {
+        const SpvReflectArrayTraits* p_array_info = (member.array.dims_count > 0) ? &member.array : nullptr;
         if (p_array_info == nullptr) {
           //
           // glslang based compilers stores array information in the type and
           // not the variable
           //
-          p_array_info = (member.type_description->traits.array.dims[0] > 0)
-                             ? &member.type_description->traits.array
-                             : nullptr;
+          p_array_info = (member.type_description->traits.array.dims[0] > 0) ? &member.type_description->traits.array : nullptr;
         }
         if (p_array_info != nullptr) {
           std::stringstream ss_array;
-          for (uint32_t array_dim_index = 0;
-               array_dim_index < p_array_info->dims_count; ++array_dim_index) {
+          for (uint32_t array_dim_index = 0; array_dim_index < p_array_info->dims_count; ++array_dim_index) {
             uint32_t dim = p_array_info->dims[array_dim_index];
             //
             // dim = 0 means it's an unbounded array
@@ -1040,8 +1016,7 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
       tl.padded_size = member.padded_size;
       tl.array_stride = member.array.stride;
       tl.block_variable_flags = member.flags;
-      tl.text_line_flags =
-          is_ref ? TEXT_LINE_TYPE_REF_END : TEXT_LINE_TYPE_STRUCT_END;
+      tl.text_line_flags = is_ref ? TEXT_LINE_TYPE_REF_END : TEXT_LINE_TYPE_STRUCT_END;
       if (!flatten_cbuffers) {
         p_text_lines->push_back(tl);
       }
@@ -1055,13 +1030,11 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
 
       TextLine tl = {};
       tl.indent = expanded_indent;
-      tl.type_name = ToStringComponentType(*member.type_description,
-                                           member.decoration_flags);
+      tl.type_name = ToStringComponentType(*member.type_description, member.decoration_flags);
       tl.name = name;
       if (member.array.dims_count > 0) {
         std::stringstream ss_array;
-        for (uint32_t array_dim_index = 0;
-             array_dim_index < member.array.dims_count; ++array_dim_index) {
+        for (uint32_t array_dim_index = 0; array_dim_index < member.array.dims_count; ++array_dim_index) {
           uint32_t dim = member.array.dims[array_dim_index];
           ss_array << "[" << dim << "]";
         }
@@ -1078,15 +1051,12 @@ void ParseBlockMembersToTextLines(const char* indent, int indent_depth,
   }
 }
 
-void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers,
-                                   const SpvReflectBlockVariable& block_var,
+void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers, const SpvReflectBlockVariable& block_var,
                                    std::vector<TextLine>* p_text_lines) {
   // Begin block
   TextLine tl = {};
   tl.indent = indent;
-  tl.type_name = (block_var.type_description->type_name != nullptr)
-                     ? block_var.type_description->type_name
-                     : "<unnamed>";
+  tl.type_name = (block_var.type_description->type_name != nullptr) ? block_var.type_description->type_name : "<unnamed>";
   tl.size = block_var.size;
   tl.padded_size = block_var.padded_size;
   tl.text_line_flags = TEXT_LINE_TYPE_BLOCK_BEGIN;
@@ -1094,9 +1064,7 @@ void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers,
 
   // Members
   tl = {};
-  ParseBlockMembersToTextLines(indent, 2, flatten_cbuffers, "",
-                               block_var.member_count, block_var.members,
-                               &tl.lines);
+  ParseBlockMembersToTextLines(indent, 2, flatten_cbuffers, "", block_var.member_count, block_var.members, &tl.lines);
   tl.text_line_flags = TEXT_LINE_TYPE_LINES;
   p_text_lines->push_back(tl);
 
@@ -1112,9 +1080,7 @@ void ParseBlockVariableToTextLines(const char* indent, bool flatten_cbuffers,
   p_text_lines->push_back(tl);
 }
 
-void FormatTextLines(const std::vector<TextLine>& text_lines,
-                     const char* indent,
-                     std::vector<TextLine>* p_formatted_lines) {
+void FormatTextLines(const std::vector<TextLine>& text_lines, const char* indent, std::vector<TextLine>* p_formatted_lines) {
   size_t modifier_width = 0;
   size_t type_name_width = 0;
   size_t name_width = 0;
@@ -1135,8 +1101,7 @@ void FormatTextLines(const std::vector<TextLine>& text_lines,
     auto& tl = text_lines[i];
 
     std::stringstream ss;
-    if ((tl.text_line_flags == TEXT_LINE_TYPE_BLOCK_BEGIN) ||
-        (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_BEGIN) ||
+    if ((tl.text_line_flags == TEXT_LINE_TYPE_BLOCK_BEGIN) || (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_BEGIN) ||
         (tl.text_line_flags == TEXT_LINE_TYPE_REF_BEGIN)) {
       ss << indent;
       ss << tl.indent;
@@ -1144,8 +1109,7 @@ void FormatTextLines(const std::vector<TextLine>& text_lines,
       ss << "struct ";
       ss << tl.type_name;
       ss << " {";
-    } else if ((tl.text_line_flags == TEXT_LINE_TYPE_BLOCK_END) ||
-               (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_END) ||
+    } else if ((tl.text_line_flags == TEXT_LINE_TYPE_BLOCK_END) || (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_END) ||
                (tl.text_line_flags == TEXT_LINE_TYPE_REF_END)) {
       ss << indent;
       ss << tl.indent;
@@ -1190,9 +1154,7 @@ void FormatTextLines(const std::vector<TextLine>& text_lines,
   }
 }
 
-void StreamWriteTextLines(std::ostream& os, const char* indent,
-                          bool flatten_cbuffers,
-                          const std::vector<TextLine>& text_lines) {
+void StreamWriteTextLines(std::ostream& os, const char* indent, bool flatten_cbuffers, const std::vector<TextLine>& text_lines) {
   std::vector<TextLine> formatted_lines;
   FormatTextLines(text_lines, indent, &formatted_lines);
 
@@ -1209,15 +1171,11 @@ void StreamWriteTextLines(std::ostream& os, const char* indent,
       continue;
     }
     line_width = std::max<size_t>(line_width, tl.formatted_line.length());
-    absolute_offset_width = std::max<size_t>(
-        absolute_offset_width, tl.formatted_absolute_offset.length());
-    offset_width =
-        std::max<size_t>(offset_width, tl.formatted_relative_offset.length());
+    absolute_offset_width = std::max<size_t>(absolute_offset_width, tl.formatted_absolute_offset.length());
+    offset_width = std::max<size_t>(offset_width, tl.formatted_relative_offset.length());
     size_width = std::max<size_t>(size_width, tl.formatted_size.length());
-    padded_size_width =
-        std::max<size_t>(padded_size_width, tl.formatted_padded_size.length());
-    array_stride_width = std::max<size_t>(array_stride_width,
-                                          tl.formatted_array_stride.length());
+    padded_size_width = std::max<size_t>(padded_size_width, tl.formatted_padded_size.length());
+    array_stride_width = std::max<size_t>(array_stride_width, tl.formatted_array_stride.length());
   }
 
   size_t n = formatted_lines.size();
@@ -1245,8 +1203,7 @@ void StreamWriteTextLines(std::ostream& os, const char* indent,
       if (i < (n - 1)) {
         os << "\n";
       }
-    } else if (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_BEGIN ||
-               tl.text_line_flags == TEXT_LINE_TYPE_REF_BEGIN) {
+    } else if (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_BEGIN || tl.text_line_flags == TEXT_LINE_TYPE_REF_BEGIN) {
       if (!flatten_cbuffers) {
         if (i > 0) {
           os << "\n";
@@ -1274,8 +1231,7 @@ void StreamWriteTextLines(std::ostream& os, const char* indent,
 
         os << std::setw(line_width) << std::left << tl.formatted_line;
       }
-    } else if (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_END ||
-               tl.text_line_flags == TEXT_LINE_TYPE_REF_END) {
+    } else if (tl.text_line_flags == TEXT_LINE_TYPE_STRUCT_END || tl.text_line_flags == TEXT_LINE_TYPE_REF_END) {
       if (!flatten_cbuffers) {
         os << std::setw(line_width) << std::left << tl.formatted_line;
         if (i < (n - 1)) {
@@ -1287,20 +1243,15 @@ void StreamWriteTextLines(std::ostream& os, const char* indent,
       os << " "
          << "//"
          << " ";
-      os << "abs offset = " << std::setw(absolute_offset_width) << std::right
-         << tl.formatted_absolute_offset << ", ";
+      os << "abs offset = " << std::setw(absolute_offset_width) << std::right << tl.formatted_absolute_offset << ", ";
       if (!flatten_cbuffers) {
-        os << "rel offset = " << std::setw(offset_width) << std::right
-           << tl.formatted_relative_offset << ", ";
+        os << "rel offset = " << std::setw(offset_width) << std::right << tl.formatted_relative_offset << ", ";
       }
-      os << "size = " << std::setw(size_width) << std::right
-         << tl.formatted_size << ", ";
-      os << "padded size = " << std::setw(padded_size_width) << std::right
-         << tl.formatted_padded_size;
+      os << "size = " << std::setw(size_width) << std::right << tl.formatted_size << ", ";
+      os << "padded size = " << std::setw(padded_size_width) << std::right << tl.formatted_padded_size;
       if (tl.array_stride > 0) {
         os << ", ";
-        os << "array stride = " << std::setw(array_stride_width)
-           << tl.formatted_array_stride;
+        os << "array stride = " << std::setw(array_stride_width) << tl.formatted_array_stride;
       }
       if (!tl.formatted_block_variable_flags.empty()) {
         os << " ";
@@ -1314,15 +1265,13 @@ void StreamWriteTextLines(std::ostream& os, const char* indent,
   }
 }
 
-void StreamWritePushConstantsBlock(std::ostream& os,
-                                   const SpvReflectBlockVariable& obj,
-                                   bool flatten_cbuffers, const char* indent) {
+void StreamWritePushConstantsBlock(std::ostream& os, const SpvReflectBlockVariable& obj, bool flatten_cbuffers,
+                                   const char* indent) {
   const char* t = indent;
   os << t << "spirv id : " << obj.spirv_id << "\n";
 
   os << t << "name     : " << ((obj.name != nullptr) ? obj.name : "<unnamed>");
-  if ((obj.type_description->type_name != nullptr) &&
-      (strlen(obj.type_description->type_name) > 0)) {
+  if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
     os << " "
        << "(" << obj.type_description->type_name << ")";
   }
@@ -1336,9 +1285,7 @@ void StreamWritePushConstantsBlock(std::ostream& os,
   }
 }
 
-void StreamWriteDescriptorBinding(std::ostream& os,
-                                  const SpvReflectDescriptorBinding& obj,
-                                  bool write_set, bool flatten_cbuffers,
+void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, bool flatten_cbuffers,
                                   const char* indent) {
   const char* t = indent;
   os << t << "spirv id : " << obj.spirv_id << "\n";
@@ -1357,8 +1304,7 @@ void StreamWriteDescriptorBinding(std::ostream& os,
   // array
   if (obj.array.dims_count > 0) {
     os << t << "array    : ";
-    for (uint32_t dim_index = 0; dim_index < obj.array.dims_count;
-         ++dim_index) {
+    for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
       os << "[" << obj.array.dims[dim_index] << "]";
     }
     os << "\n";
@@ -1379,8 +1325,7 @@ void StreamWriteDescriptorBinding(std::ostream& os,
   os << t << "accessed : " << (obj.accessed ? "true" : "false") << "\n";
 
   os << t << "name     : " << ((obj.name != nullptr) ? obj.name : "<unnamed>");
-  if ((obj.type_description->type_name != nullptr) &&
-      (strlen(obj.type_description->type_name) > 0)) {
+  if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
     os << " "
        << "(" << obj.type_description->type_name << ")";
   }
@@ -1388,8 +1333,7 @@ void StreamWriteDescriptorBinding(std::ostream& os,
   if (obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
       obj.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
     std::vector<TextLine> text_lines;
-    ParseBlockVariableToTextLines("    ", flatten_cbuffers, obj.block,
-                                  &text_lines);
+    ParseBlockVariableToTextLines("    ", flatten_cbuffers, obj.block, &text_lines);
     if (!text_lines.empty()) {
       os << "\n";
       StreamWriteTextLines(os, t, flatten_cbuffers, text_lines);
@@ -1398,9 +1342,7 @@ void StreamWriteDescriptorBinding(std::ostream& os,
   }
 }
 
-void StreamWriteInterfaceVariable(std::ostream& os,
-                                  const SpvReflectInterfaceVariable& obj,
-                                  const char* indent) {
+void StreamWriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVariable& obj, const char* indent) {
   const char* t = indent;
   os << t << "spirv id  : " << obj.spirv_id << "\n";
   os << t << "location  : ";
@@ -1410,24 +1352,20 @@ void StreamWriteInterfaceVariable(std::ostream& os,
     os << obj.location;
   }
   os << "\n";
-  os << t << "type      : " << ToStringComponentType(*obj.type_description, 0)
-     << "\n";
+  os << t << "type      : " << ToStringComponentType(*obj.type_description, 0) << "\n";
 
   // array
   if (obj.array.dims_count > 0) {
     os << t << "array     : ";
-    for (uint32_t dim_index = 0; dim_index < obj.array.dims_count;
-         ++dim_index) {
+    for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
       os << "[" << obj.array.dims[dim_index] << "]";
     }
     os << "\n";
   }
 
-  os << t << "semantic  : " << (obj.semantic != NULL ? obj.semantic : "")
-     << "\n";
+  os << t << "semantic  : " << (obj.semantic != NULL ? obj.semantic : "") << "\n";
   os << t << "name      : " << (obj.name != NULL ? obj.name : "");
-  if ((obj.type_description->type_name != nullptr) &&
-      (strlen(obj.type_description->type_name) > 0)) {
+  if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
     os << " "
        << "(" << obj.type_description->type_name << ")";
   }
@@ -1440,39 +1378,27 @@ void StreamWriteInterfaceVariable(std::ostream& os,
   }
 }
 
-void StreamWriteEntryPoint(std::ostream& os, const SpvReflectEntryPoint& obj,
-                           const char* indent) {
+void StreamWriteEntryPoint(std::ostream& os, const SpvReflectEntryPoint& obj, const char* indent) {
   os << indent << "entry point     : " << obj.name;
   os << " (stage=" << ToStringShaderStage(obj.shader_stage) << ")";
   if (obj.shader_stage == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT) {
     os << "\n";
     os << "local size      : "
-       << "("
-       << (obj.local_size.x == SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT
-               ? "Spec Constant"
-               : std::to_string(obj.local_size.x))
+       << "(" << (obj.local_size.x == SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT ? "Spec Constant" : std::to_string(obj.local_size.x))
        << ", "
-       << (obj.local_size.y == SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT
-               ? "Spec Constant"
-               : std::to_string(obj.local_size.y))
+       << (obj.local_size.y == SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT ? "Spec Constant" : std::to_string(obj.local_size.y))
        << ", "
-       << (obj.local_size.z == SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT
-               ? "Spec Constant"
-               : std::to_string(obj.local_size.z))
+       << (obj.local_size.z == SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT ? "Spec Constant" : std::to_string(obj.local_size.z))
        << ")";
   }
 }
 
-void StreamWriteShaderModule(std::ostream& os,
-                             const SpvReflectShaderModule& obj,
-                             const char* indent) {
+void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj, const char* indent) {
   (void)indent;
   os << "generator       : " << ToStringGenerator(obj.generator) << "\n";
-  os << "source lang     : " << spvReflectSourceLanguage(obj.source_language)
-     << "\n";
+  os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
   os << "source lang ver : " << obj.source_language_version << "\n";
-  os << "source file     : " << (obj.source_file != NULL ? obj.source_file : "")
-     << "\n";
+  os << "source file     : " << (obj.source_file != NULL ? obj.source_file : "") << "\n";
   // os << "shader stage    : " << ToStringShaderStage(obj.shader_stage) <<
   // "\n";
 
@@ -1491,8 +1417,7 @@ void StreamWriteShaderModule(std::ostream& os,
 #define USE_ASSERT(x) ((void)(x))
 #endif
 
-void WriteReflection(const spv_reflect::ShaderModule& obj,
-                     bool flatten_cbuffers, std::ostream& os) {
+void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers, std::ostream& os) {
   const char* t = "  ";
   const char* tt = "    ";
   const char* ttt = "      ";
@@ -1576,14 +1501,12 @@ void WriteReflection(const spv_reflect::ShaderModule& obj,
   bindings.resize(count);
   result = obj.EnumerateDescriptorBindings(&count, bindings.data());
   USE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
-  std::sort(std::begin(bindings), std::end(bindings),
-            [](SpvReflectDescriptorBinding* a,
-               SpvReflectDescriptorBinding* b) -> bool {
-              if (a->set != b->set) {
-                return a->set < b->set;
-              }
-              return a->binding < b->binding;
-            });
+  std::sort(std::begin(bindings), std::end(bindings), [](SpvReflectDescriptorBinding* a, SpvReflectDescriptorBinding* b) -> bool {
+    if (a->set != b->set) {
+      return a->set < b->set;
+    }
+    return a->binding < b->binding;
+  });
   if (count > 0) {
     os << "\n";
     os << "\n";
@@ -1605,13 +1528,10 @@ void WriteReflection(const spv_reflect::ShaderModule& obj,
 
 //////////////////////////////////
 
-SpvReflectToYaml::SpvReflectToYaml(const SpvReflectShaderModule& shader_module,
-                                   uint32_t verbosity)
+SpvReflectToYaml::SpvReflectToYaml(const SpvReflectShaderModule& shader_module, uint32_t verbosity)
     : sm_(shader_module), verbosity_(verbosity) {}
 
-void SpvReflectToYaml::WriteTypeDescription(std::ostream& os,
-                                            const SpvReflectTypeDescription& td,
-                                            uint32_t indent_level) {
+void SpvReflectToYaml::WriteTypeDescription(std::ostream& os, const SpvReflectTypeDescription& td, uint32_t indent_level) {
   // YAML anchors can only refer to points earlier in the doc, so child type
   // descriptions must be processed before the parent.
   for (uint32_t i = 0; i < td.member_count; ++i) {
@@ -1624,10 +1544,8 @@ void SpvReflectToYaml::WriteTypeDescription(std::ostream& os,
   const std::string t4 = Indent(indent_level + 4);
 
   // Determine the index of this type within the shader module's list.
-  assert(type_description_to_index_.find(&td) ==
-         type_description_to_index_.end());
-  uint32_t type_description_index =
-      static_cast<uint32_t>(type_description_to_index_.size());
+  assert(type_description_to_index_.find(&td) == type_description_to_index_.end());
+  uint32_t type_description_index = static_cast<uint32_t>(type_description_to_index_.size());
   type_description_to_index_[&td] = type_description_index;
 
   os << t0 << "- &td" << type_description_index << std::endl;
@@ -1639,17 +1557,14 @@ void SpvReflectToYaml::WriteTypeDescription(std::ostream& os,
   //   const char*                       type_name;
   os << t1 << "type_name: " << SafeString(td.type_name) << std::endl;
   //   const char*                       struct_member_name;
-  os << t1 << "struct_member_name: " << SafeString(td.struct_member_name)
-     << std::endl;
+  os << t1 << "struct_member_name: " << SafeString(td.struct_member_name) << std::endl;
   //   SpvStorageClass                   storage_class;
-  os << t1 << "storage_class: " << td.storage_class << " # "
-     << ToStringSpvStorageClass(td.storage_class) << std::endl;
+  os << t1 << "storage_class: " << td.storage_class << " # " << ToStringSpvStorageClass(td.storage_class) << std::endl;
   //   SpvReflectTypeFlags               type_flags;
-  os << t1 << "type_flags: " << AsHexString(td.type_flags) << " # "
-     << ToStringTypeFlags(td.type_flags) << std::endl;
+  os << t1 << "type_flags: " << AsHexString(td.type_flags) << " # " << ToStringTypeFlags(td.type_flags) << std::endl;
   //   SpvReflectDecorationFlags         decoration_flags;
-  os << t1 << "decoration_flags: " << AsHexString(td.decoration_flags) << " # "
-     << ToStringDecorationFlags(td.decoration_flags) << std::endl;
+  os << t1 << "decoration_flags: " << AsHexString(td.decoration_flags) << " # " << ToStringDecorationFlags(td.decoration_flags)
+     << std::endl;
   //   struct Traits {
   os << t1 << "traits:" << std::endl;
   //     SpvReflectNumericTraits         numeric;
@@ -1699,8 +1614,7 @@ void SpvReflectToYaml::WriteTypeDescription(std::ostream& os,
   os << "image_format: " << td.traits.image.image_format;
   // } SpvReflectImageTraits;
   os << " }"
-     << " # dim=" << ToStringSpvDim(td.traits.image.dim)
-     << " image_format=" << ToStringSpvImageFormat(td.traits.image.image_format)
+     << " # dim=" << ToStringSpvDim(td.traits.image.dim) << " image_format=" << ToStringSpvImageFormat(td.traits.image.image_format)
      << std::endl;
 
   //     SpvReflectArrayTraits           array;
@@ -1725,15 +1639,12 @@ void SpvReflectToYaml::WriteTypeDescription(std::ostream& os,
   //   struct SpvReflectTypeDescription* members;
   os << t1 << "members:" << std::endl;
   for (uint32_t i_member = 0; i_member < td.member_count; ++i_member) {
-    os << t2 << "- *td" << type_description_to_index_[&(td.members[i_member])]
-       << std::endl;
+    os << t2 << "- *td" << type_description_to_index_[&(td.members[i_member])] << std::endl;
   }
   // } SpvReflectTypeDescription;
 }
 
-void SpvReflectToYaml::WriteBlockVariable(std::ostream& os,
-                                          const SpvReflectBlockVariable& bv,
-                                          uint32_t indent_level) {
+void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBlockVariable& bv, uint32_t indent_level) {
   for (uint32_t i = 0; i < bv.member_count; ++i) {
     WriteBlockVariable(os, bv.members[i], indent_level);
   }
@@ -1744,8 +1655,7 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os,
   const std::string t3 = Indent(indent_level + 3);
 
   assert(block_variable_to_index_.find(&bv) == block_variable_to_index_.end());
-  uint32_t block_variable_index =
-      static_cast<uint32_t>(block_variable_to_index_.size());
+  uint32_t block_variable_index = static_cast<uint32_t>(block_variable_to_index_.size());
   block_variable_to_index_[&bv] = block_variable_index;
 
   os << t0 << "- &bv" << block_variable_index << std::endl;
@@ -1761,8 +1671,8 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os,
   //   uint32_t                          padded_size;      // Measured in bytes
   os << t1 << "padded_size: " << bv.padded_size << std::endl;
   //   SpvReflectDecorationFlags         decoration_flags;
-  os << t1 << "decorations: " << AsHexString(bv.decoration_flags) << " # "
-     << ToStringDecorationFlags(bv.decoration_flags) << std::endl;
+  os << t1 << "decorations: " << AsHexString(bv.decoration_flags) << " # " << ToStringDecorationFlags(bv.decoration_flags)
+     << std::endl;
   //   SpvReflectNumericTraits           numeric;
   // typedef struct SpvReflectNumericTraits {
   os << t1 << "numeric:" << std::endl;
@@ -1777,8 +1687,7 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os,
   //     uint32_t                        component_count;
   //   } vector;
   os << t2 << "vector: { ";
-  os << "component_count: " << bv.numeric.vector.component_count << " }"
-     << std::endl;
+  os << "component_count: " << bv.numeric.vector.component_count << " }" << std::endl;
   //   struct Matrix {
   //     uint32_t                        column_count;
   //     uint32_t                        row_count;
@@ -1829,9 +1738,7 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os,
   // } SpvReflectBlockVariable;
 }
 
-void SpvReflectToYaml::WriteDescriptorBinding(
-    std::ostream& os, const SpvReflectDescriptorBinding& db,
-    uint32_t indent_level) {
+void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& db, uint32_t indent_level) {
   if (db.uav_counter_binding != nullptr) {
     auto itor = descriptor_binding_to_index_.find(db.uav_counter_binding);
     if (itor == descriptor_binding_to_index_.end()) {
@@ -1855,8 +1762,7 @@ void SpvReflectToYaml::WriteDescriptorBinding(
     }
   }
 
-  uint32_t descriptor_binding_index =
-      static_cast<uint32_t>(descriptor_binding_to_index_.size());
+  uint32_t descriptor_binding_index = static_cast<uint32_t>(descriptor_binding_to_index_.size());
   descriptor_binding_to_index_[&db] = descriptor_binding_index;
 
   os << t0 << "- &db" << descriptor_binding_index << std::endl;
@@ -1868,16 +1774,13 @@ void SpvReflectToYaml::WriteDescriptorBinding(
   //   uint32_t                            binding;
   os << t1 << "binding: " << db.binding << std::endl;
   //   uint32_t                            input_attachment_index;
-  os << t1 << "input_attachment_index: " << db.input_attachment_index
-     << std::endl;
+  os << t1 << "input_attachment_index: " << db.input_attachment_index << std::endl;
   //   uint32_t                            set;
   os << t1 << "set: " << db.set << std::endl;
   //   SpvReflectDescriptorType            descriptor_type;
-  os << t1 << "descriptor_type: " << db.descriptor_type << " # "
-     << ToStringDescriptorType(db.descriptor_type) << std::endl;
+  os << t1 << "descriptor_type: " << db.descriptor_type << " # " << ToStringDescriptorType(db.descriptor_type) << std::endl;
   //   SpvReflectResourceType              resource_type;
-  os << t1 << "resource_type: " << db.resource_type << " # "
-     << ToStringResourceType(db.resource_type) << std::endl;
+  os << t1 << "resource_type: " << db.resource_type << " # " << ToStringResourceType(db.resource_type) << std::endl;
   //   SpvReflectImageTraits           image;
   os << t1 << "image: { ";
   // typedef struct SpvReflectImageTraits {
@@ -1895,16 +1798,13 @@ void SpvReflectToYaml::WriteDescriptorBinding(
   os << "image_format: " << db.image.image_format;
   // } SpvReflectImageTraits;
   os << " }"
-     << " # dim=" << ToStringSpvDim(db.image.dim)
-     << " image_format=" << ToStringSpvImageFormat(db.image.image_format)
-     << std::endl;
+     << " # dim=" << ToStringSpvDim(db.image.dim) << " image_format=" << ToStringSpvImageFormat(db.image.image_format) << std::endl;
 
   //   SpvReflectBlockVariable             block;
   {
     auto itor = block_variable_to_index_.find(&db.block);
     assert(itor != block_variable_to_index_.end());
-    os << t1 << "block: *bv" << itor->second << " # "
-       << SafeString(db.block.name) << std::endl;
+    os << t1 << "block: *bv" << itor->second << " # " << SafeString(db.block.name) << std::endl;
   }
   //   SpvReflectBindingArrayTraits        array;
   os << t1 << "array: { ";
@@ -1930,8 +1830,7 @@ void SpvReflectToYaml::WriteDescriptorBinding(
   } else {
     auto itor = descriptor_binding_to_index_.find(db.uav_counter_binding);
     assert(itor != descriptor_binding_to_index_.end());
-    os << t1 << "uav_counter_binding: *db" << itor->second << " # "
-       << SafeString(db.uav_counter_binding->name) << std::endl;
+    os << t1 << "uav_counter_binding: *db" << itor->second << " # " << SafeString(db.uav_counter_binding->name) << std::endl;
   }
   if (verbosity_ >= 1) {
     //   SpvReflectTypeDescription*        type_description;
@@ -1952,12 +1851,9 @@ void SpvReflectToYaml::WriteDescriptorBinding(
   // } SpvReflectDescriptorBinding;
 }
 
-void SpvReflectToYaml::WriteInterfaceVariable(
-    std::ostream& os, const SpvReflectInterfaceVariable& iv,
-    uint32_t indent_level) {
+void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflectInterfaceVariable& iv, uint32_t indent_level) {
   for (uint32_t i = 0; i < iv.member_count; ++i) {
-    assert(interface_variable_to_index_.find(&iv.members[i]) ==
-           interface_variable_to_index_.end());
+    assert(interface_variable_to_index_.find(&iv.members[i]) == interface_variable_to_index_.end());
     WriteInterfaceVariable(os, iv.members[i], indent_level);
   }
 
@@ -1966,8 +1862,7 @@ void SpvReflectToYaml::WriteInterfaceVariable(
   const std::string t2 = Indent(indent_level + 2);
   const std::string t3 = Indent(indent_level + 3);
 
-  uint32_t interface_variable_index =
-      static_cast<uint32_t>(interface_variable_to_index_.size());
+  uint32_t interface_variable_index = static_cast<uint32_t>(interface_variable_to_index_.size());
   interface_variable_to_index_[&iv] = interface_variable_index;
 
   // typedef struct SpvReflectInterfaceVariable {
@@ -1979,13 +1874,12 @@ void SpvReflectToYaml::WriteInterfaceVariable(
   //   uint32_t                            location;
   os << t1 << "location: " << iv.location << std::endl;
   //   SpvStorageClass                     storage_class;
-  os << t1 << "storage_class: " << iv.storage_class << " # "
-     << ToStringSpvStorageClass(iv.storage_class) << std::endl;
+  os << t1 << "storage_class: " << iv.storage_class << " # " << ToStringSpvStorageClass(iv.storage_class) << std::endl;
   //   const char*                         semantic;
   os << t1 << "semantic: " << SafeString(iv.semantic) << std::endl;
   //   SpvReflectDecorationFlags           decoration_flags;
-  os << t1 << "decoration_flags: " << AsHexString(iv.decoration_flags) << " # "
-     << ToStringDecorationFlags(iv.decoration_flags) << std::endl;
+  os << t1 << "decoration_flags: " << AsHexString(iv.decoration_flags) << " # " << ToStringDecorationFlags(iv.decoration_flags)
+     << std::endl;
   //   SpvBuiltIn                          built_in;
   os << t1 << "built_in: ";
   if (iv.decoration_flags & SPV_REFLECT_DECORATION_BLOCK) {
@@ -2013,8 +1907,7 @@ void SpvReflectToYaml::WriteInterfaceVariable(
   //     uint32_t                        component_count;
   //   } vector;
   os << t2 << "vector: { ";
-  os << "component_count: " << iv.numeric.vector.component_count << " }"
-     << std::endl;
+  os << "component_count: " << iv.numeric.vector.component_count << " }" << std::endl;
   //   struct Matrix {
   //     uint32_t                        column_count;
   //     uint32_t                        row_count;
@@ -2050,13 +1943,11 @@ void SpvReflectToYaml::WriteInterfaceVariable(
   for (uint32_t i = 0; i < iv.member_count; ++i) {
     auto itor = interface_variable_to_index_.find(&iv.members[i]);
     assert(itor != interface_variable_to_index_.end());
-    os << t2 << "- *iv" << itor->second << " # "
-       << SafeString(iv.members[i].name) << std::endl;
+    os << t2 << "- *iv" << itor->second << " # " << SafeString(iv.members[i].name) << std::endl;
   }
 
   //   SpvReflectFormat                    format;
-  os << t1 << "format: " << iv.format << " # " << ToStringFormat(iv.format)
-     << std::endl;
+  os << t1 << "format: " << iv.format << " # " << ToStringFormat(iv.format) << std::endl;
 
   if (verbosity_ >= 1) {
     //   SpvReflectTypeDescription*        type_description;
@@ -2072,18 +1963,14 @@ void SpvReflectToYaml::WriteInterfaceVariable(
   //   struct {
   //     uint32_t                        location;
   //   } word_offset;
-  os << t1 << "word_offset: { location: " << iv.word_offset.location << " }"
-     << std::endl;
+  os << t1 << "word_offset: { location: " << iv.word_offset.location << " }" << std::endl;
 
   // } SpvReflectInterfaceVariable;
 }
 
-void SpvReflectToYaml::WriteBlockVariableTypes(
-    std::ostream& os, const SpvReflectBlockVariable& bv,
-    uint32_t indent_level) {
+void SpvReflectToYaml::WriteBlockVariableTypes(std::ostream& os, const SpvReflectBlockVariable& bv, uint32_t indent_level) {
   const auto* td = bv.type_description;
-  if (td &&
-      type_description_to_index_.find(td) == type_description_to_index_.end()) {
+  if (td && type_description_to_index_.find(td) == type_description_to_index_.end()) {
     WriteTypeDescription(os, *td, indent_level);
   }
 
@@ -2091,9 +1978,7 @@ void SpvReflectToYaml::WriteBlockVariableTypes(
     WriteBlockVariableTypes(os, bv.members[i], indent_level);
   }
 }
-void SpvReflectToYaml::WriteDescriptorBindingTypes(
-    std::ostream& os, const SpvReflectDescriptorBinding& db,
-    uint32_t indent_level) {
+void SpvReflectToYaml::WriteDescriptorBindingTypes(std::ostream& os, const SpvReflectDescriptorBinding& db, uint32_t indent_level) {
   WriteBlockVariableTypes(os, db.block, indent_level);
 
   if (db.uav_counter_binding) {
@@ -2101,17 +1986,13 @@ void SpvReflectToYaml::WriteDescriptorBindingTypes(
   }
 
   const auto* td = db.type_description;
-  if (td &&
-      type_description_to_index_.find(td) == type_description_to_index_.end()) {
+  if (td && type_description_to_index_.find(td) == type_description_to_index_.end()) {
     WriteTypeDescription(os, *td, indent_level);
   }
 }
-void SpvReflectToYaml::WriteInterfaceVariableTypes(
-    std::ostream& os, const SpvReflectInterfaceVariable& iv,
-    uint32_t indent_level) {
+void SpvReflectToYaml::WriteInterfaceVariableTypes(std::ostream& os, const SpvReflectInterfaceVariable& iv, uint32_t indent_level) {
   const auto* td = iv.type_description;
-  if (td &&
-      type_description_to_index_.find(td) == type_description_to_index_.end()) {
+  if (td && type_description_to_index_.find(td) == type_description_to_index_.end()) {
     WriteTypeDescription(os, *td, indent_level);
   }
 
@@ -2141,28 +2022,23 @@ void SpvReflectToYaml::Write(std::ostream& os) {
     // are reachable from there, though most of them are purely internal & not
     // referenced by any of the public-facing structures.
     for (size_t i = 0; i < sm_._internal->type_description_count; ++i) {
-      WriteTypeDescription(os, sm_._internal->type_descriptions[i],
-                           indent_level + 1);
+      WriteTypeDescription(os, sm_._internal->type_descriptions[i], indent_level + 1);
     }
   } else if (verbosity_ >= 1) {
     os << t0 << "all_type_descriptions:" << std::endl;
     // Iterate through all public-facing structures and write any type
     // descriptions we find (and their children).
     for (uint32_t i = 0; i < sm_.descriptor_binding_count; ++i) {
-      WriteDescriptorBindingTypes(os, sm_.descriptor_bindings[i],
-                                  indent_level + 1);
+      WriteDescriptorBindingTypes(os, sm_.descriptor_bindings[i], indent_level + 1);
     }
     for (uint32_t i = 0; i < sm_.push_constant_block_count; ++i) {
-      WriteBlockVariableTypes(os, sm_.push_constant_blocks[i],
-                              indent_level + 1);
+      WriteBlockVariableTypes(os, sm_.push_constant_blocks[i], indent_level + 1);
     }
     for (uint32_t i = 0; i < sm_.input_variable_count; ++i) {
-      WriteInterfaceVariableTypes(os, *sm_.input_variables[i],
-                                  indent_level + 1);
+      WriteInterfaceVariableTypes(os, *sm_.input_variables[i], indent_level + 1);
     }
     for (uint32_t i = 0; i < sm_.output_variable_count; ++i) {
-      WriteInterfaceVariableTypes(os, *sm_.output_variables[i],
-                                  indent_level + 1);
+      WriteInterfaceVariableTypes(os, *sm_.output_variables[i], indent_level + 1);
     }
   }
 
@@ -2193,35 +2069,28 @@ void SpvReflectToYaml::Write(std::ostream& os) {
   // struct SpvReflectShaderModule {
   os << t0 << "module:" << std::endl;
   // uint16_t                          generator;
-  os << t1 << "generator: " << sm_.generator << " # "
-     << ToStringGenerator(sm_.generator) << std::endl;
+  os << t1 << "generator: " << sm_.generator << " # " << ToStringGenerator(sm_.generator) << std::endl;
   // const char*                       entry_point_name;
-  os << t1 << "entry_point_name: " << SafeString(sm_.entry_point_name)
-     << std::endl;
+  os << t1 << "entry_point_name: " << SafeString(sm_.entry_point_name) << std::endl;
   // uint32_t                          entry_point_id;
   os << t1 << "entry_point_id: " << sm_.entry_point_id << std::endl;
   // SpvSourceLanguage                 source_language;
-  os << t1 << "source_language: " << sm_.source_language << " # "
-     << ToStringSpvSourceLanguage(sm_.source_language) << std::endl;
+  os << t1 << "source_language: " << sm_.source_language << " # " << ToStringSpvSourceLanguage(sm_.source_language) << std::endl;
   // uint32_t                          source_language_version;
-  os << t1 << "source_language_version: " << sm_.source_language_version
-     << std::endl;
+  os << t1 << "source_language_version: " << sm_.source_language_version << std::endl;
   // SpvExecutionModel                 spirv_execution_model;
   os << t1 << "spirv_execution_model: " << sm_.spirv_execution_model << " # "
      << ToStringSpvExecutionModel(sm_.spirv_execution_model) << std::endl;
   // SpvShaderStageFlagBits             shader_stage;
-  os << t1 << "shader_stage: " << AsHexString(sm_.shader_stage) << " # "
-     << ToStringShaderStage(sm_.shader_stage) << std::endl;
+  os << t1 << "shader_stage: " << AsHexString(sm_.shader_stage) << " # " << ToStringShaderStage(sm_.shader_stage) << std::endl;
   // uint32_t                          descriptor_binding_count;
-  os << t1 << "descriptor_binding_count: " << sm_.descriptor_binding_count
-     << std::endl;
+  os << t1 << "descriptor_binding_count: " << sm_.descriptor_binding_count << std::endl;
   // SpvReflectDescriptorBinding*      descriptor_bindings;
   os << t1 << "descriptor_bindings:" << std::endl;
   for (uint32_t i = 0; i < sm_.descriptor_binding_count; ++i) {
     auto itor = descriptor_binding_to_index_.find(&sm_.descriptor_bindings[i]);
     assert(itor != descriptor_binding_to_index_.end());
-    os << t2 << "- *db" << itor->second << " # "
-       << SafeString(sm_.descriptor_bindings[i].name) << std::endl;
+    os << t2 << "- *db" << itor->second << " # " << SafeString(sm_.descriptor_bindings[i].name) << std::endl;
   }
   // uint32_t                          descriptor_set_count;
   os << t1 << "descriptor_set_count: " << sm_.descriptor_set_count << std::endl;
@@ -2240,8 +2109,7 @@ void SpvReflectToYaml::Write(std::ostream& os) {
     for (uint32_t i_binding = 0; i_binding < dset.binding_count; ++i_binding) {
       auto itor = descriptor_binding_to_index_.find(dset.bindings[i_binding]);
       assert(itor != descriptor_binding_to_index_.end());
-      os << t3 << "- *db" << itor->second << " # "
-         << SafeString(dset.bindings[i_binding]->name) << std::endl;
+      os << t3 << "- *db" << itor->second << " # " << SafeString(dset.bindings[i_binding]->name) << std::endl;
     }
     // } SpvReflectDescriptorSet;
   }
@@ -2252,8 +2120,7 @@ void SpvReflectToYaml::Write(std::ostream& os) {
   for (uint32_t i = 0; i < sm_.input_variable_count; ++i) {
     auto itor = interface_variable_to_index_.find(sm_.input_variables[i]);
     assert(itor != interface_variable_to_index_.end());
-    os << t2 << "- *iv" << itor->second << " # "
-       << SafeString(sm_.input_variables[i]->name) << std::endl;
+    os << t2 << "- *iv" << itor->second << " # " << SafeString(sm_.input_variables[i]->name) << std::endl;
   }
   // uint32_t                          output_variable_count;
   os << t1 << "output_variable_count: " << sm_.output_variable_count << ",\n";
@@ -2262,8 +2129,7 @@ void SpvReflectToYaml::Write(std::ostream& os) {
   for (uint32_t i = 0; i < sm_.output_variable_count; ++i) {
     auto itor = interface_variable_to_index_.find(sm_.output_variables[i]);
     assert(itor != interface_variable_to_index_.end());
-    os << t2 << "- *iv" << itor->second << " # "
-       << SafeString(sm_.output_variables[i]->name) << std::endl;
+    os << t2 << "- *iv" << itor->second << " # " << SafeString(sm_.output_variables[i]->name) << std::endl;
   }
   // uint32_t                          push_constant_count;
   os << t1 << "push_constant_count: " << sm_.push_constant_block_count << ",\n";
@@ -2272,8 +2138,7 @@ void SpvReflectToYaml::Write(std::ostream& os) {
   for (uint32_t i = 0; i < sm_.push_constant_block_count; ++i) {
     auto itor = block_variable_to_index_.find(&sm_.push_constant_blocks[i]);
     assert(itor != block_variable_to_index_.end());
-    os << t2 << "- *bv" << itor->second << " # "
-       << SafeString(sm_.push_constant_blocks[i].name) << std::endl;
+    os << t2 << "- *bv" << itor->second << " # " << SafeString(sm_.push_constant_blocks[i].name) << std::endl;
   }
 
   if (verbosity_ >= 2) {
@@ -2292,17 +2157,13 @@ void SpvReflectToYaml::Write(std::ostream& os) {
       }
       os << "]" << std::endl;
       //   uint32_t                        spirv_word_count;
-      os << t2 << "spirv_word_count: " << sm_._internal->spirv_word_count
-         << std::endl;
+      os << t2 << "spirv_word_count: " << sm_._internal->spirv_word_count << std::endl;
       //   size_t                          type_description_count;
-      os << t2
-         << "type_description_count: " << sm_._internal->type_description_count
-         << std::endl;
+      os << t2 << "type_description_count: " << sm_._internal->type_description_count << std::endl;
       //   SpvReflectTypeDescription*      type_descriptions;
       os << t2 << "type_descriptions:" << std::endl;
       for (uint32_t i = 0; i < sm_._internal->type_description_count; ++i) {
-        auto itor = type_description_to_index_.find(
-            &sm_._internal->type_descriptions[i]);
+        auto itor = type_description_to_index_.find(&sm_._internal->type_descriptions[i]);
         assert(itor != type_description_to_index_.end());
         os << t3 << "- *td" << itor->second << std::endl;
       }

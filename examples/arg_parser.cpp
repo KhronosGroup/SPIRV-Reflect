@@ -8,60 +8,47 @@ ArgParser::ArgParser() {}
 
 ArgParser::~ArgParser() {}
 
-ArgParser::Option* ArgParser::FindOptionByShortName(
-    const std::string& short_name) {
+ArgParser::Option* ArgParser::FindOptionByShortName(const std::string& short_name) {
   ArgParser::Option* p_option = nullptr;
   auto it = std::find_if(std::begin(m_options), std::end(m_options),
-                         [short_name](const ArgParser::Option& elem) -> bool {
-                           return elem.short_name == short_name;
-                         });
+                         [short_name](const ArgParser::Option& elem) -> bool { return elem.short_name == short_name; });
   if (it != std::end(m_options)) {
     p_option = &(*it);
   }
   return p_option;
 }
 
-const ArgParser::Option* ArgParser::FindOptionByShortName(
-    const std::string& short_name) const {
+const ArgParser::Option* ArgParser::FindOptionByShortName(const std::string& short_name) const {
   const ArgParser::Option* p_option = nullptr;
   auto it = std::find_if(std::begin(m_options), std::end(m_options),
-                         [short_name](const ArgParser::Option& elem) -> bool {
-                           return elem.short_name == short_name;
-                         });
+                         [short_name](const ArgParser::Option& elem) -> bool { return elem.short_name == short_name; });
   if (it != std::end(m_options)) {
     p_option = &(*it);
   }
   return p_option;
 }
 
-ArgParser::Option* ArgParser::FindOptionByLongName(
-    const std::string& long_name) {
+ArgParser::Option* ArgParser::FindOptionByLongName(const std::string& long_name) {
   ArgParser::Option* p_option = nullptr;
   auto it = std::find_if(std::begin(m_options), std::end(m_options),
-                         [long_name](const ArgParser::Option& elem) -> bool {
-                           return elem.long_name == long_name;
-                         });
+                         [long_name](const ArgParser::Option& elem) -> bool { return elem.long_name == long_name; });
   if (it != std::end(m_options)) {
     p_option = &(*it);
   }
   return p_option;
 }
 
-const ArgParser::Option* ArgParser::FindOptionByLongName(
-    const std::string& long_name) const {
+const ArgParser::Option* ArgParser::FindOptionByLongName(const std::string& long_name) const {
   const ArgParser::Option* p_option = nullptr;
   auto it = std::find_if(std::begin(m_options), std::end(m_options),
-                         [long_name](const ArgParser::Option& elem) -> bool {
-                           return elem.long_name == long_name;
-                         });
+                         [long_name](const ArgParser::Option& elem) -> bool { return elem.long_name == long_name; });
   if (it != std::end(m_options)) {
     p_option = &(*it);
   }
   return p_option;
 }
 
-bool ArgParser::AddFlag(const std::string& short_name,
-                        const std::string& long_name, const std::string& desc) {
+bool ArgParser::AddFlag(const std::string& short_name, const std::string& long_name, const std::string& desc) {
   Option option = {};
   option.short_name = short_name;
   option.long_name = long_name;
@@ -76,9 +63,7 @@ bool ArgParser::AddFlag(const std::string& short_name,
   return true;
 }
 
-bool ArgParser::AddOptionString(const std::string& short_name,
-                                const std::string& long_name,
-                                const std::string& desc,
+bool ArgParser::AddOptionString(const std::string& short_name, const std::string& long_name, const std::string& desc,
                                 const std::string& default_value) {
   Option option = {};
   option.short_name = short_name;
@@ -95,9 +80,8 @@ bool ArgParser::AddOptionString(const std::string& short_name,
   return true;
 }
 
-bool ArgParser::AddOptionInt(const std::string& short_name,
-                             const std::string& long_name,
-                             const std::string& desc, int default_value) {
+bool ArgParser::AddOptionInt(const std::string& short_name, const std::string& long_name, const std::string& desc,
+                             int default_value) {
   Option option = {};
   option.short_name = short_name;
   option.long_name = long_name;
@@ -113,9 +97,8 @@ bool ArgParser::AddOptionInt(const std::string& short_name,
   return true;
 }
 
-bool ArgParser::AddOptionFloat(const std::string& short_name,
-                               const std::string& long_name,
-                               const std::string& desc, float default_value) {
+bool ArgParser::AddOptionFloat(const std::string& short_name, const std::string& long_name, const std::string& desc,
+                               float default_value) {
   Option option = {};
   option.short_name = short_name;
   option.long_name = long_name;
@@ -228,8 +211,7 @@ bool ArgParser::GetArg(size_t i, std::string* p_value) const {
 
 const std::vector<std::string>& ArgParser::GetArgs() const { return m_args; }
 
-bool ArgParser::GetFlag(const std::string& short_name,
-                        const std::string& long_name) const {
+bool ArgParser::GetFlag(const std::string& short_name, const std::string& long_name) const {
   auto p_short = FindOptionByShortName(short_name);
   auto p_long = FindOptionByLongName(long_name);
 
@@ -252,9 +234,7 @@ bool ArgParser::GetFlag(const std::string& short_name,
   return p_option->parsed;
 }
 
-bool ArgParser::GetString(const std::string& short_name,
-                          const std::string& long_name,
-                          std::string* p_value) const {
+bool ArgParser::GetString(const std::string& short_name, const std::string& long_name, std::string* p_value) const {
   auto p_short = FindOptionByShortName(short_name);
   auto p_long = FindOptionByLongName(long_name);
 
@@ -281,8 +261,7 @@ bool ArgParser::GetString(const std::string& short_name,
   return true;
 }
 
-bool ArgParser::GetInt(const std::string& short_name,
-                       const std::string& long_name, int* p_value) const {
+bool ArgParser::GetInt(const std::string& short_name, const std::string& long_name, int* p_value) const {
   auto p_short = FindOptionByShortName(short_name);
   auto p_long = FindOptionByLongName(long_name);
 
@@ -309,8 +288,7 @@ bool ArgParser::GetInt(const std::string& short_name,
   return true;
 }
 
-bool ArgParser::GetFloat(const std::string& short_name,
-                         const std::string& long_name, float* p_value) const {
+bool ArgParser::GetFloat(const std::string& short_name, const std::string& long_name, float* p_value) const {
   auto p_short = FindOptionByShortName(short_name);
   auto p_long = FindOptionByLongName(long_name);
 

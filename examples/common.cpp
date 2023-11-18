@@ -6,11 +6,9 @@
 
 #include "../common/output_stream.h"
 
-void PrintModuleInfo(std::ostream& os, const SpvReflectShaderModule& obj,
-                     const char* /*indent*/) {
+void PrintModuleInfo(std::ostream& os, const SpvReflectShaderModule& obj, const char* /*indent*/) {
   os << "entry point     : " << obj.entry_point_name << "\n";
-  os << "source lang     : " << spvReflectSourceLanguage(obj.source_language)
-     << "\n";
+  os << "source lang     : " << spvReflectSourceLanguage(obj.source_language) << "\n";
   os << "source lang ver : " << obj.source_language_version << "\n";
   if (obj.source_language == SpvSourceLanguageHLSL) {
     os << "stage           : ";
@@ -39,8 +37,7 @@ void PrintModuleInfo(std::ostream& os, const SpvReflectShaderModule& obj,
   }
 }
 
-void PrintDescriptorSet(std::ostream& os, const SpvReflectDescriptorSet& obj,
-                        const char* indent) {
+void PrintDescriptorSet(std::ostream& os, const SpvReflectDescriptorSet& obj, const char* indent) {
   const char* t = indent;
   std::string tt = std::string(indent) + "  ";
   std::string ttttt = std::string(indent) + "    ";
@@ -59,22 +56,18 @@ void PrintDescriptorSet(std::ostream& os, const SpvReflectDescriptorSet& obj,
   }
 }
 
-void PrintDescriptorBinding(std::ostream& os,
-                            const SpvReflectDescriptorBinding& obj,
-                            bool write_set, const char* indent) {
+void PrintDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, const char* indent) {
   const char* t = indent;
   os << t << "binding : " << obj.binding << "\n";
   if (write_set) {
     os << t << "set     : " << obj.set << "\n";
   }
-  os << t << "type    : " << ToStringDescriptorType(obj.descriptor_type)
-     << "\n";
+  os << t << "type    : " << ToStringDescriptorType(obj.descriptor_type) << "\n";
 
   // array
   if (obj.array.dims_count > 0) {
     os << t << "array   : ";
-    for (uint32_t dim_index = 0; dim_index < obj.array.dims_count;
-         ++dim_index) {
+    for (uint32_t dim_index = 0; dim_index < obj.array.dims_count; ++dim_index) {
       os << "[" << obj.array.dims[dim_index] << "]";
     }
     os << "\n";
@@ -92,15 +85,13 @@ void PrintDescriptorBinding(std::ostream& os,
   }
 
   os << t << "name    : " << obj.name;
-  if ((obj.type_description->type_name != nullptr) &&
-      (strlen(obj.type_description->type_name) > 0)) {
+  if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
     os << " "
        << "(" << obj.type_description->type_name << ")";
   }
 }
 
-void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang,
-                            const SpvReflectInterfaceVariable& obj,
+void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang, const SpvReflectInterfaceVariable& obj,
                             const char* indent) {
   const char* t = indent;
   os << t << "location  : ";
@@ -113,8 +104,7 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang,
   if (obj.semantic != nullptr) {
     os << t << "semantic  : " << obj.semantic << "\n";
   }
-  os << t << "type      : " << ToStringType(src_lang, *obj.type_description)
-     << "\n";
+  os << t << "type      : " << ToStringType(src_lang, *obj.type_description) << "\n";
   os << t << "format    : " << ToStringFormat(obj.format) << "\n";
   os << t << "qualifier : ";
   if (obj.decoration_flags & SPV_REFLECT_DECORATION_FLAT) {
@@ -131,8 +121,7 @@ void PrintInterfaceVariable(std::ostream& os, SpvSourceLanguage src_lang,
   os << "\n";
 
   os << t << "name      : " << obj.name;
-  if ((obj.type_description->type_name != nullptr) &&
-      (strlen(obj.type_description->type_name) > 0)) {
+  if ((obj.type_description->type_name != nullptr) && (strlen(obj.type_description->type_name) > 0)) {
     os << " "
        << "(" << obj.type_description->type_name << ")";
   }

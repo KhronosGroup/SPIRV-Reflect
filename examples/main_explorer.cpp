@@ -44,8 +44,7 @@ int main(int argn, char** argv) {
 
   std::ifstream spv_ifstream(input_spv_path.c_str(), std::ios::binary);
   if (!spv_ifstream.is_open()) {
-    std::cerr << "ERROR: could not open '" << input_spv_path
-              << "' for reading\n";
+    std::cerr << "ERROR: could not open '" << input_spv_path << "' for reading\n";
     return EXIT_FAILURE;
   }
 
@@ -57,8 +56,7 @@ int main(int argn, char** argv) {
   spv_ifstream.read(spv_data.data(), size);
 
   SpvReflectShaderModule module = {};
-  SpvReflectResult result =
-      spvReflectCreateShaderModule(spv_data.size(), spv_data.data(), &module);
+  SpvReflectResult result = spvReflectCreateShaderModule(spv_data.size(), spv_data.data(), &module);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   // Go through each enumerate to examine it
@@ -73,35 +71,30 @@ int main(int argn, char** argv) {
   result = spvReflectEnumerateDescriptorBindings(&module, &count, NULL);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
   std::vector<SpvReflectDescriptorBinding*> bindings(count);
-  result =
-      spvReflectEnumerateDescriptorBindings(&module, &count, bindings.data());
+  result = spvReflectEnumerateDescriptorBindings(&module, &count, bindings.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   result = spvReflectEnumerateInterfaceVariables(&module, &count, NULL);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
   std::vector<SpvReflectInterfaceVariable*> interface_variables(count);
-  result = spvReflectEnumerateInterfaceVariables(&module, &count,
-                                                 interface_variables.data());
+  result = spvReflectEnumerateInterfaceVariables(&module, &count, interface_variables.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   result = spvReflectEnumerateInputVariables(&module, &count, NULL);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
   std::vector<SpvReflectInterfaceVariable*> input_variables(count);
-  result = spvReflectEnumerateInputVariables(&module, &count,
-                                             input_variables.data());
+  result = spvReflectEnumerateInputVariables(&module, &count, input_variables.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
   result = spvReflectEnumerateOutputVariables(&module, &count, NULL);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
   std::vector<SpvReflectInterfaceVariable*> output_variables(count);
-  result = spvReflectEnumerateOutputVariables(&module, &count,
-                                              output_variables.data());
+  result = spvReflectEnumerateOutputVariables(&module, &count, output_variables.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   result = spvReflectEnumeratePushConstantBlocks(&module, &count, NULL);
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
   std::vector<SpvReflectBlockVariable*> push_constant(count);
-  result = spvReflectEnumeratePushConstantBlocks(&module, &count,
-                                                 push_constant.data());
+  result = spvReflectEnumeratePushConstantBlocks(&module, &count, push_constant.data());
   assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
   // Can set a breakpoint here and explorer the various variables enumerated.
