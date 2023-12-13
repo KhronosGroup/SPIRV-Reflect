@@ -113,6 +113,8 @@ typedef struct SpvReflectPrvDecorations {
   bool                            is_patch;
   bool                            is_per_vertex;
   bool                            is_per_task;
+  bool                            is_weight_texture;
+  bool                            is_block_match_texture;
   SpvReflectPrvNumberDecoration   set;
   SpvReflectPrvNumberDecoration   binding;
   SpvReflectPrvNumberDecoration   input_attachment_index;
@@ -452,6 +454,12 @@ static SpvReflectDecorationFlags ApplyDecorations(const SpvReflectPrvDecorations
   }
   if (p_decoration_fields->is_per_task) {
     decorations |= SPV_REFLECT_DECORATION_PER_TASK;
+  }
+  if (p_decoration_fields->is_weight_texture) {
+    decorations |= SPV_REFLECT_DECORATION_WEIGHT_TEXTURE;
+  }
+  if (p_decoration_fields->is_block_match_texture) {
+    decorations |= SPV_REFLECT_DECORATION_BLOCK_MATCH_TEXTURE;
   }
   return decorations;
 }
@@ -1348,6 +1356,8 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
       case SpvDecorationDescriptorSet:
       case SpvDecorationOffset:
       case SpvDecorationInputAttachmentIndex:
+      case SpvDecorationWeightTextureQCOM:
+      case SpvDecorationBlockMatchTextureQCOM:
       case SpvReflectDecorationHlslCounterBufferGOOGLE:
       case SpvReflectDecorationHlslSemanticGOOGLE: {
         skip = false;
@@ -1492,6 +1502,14 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
         uint32_t word_offset = p_node->word_offset + member_offset + 3;
         p_target_decorations->semantic.value = (const char*)(p_parser->spirv_code + word_offset);
         p_target_decorations->semantic.word_offset = word_offset;
+      } break;
+
+      case SpvDecorationWeightTextureQCOM: {
+        p_target_decorations->is_weight_texture = true;
+      } break;
+
+      case SpvDecorationBlockMatchTextureQCOM: {
+        p_target_decorations->is_block_match_texture = true;
       } break;
     }
   }
