@@ -154,6 +154,8 @@ typedef enum SpvReflectDecorationFlagBits {
   SPV_REFLECT_DECORATION_PATCH                  = 0x00000400,
   SPV_REFLECT_DECORATION_PER_VERTEX             = 0x00000800,
   SPV_REFLECT_DECORATION_PER_TASK               = 0x00001000,
+  SPV_REFLECT_DECORATION_WEIGHT_TEXTURE         = 0x00002000,
+  SPV_REFLECT_DECORATION_BLOCK_MATCH_TEXTURE    = 0x00004000,
 } SpvReflectDecorationFlagBits;
 
 typedef uint32_t SpvReflectDecorationFlags;
