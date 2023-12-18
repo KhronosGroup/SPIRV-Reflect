@@ -299,20 +299,20 @@ static SpvReflectResult IntersectSortedAccessedVariable(const SpvReflectPrvAcces
     return SPV_REFLECT_RESULT_SUCCESS;
   }
 
-  const SpvReflectPrvAccessedVariable* arr0_end = p_arr0 + arr0_size;
-  const uint32_t* arr1_end = p_arr1 + arr1_size;
+  const SpvReflectPrvAccessedVariable* p_arr0_end = p_arr0 + arr0_size;
+  const uint32_t* p_arr1_end = p_arr1 + arr1_size;
 
-  const SpvReflectPrvAccessedVariable* idx0 = p_arr0;
-  const uint32_t* idx1 = p_arr1;
-  while (idx0 != arr0_end && idx1 != arr1_end) {
-    if (idx0->variable_ptr < *idx1) {
-      ++idx0;
-    } else if (idx0->variable_ptr > *idx1) {
-      ++idx1;
+  const SpvReflectPrvAccessedVariable* p_idx0 = p_arr0;
+  const uint32_t* p_idx1 = p_arr1;
+  while (p_idx0 != p_arr0_end && p_idx1 != p_arr1_end) {
+    if (p_idx0->variable_ptr < *p_idx1) {
+      ++p_idx0;
+    } else if (p_idx0->variable_ptr > *p_idx1) {
+      ++p_idx1;
     } else {
       ++*res_size;
-      ++idx0;
-      ++idx1;
+      ++p_idx0;
+      ++p_idx1;
     }
   }
 
@@ -321,18 +321,18 @@ static SpvReflectResult IntersectSortedAccessedVariable(const SpvReflectPrvAcces
     if (IsNull(*pp_res)) {
       return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
     }
-    uint32_t* idxr = *pp_res;
-    idx0 = p_arr0;
-    idx1 = p_arr1;
-    while (idx0 != arr0_end && idx1 != arr1_end) {
-      if (idx0->variable_ptr < *idx1) {
-        ++idx0;
-      } else if (idx0->variable_ptr > *idx1) {
-        ++idx1;
+    uint32_t* p_idxr = *pp_res;
+    p_idx0 = p_arr0;
+    p_idx1 = p_arr1;
+    while (p_idx0 != p_arr0_end && p_idx1 != p_arr1_end) {
+      if (p_idx0->variable_ptr < *p_idx1) {
+        ++p_idx0;
+      } else if (p_idx0->variable_ptr > *p_idx1) {
+        ++p_idx1;
       } else {
-        *(idxr++) = idx0->variable_ptr;
-        ++idx0;
-        ++idx1;
+        *(p_idxr++) = p_idx0->variable_ptr;
+        ++p_idx0;
+        ++p_idx1;
       }
     }
   }
@@ -3089,10 +3089,10 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
     }
     used_acessed_count += p_parser->functions[j].accessed_variable_count;
   }
-  SpvReflectPrvAccessedVariable* used_accesses = NULL;
+  SpvReflectPrvAccessedVariable* p_used_accesses = NULL;
   if (used_acessed_count > 0) {
-    used_accesses = (SpvReflectPrvAccessedVariable*)calloc(used_acessed_count, sizeof(SpvReflectPrvAccessedVariable));
-    if (IsNull(used_accesses)) {
+    p_used_accesses = (SpvReflectPrvAccessedVariable*)calloc(used_acessed_count, sizeof(SpvReflectPrvAccessedVariable));
+    if (IsNull(p_used_accesses)) {
       SafeFree(p_called_functions);
       return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
     }
@@ -3103,35 +3103,36 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
       ++j;
     }
 
-    memcpy(&used_accesses[used_acessed_count], p_parser->functions[j].accessed_variables,
+    memcpy(&p_used_accesses[used_acessed_count], p_parser->functions[j].accessed_variables,
            p_parser->functions[j].accessed_variable_count * sizeof(SpvReflectPrvAccessedVariable));
     used_acessed_count += p_parser->functions[j].accessed_variable_count;
   }
   SafeFree(p_called_functions);
 
   if (used_acessed_count > 0) {
-    qsort(used_accesses, used_acessed_count, sizeof(*used_accesses), SortCompareAccessedVariable);
+    qsort(p_used_accesses, used_acessed_count, sizeof(*p_used_accesses), SortCompareAccessedVariable);
   }
 
   // Do set intersection to find the used uniform and push constants
   size_t used_uniform_count = 0;
-  SpvReflectResult result0 = IntersectSortedAccessedVariable(used_accesses, used_acessed_count, uniforms, uniform_count,
+  SpvReflectResult result0 = IntersectSortedAccessedVariable(p_used_accesses, used_acessed_count, uniforms, uniform_count,
                                                              &p_entry->used_uniforms, &used_uniform_count);
 
   size_t used_push_constant_count = 0;
-  SpvReflectResult result1 = IntersectSortedAccessedVariable(used_accesses, used_acessed_count, push_constants, push_constant_count,
-                                                             &p_entry->used_push_constants, &used_push_constant_count);
+  SpvReflectResult result1 =
+      IntersectSortedAccessedVariable(p_used_accesses, used_acessed_count, push_constants, push_constant_count,
+                                      &p_entry->used_push_constants, &used_push_constant_count);
 
   for (uint32_t i = 0; i < p_module->descriptor_binding_count; ++i) {
     SpvReflectDescriptorBinding* p_binding = &p_module->descriptor_bindings[i];
     for (uint32_t j = 0; j < used_acessed_count; j++) {
-      if (used_accesses[j].variable_ptr == p_binding->spirv_id) {
+      if (p_used_accesses[j].variable_ptr == p_binding->spirv_id) {
         p_binding->accessed = 1;
       }
     }
   }
 
-  SafeFree(used_accesses);
+  SafeFree(p_used_accesses);
   if (result0 != SPV_REFLECT_RESULT_SUCCESS) {
     return result0;
   }
