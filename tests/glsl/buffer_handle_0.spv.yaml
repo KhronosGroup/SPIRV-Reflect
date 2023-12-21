@@ -24,8 +24,8 @@ all_type_descriptions:
     type_name: 
     struct_member_name: "i_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -33,15 +33,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 4
     members:
+    - [forward pointer]
   - &td2
     id: 7
     op: 32
     type_name: "t1"
     struct_member_name: "k_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -59,8 +60,8 @@ all_type_descriptions:
     type_name: 
     struct_member_name: "i_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -68,15 +69,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 4
     members:
+    - [forward pointer]
   - &td4
     id: 8
     op: 32
     type_name: "t2"
     struct_member_name: "k_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -91,11 +93,11 @@ all_type_descriptions:
   - &td5
     id: 8
     op: 32
-    type_name: 
+    type_name: "t2"
     struct_member_name: "i_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -103,15 +105,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td6
     id: 9
     op: 32
     type_name: "t3"
     struct_member_name: "k_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -129,7 +132,7 @@ all_type_descriptions:
     type_name: "t4"
     struct_member_name: "m"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -202,8 +205,8 @@ all_type_descriptions:
     type_name: 
     struct_member_name: "k_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -211,16 +214,17 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td12
     id: 11
     op: 32
     type_name: 
     struct_member_name: "i_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -228,15 +232,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 4
     members:
+    - [forward pointer]
   - &td13
     id: 8
     op: 32
     type_name: "t2"
     struct_member_name: "k_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -251,11 +256,11 @@ all_type_descriptions:
   - &td14
     id: 8
     op: 32
-    type_name: 
+    type_name: "t2"
     struct_member_name: "i_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -263,15 +268,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td15
     id: 9
     op: 32
     type_name: "t3"
     struct_member_name: "k_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -289,7 +295,7 @@ all_type_descriptions:
     type_name: "t4"
     struct_member_name: "i_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -310,7 +316,7 @@ all_type_descriptions:
     type_name: "t1"
     struct_member_name: "k_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -345,8 +351,8 @@ all_type_descriptions:
     type_name: 
     struct_member_name: "i_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -354,15 +360,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 4
     members:
+    - [forward pointer]
   - &td20
     id: 7
     op: 32
     type_name: "t1"
     struct_member_name: "k_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -380,8 +387,8 @@ all_type_descriptions:
     type_name: 
     struct_member_name: "i_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -389,15 +396,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 4
     members:
+    - [forward pointer]
   - &td22
     id: 8
     op: 32
     type_name: "t2"
     struct_member_name: "k_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -412,11 +420,11 @@ all_type_descriptions:
   - &td23
     id: 8
     op: 32
-    type_name: 
+    type_name: "t2"
     struct_member_name: "i_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -424,15 +432,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td24
     id: 9
     op: 32
     type_name: "t3"
     struct_member_name: "k_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -450,7 +459,7 @@ all_type_descriptions:
     type_name: "t4"
     struct_member_name: "i_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -468,11 +477,11 @@ all_type_descriptions:
   - &td26
     id: 8
     op: 32
-    type_name: 
+    type_name: "t2"
     struct_member_name: "k_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -480,8 +489,9 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td27
     id: 6
     op: 21
@@ -505,8 +515,8 @@ all_type_descriptions:
     type_name: 
     struct_member_name: "i_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -514,15 +524,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 4
     members:
+    - [forward pointer]
   - &td29
     id: 7
     op: 32
     type_name: "t1"
     struct_member_name: "k_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -540,8 +551,8 @@ all_type_descriptions:
     type_name: 
     struct_member_name: "i_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -549,15 +560,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 4
     members:
+    - [forward pointer]
   - &td31
     id: 8
     op: 32
     type_name: "t2"
     struct_member_name: "k_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -572,11 +584,11 @@ all_type_descriptions:
   - &td32
     id: 8
     op: 32
-    type_name: 
+    type_name: "t2"
     struct_member_name: "i_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -584,15 +596,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td33
     id: 9
     op: 32
     type_name: "t3"
     struct_member_name: "k_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -610,7 +623,7 @@ all_type_descriptions:
     type_name: "t4"
     struct_member_name: "i_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -628,11 +641,11 @@ all_type_descriptions:
   - &td35
     id: 9
     op: 32
-    type_name: 
+    type_name: "t3"
     struct_member_name: "k_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -640,8 +653,9 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td36
     id: 6
     op: 21
@@ -665,8 +679,8 @@ all_type_descriptions:
     type_name: 
     struct_member_name: "i_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -674,15 +688,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 4
     members:
+    - [forward pointer]
   - &td38
     id: 7
     op: 32
     type_name: "t1"
     struct_member_name: "k_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -700,8 +715,8 @@ all_type_descriptions:
     type_name: 
     struct_member_name: "k_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -709,16 +724,17 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td40
     id: 8
     op: 32
     type_name: 
     struct_member_name: "i_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -726,15 +742,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td41
     id: 9
     op: 32
     type_name: "t3"
     struct_member_name: "k_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -752,7 +769,7 @@ all_type_descriptions:
     type_name: "t4"
     struct_member_name: "i_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -773,7 +790,7 @@ all_type_descriptions:
     type_name: "t2"
     struct_member_name: "i_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -825,8 +842,8 @@ all_type_descriptions:
     type_name: 
     struct_member_name: "k_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -834,16 +851,17 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td47
     id: 11
     op: 32
     type_name: 
     struct_member_name: "i_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -851,15 +869,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 4
     members:
+    - [forward pointer]
   - &td48
     id: 8
     op: 32
     type_name: "t2"
     struct_member_name: "k_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -874,11 +893,11 @@ all_type_descriptions:
   - &td49
     id: 8
     op: 32
-    type_name: 
+    type_name: "t2"
     struct_member_name: "i_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -886,15 +905,16 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td50
     id: 9
     op: 32
     type_name: "t3"
     struct_member_name: "k_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -912,7 +932,7 @@ all_type_descriptions:
     type_name: "t4"
     struct_member_name: "i_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -933,7 +953,7 @@ all_type_descriptions:
     type_name: "t1"
     struct_member_name: "k_1"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x50080000 # STRUCT EXTERNAL_BLOCK ???
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
     decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
@@ -948,11 +968,11 @@ all_type_descriptions:
   - &td53
     id: 8
     op: 32
-    type_name: 
+    type_name: "t2"
     struct_member_name: "k_2"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -960,16 +980,17 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td54
     id: 9
     op: 32
-    type_name: 
+    type_name: "t3"
     struct_member_name: "k_3"
     storage_class: 5349 # PhysicalStorageBuffer
-    type_flags: 0x40000000 # ???
-    decoration_flags: 0x00000000 # NONE
+    type_flags: 0x50080000 # STRUCT REF EXTERNAL_BLOCK 
+    decoration_flags: 0x00000001 # BLOCK 
     traits:
       numeric:
         scalar: { width: 0, signedness: 0 }
@@ -977,8 +998,9 @@ all_type_descriptions:
         matrix: { column_count: 0, row_count: 0, stride: 0 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
+    member_count: 1
     members:
+    - [forward pointer]
   - &td55
     id: 10
     op: 30
@@ -1017,21 +1039,6 @@ all_block_variables:
     members:
     type_description: *td9
   - &bv1
-    name: "i_1"
-    offset: 0
-    absolute_offset: 0
-    size: 0
-    padded_size: 0
-    decorations: 0x00000000 # NONE
-    numeric:
-      scalar: { width: 0, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-    type_description: *td25
-  - &bv2
     name: "k_1"
     offset: 8
     absolute_offset: 8
@@ -1045,24 +1052,9 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 1
     members:
-      - *bv1
+      - [recursive]
     type_description: *td17
-  - &bv3
-    name: "i_2"
-    offset: 0
-    absolute_offset: 0
-    size: 0
-    padded_size: 0
-    decorations: 0x00000000 # NONE
-    numeric:
-      scalar: { width: 0, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-    type_description: *td34
-  - &bv4
+  - &bv2
     name: "k_2"
     offset: 16
     absolute_offset: 16
@@ -1076,24 +1068,9 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 1
     members:
-      - *bv3
+      - [recursive]
     type_description: *td26
-  - &bv5
-    name: "i_3"
-    offset: 0
-    absolute_offset: 0
-    size: 0
-    padded_size: 0
-    decorations: 0x00000000 # NONE
-    numeric:
-      scalar: { width: 0, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-    type_description: *td43
-  - &bv6
+  - &bv3
     name: "k_3"
     offset: 24
     absolute_offset: 24
@@ -1107,9 +1084,9 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 1
     members:
-      - *bv5
+      - [recursive]
     type_description: *td35
-  - &bv7
+  - &bv4
     name: "m"
     offset: 0
     absolute_offset: 0
@@ -1124,11 +1101,11 @@ all_block_variables:
     member_count: 4
     members:
       - *bv0
+      - *bv1
       - *bv2
-      - *bv4
-      - *bv6
+      - *bv3
     type_description: *td7
-  - &bv8
+  - &bv5
     name: "s5"
     offset: 0
     absolute_offset: 0
@@ -1142,9 +1119,9 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 1
     members:
-      - *bv7
+      - *bv4
     type_description: *td8
-  - &bv9
+  - &bv6
     name: "j"
     offset: 0
     absolute_offset: 0
@@ -1159,7 +1136,7 @@ all_block_variables:
     member_count: 0
     members:
     type_description: *td44
-  - &bv10
+  - &bv7
     name: "j"
     offset: 0
     absolute_offset: 0
@@ -1174,37 +1151,7 @@ all_block_variables:
     member_count: 0
     members:
     type_description: *td9
-  - &bv11
-    name: "k_1"
-    offset: 8
-    absolute_offset: 8
-    size: 0
-    padded_size: 0
-    decorations: 0x00000000 # NONE
-    numeric:
-      scalar: { width: 0, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-    type_description: *td17
-  - &bv12
-    name: "i_2"
-    offset: 0
-    absolute_offset: 0
-    size: 0
-    padded_size: 0
-    decorations: 0x00000000 # NONE
-    numeric:
-      scalar: { width: 0, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-    type_description: *td34
-  - &bv13
+  - &bv8
     name: "k_2"
     offset: 16
     absolute_offset: 16
@@ -1218,24 +1165,9 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 1
     members:
-      - *bv12
+      - [recursive]
     type_description: *td26
-  - &bv14
-    name: "i_3"
-    offset: 0
-    absolute_offset: 0
-    size: 0
-    padded_size: 0
-    decorations: 0x00000000 # NONE
-    numeric:
-      scalar: { width: 0, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-    type_description: *td43
-  - &bv15
+  - &bv9
     name: "k_3"
     offset: 24
     absolute_offset: 24
@@ -1249,9 +1181,9 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 1
     members:
-      - *bv14
+      - [recursive]
     type_description: *td35
-  - &bv16
+  - &bv10
     name: "i_1"
     offset: 0
     absolute_offset: 0
@@ -1265,12 +1197,12 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 4
     members:
-      - *bv10
-      - *bv11
-      - *bv13
-      - *bv15
+      - *bv7
+      - [recursive]
+      - *bv8
+      - *bv9
     type_description: *td25
-  - &bv17
+  - &bv11
     name: "k_1"
     offset: 8
     absolute_offset: 8
@@ -1284,39 +1216,9 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 1
     members:
-      - *bv16
+      - *bv10
     type_description: *td52
-  - &bv18
-    name: "k_2"
-    offset: 16
-    absolute_offset: 16
-    size: 0
-    padded_size: 0
-    decorations: 0x00000000 # NONE
-    numeric:
-      scalar: { width: 0, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-    type_description: *td53
-  - &bv19
-    name: "k_3"
-    offset: 24
-    absolute_offset: 24
-    size: 0
-    padded_size: 0
-    decorations: 0x00000000 # NONE
-    numeric:
-      scalar: { width: 0, signedness: 0 }
-      vector: { component_count: 0 }
-      matrix: { column_count: 0, row_count: 0, stride: 0 }
-    array: { dims_count: 0, dims: [], stride: 0 }
-    member_count: 0
-    members:
-    type_description: *td54
-  - &bv20
+  - &bv12
     name: "x"
     offset: 0
     absolute_offset: 0
@@ -1330,10 +1232,10 @@ all_block_variables:
     array: { dims_count: 0, dims: [], stride: 0 }
     member_count: 4
     members:
-      - *bv9
-      - *bv17
-      - *bv18
-      - *bv19
+      - *bv6
+      - *bv11
+      - [recursive]
+      - [recursive]
     type_description: *td55
 all_descriptor_bindings:
   - &db0
@@ -1345,7 +1247,7 @@ all_descriptor_bindings:
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 8 # UAV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-    block: *bv8 # "s5"
+    block: *bv5 # "s5"
     array: { dims_count: 0, dims: [] }
     accessed: 0
     uav_counter_id: 4294967295
@@ -1361,7 +1263,7 @@ all_descriptor_bindings:
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 8 # UAV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
-    block: *bv20 # "x"
+    block: *bv12 # "x"
     array: { dims_count: 0, dims: [] }
     accessed: 0
     uav_counter_id: 4294967295

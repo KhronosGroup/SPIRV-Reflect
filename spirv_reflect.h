@@ -220,6 +220,8 @@ typedef enum SpvReflectFormat {
 enum SpvReflectVariableFlagBits{
   SPV_REFLECT_VARIABLE_FLAGS_NONE   = 0x00000000,
   SPV_REFLECT_VARIABLE_FLAGS_UNUSED = 0x00000001,
+  // If variable points to a copy of the PhysicalStorageBuffer struct
+  SPV_REFLECT_VARIABLE_FLAGS_PHYSICAL_POINTER_COPY = 0x00000002,
 };
 
 typedef uint32_t SpvReflectVariableFlags;
@@ -361,6 +363,10 @@ typedef struct SpvReflectTypeDescription {
   // If underlying type is a struct (ex. array of structs)
   // this gives access to the OpTypeStruct
   struct SpvReflectTypeDescription* struct_type_description;
+
+  // Some pointers to SpvReflectTypeDescription are really
+  // just copies of another reference to the same OpType
+  uint32_t                          copied;
 
   // @deprecated use struct_type_description instead
   uint32_t                          member_count;
