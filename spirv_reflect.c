@@ -656,7 +656,10 @@ static void DestroyParser(SpvReflectPrvParser* p_parser) {
     SafeFree(p_parser->source_embedded);
     SafeFree(p_parser->functions);
     SafeFree(p_parser->access_chains);
-    SafeFree(p_parser->physical_pointer_structs);
+
+    if (IsNotNull(p_parser->physical_pointer_structs)) {
+      SafeFree(p_parser->physical_pointer_structs);
+    }
     p_parser->node_count = 0;
   }
 }
@@ -1899,10 +1902,12 @@ static SpvReflectResult ParseTypes(SpvReflectPrvParser* p_parser, SpvReflectShad
   }
 
   // allocate now and fill in when parsing struct variable later
-  p_parser->physical_pointer_structs = (SpvReflectPrvPhysicalPointerStruct*)calloc(p_parser->physical_pointer_struct_count,
-                                                                                   sizeof(*(p_parser->physical_pointer_structs)));
-  if (IsNull(p_parser->physical_pointer_structs)) {
-    return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+  if (p_parser->physical_pointer_struct_count > 0) {
+    p_parser->physical_pointer_structs = (SpvReflectPrvPhysicalPointerStruct*)calloc(p_parser->physical_pointer_struct_count,
+                                                                                     sizeof(*(p_parser->physical_pointer_structs)));
+    if (IsNull(p_parser->physical_pointer_structs)) {
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
   }
   return SPV_REFLECT_RESULT_SUCCESS;
 }
