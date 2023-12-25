@@ -116,6 +116,7 @@ typedef struct SpvReflectPrvDecorations {
   SpvReflectPrvStringDecoration   semantic;
   uint32_t                        array_stride;
   uint32_t                        matrix_stride;
+  uint32_t                        spec_id;
   SpvBuiltIn                      built_in;
 } SpvReflectPrvDecorations;
 
@@ -497,7 +498,8 @@ static void ApplyArrayTraits(const SpvReflectTypeDescription* p_type, SpvReflect
 }
 
 static bool IsSpecConstant(const SpvReflectPrvNode* p_node) {
-  return (p_node->op == SpvOpSpecConstant || p_node->op == SpvOpSpecConstantOp);
+  return (p_node->op == SpvOpSpecConstant || p_node->op == SpvOpSpecConstantOp || p_node->op == SpvOpSpecConstantTrue ||
+          p_node->op == SpvOpSpecConstantFalse);
 }
 
 static SpvReflectPrvNode* FindNode(SpvReflectPrvParser* p_parser, uint32_t result_id) {
@@ -698,6 +700,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
     p_parser->nodes[i].decorations.component.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.offset.value = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.uav_counter_buffer.value = (uint32_t)INVALID_VALUE;
+    p_parser->nodes[i].decorations.spec_id = (uint32_t)INVALID_VALUE;
     p_parser->nodes[i].decorations.built_in = (SpvBuiltIn)INVALID_VALUE;
   }
   // Mark source file id node
@@ -939,7 +942,8 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
             CHECKED_READU32(p_parser, p_node->word_offset + SPIRV_ACCESS_CHAIN_INDEX_OFFSET + index_index, index_id);
             // Find OpConstant node that contains index value
             SpvReflectPrvNode* p_index_value_node = FindNode(p_parser, index_id);
-            if ((p_index_value_node != NULL) && (p_index_value_node->op == SpvOpConstant)) {
+            if ((p_index_value_node != NULL) &&
+                (p_index_value_node->op == SpvOpConstant || p_index_value_node->op == SpvOpSpecConstant)) {
               // Read index value
               uint32_t index_value = UINT32_MAX;
               CHECKED_READU32(p_parser, p_index_value_node->word_offset + 3, index_value);
@@ -1396,6 +1400,7 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
       case SpvDecorationDescriptorSet:
       case SpvDecorationOffset:
       case SpvDecorationInputAttachmentIndex:
+      case SpvDecorationSpecId:
       case SpvDecorationWeightTextureQCOM:
       case SpvDecorationBlockMatchTextureQCOM:
       case SpvDecorationHlslCounterBufferGOOGLE:
@@ -1530,6 +1535,11 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
         uint32_t word_offset = p_node->word_offset + member_offset + 3;
         CHECKED_READU32(p_parser, word_offset, p_target_decorations->input_attachment_index.value);
         p_target_decorations->input_attachment_index.word_offset = word_offset;
+      } break;
+
+      case SpvDecorationSpecId: {
+        uint32_t word_offset = p_node->word_offset + member_offset + 3;
+        CHECKED_READU32(p_parser, word_offset, p_target_decorations->spec_id);
       } break;
 
       case SpvDecorationHlslCounterBufferGOOGLE: {
@@ -1714,22 +1724,16 @@ static SpvReflectResult ParseType(SpvReflectPrvParser* p_parser, SpvReflectPrvNo
           SpvReflectPrvNode* p_length_node = FindNode(p_parser, length_id);
           if (IsNotNull(p_length_node)) {
             uint32_t dim_index = p_type->traits.array.dims_count;
-            if (IsSpecConstant(p_length_node)) {
-              p_type->traits.array.dims[dim_index] = (uint32_t)SPV_REFLECT_ARRAY_DIM_SPEC_CONSTANT;
-              p_type->traits.array.spec_constant_op_ids[dim_index] = length_id;
+            uint32_t length = 0;
+            IF_READU32(result, p_parser, p_length_node->word_offset + 3, length);
+            if (result == SPV_REFLECT_RESULT_SUCCESS) {
+              p_type->traits.array.dims[dim_index] = length;
               p_type->traits.array.dims_count += 1;
+              p_type->traits.array.spec_constant_op_ids[dim_index] =
+                  IsSpecConstant(p_length_node) ? p_length_node->decorations.spec_id : (uint32_t)INVALID_VALUE;
             } else {
-              uint32_t length = 0;
-              IF_READU32(result, p_parser, p_length_node->word_offset + 3, length);
-              if (result == SPV_REFLECT_RESULT_SUCCESS) {
-                // Write the array dim and increment the count and offset
-                p_type->traits.array.dims[dim_index] = length;
-                p_type->traits.array.spec_constant_op_ids[dim_index] = (uint32_t)SPV_REFLECT_ARRAY_DIM_SPEC_CONSTANT;
-                p_type->traits.array.dims_count += 1;
-              } else {
-                result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
-                SPV_REFLECT_ASSERT(false);
-              }
+              result = SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
+              SPV_REFLECT_ASSERT(false);
             }
             // Parse next dimension or element type
             SpvReflectPrvNode* p_next_node = FindNode(p_parser, element_type_id);
@@ -1750,7 +1754,7 @@ static SpvReflectResult ParseType(SpvReflectPrvParser* p_parser, SpvReflectPrvNo
         p_type->traits.array.stride = p_node->decorations.array_stride;
         uint32_t dim_index = p_type->traits.array.dims_count;
         p_type->traits.array.dims[dim_index] = (uint32_t)SPV_REFLECT_ARRAY_DIM_RUNTIME;
-        p_type->traits.array.spec_constant_op_ids[dim_index] = 0;
+        p_type->traits.array.spec_constant_op_ids[dim_index] = (uint32_t)INVALID_VALUE;
         p_type->traits.array.dims_count += 1;
         // Parse next dimension or element type
         SpvReflectPrvNode* p_next_node = FindNode(p_parser, element_type_id);
