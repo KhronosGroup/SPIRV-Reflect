@@ -240,4 +240,6 @@ module:
     - *iv6 # "out.var.COLOR0"
   push_constant_count: 0,
   push_constants:
+  specialization_constant_count: 0,
+  specialization_constants:
 ...

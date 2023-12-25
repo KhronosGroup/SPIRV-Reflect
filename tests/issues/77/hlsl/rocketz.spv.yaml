@@ -253,4 +253,6 @@ module:
     - *iv3 # "out.var.POSITION"
   push_constant_count: 0,
   push_constants:
+  specialization_constant_count: 0,
+  specialization_constants:
 ...

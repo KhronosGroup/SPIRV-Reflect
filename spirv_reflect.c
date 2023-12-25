@@ -1352,7 +1352,8 @@ static SpvReflectResult ParseNames(SpvReflectPrvParser* p_parser) {
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
-static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
+static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module) {
+  uint32_t spec_constant_count = 0;
   for (uint32_t i = 0; i < p_parser->node_count; ++i) {
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
 
@@ -1538,8 +1539,7 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
       } break;
 
       case SpvDecorationSpecId: {
-        uint32_t word_offset = p_node->word_offset + member_offset + 3;
-        CHECKED_READU32(p_parser, word_offset, p_target_decorations->spec_id);
+        spec_constant_count++;
       } break;
 
       case SpvDecorationHlslCounterBufferGOOGLE: {
@@ -1563,6 +1563,27 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
       } break;
     }
   }
+
+  if (spec_constant_count > 0) {
+    p_module->spec_constants = (SpvReflectSpecializationConstant*)calloc(spec_constant_count, sizeof(*p_module->spec_constants));
+    if (IsNull(p_module->spec_constants)) {
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
+  }
+  for (uint32_t i = 0; i < p_parser->node_count; ++i) {
+    SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
+    if (p_node->op == SpvOpDecorate) {
+      uint32_t decoration = (uint32_t)INVALID_VALUE;
+      CHECKED_READU32(p_parser, p_node->word_offset + 2, decoration);
+      if (decoration == SpvDecorationSpecId) {
+        const uint32_t count = p_module->spec_constant_count;
+        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_module->spec_constants[count].constant_id);
+        CHECKED_READU32(p_parser, p_node->word_offset + 3, p_module->spec_constants[count].spirv_id);
+        p_module->spec_constant_count++;
+      }
+    }
+  }
+
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
@@ -3861,7 +3882,7 @@ static SpvReflectResult CreateShaderModule(uint32_t flags, size_t size, const vo
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
-    result = ParseDecorations(&parser);
+    result = ParseDecorations(&parser, p_module);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
 
@@ -4050,6 +4071,7 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module) {
   }
   SafeFree(p_module->capabilities);
   SafeFree(p_module->entry_points);
+  SafeFree(p_module->spec_constants);
 
   // Push constants
   for (size_t i = 0; i < p_module->push_constant_block_count; ++i) {
@@ -4452,6 +4474,31 @@ SpvReflectResult spvReflectEnumerateEntryPointPushConstantBlocks(const SpvReflec
   } else {
     *p_count = count;
   }
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
+SpvReflectResult spvReflectEnumerateSpecializationConstants(const SpvReflectShaderModule* p_module, uint32_t* p_count,
+                                                            SpvReflectSpecializationConstant** pp_constants) {
+  if (IsNull(p_module)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+  if (IsNull(p_count)) {
+    return SPV_REFLECT_RESULT_ERROR_NULL_POINTER;
+  }
+
+  if (IsNotNull(pp_constants)) {
+    if (*p_count != p_module->spec_constant_count) {
+      return SPV_REFLECT_RESULT_ERROR_COUNT_MISMATCH;
+    }
+
+    for (uint32_t index = 0; index < *p_count; ++index) {
+      SpvReflectSpecializationConstant* p_constant = (SpvReflectSpecializationConstant*)&p_module->spec_constants[index];
+      pp_constants[index] = p_constant;
+    }
+  } else {
+    *p_count = p_module->spec_constant_count;
+  }
+
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 

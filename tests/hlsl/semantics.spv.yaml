@@ -619,4 +619,6 @@ module:
     - *iv16 # "out.var.SV_TARGET7"
   push_constant_count: 0,
   push_constants:
+  specialization_constant_count: 0,
+  specialization_constants:
 ...
