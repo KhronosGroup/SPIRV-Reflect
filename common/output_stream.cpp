@@ -676,6 +676,7 @@ std::string ToStringDecorationFlags(SpvReflectDecorationFlags decoration_flags) 
   }
   std::stringstream sstream;
   PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, NON_WRITABLE);
+  PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, NON_READABLE);
   PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, FLAT);
   PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, NOPERSPECTIVE);
   PRINT_AND_CLEAR_DECORATION_FLAG(sstream, decoration_flags, BUILT_IN);
@@ -1807,6 +1808,9 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
   os << t1 << "input_attachment_index: " << db.input_attachment_index << std::endl;
   //   uint32_t                            set;
   os << t1 << "set: " << db.set << std::endl;
+  //   SpvReflectDecorationFlags           decoration_flags;
+  os << t1 << "decoration_flags: " << AsHexString(db.decoration_flags) << " # " << ToStringDecorationFlags(db.decoration_flags)
+     << std::endl;
   //   SpvReflectDescriptorType            descriptor_type;
   os << t1 << "descriptor_type: " << db.descriptor_type << " # " << ToStringDescriptorType(db.descriptor_type) << std::endl;
   //   SpvReflectResourceType              resource_type;

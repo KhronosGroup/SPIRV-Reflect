@@ -216,7 +216,7 @@ all_block_variables:
     absolute_offset: 0
     size: 0
     padded_size: 0
-    decorations: 0x00000200 # ???
+    decorations: 0x00000200 # NON_READABLE 
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 0 }
