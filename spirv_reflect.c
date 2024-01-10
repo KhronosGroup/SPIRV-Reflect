@@ -803,6 +803,9 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
       case SpvOpCapability: {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->capability);
         ++(p_parser->capability_count);
+        if (p_node->capability == SpvCapabilityRayQueryKHR) {
+            free(p_node);
+        }
       } break;
 
       case SpvOpName:
