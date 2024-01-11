@@ -321,7 +321,6 @@ typedef struct SpvReflectImageTraits {
 
 typedef enum SpvReflectArrayDimType {
   SPV_REFLECT_ARRAY_DIM_RUNTIME       = 0,         // OpTypeRuntimeArray
-  SPV_REFLECT_ARRAY_DIM_SPEC_CONSTANT = 0xFFFFFFFF // specialization constant
 } SpvReflectArrayDimType;
 
 typedef struct SpvReflectArrayTraits {

@@ -1723,7 +1723,6 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBloc
   os << t2 << "matrix: { ";
   os << "column_count: " << bv.numeric.matrix.column_count << ", ";
   os << "row_count: " << bv.numeric.matrix.row_count << ", ";
-  ;
   os << "stride: " << bv.numeric.matrix.stride << " }" << std::endl;
   // } SpvReflectNumericTraits;
 
@@ -1946,7 +1945,6 @@ void SpvReflectToYaml::WriteInterfaceVariable(std::ostream& os, const SpvReflect
   os << t2 << "matrix: { ";
   os << "column_count: " << iv.numeric.matrix.column_count << ", ";
   os << "row_count: " << iv.numeric.matrix.row_count << ", ";
-  ;
   os << "stride: " << iv.numeric.matrix.stride << " }" << std::endl;
   // } SpvReflectNumericTraits;
 
