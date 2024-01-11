@@ -1111,4 +1111,6 @@ module:
     - *iv5 # "gl_PerVertexOut"
   push_constant_count: 0,
   push_constants:
+  specialization_constant_count: 0,
+  specialization_constants:
 ...

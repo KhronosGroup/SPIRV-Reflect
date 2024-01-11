@@ -179,4 +179,6 @@ module:
     - *iv0 # "outColor"
   push_constant_count: 0,
   push_constants:
+  specialization_constant_count: 0,
+  specialization_constants:
 ...
