@@ -40,16 +40,7 @@
 #define SPV_REFLECT_ASSERT(COND)
 #endif
 
-// Temporary enums until these make it into SPIR-V/Vulkan
 // clang-format off
-enum {
-  SpvReflectOpDecorateId                      = 332,
-  SpvReflectOpDecorateStringGOOGLE            = 5632,
-  SpvReflectOpMemberDecorateStringGOOGLE      = 5633,
-  SpvReflectDecorationHlslCounterBufferGOOGLE = 5634,
-  SpvReflectDecorationHlslSemanticGOOGLE      = 5635,
-};
-
 enum {
   SPIRV_STARTING_WORD_INDEX       = 5,
   SPIRV_WORD_SIZE                 = sizeof(uint32_t),
@@ -1362,9 +1353,8 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
 
     if (((uint32_t)p_node->op != (uint32_t)SpvOpDecorate) && ((uint32_t)p_node->op != (uint32_t)SpvOpMemberDecorate) &&
-        ((uint32_t)p_node->op != (uint32_t)SpvReflectOpDecorateId) &&
-        ((uint32_t)p_node->op != (uint32_t)SpvReflectOpDecorateStringGOOGLE) &&
-        ((uint32_t)p_node->op != (uint32_t)SpvReflectOpMemberDecorateStringGOOGLE)) {
+        ((uint32_t)p_node->op != (uint32_t)SpvOpDecorateId) && ((uint32_t)p_node->op != (uint32_t)SpvOpDecorateString) &&
+        ((uint32_t)p_node->op != (uint32_t)SpvOpMemberDecorateString)) {
       continue;
     }
 
@@ -1408,8 +1398,8 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
       case SpvDecorationInputAttachmentIndex:
       case SpvDecorationWeightTextureQCOM:
       case SpvDecorationBlockMatchTextureQCOM:
-      case SpvReflectDecorationHlslCounterBufferGOOGLE:
-      case SpvReflectDecorationHlslSemanticGOOGLE: {
+      case SpvDecorationHlslCounterBufferGOOGLE:
+      case SpvDecorationHlslSemanticGOOGLE: {
         skip = false;
       } break;
     }
@@ -1542,13 +1532,13 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
         p_target_decorations->input_attachment_index.word_offset = word_offset;
       } break;
 
-      case SpvReflectDecorationHlslCounterBufferGOOGLE: {
+      case SpvDecorationHlslCounterBufferGOOGLE: {
         uint32_t word_offset = p_node->word_offset + member_offset + 3;
         CHECKED_READU32(p_parser, word_offset, p_target_decorations->uav_counter_buffer.value);
         p_target_decorations->uav_counter_buffer.word_offset = word_offset;
       } break;
 
-      case SpvReflectDecorationHlslSemanticGOOGLE: {
+      case SpvDecorationHlslSemanticGOOGLE: {
         uint32_t word_offset = p_node->word_offset + member_offset + 3;
         p_target_decorations->semantic.value = (const char*)(p_parser->spirv_code + word_offset);
         p_target_decorations->semantic.word_offset = word_offset;
