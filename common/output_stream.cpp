@@ -631,6 +631,65 @@ std::string ToStringSpvImageFormat(SpvImageFormat fmt) {
   return "???";
 }
 
+std::string ToStringUserType(SpvReflectUserType user_type) {
+  switch (user_type) {
+    case SPV_REFLECT_USER_TYPE_CBUFFER:
+      return "cbuffer";
+    case SPV_REFLECT_USER_TYPE_TBUFFER:
+      return "tbuffer";
+    case SPV_REFLECT_USER_TYPE_APPEND_STRUCTURED_BUFFER:
+      return "AppendStructuredBuffer";
+    case SPV_REFLECT_USER_TYPE_BUFFER:
+      return "Buffer";
+    case SPV_REFLECT_USER_TYPE_BYTE_ADDRESS_BUFFER:
+      return "ByteAddressBuffer";
+    case SPV_REFLECT_USER_TYPE_CONSUME_STRUCTURED_BUFFER:
+      return "ConsumeStructuredBuffer";
+    case SPV_REFLECT_USER_TYPE_INPUT_PATCH:
+      return "InputPatch";
+    case SPV_REFLECT_USER_TYPE_OUTPUT_PATCH:
+      return "OutputPatch";
+    case SPV_REFLECT_USER_TYPE_RW_BUFFER:
+      return "RWBuffer";
+    case SPV_REFLECT_USER_TYPE_RW_BYTE_ADDRESS_BUFFER:
+      return "RWByteAddressBuffer";
+    case SPV_REFLECT_USER_TYPE_RW_STRUCTURED_BUFFER:
+      return "RWStructuredBuffer";
+    case SPV_REFLECT_USER_TYPE_RW_TEXTURE_1D:
+      return "RWTexture1D";
+    case SPV_REFLECT_USER_TYPE_RW_TEXTURE_1D_ARRAY:
+      return "RWTexture1DArray";
+    case SPV_REFLECT_USER_TYPE_RW_TEXTURE_2D:
+      return "RWTexture2D";
+    case SPV_REFLECT_USER_TYPE_RW_TEXTURE_2D_ARRAY:
+      return "RWTexture2DArray";
+    case SPV_REFLECT_USER_TYPE_RW_TEXTURE_3D:
+      return "RWTexture3D";
+    case SPV_REFLECT_USER_TYPE_STRUCTURED_BUFFER:
+      return "StructuredBuffer";
+    case SPV_REFLECT_USER_TYPE_TEXTURE_1D:
+      return "Texture1D";
+    case SPV_REFLECT_USER_TYPE_TEXTURE_1D_ARRAY:
+      return "Texture1DArray";
+    case SPV_REFLECT_USER_TYPE_TEXTURE_2D:
+      return "Texture2D";
+    case SPV_REFLECT_USER_TYPE_TEXTURE_2D_ARRAY:
+      return "Texture2DArray";
+    case SPV_REFLECT_USER_TYPE_TEXTURE_2DMS:
+      return "Texture2DMS";
+    case SPV_REFLECT_USER_TYPE_TEXTURE_2DMS_ARRAY:
+      return "Texture2DMSArray";
+    case SPV_REFLECT_USER_TYPE_TEXTURE_3D:
+      return "Texture3D";
+    case SPV_REFLECT_USER_TYPE_TEXTURE_CUBE:
+      return "TextureCube";
+    case SPV_REFLECT_USER_TYPE_TEXTURE_CUBE_ARRAY:
+      return "TextureCubeArray";
+    default:
+      return "???";
+  }
+}
+
 std::string ToStringTypeFlags(SpvReflectTypeFlags type_flags) {
   if (type_flags == SPV_REFLECT_TYPE_FLAG_UNDEFINED) {
     return "UNDEFINED";
@@ -1877,6 +1936,10 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
   //   } word_offset;
   os << t1 << "word_offset: { binding: " << db.word_offset.binding;
   os << ", set: " << db.word_offset.set << " }" << std::endl;
+
+  if (db.user_type != SPV_REFLECT_USER_TYPE_INVALID) {
+    os << t1 << "user_type: " << ToStringUserType(db.user_type) << std::endl;
+  }
   // } SpvReflectDescriptorBinding;
 }
 

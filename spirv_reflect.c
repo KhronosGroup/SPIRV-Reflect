@@ -106,6 +106,7 @@ typedef struct SpvReflectPrvDecorations {
   bool                            is_per_task;
   bool                            is_weight_texture;
   bool                            is_block_match_texture;
+  SpvReflectUserType              user_type;
   SpvReflectPrvNumberDecoration   set;
   SpvReflectPrvNumberDecoration   binding;
   SpvReflectPrvNumberDecoration   input_attachment_index;
@@ -1357,9 +1358,8 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser, SpvRefle
   for (uint32_t i = 0; i < p_parser->node_count; ++i) {
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
 
-    if (((uint32_t)p_node->op != (uint32_t)SpvOpDecorate) && ((uint32_t)p_node->op != (uint32_t)SpvOpMemberDecorate) &&
-        ((uint32_t)p_node->op != (uint32_t)SpvOpDecorateId) && ((uint32_t)p_node->op != (uint32_t)SpvOpDecorateString) &&
-        ((uint32_t)p_node->op != (uint32_t)SpvOpMemberDecorateString)) {
+    if ((p_node->op != SpvOpDecorate) && (p_node->op != SpvOpMemberDecorate) && (p_node->op != SpvOpDecorateId) &&
+        (p_node->op != SpvOpDecorateString) && (p_node->op != SpvOpMemberDecorateString)) {
       continue;
     }
 
@@ -1404,6 +1404,7 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser, SpvRefle
       case SpvDecorationSpecId:
       case SpvDecorationWeightTextureQCOM:
       case SpvDecorationBlockMatchTextureQCOM:
+      case SpvDecorationUserTypeGOOGLE:
       case SpvDecorationHlslCounterBufferGOOGLE:
       case SpvDecorationHlslSemanticGOOGLE: {
         skip = false;
@@ -1561,6 +1562,68 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser, SpvRefle
       case SpvDecorationBlockMatchTextureQCOM: {
         p_target_decorations->is_block_match_texture = true;
       } break;
+    }
+
+    if (p_node->op == SpvOpDecorateString && decoration == SpvDecorationUserTypeGOOGLE) {
+      uint32_t terminator = 0;
+      SpvReflectResult result = ReadStr(p_parser, p_node->word_offset + 3, 0, p_node->word_count, &terminator, NULL);
+      if (result != SPV_REFLECT_RESULT_SUCCESS) {
+        return result;
+      }
+      const char* name = (const char*)(p_parser->spirv_code + p_node->word_offset + 3);
+      if (strcmp(name, "cbuffer") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_CBUFFER;
+      } else if (strcmp(name, "tbuffer") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TBUFFER;
+      } else if (strcmp(name, "appendstructuredbuffer") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_APPEND_STRUCTURED_BUFFER;
+      } else if (strcmp(name, "buffer") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_BUFFER;
+      } else if (strcmp(name, "byteaddressbuffer") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_BYTE_ADDRESS_BUFFER;
+      } else if (strcmp(name, "consumestructuredbuffer") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_CONSUME_STRUCTURED_BUFFER;
+      } else if (strcmp(name, "inputpatch") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_INPUT_PATCH;
+      } else if (strcmp(name, "outputpatch") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_OUTPUT_PATCH;
+      } else if (strcmp(name, "rwbuffer") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_BUFFER;
+      } else if (strcmp(name, "rwbyteaddressbuffer") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_BYTE_ADDRESS_BUFFER;
+      } else if (strcmp(name, "rwstructuredbuffer") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_STRUCTURED_BUFFER;
+      } else if (strcmp(name, "rwtexture1d") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_TEXTURE_1D;
+      } else if (strcmp(name, "rwtexture1darray") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_TEXTURE_1D_ARRAY;
+      } else if (strcmp(name, "rwtexture2d") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_TEXTURE_2D;
+      } else if (strcmp(name, "rwtexture2darray") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_TEXTURE_2D_ARRAY;
+      } else if (strcmp(name, "rwtexture3d") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_TEXTURE_3D;
+      } else if (strcmp(name, "structuredbuffer") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_STRUCTURED_BUFFER;
+      } else if (strcmp(name, "texture1d") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_1D;
+      } else if (strcmp(name, "texture1darray") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_1D_ARRAY;
+      } else if (strcmp(name, "texture2d") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_2D;
+      } else if (strcmp(name, "texture2darray") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_2D_ARRAY;
+      } else if (strcmp(name, "texture2dms") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_2DMS;
+      } else if (strcmp(name, "texture2dmsarray") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_2DMS_ARRAY;
+      } else if (strcmp(name, "texture3d") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_3D;
+      } else if (strcmp(name, "texturecube") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_CUBE;
+      } else if (strcmp(name, "texturecubearray") == 0) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_CUBE_ARRAY;
+      }
     }
   }
 
@@ -2053,6 +2116,7 @@ static SpvReflectResult ParseDescriptorBindings(SpvReflectPrvParser* p_parser, S
     p_descriptor->uav_counter_id = p_node->decorations.uav_counter_buffer.value;
     p_descriptor->type_description = p_type;
     p_descriptor->decoration_flags = ApplyDecorations(&p_node->decorations);
+    p_descriptor->user_type = p_node->decorations.user_type;
 
     // If this is in the StorageBuffer storage class, it's for sure a storage
     // buffer descriptor. We need to handle this case earlier because in SPIR-V
