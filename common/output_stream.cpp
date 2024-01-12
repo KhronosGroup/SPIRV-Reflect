@@ -1920,6 +1920,18 @@ void SpvReflectToYaml::WriteDescriptorBinding(std::ostream& os, const SpvReflect
     assert(itor != descriptor_binding_to_index_.end());
     os << t1 << "uav_counter_binding: *db" << itor->second << " # " << SafeString(db.uav_counter_binding->name) << std::endl;
   }
+
+  if (db.byte_address_buffer_offset_count > 0) {
+    os << t1 << "ByteAddressBuffer offsets: [";
+    for (uint32_t i = 0; i < db.byte_address_buffer_offset_count; i++) {
+      os << db.byte_address_buffer_offsets[i];
+      if (i < (db.byte_address_buffer_offset_count - 1)) {
+        os << ", ";
+      }
+    }
+    os << "]\n";
+  }
+
   if (verbosity_ >= 1) {
     //   SpvReflectTypeDescription*        type_description;
     if (db.type_description == nullptr) {

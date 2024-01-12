@@ -157,6 +157,7 @@ typedef struct SpvReflectPrvString {
 //    OpAtomicIAdd -> OpAccessChain -> OpVariable
 //    OpAtomicLoad -> OpImageTexelPointer -> OpVariable
 typedef struct SpvReflectPrvAccessedVariable {
+  SpvReflectPrvNode*     p_node;
   uint32_t               result_id;
   uint32_t               variable_ptr;
 } SpvReflectPrvAccessedVariable;
@@ -981,6 +982,15 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
       case SpvOpFunctionParameter: {
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
       } break;
+      case SpvOpBitcast:
+      case SpvOpShiftRightLogical:
+      case SpvOpIAdd:
+      case SpvOpISub:
+      case SpvOpIMul:
+      case SpvOpUDiv:
+      case SpvOpSDiv: {
+        CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
+      } break;
     }
 
     if (p_node->is_type) {
@@ -1152,6 +1162,7 @@ static SpvReflectResult ParseFunction(SpvReflectPrvParser* p_parser, SpvReflectP
         const uint32_t ptr_index = p_node->word_offset + 3;
         SpvReflectPrvAccessedVariable* access_ptr = &p_func->accessed_variables[p_func->accessed_variable_count];
 
+        access_ptr->p_node = p_node;
         // Need to track Result ID as not sure there has been any memory access through here yet
         CHECKED_READU32(p_parser, result_index, access_ptr->result_id);
         CHECKED_READU32(p_parser, ptr_index, access_ptr->variable_ptr);
@@ -1160,11 +1171,12 @@ static SpvReflectResult ParseFunction(SpvReflectPrvParser* p_parser, SpvReflectP
       case SpvOpStore: {
         const uint32_t result_index = p_node->word_offset + 2;
         CHECKED_READU32(p_parser, result_index, p_func->accessed_variables[p_func->accessed_variable_count].variable_ptr);
+        p_func->accessed_variables[p_func->accessed_variable_count].p_node = p_node;
         (++p_func->accessed_variable_count);
       } break;
       case SpvOpCopyMemory:
       case SpvOpCopyMemorySized: {
-        // There is no result_id is being zero is same as being invalid
+        // There is no result_id or node, being zero is same as being invalid
         CHECKED_READU32(p_parser, p_node->word_offset + 1,
                         p_func->accessed_variables[p_func->accessed_variable_count].variable_ptr);
         (++p_func->accessed_variable_count);
@@ -3221,6 +3233,106 @@ static SpvReflectResult TraverseCallGraph(SpvReflectPrvParser* p_parser, SpvRefl
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+static uint32_t GetUint32Constant(SpvReflectPrvParser* p_parser, uint32_t id) {
+  uint32_t result = (uint32_t)INVALID_VALUE;
+  SpvReflectPrvNode* p_node = FindNode(p_parser, id);
+  if (p_node && p_node->op == SpvOpConstant) {
+    UNCHECKED_READU32(p_parser, p_node->word_offset + 3, result);
+  }
+  return result;
+}
+
+static bool HasByteAddressBufferOffset(SpvReflectPrvNode* p_node, SpvReflectDescriptorBinding* p_binding) {
+  return IsNotNull(p_node) && IsNotNull(p_binding) && p_node->op == SpvOpAccessChain && p_node->word_count == 6 &&
+         (p_binding->user_type == SPV_REFLECT_USER_TYPE_BYTE_ADDRESS_BUFFER ||
+          p_binding->user_type == SPV_REFLECT_USER_TYPE_RW_BYTE_ADDRESS_BUFFER);
+}
+
+static SpvReflectResult ParseByteAddressBuffer(SpvReflectPrvParser* p_parser, SpvReflectPrvNode* p_node,
+                                               SpvReflectDescriptorBinding* p_binding) {
+  const SpvReflectResult not_found = SPV_REFLECT_RESULT_SUCCESS;
+  if (!HasByteAddressBufferOffset(p_node, p_binding)) {
+    return not_found;
+  }
+
+  uint32_t offset = 0;  // starting offset
+
+  uint32_t base_id = 0;
+  // expect first index of 2D access is zero
+  UNCHECKED_READU32(p_parser, p_node->word_offset + 4, base_id);
+  if (GetUint32Constant(p_parser, base_id) != 0) {
+    return not_found;
+  }
+  UNCHECKED_READU32(p_parser, p_node->word_offset + 5, base_id);
+  SpvReflectPrvNode* p_next_node = FindNode(p_parser, base_id);
+  if (IsNull(p_next_node)) {
+    return not_found;
+  } else if (p_next_node->op == SpvOpConstant) {
+    // The access chain might just be a constant right to the offset
+    offset = GetUint32Constant(p_parser, base_id);
+    p_binding->byte_address_buffer_offsets[p_binding->byte_address_buffer_offset_count] = offset;
+    p_binding->byte_address_buffer_offset_count++;
+    return SPV_REFLECT_RESULT_SUCCESS;
+  }
+
+  // there is usually 2 (sometimes 3) instrucitons that make up the arithmetic logic to calculate the offset
+  SpvReflectPrvNode* arithmetic_node_stack[8];
+  uint32_t arithmetic_count = 0;
+
+  while (IsNotNull(p_next_node)) {
+    if (p_next_node->op == SpvOpLoad || p_next_node->op == SpvOpBitcast || p_next_node->op == SpvOpConstant) {
+      break;  // arithmetic starts here
+    }
+    arithmetic_node_stack[arithmetic_count++] = p_next_node;
+    if (arithmetic_count >= 8) {
+      return not_found;
+    }
+
+    UNCHECKED_READU32(p_parser, p_next_node->word_offset + 3, base_id);
+    p_next_node = FindNode(p_parser, base_id);
+  }
+
+  const uint32_t count = arithmetic_count;
+  for (uint32_t i = 0; i < count; i++) {
+    p_next_node = arithmetic_node_stack[--arithmetic_count];
+    // All arithmetic ops takes 2 operands, assumption is the 2nd operand has the constant
+    UNCHECKED_READU32(p_parser, p_next_node->word_offset + 4, base_id);
+    uint32_t value = GetUint32Constant(p_parser, base_id);
+    if (value == INVALID_VALUE) {
+      return not_found;
+    }
+
+    switch (p_next_node->op) {
+      case SpvOpShiftRightLogical:
+        offset >>= value;
+        break;
+      case SpvOpIAdd:
+        offset += value;
+        break;
+      case SpvOpISub:
+        offset -= value;
+        break;
+      case SpvOpIMul:
+        offset *= value;
+        break;
+      case SpvOpUDiv:
+        offset /= value;
+        break;
+      case SpvOpSDiv:
+        // OpConstant might be signed, but value should never be negative
+        assert((int32_t)value > 0);
+        offset /= value;
+        break;
+      default:
+        return not_found;
+    }
+  }
+
+  p_binding->byte_address_buffer_offsets[p_binding->byte_address_buffer_offset_count] = offset;
+  p_binding->byte_address_buffer_offset_count++;
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
 static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module,
                                                      SpvReflectEntryPoint* p_entry, size_t uniform_count, uint32_t* uniforms,
                                                      size_t push_constant_count, uint32_t* push_constants) {
@@ -3253,6 +3365,7 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
   called_function_count = 0;
   result = TraverseCallGraph(p_parser, p_func, &called_function_count, p_called_functions, 0);
   if (result != SPV_REFLECT_RESULT_SUCCESS) {
+    SafeFree(p_called_functions);
     return result;
   }
 
@@ -3296,30 +3409,57 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
 
   // Do set intersection to find the used uniform and push constants
   size_t used_uniform_count = 0;
-  SpvReflectResult result0 = IntersectSortedAccessedVariable(p_used_accesses, used_acessed_count, uniforms, uniform_count,
-                                                             &p_entry->used_uniforms, &used_uniform_count);
+  result = IntersectSortedAccessedVariable(p_used_accesses, used_acessed_count, uniforms, uniform_count, &p_entry->used_uniforms,
+                                           &used_uniform_count);
+  if (result != SPV_REFLECT_RESULT_SUCCESS) {
+    SafeFree(p_used_accesses);
+    return result;
+  }
 
   size_t used_push_constant_count = 0;
-  SpvReflectResult result1 =
-      IntersectSortedAccessedVariable(p_used_accesses, used_acessed_count, push_constants, push_constant_count,
-                                      &p_entry->used_push_constants, &used_push_constant_count);
+  result = IntersectSortedAccessedVariable(p_used_accesses, used_acessed_count, push_constants, push_constant_count,
+                                           &p_entry->used_push_constants, &used_push_constant_count);
+  if (result != SPV_REFLECT_RESULT_SUCCESS) {
+    SafeFree(p_used_accesses);
+    return result;
+  }
 
   for (uint32_t i = 0; i < p_module->descriptor_binding_count; ++i) {
     SpvReflectDescriptorBinding* p_binding = &p_module->descriptor_bindings[i];
+    uint32_t byte_address_buffer_offset_count = 0;
+
     for (uint32_t j = 0; j < used_acessed_count; j++) {
       if (p_used_accesses[j].variable_ptr == p_binding->spirv_id) {
         p_binding->accessed = 1;
+
+        if (HasByteAddressBufferOffset(p_used_accesses[j].p_node, p_binding)) {
+          byte_address_buffer_offset_count++;
+        }
+      }
+    }
+
+    // only if SPIR-V has ByteAddressBuffer user type
+    if (byte_address_buffer_offset_count > 0) {
+      // possible not all allocated offset slots are used, but this will be a max per binding
+      p_binding->byte_address_buffer_offsets = (uint32_t*)calloc(byte_address_buffer_offset_count, sizeof(uint32_t));
+      if (IsNull(p_binding->byte_address_buffer_offsets)) {
+        SafeFree(p_used_accesses);
+        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      }
+
+      for (uint32_t j = 0; j < used_acessed_count; j++) {
+        if (p_used_accesses[j].variable_ptr == p_binding->spirv_id) {
+          result = ParseByteAddressBuffer(p_parser, p_used_accesses[j].p_node, p_binding);
+          if (result != SPV_REFLECT_RESULT_SUCCESS) {
+            SafeFree(p_used_accesses);
+            return result;
+          }
+        }
       }
     }
   }
 
   SafeFree(p_used_accesses);
-  if (result0 != SPV_REFLECT_RESULT_SUCCESS) {
-    return result0;
-  }
-  if (result1 != SPV_REFLECT_RESULT_SUCCESS) {
-    return result1;
-  }
 
   p_entry->used_uniform_count = (uint32_t)used_uniform_count;
   p_entry->used_push_constant_count = (uint32_t)used_push_constant_count;
@@ -4112,6 +4252,9 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module) {
   // Descriptor binding blocks
   for (size_t i = 0; i < p_module->descriptor_binding_count; ++i) {
     SpvReflectDescriptorBinding* p_descriptor = &p_module->descriptor_bindings[i];
+    if (IsNotNull(p_descriptor->byte_address_buffer_offsets)) {
+      SafeFree(p_descriptor->byte_address_buffer_offsets);
+    }
     SafeFreeBlockVariables(&p_descriptor->block);
   }
   SafeFree(p_module->descriptor_bindings);

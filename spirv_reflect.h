@@ -481,6 +481,8 @@ typedef struct SpvReflectDescriptorBinding {
   uint32_t                            accessed;
   uint32_t                            uav_counter_id;
   struct SpvReflectDescriptorBinding* uav_counter_binding;
+  uint32_t                            byte_address_buffer_offset_count;
+  uint32_t*                           byte_address_buffer_offsets;
 
   SpvReflectTypeDescription*          type_description;
 
