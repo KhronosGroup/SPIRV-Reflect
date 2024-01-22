@@ -3440,8 +3440,21 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
 
     // only if SPIR-V has ByteAddressBuffer user type
     if (byte_address_buffer_offset_count > 0) {
-      // possible not all allocated offset slots are used, but this will be a max per binding
-      p_binding->byte_address_buffer_offsets = (uint32_t*)calloc(byte_address_buffer_offset_count, sizeof(uint32_t));
+      bool multi_entrypoint = p_binding->byte_address_buffer_offset_count > 0;
+      if (multi_entrypoint) {
+        // If there is a 2nd entrypoint, we can have multiple entry points, in this case we want to just combine the accessed
+        // offsets and then de-duplicate it
+        uint32_t* prev_byte_address_buffer_offsets = p_binding->byte_address_buffer_offsets;
+        p_binding->byte_address_buffer_offsets =
+            (uint32_t*)calloc(byte_address_buffer_offset_count + p_binding->byte_address_buffer_offset_count, sizeof(uint32_t));
+        memcpy(p_binding->byte_address_buffer_offsets, prev_byte_address_buffer_offsets,
+               sizeof(uint32_t) * p_binding->byte_address_buffer_offset_count);
+        SafeFree(prev_byte_address_buffer_offsets);
+      } else {
+        // possible not all allocated offset slots are used, but this will be a max per binding
+        p_binding->byte_address_buffer_offsets = (uint32_t*)calloc(byte_address_buffer_offset_count, sizeof(uint32_t));
+      }
+
       if (IsNull(p_binding->byte_address_buffer_offsets)) {
         SafeFree(p_used_accesses);
         return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
@@ -3455,6 +3468,13 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
             return result;
           }
         }
+      }
+
+      if (multi_entrypoint) {
+        qsort(p_binding->byte_address_buffer_offsets, p_binding->byte_address_buffer_offset_count,
+              sizeof(*(p_binding->byte_address_buffer_offsets)), SortCompareUint32);
+        p_binding->byte_address_buffer_offset_count =
+            (uint32_t)DedupSortedUint32(p_binding->byte_address_buffer_offsets, p_binding->byte_address_buffer_offset_count);
       }
     }
   }
