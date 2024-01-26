@@ -2,7 +2,7 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 10
+    id: 9
     op: 29
     type_name: 
     struct_member_name: 
@@ -37,7 +37,7 @@ all_type_descriptions:
     members:
       - *td0
   - &td2
-    id: 13
+    id: 11
     op: 21
     type_name: 
     struct_member_name: 
@@ -100,8 +100,9 @@ all_descriptor_bindings:
     accessed: 1
     uav_counter_id: 4294967295
     uav_counter_binding:
+    ByteAddressBuffer offsets: [4, 8, 12]
     type_description: *td1
-    word_offset: { binding: 129, set: 125 }
+    word_offset: { binding: 107, set: 103 }
     user_type: ByteAddressBuffer
 all_interface_variables:
   - &iv0
@@ -123,13 +124,13 @@ all_interface_variables:
     type_description: *td2
     word_offset: { location: 0 }
 module:
-  generator: 14 # Google spiregg
-  entry_point_name: "ClosestHit0"
+  generator: 7 # Khronos SPIR-V Tools Assembler
+  entry_point_name: "AnyHit1"
   entry_point_id: 1
   source_language: 5 # HLSL
   source_language_version: 640
-  spirv_execution_model: 5316 # ClosestHitKHR
-  shader_stage: 0x00000400 # CLOSEST_HIT
+  spirv_execution_model: 5315 # AnyHitKHR
+  shader_stage: 0x00000200 # ANY_HIT
   descriptor_binding_count: 1
   descriptor_bindings:
     - *db0 # "g_MaterialData"
