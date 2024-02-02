@@ -560,6 +560,7 @@ typedef struct SpvReflectCapability {
 */
 typedef struct SpvReflectSpecializationConstant {
   uint32_t spirv_id;
+  const char* name;
   uint32_t constant_id;
 } SpvReflectSpecializationConstant;
 
