@@ -147,6 +147,8 @@ module:
   specialization_constants:
       spirv_id: 8
       constant_id: 8
-      spirv_id: 5
-      constant_id: 10
+      name: "SIZE_A"
+      spirv_id: 10
+      constant_id: 5
+      name: "SIZE_B"
 ...

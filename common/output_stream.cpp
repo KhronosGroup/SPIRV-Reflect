@@ -2253,8 +2253,8 @@ void SpvReflectToYaml::Write(std::ostream& os) {
   os << t1 << "specialization_constants:" << std::endl;
   for (uint32_t i = 0; i < sm_.spec_constant_count; ++i) {
     os << t3 << "spirv_id: " << sm_.spec_constants[i].spirv_id << std::endl;
-    os << t3 << "name: " << sm_.spec_constants[i].name << std::endl;
     os << t3 << "constant_id: " << sm_.spec_constants[i].constant_id << std::endl;
+    os << t3 << "name: " << SafeString(sm_.spec_constants[i].name) << std::endl;
   }
 
   if (verbosity_ >= 2) {
