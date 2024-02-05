@@ -1440,7 +1440,7 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser, SpvRefle
     }
     // Get decorations
     SpvReflectPrvDecorations* p_target_decorations = &(p_target_node->decorations);
-    // Update pointer if this is a member member decoration
+    // Update pointer if this is a member decoration
     if (p_node->op == SpvOpMemberDecorate) {
       uint32_t member_index = (uint32_t)INVALID_VALUE;
       CHECKED_READU32(p_parser, p_node->word_offset + 2, member_index);
