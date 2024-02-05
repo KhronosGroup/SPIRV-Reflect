@@ -1426,7 +1426,7 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser, SpvRefle
       continue;
     }
 
-    // Find target target node
+    // Find target node
     uint32_t target_id = 0;
     CHECKED_READU32(p_parser, p_node->word_offset + 1, target_id);
     SpvReflectPrvNode* p_target_node = FindNode(p_parser, target_id);
