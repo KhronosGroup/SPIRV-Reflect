@@ -643,12 +643,32 @@ std::string ToStringUserType(SpvReflectUserType user_type) {
       return "Buffer";
     case SPV_REFLECT_USER_TYPE_BYTE_ADDRESS_BUFFER:
       return "ByteAddressBuffer";
+    case SPV_REFLECT_USER_TYPE_CONSTANT_BUFFER:
+      return "ConstantBuffer";
     case SPV_REFLECT_USER_TYPE_CONSUME_STRUCTURED_BUFFER:
       return "ConsumeStructuredBuffer";
     case SPV_REFLECT_USER_TYPE_INPUT_PATCH:
       return "InputPatch";
     case SPV_REFLECT_USER_TYPE_OUTPUT_PATCH:
       return "OutputPatch";
+    case SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_BUFFER:
+      return "RasterizerOrderedBuffer";
+    case SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_BYTE_ADDRESS_BUFFER:
+      return "RasterizerOrderedByteAddressBuffer";
+    case SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_STRUCTURED_BUFFER:
+      return "RasterizerOrderedStructuredBuffer";
+    case SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_1D:
+      return "RasterizerOrderedTexture1D";
+    case SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_1D_ARRAY:
+      return "RasterizerOrderedTexture1DArray";
+    case SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_2D:
+      return "RasterizerOrderedTexture2D";
+    case SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_2D_ARRAY:
+      return "RasterizerOrderedTexture2DArray";
+    case SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_3D:
+      return "RasterizerOrderedTexture3D";
+    case SPV_REFLECT_USER_TYPE_RAYTRACING_ACCELERATION_STRUCTURE:
+      return "RaytracingAccelerationStructure";
     case SPV_REFLECT_USER_TYPE_RW_BUFFER:
       return "RWBuffer";
     case SPV_REFLECT_USER_TYPE_RW_BYTE_ADDRESS_BUFFER:
@@ -667,6 +687,10 @@ std::string ToStringUserType(SpvReflectUserType user_type) {
       return "RWTexture3D";
     case SPV_REFLECT_USER_TYPE_STRUCTURED_BUFFER:
       return "StructuredBuffer";
+    case SPV_REFLECT_USER_TYPE_SUBPASS_INPUT:
+      return "SubpassInput";
+    case SPV_REFLECT_USER_TYPE_SUBPASS_INPUT_MS:
+      return "SubpassInputMS";
     case SPV_REFLECT_USER_TYPE_TEXTURE_1D:
       return "Texture1D";
     case SPV_REFLECT_USER_TYPE_TEXTURE_1D_ARRAY:
@@ -681,6 +705,8 @@ std::string ToStringUserType(SpvReflectUserType user_type) {
       return "Texture2DMSArray";
     case SPV_REFLECT_USER_TYPE_TEXTURE_3D:
       return "Texture3D";
+    case SPV_REFLECT_USER_TYPE_TEXTURE_BUFFER:
+      return "TextureBuffer";
     case SPV_REFLECT_USER_TYPE_TEXTURE_CUBE:
       return "TextureCube";
     case SPV_REFLECT_USER_TYPE_TEXTURE_CUBE_ARRAY:
