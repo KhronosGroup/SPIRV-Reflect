@@ -250,6 +250,7 @@ all_descriptor_bindings:
     uav_counter_binding:
     type_description: *td3
     word_offset: { binding: 120, set: 116 }
+    user_type: RWStructuredBuffer
   - &db2
     spirv_id: 4
     name: "g_MaterialData"

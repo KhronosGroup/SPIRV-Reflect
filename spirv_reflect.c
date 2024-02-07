@@ -1365,6 +1365,19 @@ static SpvReflectResult ParseNames(SpvReflectPrvParser* p_parser) {
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+// Returns true if user_type matches pattern or if user_type begins with pattern and the next character is ':'
+// For example, UserTypeMatches("rwbuffer", "rwbuffer") will be true, UserTypeMatches("rwbuffer", "rwbuffer:<S>") will be true, and
+// UserTypeMatches("rwbuffer", "rwbufferfoo") will be false.
+static bool UserTypeMatches(const char* user_type, const char* pattern) {
+  const size_t pattern_length = strlen(pattern);
+  if (strncmp(user_type, pattern, pattern_length) == 0) {
+    if (user_type[pattern_length] == ':' || user_type[pattern_length] == '\0') {
+      return true;
+    }
+  }
+  return false;
+}
+
 static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module) {
   uint32_t spec_constant_count = 0;
   for (uint32_t i = 0; i < p_parser->node_count; ++i) {
@@ -1583,57 +1596,83 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser, SpvRefle
         return result;
       }
       const char* name = (const char*)(p_parser->spirv_code + p_node->word_offset + 3);
-      if (strcmp(name, "cbuffer") == 0) {
+      if (UserTypeMatches(name, "cbuffer")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_CBUFFER;
-      } else if (strcmp(name, "tbuffer") == 0) {
+      } else if (UserTypeMatches(name, "tbuffer")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TBUFFER;
-      } else if (strcmp(name, "appendstructuredbuffer") == 0) {
+      } else if (UserTypeMatches(name, "appendstructuredbuffer")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_APPEND_STRUCTURED_BUFFER;
-      } else if (strcmp(name, "buffer") == 0) {
+      } else if (UserTypeMatches(name, "buffer")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_BUFFER;
-      } else if (strcmp(name, "byteaddressbuffer") == 0) {
+      } else if (UserTypeMatches(name, "byteaddressbuffer")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_BYTE_ADDRESS_BUFFER;
-      } else if (strcmp(name, "consumestructuredbuffer") == 0) {
+      } else if (UserTypeMatches(name, "constantbuffer")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_CONSTANT_BUFFER;
+      } else if (UserTypeMatches(name, "consumestructuredbuffer")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_CONSUME_STRUCTURED_BUFFER;
-      } else if (strcmp(name, "inputpatch") == 0) {
+      } else if (UserTypeMatches(name, "inputpatch")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_INPUT_PATCH;
-      } else if (strcmp(name, "outputpatch") == 0) {
+      } else if (UserTypeMatches(name, "outputpatch")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_OUTPUT_PATCH;
-      } else if (strcmp(name, "rwbuffer") == 0) {
+      } else if (UserTypeMatches(name, "rasterizerorderedbuffer")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_BUFFER;
+      } else if (UserTypeMatches(name, "rasterizerorderedbyteaddressbuffer")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_BYTE_ADDRESS_BUFFER;
+      } else if (UserTypeMatches(name, "rasterizerorderedstructuredbuffer")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_STRUCTURED_BUFFER;
+      } else if (UserTypeMatches(name, "rasterizerorderedtexture1d")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_1D;
+      } else if (UserTypeMatches(name, "rasterizerorderedtexture1darray")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_1D_ARRAY;
+      } else if (UserTypeMatches(name, "rasterizerorderedtexture2d")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_2D;
+      } else if (UserTypeMatches(name, "rasterizerorderedtexture2darray")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_2D_ARRAY;
+      } else if (UserTypeMatches(name, "rasterizerorderedtexture3d")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_3D;
+      } else if (UserTypeMatches(name, "raytracingaccelerationstructure")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RAYTRACING_ACCELERATION_STRUCTURE;
+      } else if (UserTypeMatches(name, "rwbuffer")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_BUFFER;
-      } else if (strcmp(name, "rwbyteaddressbuffer") == 0) {
+      } else if (UserTypeMatches(name, "rwbyteaddressbuffer")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_BYTE_ADDRESS_BUFFER;
-      } else if (strcmp(name, "rwstructuredbuffer") == 0) {
+      } else if (UserTypeMatches(name, "rwstructuredbuffer")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_STRUCTURED_BUFFER;
-      } else if (strcmp(name, "rwtexture1d") == 0) {
+      } else if (UserTypeMatches(name, "rwtexture1d")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_TEXTURE_1D;
-      } else if (strcmp(name, "rwtexture1darray") == 0) {
+      } else if (UserTypeMatches(name, "rwtexture1darray")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_TEXTURE_1D_ARRAY;
-      } else if (strcmp(name, "rwtexture2d") == 0) {
+      } else if (UserTypeMatches(name, "rwtexture2d")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_TEXTURE_2D;
-      } else if (strcmp(name, "rwtexture2darray") == 0) {
+      } else if (UserTypeMatches(name, "rwtexture2darray")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_TEXTURE_2D_ARRAY;
-      } else if (strcmp(name, "rwtexture3d") == 0) {
+      } else if (UserTypeMatches(name, "rwtexture3d")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_RW_TEXTURE_3D;
-      } else if (strcmp(name, "structuredbuffer") == 0) {
+      } else if (UserTypeMatches(name, "structuredbuffer")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_STRUCTURED_BUFFER;
-      } else if (strcmp(name, "texture1d") == 0) {
+      } else if (UserTypeMatches(name, "subpassinput")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_SUBPASS_INPUT;
+      } else if (UserTypeMatches(name, "subpassinputms")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_SUBPASS_INPUT_MS;
+      } else if (UserTypeMatches(name, "texture1d")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_1D;
-      } else if (strcmp(name, "texture1darray") == 0) {
+      } else if (UserTypeMatches(name, "texture1darray")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_1D_ARRAY;
-      } else if (strcmp(name, "texture2d") == 0) {
+      } else if (UserTypeMatches(name, "texture2d")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_2D;
-      } else if (strcmp(name, "texture2darray") == 0) {
+      } else if (UserTypeMatches(name, "texture2darray")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_2D_ARRAY;
-      } else if (strcmp(name, "texture2dms") == 0) {
+      } else if (UserTypeMatches(name, "texture2dms")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_2DMS;
-      } else if (strcmp(name, "texture2dmsarray") == 0) {
+      } else if (UserTypeMatches(name, "texture2dmsarray")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_2DMS_ARRAY;
-      } else if (strcmp(name, "texture3d") == 0) {
+      } else if (UserTypeMatches(name, "texture3d")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_3D;
-      } else if (strcmp(name, "texturecube") == 0) {
+      } else if (UserTypeMatches(name, "texturebuffer")) {
+        p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_BUFFER;
+      } else if (UserTypeMatches(name, "texturecube")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_CUBE;
-      } else if (strcmp(name, "texturecubearray") == 0) {
+      } else if (UserTypeMatches(name, "texturecubearray")) {
         p_target_decorations->user_type = SPV_REFLECT_USER_TYPE_TEXTURE_CUBE_ARRAY;
       }
     }
