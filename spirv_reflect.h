@@ -574,6 +574,7 @@ typedef struct SpvReflectCapability {
 typedef struct SpvReflectSpecializationConstant {
   uint32_t spirv_id;
   uint32_t constant_id;
+  const char* name;
 } SpvReflectSpecializationConstant;
 
 /*! @struct SpvReflectShaderModule

@@ -1691,8 +1691,13 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser, SpvRefle
       CHECKED_READU32(p_parser, p_node->word_offset + 2, decoration);
       if (decoration == SpvDecorationSpecId) {
         const uint32_t count = p_module->spec_constant_count;
-        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_module->spec_constants[count].constant_id);
-        CHECKED_READU32(p_parser, p_node->word_offset + 3, p_module->spec_constants[count].spirv_id);
+        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_module->spec_constants[count].spirv_id);
+        CHECKED_READU32(p_parser, p_node->word_offset + 3, p_module->spec_constants[count].constant_id);
+        // If being used for a OpSpecConstantComposite (ex. LocalSizeId), there won't be a name
+        SpvReflectPrvNode* target_node = FindNode(p_parser, p_module->spec_constants[count].spirv_id);
+        if (IsNotNull(target_node)) {
+          p_module->spec_constants[count].name = target_node->name;
+        }
         p_module->spec_constant_count++;
       }
     }

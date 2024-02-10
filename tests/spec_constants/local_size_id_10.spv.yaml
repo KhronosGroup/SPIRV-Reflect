@@ -24,8 +24,10 @@ module:
   push_constants:
   specialization_constant_count: 2,
   specialization_constants:
-      spirv_id: 8
-      constant_id: 7
-      spirv_id: 4
+      spirv_id: 7
       constant_id: 8
+      name: 
+      spirv_id: 8
+      constant_id: 4
+      name: 
 ...

@@ -3685,22 +3685,31 @@ module:
   push_constants:
   specialization_constant_count: 9,
   specialization_constants:
-      spirv_id: 2
-      constant_id: 34
-      spirv_id: 3
-      constant_id: 35
-      spirv_id: 5
-      constant_id: 36
-      spirv_id: 6
-      constant_id: 37
-      spirv_id: 4
-      constant_id: 40
-      spirv_id: 7
-      constant_id: 47
-      spirv_id: 8
-      constant_id: 135
-      spirv_id: 0
-      constant_id: 102
-      spirv_id: 1
-      constant_id: 103
+      spirv_id: 34
+      constant_id: 2
+      name: "SONE"
+      spirv_id: 35
+      constant_id: 3
+      name: "STWO"
+      spirv_id: 36
+      constant_id: 5
+      name: "UONE"
+      spirv_id: 37
+      constant_id: 6
+      name: "UTWO"
+      spirv_id: 40
+      constant_id: 4
+      name: "SNEG_TWO"
+      spirv_id: 47
+      constant_id: 7
+      name: "SNEG_THREE"
+      spirv_id: 135
+      constant_id: 8
+      name: 
+      spirv_id: 102
+      constant_id: 0
+      name: "TRUE"
+      spirv_id: 103
+      constant_id: 1
+      name: "FALSE"
 ...
