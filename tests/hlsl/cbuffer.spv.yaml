@@ -874,6 +874,7 @@ all_descriptor_bindings:
     binding: 0
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 6 # VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
     resource_type: 2 # CBV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown

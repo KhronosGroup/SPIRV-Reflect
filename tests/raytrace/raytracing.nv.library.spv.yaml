@@ -126,6 +126,7 @@ all_descriptor_bindings:
     binding: 0
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 1000150000 # VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR
     resource_type: 4 # SRV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown

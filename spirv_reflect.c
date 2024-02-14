@@ -2174,6 +2174,34 @@ static SpvReflectResult ParseDescriptorBindings(SpvReflectPrvParser* p_parser, S
     p_descriptor->decoration_flags = ApplyDecorations(&p_node->decorations);
     p_descriptor->user_type = p_node->decorations.user_type;
 
+    // Flags like non-writable and non-readable are found as member decorations only.
+    // If all members have one of those decorations set, promote the decoration up
+    // to the whole descriptor.
+    const SpvReflectPrvNode* p_type_node = FindNode(p_parser, p_type->id);
+    if (IsNotNull(p_type_node) && p_type_node->member_count) {
+      SpvReflectPrvDecorations common_flags = p_type_node->member_decorations[0];
+
+      for (uint32_t m = 1; m < p_type_node->member_count; ++m) {
+        common_flags.is_relaxed_precision &= p_type_node->member_decorations[m].is_relaxed_precision;
+        common_flags.is_block &= p_type_node->member_decorations[m].is_block;
+        common_flags.is_buffer_block &= p_type_node->member_decorations[m].is_buffer_block;
+        common_flags.is_row_major &= p_type_node->member_decorations[m].is_row_major;
+        common_flags.is_column_major &= p_type_node->member_decorations[m].is_column_major;
+        common_flags.is_built_in &= p_type_node->member_decorations[m].is_built_in;
+        common_flags.is_noperspective &= p_type_node->member_decorations[m].is_noperspective;
+        common_flags.is_flat &= p_type_node->member_decorations[m].is_flat;
+        common_flags.is_non_writable &= p_type_node->member_decorations[m].is_non_writable;
+        common_flags.is_non_readable &= p_type_node->member_decorations[m].is_non_readable;
+        common_flags.is_patch &= p_type_node->member_decorations[m].is_patch;
+        common_flags.is_per_vertex &= p_type_node->member_decorations[m].is_per_vertex;
+        common_flags.is_per_task &= p_type_node->member_decorations[m].is_per_task;
+        common_flags.is_weight_texture &= p_type_node->member_decorations[m].is_weight_texture;
+        common_flags.is_block_match_texture &= p_type_node->member_decorations[m].is_block_match_texture;
+      }
+
+      p_descriptor->decoration_flags |= ApplyDecorations(&common_flags);
+    }
+
     // If this is in the StorageBuffer storage class, it's for sure a storage
     // buffer descriptor. We need to handle this case earlier because in SPIR-V
     // there are two ways to indicate a storage buffer:
