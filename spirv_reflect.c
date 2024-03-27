@@ -3770,13 +3770,6 @@ static SpvReflectResult ParseExecutionModes(SpvReflectPrvParser* p_parser, SpvRe
           }
         } break;
 
-        case SpvExecutionModeInputPoints:
-        case SpvExecutionModeInputLines:
-        case SpvExecutionModeInputLinesAdjacency:
-        case SpvExecutionModeTriangles:
-        case SpvExecutionModeInputTrianglesAdjacency:
-        case SpvExecutionModeQuads:
-        case SpvExecutionModeIsolines:
         case SpvExecutionModeOutputVertices: {
           CHECKED_READU32(p_parser, p_node->word_offset + 3, p_entry_point->output_vertices);
         } break;
