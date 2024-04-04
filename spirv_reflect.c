@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #endif
 
-#if defined(__clang__) || defined(__GNUC__) || defined(__APPLE_CC__)
+#if defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 7) || defined(__APPLE_CC__)
 #define FALLTHROUGH __attribute__((fallthrough))
 #else
 #define FALLTHROUGH
