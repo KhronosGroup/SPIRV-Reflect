@@ -1950,6 +1950,7 @@ all_descriptor_bindings:
     binding: 0
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000080 # NON_WRITABLE 
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 4 # SRV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -1967,6 +1968,7 @@ all_descriptor_bindings:
     binding: 1
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 8 # UAV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -1984,6 +1986,7 @@ all_descriptor_bindings:
     binding: 3
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 8 # UAV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -2000,6 +2003,7 @@ all_descriptor_bindings:
     binding: 2
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 8 # UAV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -2018,6 +2022,7 @@ all_descriptor_bindings:
     binding: 5
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 8 # UAV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -2034,6 +2039,7 @@ all_descriptor_bindings:
     binding: 4
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 8 # UAV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -2052,6 +2058,7 @@ all_descriptor_bindings:
     binding: 6
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 0, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=1D image_format=Unknown
@@ -2069,6 +2076,7 @@ all_descriptor_bindings:
     binding: 7
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 1, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
@@ -2086,6 +2094,7 @@ all_descriptor_bindings:
     binding: 8
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 2, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=3D image_format=Unknown
@@ -2103,6 +2112,7 @@ all_descriptor_bindings:
     binding: 9
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 3, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=Cube image_format=Unknown
@@ -2120,6 +2130,7 @@ all_descriptor_bindings:
     binding: 10
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 0, depth: 2, arrayed: 1, ms: 0, sampled: 1, image_format: 0 } # dim=1D image_format=Unknown
@@ -2137,6 +2148,7 @@ all_descriptor_bindings:
     binding: 11
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 1, depth: 2, arrayed: 1, ms: 0, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
@@ -2154,6 +2166,7 @@ all_descriptor_bindings:
     binding: 12
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 1, depth: 2, arrayed: 0, ms: 1, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
@@ -2171,6 +2184,7 @@ all_descriptor_bindings:
     binding: 13
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 1, depth: 2, arrayed: 1, ms: 1, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
@@ -2188,6 +2202,7 @@ all_descriptor_bindings:
     binding: 14
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 3, depth: 2, arrayed: 1, ms: 0, sampled: 1, image_format: 0 } # dim=Cube image_format=Unknown
@@ -2205,6 +2220,7 @@ all_descriptor_bindings:
     binding: 15
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 3 # VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     resource_type: 8 # UAV
     image: { dim: 0, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 3 } # dim=1D image_format=R32f
@@ -2222,6 +2238,7 @@ all_descriptor_bindings:
     binding: 16
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 3 # VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     resource_type: 8 # UAV
     image: { dim: 1, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 3 } # dim=2D image_format=R32f
@@ -2239,6 +2256,7 @@ all_descriptor_bindings:
     binding: 17
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 3 # VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     resource_type: 8 # UAV
     image: { dim: 2, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 3 } # dim=3D image_format=R32f
@@ -2256,6 +2274,7 @@ all_descriptor_bindings:
     binding: 18
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 3 # VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     resource_type: 8 # UAV
     image: { dim: 0, depth: 2, arrayed: 1, ms: 0, sampled: 2, image_format: 3 } # dim=1D image_format=R32f
@@ -2273,6 +2292,7 @@ all_descriptor_bindings:
     binding: 19
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 3 # VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     resource_type: 8 # UAV
     image: { dim: 1, depth: 2, arrayed: 1, ms: 0, sampled: 2, image_format: 3 } # dim=2D image_format=R32f
@@ -2290,6 +2310,7 @@ all_descriptor_bindings:
     binding: 20
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 4 # VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
     resource_type: 4 # SRV
     image: { dim: 5, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 3 } # dim=Buffer image_format=R32f
@@ -2307,6 +2328,7 @@ all_descriptor_bindings:
     binding: 21
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 5 # VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
     resource_type: 8 # UAV
     image: { dim: 5, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 3 } # dim=Buffer image_format=R32f
@@ -2324,6 +2346,7 @@ all_descriptor_bindings:
     binding: 22
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 1, depth: 2, arrayed: 1, ms: 1, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
@@ -2341,6 +2364,7 @@ all_descriptor_bindings:
     binding: 23
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 1, depth: 2, arrayed: 1, ms: 1, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
@@ -2358,6 +2382,7 @@ all_descriptor_bindings:
     binding: 24
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 0, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=1D image_format=Unknown
@@ -2375,6 +2400,7 @@ all_descriptor_bindings:
     binding: 25
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 1, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
@@ -2392,6 +2418,7 @@ all_descriptor_bindings:
     binding: 26
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 0, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=1D image_format=Unknown
@@ -2409,6 +2436,7 @@ all_descriptor_bindings:
     binding: 27
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 1, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
@@ -2426,6 +2454,7 @@ all_descriptor_bindings:
     binding: 28
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 2, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=3D image_format=Unknown
@@ -2443,6 +2472,7 @@ all_descriptor_bindings:
     binding: 29
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 3, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 0 } # dim=Cube image_format=Unknown
@@ -2460,6 +2490,7 @@ all_descriptor_bindings:
     binding: 30
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 0, depth: 2, arrayed: 1, ms: 0, sampled: 1, image_format: 0 } # dim=1D image_format=Unknown
@@ -2477,6 +2508,7 @@ all_descriptor_bindings:
     binding: 31
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 1, depth: 2, arrayed: 1, ms: 0, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
@@ -2494,6 +2526,7 @@ all_descriptor_bindings:
     binding: 32
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 1, depth: 2, arrayed: 0, ms: 1, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
@@ -2511,6 +2544,7 @@ all_descriptor_bindings:
     binding: 33
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 1, depth: 2, arrayed: 1, ms: 1, sampled: 1, image_format: 0 } # dim=2D image_format=Unknown
@@ -2528,6 +2562,7 @@ all_descriptor_bindings:
     binding: 34
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
     resource_type: 4 # SRV
     image: { dim: 3, depth: 2, arrayed: 1, ms: 0, sampled: 1, image_format: 0 } # dim=Cube image_format=Unknown
@@ -2545,6 +2580,7 @@ all_descriptor_bindings:
     binding: 35
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 3 # VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     resource_type: 8 # UAV
     image: { dim: 0, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 3 } # dim=1D image_format=R32f
@@ -2562,6 +2598,7 @@ all_descriptor_bindings:
     binding: 36
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 3 # VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     resource_type: 8 # UAV
     image: { dim: 1, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 3 } # dim=2D image_format=R32f
@@ -2579,6 +2616,7 @@ all_descriptor_bindings:
     binding: 37
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 3 # VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     resource_type: 8 # UAV
     image: { dim: 2, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 3 } # dim=3D image_format=R32f
@@ -2596,6 +2634,7 @@ all_descriptor_bindings:
     binding: 38
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 3 # VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     resource_type: 8 # UAV
     image: { dim: 0, depth: 2, arrayed: 1, ms: 0, sampled: 2, image_format: 3 } # dim=1D image_format=R32f
@@ -2613,6 +2652,7 @@ all_descriptor_bindings:
     binding: 39
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 3 # VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     resource_type: 8 # UAV
     image: { dim: 1, depth: 2, arrayed: 1, ms: 0, sampled: 2, image_format: 3 } # dim=2D image_format=R32f
@@ -2630,6 +2670,7 @@ all_descriptor_bindings:
     binding: 40
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 4 # VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
     resource_type: 4 # SRV
     image: { dim: 5, depth: 2, arrayed: 0, ms: 0, sampled: 1, image_format: 3 } # dim=Buffer image_format=R32f
@@ -2647,6 +2688,7 @@ all_descriptor_bindings:
     binding: 41
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 5 # VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
     resource_type: 8 # UAV
     image: { dim: 5, depth: 2, arrayed: 0, ms: 0, sampled: 2, image_format: 3 } # dim=Buffer image_format=R32f
@@ -2664,6 +2706,7 @@ all_descriptor_bindings:
     binding: 42
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 6 # VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
     resource_type: 2 # CBV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -2681,6 +2724,7 @@ all_descriptor_bindings:
     binding: 43
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000080 # NON_WRITABLE 
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 4 # SRV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -2698,6 +2742,7 @@ all_descriptor_bindings:
     binding: 44
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000080 # NON_WRITABLE 
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 4 # SRV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -2715,6 +2760,7 @@ all_descriptor_bindings:
     binding: 45
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 8 # UAV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -2732,6 +2778,7 @@ all_descriptor_bindings:
     binding: 46
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 1000150000 # VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR
     resource_type: 4 # SRV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -2749,6 +2796,7 @@ all_descriptor_bindings:
     binding: 47
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000000 # NONE
     descriptor_type: 6 # VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
     resource_type: 2 # CBV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
@@ -2766,6 +2814,7 @@ all_descriptor_bindings:
     binding: 48
     input_attachment_index: 0
     set: 0
+    decoration_flags: 0x00000080 # NON_WRITABLE 
     descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     resource_type: 4 # SRV
     image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
