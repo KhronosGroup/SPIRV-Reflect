@@ -555,6 +555,11 @@ static uint32_t FindBaseId(SpvReflectPrvParser* p_parser, SpvReflectPrvAccessCha
       case SpvOpFunctionParameter: {
         UNCHECKED_READU32(p_parser, base_node->word_offset + 2, base_id);
       } break;
+      case SpvOpBitcast : {
+        // TODO - This is just a band-aid to fix crashes.
+        // https://github.com/KhronosGroup/SPIRV-Reflect/issues/257
+        return 0;
+      } break;
       default: {
         assert(false);
       } break;
