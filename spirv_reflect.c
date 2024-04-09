@@ -529,8 +529,8 @@ static SpvReflectTypeDescription* FindType(SpvReflectShaderModule* p_module, uin
 }
 
 static SpvReflectPrvAccessChain* FindAccessChain(SpvReflectPrvParser* p_parser, uint32_t id) {
-  uint32_t ac_cnt = p_parser->access_chain_count;
-  for (uint32_t i = 0; i < ac_cnt; i++) {
+  const uint32_t ac_count = p_parser->access_chain_count;
+  for (uint32_t i = 0; i < ac_count; i++) {
     if (p_parser->access_chains[i].result_id == id) {
       return &p_parser->access_chains[i];
     }
@@ -538,8 +538,10 @@ static SpvReflectPrvAccessChain* FindAccessChain(SpvReflectPrvParser* p_parser, 
   return 0;
 }
 
-static uint32_t FindBaseId(SpvReflectPrvParser* p_parser, SpvReflectPrvAccessChain* ac) {
-  uint32_t base_id = ac->base_id;
+// Access Chains mostly have their Base ID pointed directly to a OpVariable, but sometimes
+// it will be through a load and this funciton handles the edge cases how to find that
+static uint32_t FindAccessChainBaseVariable(SpvReflectPrvParser* p_parser, SpvReflectPrvAccessChain* p_access_chain) {
+  uint32_t base_id = p_access_chain->base_id;
   SpvReflectPrvNode* base_node = FindNode(p_parser, base_id);
   // TODO - This is just a band-aid to fix crashes.
   // Need to understand why here and hopefully remove
@@ -555,6 +557,10 @@ static uint32_t FindBaseId(SpvReflectPrvParser* p_parser, SpvReflectPrvAccessCha
       case SpvOpFunctionParameter: {
         UNCHECKED_READU32(p_parser, base_node->word_offset + 2, base_id);
       } break;
+      case SpvOpBitcast:
+        // This can be caused by something like GL_EXT_buffer_reference_uvec2 trying to load a pointer.
+        // We currently call from a push constant, so no way to have a reference loop back into the PC block
+        return 0;
       default: {
         assert(false);
       } break;
@@ -573,8 +579,8 @@ static uint32_t FindBaseId(SpvReflectPrvParser* p_parser, SpvReflectPrvAccessCha
   return base_id;
 }
 
-static SpvReflectBlockVariable* GetRefBlkVar(SpvReflectPrvParser* p_parser, SpvReflectPrvAccessChain* ac) {
-  uint32_t base_id = ac->base_id;
+static SpvReflectBlockVariable* GetRefBlkVar(SpvReflectPrvParser* p_parser, SpvReflectPrvAccessChain* p_access_chain) {
+  uint32_t base_id = p_access_chain->base_id;
   SpvReflectPrvNode* base_node = FindNode(p_parser, base_id);
   assert(base_node->op == SpvOpLoad);
   UNCHECKED_READU32(p_parser, base_node->word_offset + 3, base_id);
@@ -3888,7 +3894,7 @@ static SpvReflectResult ParsePushConstantBlocks(SpvReflectPrvParser* p_parser, S
     for (uint32_t access_chain_index = 0; access_chain_index < p_parser->access_chain_count; ++access_chain_index) {
       SpvReflectPrvAccessChain* p_access_chain = &(p_parser->access_chains[access_chain_index]);
       // Skip any access chains that aren't touching this push constant block
-      if (p_push_constant->spirv_id != FindBaseId(p_parser, p_access_chain)) {
+      if (p_push_constant->spirv_id != FindAccessChainBaseVariable(p_parser, p_access_chain)) {
         continue;
       }
       SpvReflectBlockVariable* p_var =
