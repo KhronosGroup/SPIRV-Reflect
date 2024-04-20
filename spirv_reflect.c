@@ -2711,22 +2711,48 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(SpvReflectPrvParser* p
     }
   }
 
-  // Parse padded size using offset difference for all member except for the last entry...
-  for (uint32_t member_index = 0; member_index < (p_var->member_count - 1); ++member_index) {
-    SpvReflectBlockVariable* p_member_var = &p_var->members[member_index];
-    SpvReflectBlockVariable* p_next_member_var = &p_var->members[member_index + 1];
-    p_member_var->padded_size = p_next_member_var->offset - p_member_var->offset;
-    if (p_member_var->size > p_member_var->padded_size) {
-      p_member_var->size = p_member_var->padded_size;
-    }
-    if (is_parent_rta) {
-      p_member_var->padded_size = p_member_var->size;
-    }
-  }
-  // ...last entry just gets rounded up to near multiple of SPIRV_DATA_ALIGNMENT, which is 16 and
-  // subtract the offset.
   if (p_var->member_count > 0) {
-    SpvReflectBlockVariable* p_member_var = &p_var->members[p_var->member_count - 1];
+    // Structs can offset order don't need to match the index order, so first order by offset
+    // example:
+    //     OpMemberDecorate %struct 0 Offset 4
+    //     OpMemberDecorate %struct 1 Offset 0
+    SpvReflectBlockVariable** pp_member_offset_order =
+        (SpvReflectBlockVariable**)calloc(p_var->member_count, sizeof(SpvReflectBlockVariable*));
+    if (IsNull(pp_member_offset_order)) {
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
+
+    uint32_t bottom_bound = 0;
+    for (uint32_t i = 0; i < p_var->member_count; ++i) {
+      uint32_t lowest_offset = UINT32_MAX;
+      uint32_t member_index = 0;
+      for (uint32_t j = 0; j < p_var->member_count; ++j) {
+        const uint32_t offset = p_var->members[j].offset;
+        if (offset < lowest_offset && offset >= bottom_bound) {
+          member_index = j;
+          lowest_offset = offset;
+        }
+      }
+      pp_member_offset_order[i] = &p_var->members[member_index];
+      bottom_bound = lowest_offset + 1;  // 2 index can't share the same offset
+    }
+
+    // Parse padded size using offset difference for all member except for the last entry...
+    for (uint32_t i = 0; i < (p_var->member_count - 1); ++i) {
+      SpvReflectBlockVariable* p_member_var = pp_member_offset_order[i];
+      SpvReflectBlockVariable* p_next_member_var = pp_member_offset_order[i + 1];
+      p_member_var->padded_size = p_next_member_var->offset - p_member_var->offset;
+      if (p_member_var->size > p_member_var->padded_size) {
+        p_member_var->size = p_member_var->padded_size;
+      }
+      if (is_parent_rta) {
+        p_member_var->padded_size = p_member_var->size;
+      }
+    }
+
+    // ...last entry just gets rounded up to near multiple of SPIRV_DATA_ALIGNMENT, which is 16 and
+    // subtract the offset.
+    SpvReflectBlockVariable* p_member_var = pp_member_offset_order[p_var->member_count - 1];
     p_member_var->padded_size = RoundUp(p_member_var->offset + p_member_var->size, SPIRV_DATA_ALIGNMENT) - p_member_var->offset;
     if (p_member_var->size > p_member_var->padded_size) {
       p_member_var->size = p_member_var->padded_size;
@@ -2734,6 +2760,8 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(SpvReflectPrvParser* p
     if (is_parent_rta) {
       p_member_var->padded_size = p_member_var->size;
     }
+
+    SafeFree(pp_member_offset_order);
   }
 
   // If buffer ref, sizes are same as uint64_t
