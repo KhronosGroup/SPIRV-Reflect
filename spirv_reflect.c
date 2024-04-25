@@ -2751,13 +2751,15 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(SpvReflectPrvParser* p
 
   // ...last entry just gets rounded up to near multiple of SPIRV_DATA_ALIGNMENT, which is 16 and
   // subtract the offset.
-  SpvReflectBlockVariable* p_member_var = pp_member_offset_order[p_var->member_count - 1];
-  p_member_var->padded_size = RoundUp(p_member_var->offset + p_member_var->size, SPIRV_DATA_ALIGNMENT) - p_member_var->offset;
-  if (p_member_var->size > p_member_var->padded_size) {
-    p_member_var->size = p_member_var->padded_size;
+  // last entry == entry with largest offset value
+  SpvReflectBlockVariable* p_last_member_var = pp_member_offset_order[p_var->member_count - 1];
+  p_last_member_var->padded_size =
+      RoundUp(p_last_member_var->offset + p_last_member_var->size, SPIRV_DATA_ALIGNMENT) - p_last_member_var->offset;
+  if (p_last_member_var->size > p_last_member_var->padded_size) {
+    p_last_member_var->size = p_last_member_var->padded_size;
   }
   if (is_parent_rta) {
-    p_member_var->padded_size = p_member_var->size;
+    p_last_member_var->padded_size = p_last_member_var->size;
   }
 
   SafeFree(pp_member_offset_order);
@@ -2769,7 +2771,7 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(SpvReflectPrvParser* p
   }
 
   // @TODO validate this with assertion
-  p_var->size = p_var->members[p_var->member_count - 1].offset + p_var->members[p_var->member_count - 1].padded_size;
+  p_var->size = p_last_member_var->offset + p_last_member_var->padded_size;
   p_var->padded_size = p_var->size;
 
   return SPV_REFLECT_RESULT_SUCCESS;
