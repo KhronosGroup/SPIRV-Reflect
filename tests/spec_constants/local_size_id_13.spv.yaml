@@ -24,16 +24,16 @@ module:
   push_constants:
   specialization_constant_count: 4,
   specialization_constants:
-      spirv_id: 7
+    - spirv_id: 7
       constant_id: 8
-      name: 
-      spirv_id: 8
+      name:
+    - spirv_id: 8
       constant_id: 4
-      name: 
-      spirv_id: 10
+      name:
+    - spirv_id: 10
       constant_id: 8
-      name: 
-      spirv_id: 11
+      name:
+    - spirv_id: 11
       constant_id: 4
-      name: 
+      name:
 ...

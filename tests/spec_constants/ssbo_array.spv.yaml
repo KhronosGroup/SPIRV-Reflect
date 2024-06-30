@@ -146,10 +146,10 @@ module:
   push_constants:
   specialization_constant_count: 2,
   specialization_constants:
-      spirv_id: 8
+    - spirv_id: 8
       constant_id: 8
       name: "SIZE_A"
-      spirv_id: 10
+    - spirv_id: 10
       constant_id: 5
       name: "SIZE_B"
 ...

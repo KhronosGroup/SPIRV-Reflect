@@ -146,7 +146,7 @@ module:
   push_constants:
   specialization_constant_count: 1,
   specialization_constants:
-      spirv_id: 8
+    - spirv_id: 8
       constant_id: 3
       name: "SIZE"
 ...
