@@ -2511,8 +2511,11 @@ static SpvReflectResult ParseDescriptorBlockVariable(SpvReflectPrvParser* p_pars
           }
         }
         if (!found_recursion) {
-          uint32_t struct_id = FindType(p_module, p_member_type->id)->struct_type_description->id;
-          p_parser->physical_pointer_structs[p_parser->physical_pointer_struct_count].struct_id = struct_id;
+          const SpvReflectTypeDescription* type_description = FindType(p_module, p_member_type->id);
+          if (IsNotNull(type_description) && IsNotNull(type_description->struct_type_description)) {
+            uint32_t struct_id = type_description->struct_type_description->id;
+            p_parser->physical_pointer_structs[p_parser->physical_pointer_struct_count].struct_id = struct_id;
+          }
           p_parser->physical_pointer_structs[p_parser->physical_pointer_struct_count].p_var = p_member_var;
           p_parser->physical_pointer_struct_count++;
 
