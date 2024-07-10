@@ -2491,7 +2491,7 @@ static SpvReflectResult ParseDescriptorBlockVariable(SpvReflectPrvParser* p_pars
         p_member_ptr_type = p_member_type;
 
         // strip array
-        if (p_member_type->op == SpvOpTypeArray) {
+        if (p_member_type->op == SpvOpTypeArray || p_member_type->op == SpvOpTypeRuntimeArray) {
           SpvReflectPrvNode* p_node = FindNode(p_parser, p_member_type->id);
           if (p_node == NULL) {
             return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
