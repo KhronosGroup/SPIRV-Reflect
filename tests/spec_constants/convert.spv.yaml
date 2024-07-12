@@ -503,16 +503,16 @@ module:
   push_constants:
   specialization_constant_count: 4,
   specialization_constants:
-      spirv_id: 8
-      constant_id: 0
-      name: "SONE"
-      spirv_id: 19
-      constant_id: 2
-      name: "F_ONE"
-      spirv_id: 23
-      constant_id: 1
-      name: "UONE"
-      spirv_id: 36
-      constant_id: 3
-      name: "D_ONE"
+      - name: "SONE"
+        spirv_id: 8
+        constant_id: 0
+      - name: "F_ONE"
+        spirv_id: 19
+        constant_id: 2
+      - name: "UONE"
+        spirv_id: 23
+        constant_id: 1
+      - name: "D_ONE"
+        spirv_id: 36
+        constant_id: 3
 ...
