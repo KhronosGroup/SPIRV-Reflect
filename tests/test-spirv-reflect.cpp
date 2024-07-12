@@ -821,6 +821,7 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/issues/77/hlsl/array_from_ubo.spv",
     "../tests/issues/77/hlsl/array_from_ubo_with_O0.spv",
     "../tests/issues/77/hlsl/rocketz.spv",
+    "../tests/issues/102/function_parameter_access.spv",
     "../tests/issues/178/vertex_input_struct.spv",
     "../tests/issues/178/vertex_input_struct2.spv",
     "../tests/multi_entrypoint/multi_entrypoint.spv",

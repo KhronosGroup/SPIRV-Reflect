@@ -268,7 +268,7 @@ all_descriptor_bindings:
     accessed: 1
     uav_counter_id: 4294967295
     uav_counter_binding:
-    ByteAddressBuffer offsets: [1, 2]
+    ByteAddressBuffer offsets: [2, 1]
     type_description: *td5
     word_offset: { binding: 112, set: 108 }
     user_type: ByteAddressBuffer
