@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 project(spirv-reflect)
 
+OPTION(BUILD_SHARED_LIBS            "Build shared library" OFF)
 OPTION(SPIRV_REFLECT_EXECUTABLE     "Build spirv-reflect executable" ON)
 
 OPTION(SPIRV_REFLECT_STATIC_LIB     "Build a SPIRV-Reflect static library" OFF)
@@ -12,7 +13,6 @@ OPTION(SPIRV_REFLECT_ENABLE_ASAN    "Use address sanitization" OFF)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 14)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
 if (SPIRV_REFLECT_ENABLE_ASAN)
     add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
@@ -20,6 +20,8 @@ if (SPIRV_REFLECT_ENABLE_ASAN)
 endif()
 
 if (SPIRV_REFLECT_EXECUTABLE)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+
     # ==========================================================================
     # Compile spirv_reflect.c as C
     # ==========================================================================
@@ -118,3 +120,18 @@ if(SPIRV_REFLECT_STATIC_LIB)
             ARCHIVE DESTINATION lib)
 endif()
 
+if(BUILD_SHARED_LIBS)
+    add_library(spirv-reflect SHARED ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.c)
+
+    target_include_directories(spirv-reflect
+            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+    target_compile_definitions(spirv-reflect PUBLIC SPIRV_REFLECT_SHARED)
+    target_compile_options(spirv-reflect PRIVATE
+            $<$<CXX_COMPILER_ID:GNU>:-fvisibility=hidden>)
+
+    install(TARGETS spirv-reflect
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib)
+endif ()

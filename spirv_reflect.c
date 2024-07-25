@@ -14,6 +14,7 @@
  limitations under the License.
 */
 
+#define SPIRV_REFLECT_IMPLEMENTATION  // turn dllimports into dllexports
 #include "spirv_reflect.h"
 
 #include <assert.h>
