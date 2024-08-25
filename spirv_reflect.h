@@ -1801,9 +1801,9 @@ inline const char* ShaderModule::GetEntryPointName() const {
   return this->GetEntryPointName(0);
 }
 
-/*! @fn GetEntryPoint
+/*! @fn GetSourceFile
 
-  @return Returns entry point
+  @return Returns source file
 
 */
 inline const char* ShaderModule::GetSourceFile() const {
