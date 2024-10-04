@@ -2148,7 +2148,7 @@ void SpvReflectToYaml::Write(std::ostream& os) {
   const std::string t2 = Indent(indent_level + 2);
   const std::string t3 = Indent(indent_level + 3);
 
-  os << "%YAML 1.0" << std::endl;
+  os << "%YAML 1.1" << std::endl;
   os << "---" << std::endl;
 
   type_description_to_index_.clear();
