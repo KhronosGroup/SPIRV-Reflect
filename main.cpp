@@ -14,6 +14,7 @@
  limitations under the License.
 */
 
+#include <cstdint>
 #if defined(WIN32)
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
@@ -108,25 +109,37 @@ int main(int argn, char** argv) {
   bool ci_mode = arg_parser.GetFlag("ci", "ci");
 
   std::string input_spv_path;
-  if (!arg_parser.GetArg(0, &input_spv_path)) {
-    std::cerr << "ERROR: no SPIR-V file specified" << std::endl;
-    return EXIT_FAILURE;
+  std::vector<uint8_t> spv_data;
+
+  // Get SPIR-V data/input
+  if (arg_parser.GetArg(0, &input_spv_path)) {
+    std::ifstream spv_ifstream(input_spv_path.c_str(), std::ios::binary);
+    if (!spv_ifstream.is_open()) {
+      std::cerr << "ERROR: could not open '" << input_spv_path << "' for reading" << std::endl;
+      return EXIT_FAILURE;
+    }
+
+    spv_ifstream.seekg(0, std::ios::end);
+    size_t size = static_cast<size_t>(spv_ifstream.tellg());
+    spv_ifstream.seekg(0, std::ios::beg);
+
+    spv_data.resize(size);
+    spv_ifstream.read((char*)spv_data.data(), size);
+  } else {
+    uint8_t buffer[4096];
+    size_t bytes_read = fread(buffer, 1, sizeof(buffer), stdin);
+    if (bytes_read == 0) {
+      std::cerr << "ERROR: no SPIR-V file specified" << std::endl;
+      return EXIT_FAILURE;
+    }
+    spv_data.insert(spv_data.end(), buffer, buffer + bytes_read);
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), stdin)) > 0) {
+      spv_data.insert(spv_data.end(), buffer, buffer + bytes_read);
+    }
   }
 
-  std::ifstream spv_ifstream(input_spv_path.c_str(), std::ios::binary);
-  if (!spv_ifstream.is_open()) {
-    std::cerr << "ERROR: could not open '" << input_spv_path << "' for reading" << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  spv_ifstream.seekg(0, std::ios::end);
-  size_t size = static_cast<size_t>(spv_ifstream.tellg());
-  spv_ifstream.seekg(0, std::ios::beg);
-
+  // run reflection with input
   {
-    std::vector<char> spv_data(size);
-    spv_ifstream.read(spv_data.data(), size);
-
     spv_reflect::ShaderModule reflection(spv_data.size(), spv_data.data());
     if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
       std::cerr << "ERROR: could not process '" << input_spv_path << "' (is it a valid SPIR-V bytecode?)" << std::endl;
