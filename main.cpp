@@ -15,6 +15,7 @@
 */
 
 #include <cstdint>
+#include <cstdio>
 #if defined(WIN32)
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
@@ -40,6 +41,7 @@ void PrintUsage() {
             << std::endl
             << "Options:" << std::endl
             << " --help                   Display this message" << std::endl
+            << " -o,--output              Print output to file. [default: stdout]" << std::endl
             << " -y,--yaml                Format output as YAML. [default: disabled]" << std::endl
             << " -v VERBOSITY             Specify output verbosity (YAML output "
                "only):"
@@ -80,6 +82,7 @@ void PrintUsage() {
 int main(int argn, char** argv) {
   ArgParser arg_parser;
   arg_parser.AddFlag("h", "help", "");
+  arg_parser.AddOptionString("o", "output", "");
   arg_parser.AddFlag("y", "yaml", "");
   arg_parser.AddOptionInt("v", "verbosity", "", 0);
   arg_parser.AddFlag("e", "entrypoint", "");
@@ -96,6 +99,10 @@ int main(int argn, char** argv) {
     PrintUsage();
     return EXIT_SUCCESS;
   }
+
+  std::string output_file;
+  arg_parser.GetString("o", "output", &output_file);
+  FILE* output_fp = output_file.empty() ? NULL : freopen(output_file.c_str(), "w", stdout);
 
   bool output_as_yaml = arg_parser.GetFlag("y", "yaml");
 
@@ -189,5 +196,8 @@ int main(int argn, char** argv) {
     }
   }
 
+  if (output_fp) {
+    fclose(output_fp);
+  }
   return EXIT_SUCCESS;
 }
