@@ -2188,7 +2188,8 @@ static SpvReflectResult ParseDescriptorBindings(SpvReflectPrvParser* p_parser, S
     // from the pointer so that we can use it to deduce deescriptor types.
     SpvStorageClass pointer_storage_class = SpvStorageClassMax;
     if (p_type->op == SpvOpTypePointer) {
-      pointer_storage_class = p_type->storage_class;
+      assert(p_type->storage_class != -1 && "Pointer types must have a valid storage class.");
+      pointer_storage_class = (SpvStorageClass)p_type->storage_class;
       // Find the type's node
       SpvReflectPrvNode* p_type_node = FindNode(p_parser, p_type->id);
       if (IsNull(p_type_node)) {

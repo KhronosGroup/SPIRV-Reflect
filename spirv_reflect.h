@@ -393,6 +393,9 @@ typedef struct SpvReflectTypeDescription {
   const char*                       type_name;
   // Non-NULL if type is member of a struct
   const char*                       struct_member_name;
+
+  // The storage class (SpvStorageClass) if the type, and -1 if it does not have a storage class.
+  // Note that SpvSt
   int                               storage_class;
   SpvReflectTypeFlags               type_flags;
   SpvReflectDecorationFlags         decoration_flags;
