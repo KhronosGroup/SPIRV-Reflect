@@ -204,7 +204,7 @@ std::string ToStringShaderStage(SpvReflectShaderStageFlagBits stage) {
   return "???";
 }
 
-std::string ToStringSpvStorageClass(SpvStorageClass storage_class) {
+std::string ToStringSpvStorageClass(int storage_class) {
   switch (storage_class) {
     case SpvStorageClassUniformConstant:
       return "UniformConstant";
@@ -343,7 +343,7 @@ std::string ToStringDescriptorType(SpvReflectDescriptorType value) {
   return "VK_DESCRIPTOR_TYPE_???";
 }
 
-static std::string ToStringSpvBuiltIn(SpvBuiltIn built_in) {
+static std::string ToStringSpvBuiltIn(int built_in) {
   switch (built_in) {
     case SpvBuiltInPosition:
       return "Position";
