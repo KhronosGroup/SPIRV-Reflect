@@ -395,7 +395,6 @@ typedef struct SpvReflectTypeDescription {
   const char*                       struct_member_name;
 
   // The storage class (SpvStorageClass) if the type, and -1 if it does not have a storage class.
-  // Note that SpvSt
   int                               storage_class;
   SpvReflectTypeFlags               type_flags;
   SpvReflectDecorationFlags         decoration_flags;
@@ -432,6 +431,8 @@ typedef struct SpvReflectInterfaceVariable {
   SpvStorageClass                     storage_class;
   const char*                         semantic;
   SpvReflectDecorationFlags           decoration_flags;
+  
+  // The builtin id if the variable is a builtin, and -1 otherwise.
   int                                 built_in;
   SpvReflectNumericTraits             numeric;
   SpvReflectArrayTraits               array;
