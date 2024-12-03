@@ -1998,7 +1998,6 @@ static SpvReflectResult ParseType(SpvReflectPrvParser* p_parser, SpvReflectPrvNo
             }
           }
           if (!found_recursion) {
-            p_parser->physical_pointer_struct_count++;
             p_parser->physical_pointer_check[p_parser->physical_pointer_count] = p_type;
             p_parser->physical_pointer_count++;
             if (p_parser->physical_pointer_count >= MAX_RECURSIVE_PHYSICAL_POINTER_CHECK) {
@@ -2014,6 +2013,7 @@ static SpvReflectResult ParseType(SpvReflectPrvParser* p_parser, SpvReflectPrvNo
           SPV_REFLECT_ASSERT(false);
         } else if (!found_recursion) {
           if (p_next_node->op == SpvOpTypeStruct) {
+            p_parser->physical_pointer_struct_count++;
             p_type->struct_type_description = FindType(p_module, p_next_node->result_id);
           }
 
@@ -2517,6 +2517,7 @@ static SpvReflectResult ParseDescriptorBlockVariable(SpvReflectPrvParser* p_pars
       SpvReflectBlockVariable* p_member_var = &p_var->members[member_index];
       // If pointer type, treat like reference and resolve to pointee type
       SpvReflectTypeDescription* p_member_ptr_type = 0;
+      SpvReflectTypeDescription* p_struct_type_description = 0;
       bool found_recursion = false;
 
       if ((p_member_type->storage_class == SpvStorageClassPhysicalStorageBuffer) &&
@@ -2545,6 +2546,9 @@ static SpvReflectResult ParseDescriptorBlockVariable(SpvReflectPrvParser* p_pars
           }
         }
         if (!found_recursion) {
+          p_struct_type_description = FindType(p_module, p_member_type->id)->struct_type_description;
+        }
+        if (p_struct_type_description) {
           uint32_t struct_id = FindType(p_module, p_member_type->id)->struct_type_description->id;
           p_parser->physical_pointer_structs[p_parser->physical_pointer_struct_count].struct_id = struct_id;
           p_parser->physical_pointer_structs[p_parser->physical_pointer_struct_count].p_var = p_member_var;
@@ -2724,7 +2728,6 @@ static SpvReflectResult ParseDescriptorBlockVariableSizes(SpvReflectPrvParser* p
         if (IsNull(p_member_type)) {
           return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ID_REFERENCE;
         }
-        assert(p_member_type->op == SpvOpTypeStruct);
         FALLTHROUGH;
       }
 
