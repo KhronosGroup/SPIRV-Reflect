@@ -49,6 +49,26 @@ If the project wants to use it's own SPIRV-Header path, it can set `SPIRV_REFLEC
 target_compile_definitions(project_name PUBLIC SPIRV_REFLECT_USE_SYSTEM_SPIRV_H)
 ```
 
+### Building a shared library
+
+To facilitate integration into managed languages with FFI support (such as Java and Python), 
+this project could be built as a shared library. This mode is controlled by the `BUILD_SHARED_LIBS`
+CMake option:
+
+```shell
+mkdir build && cd build
+cmake -DBUILD_SHARED_LIBS=ON -DSPIRV_REFLECT_EXECUTABLE=OFF ..
+make
+``` 
+
+Please note that shared library mode is not intended for anything else but this. **Especially** it 
+is not intended for the regular use case of the shared libraries: packaging and shipping a single 
+global library for all applications in the system. Header files of SPIRV-Reflect expose several C 
+structures that you are supposed to allocate by yourself without any way of communicating the 
+actual runtime structure size. Therefore, you must treat the resulting artifact in the same way 
+you are dealing with static libraries: runtime library version must **exactly** match the version 
+of `spirv_reflect.h` file you used to  compile your app or generate its FFI bindings.
+
 ## Building Samples
 
 **This step is only necessary when building/running SPIRV-Reflect's example applications.**
