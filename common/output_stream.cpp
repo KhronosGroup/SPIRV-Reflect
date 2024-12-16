@@ -1017,6 +1017,10 @@ std::string ToStringComponentType(const SpvReflectTypeDescription& type, uint32_
     ss << type.traits.numeric.vector.component_count;
   }
 
+  if (type.type_flags & SPV_REFLECT_TYPE_FLAG_REF) {
+    ss << "*";
+  }
+
   return ss.str();
 }
 

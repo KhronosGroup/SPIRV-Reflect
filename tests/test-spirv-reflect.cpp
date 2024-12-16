@@ -797,6 +797,7 @@ const std::vector<const char*> all_spirv_paths = {
     // clang-format off
     "../tests/16bit/vert_in_out_16.spv",
     "../tests/access_chains/array_length_from_access_chain.spv",
+    "../tests/access_chains/pointer_access_chain_phy_storage_buffer.spv",
     "../tests/cbuffer_unused/cbuffer_unused_001.spv",
     "../tests/glsl/built_in_format.spv",
     "../tests/entry_exec_mode/comp_local_size.spv",
@@ -856,6 +857,8 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/mesh_shader_ext/mesh_shader_ext.mesh.hlsl.spv",
     "../tests/multi_entrypoint/multi_entrypoint.spv",
     "../tests/push_constants/non_zero_block_offset.spv",
+    "../tests/push_constants/pointer_in_struct.spv",
+    "../tests/push_constants/pointer_in_struct_2.spv",
     "../tests/raytrace/rayquery_equal.cs.spv",
     "../tests/raytrace/rayquery_init_ds.spv",
     "../tests/raytrace/rayquery_init_gs.spv",
