@@ -859,6 +859,8 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/push_constants/non_zero_block_offset.spv",
     "../tests/push_constants/pointer_in_struct.spv",
     "../tests/push_constants/pointer_in_struct_2.spv",
+    "../tests/push_constants/push_constant_basic_0.spv",
+    "../tests/push_constants/push_constant_basic_1.spv",
     "../tests/raytrace/rayquery_equal.cs.spv",
     "../tests/raytrace/rayquery_init_ds.spv",
     "../tests/raytrace/rayquery_init_gs.spv",
@@ -893,7 +895,17 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/user_type/byte_address_buffer_2.spv",
     "../tests/user_type/byte_address_buffer_3.spv",
     "../tests/user_type/rw_byte_address_buffer.spv",
+    "../tests/variable_access/atomics_0.spv",
+    "../tests/variable_access/atomics_1.spv",
+    "../tests/variable_access/copy_array_0.spv",
+    "../tests/variable_access/copy_array_1.spv",
+    "../tests/variable_access/copy_array_2.spv",
+    "../tests/variable_access/copy_array_3.spv",
     "../tests/variable_access/copy_memory.spv",
+    "../tests/variable_access/copy_struct_0.spv",
+    "../tests/variable_access/copy_struct_1.spv",
+    "../tests/variable_access/descriptor_indexing_0.spv",
+    "../tests/variable_access/descriptor_indexing_1.spv",
     // clang-format on
 };
 }  // namespace
