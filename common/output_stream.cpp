@@ -749,6 +749,27 @@ std::string ToStringTypeFlags(SpvReflectTypeFlags type_flags) {
   return sstream.str();
 }
 
+std::string ToStringVariableFlags(SpvReflectVariableFlags var_flags) {
+  if (var_flags == SPV_REFLECT_VARIABLE_FLAGS_NONE) {
+    return "NONE";
+  }
+
+#define PRINT_AND_CLEAR_TYPE_FLAG(stream, flags, bit)                                         \
+  if (((flags) & (SPV_REFLECT_VARIABLE_FLAGS_##bit)) == (SPV_REFLECT_VARIABLE_FLAGS_##bit)) { \
+    stream << #bit << " ";                                                                    \
+    flags ^= SPV_REFLECT_VARIABLE_FLAGS_##bit;                                                \
+  }
+  std::stringstream sstream;
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, var_flags, UNUSED);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, var_flags, PHYSICAL_POINTER_COPY);
+#undef PRINT_AND_CLEAR_TYPE_FLAG
+  if (var_flags != 0) {
+    // Unhandled SpvReflectVariableFlags bit
+    sstream << "???";
+  }
+  return sstream.str();
+}
+
 std::string ToStringDecorationFlags(SpvReflectDecorationFlags decoration_flags) {
   if (decoration_flags == SPV_REFLECT_DECORATION_NONE) {
     return "NONE";
@@ -1831,6 +1852,9 @@ void SpvReflectToYaml::WriteBlockVariable(std::ostream& os, const SpvReflectBloc
   os << "stride: " << bv.array.stride;
   // } SpvReflectArrayTraits;
   os << " }" << std::endl;
+
+  //   SpvReflectVariableFlags           flags;
+  os << t1 << "flags: " << AsHexString(bv.flags) << " # " << ToStringVariableFlags(bv.flags) << std::endl;
 
   //   uint32_t                          member_count;
   os << t1 << "member_count: " << bv.member_count << std::endl;
