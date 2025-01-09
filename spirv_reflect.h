@@ -431,7 +431,7 @@ typedef struct SpvReflectInterfaceVariable {
   SpvStorageClass                     storage_class;
   const char*                         semantic;
   SpvReflectDecorationFlags           decoration_flags;
-  
+
   // The builtin id (SpvBuiltIn) if the variable is a builtin, and -1 otherwise.
   int                                 built_in;
   SpvReflectNumericTraits             numeric;

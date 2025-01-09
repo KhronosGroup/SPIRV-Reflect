@@ -906,6 +906,10 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/variable_access/copy_struct_1.spv",
     "../tests/variable_access/descriptor_indexing_0.spv",
     "../tests/variable_access/descriptor_indexing_1.spv",
+    "../tests/variable_access/phy_storage_buffer_used_0.spv",
+    "../tests/variable_access/phy_storage_buffer_used_1.spv",
+    "../tests/variable_access/phy_storage_buffer_used_2.spv",
+    "../tests/variable_access/phy_storage_buffer_used_3.spv",
     // clang-format on
 };
 }  // namespace

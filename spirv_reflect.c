@@ -2829,19 +2829,11 @@ static void MarkSelfAndAllMemberVarsAsUsed(SpvReflectBlockVariable* p_var) {
   p_var->flags &= ~SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
 
   SpvOp op_type = p_var->type_description->op;
-  switch (op_type) {
-    default:
-      break;
-
-    case SpvOpTypeArray: {
-    } break;
-
-    case SpvOpTypeStruct: {
-      for (uint32_t i = 0; i < p_var->member_count; ++i) {
-        SpvReflectBlockVariable* p_member_var = &p_var->members[i];
-        MarkSelfAndAllMemberVarsAsUsed(p_member_var);
-      }
-    } break;
+  if (op_type == SpvOpTypeStruct) {
+    for (uint32_t i = 0; i < p_var->member_count; ++i) {
+      SpvReflectBlockVariable* p_member_var = &p_var->members[i];
+      MarkSelfAndAllMemberVarsAsUsed(p_member_var);
+    }
   }
 }
 
@@ -2958,7 +2950,10 @@ static SpvReflectResult ParseDescriptorBlockVariableUsage(SpvReflectPrvParser* p
         if (result != SPV_REFLECT_RESULT_SUCCESS) {
           return result;
         }
-      } else if (!is_pointer_to_pointer) {
+      } else if (is_pointer_to_pointer) {
+        // Clear UNUSED flag, but only for the pointer
+        p_member_var->flags &= ~SPV_REFLECT_VARIABLE_FLAGS_UNUSED;
+      } else {
         // Clear UNUSED flag for remaining variables
         MarkSelfAndAllMemberVarsAsUsed(p_member_var);
       }
