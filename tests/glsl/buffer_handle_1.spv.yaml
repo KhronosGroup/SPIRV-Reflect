@@ -512,7 +512,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
-    flags: 0x00000001 # UNUSED 
+    flags: 0x00000000 # NONE
     member_count: 2
     members:
       - *bv0
@@ -613,7 +613,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
-    flags: 0x00000001 # UNUSED 
+    flags: 0x00000000 # NONE
     member_count: 2
     members:
       - *bv6
