@@ -188,6 +188,7 @@ all_block_variables:
       vector: { component_count: 4 }
       matrix: { column_count: 4, row_count: 4, stride: 16 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000000 # NONE
     member_count: 0
     members:
     type_description: *td0
@@ -203,6 +204,7 @@ all_block_variables:
       vector: { component_count: 3 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000000 # NONE
     member_count: 0
     members:
     type_description: *td1
@@ -218,6 +220,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td2
@@ -233,6 +236,7 @@ all_block_variables:
       vector: { component_count: 2 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000001 # UNUSED 
     member_count: 0
     members:
     type_description: *td3
@@ -248,6 +252,7 @@ all_block_variables:
       vector: { component_count: 0 }
       matrix: { column_count: 0, row_count: 0, stride: 0 }
     array: { dims_count: 0, dims: [], stride: 0 }
+    flags: 0x00000000 # NONE
     member_count: 4
     members:
       - *bv0

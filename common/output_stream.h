@@ -19,6 +19,7 @@ std::string ToStringShaderStage(SpvReflectShaderStageFlagBits stage);
 std::string ToStringResourceType(SpvReflectResourceType type);
 std::string ToStringDescriptorType(SpvReflectDescriptorType value);
 std::string ToStringTypeFlags(SpvReflectTypeFlags type_flags);
+std::string ToStringVariableFlags(SpvReflectVariableFlags flags);
 std::string ToStringDecorationFlags(SpvReflectDecorationFlags decoration_flags);
 std::string ToStringDescriptorType(SpvReflectDescriptorType value);
 std::string ToStringFormat(SpvReflectFormat fmt);
