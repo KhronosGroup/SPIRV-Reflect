@@ -861,6 +861,8 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/push_constants/pointer_in_struct_2.spv",
     "../tests/push_constants/push_constant_basic_0.spv",
     "../tests/push_constants/push_constant_basic_1.spv",
+    "../tests/push_constants/push_constant_basic_2.spv",
+    "../tests/push_constants/push_constant_basic_3.spv",
     "../tests/raytrace/rayquery_equal.cs.spv",
     "../tests/raytrace/rayquery_init_ds.spv",
     "../tests/raytrace/rayquery_init_gs.spv",
