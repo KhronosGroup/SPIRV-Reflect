@@ -8,3 +8,7 @@ bazel-SPIRV-Reflect
 bazel-testlogs
 /.vs
 /.vscode
+
+# CLion-specific:
+/.idea
+/cmake-build*
