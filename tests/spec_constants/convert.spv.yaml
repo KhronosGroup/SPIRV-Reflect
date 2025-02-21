@@ -235,7 +235,7 @@ all_block_variables:
     offset: 4
     absolute_offset: 4
     size: 4
-    padded_size: 4
+    padded_size: 12
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -250,8 +250,8 @@ all_block_variables:
     name: "U_Sone"
     offset: 0
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 16
+    padded_size: 16
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
@@ -285,7 +285,7 @@ all_block_variables:
     offset: 4
     absolute_offset: 4
     size: 4
-    padded_size: 4
+    padded_size: 12
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -300,8 +300,8 @@ all_block_variables:
     name: "U_Uone"
     offset: 0
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 16
+    padded_size: 16
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
@@ -335,7 +335,7 @@ all_block_variables:
     offset: 4
     absolute_offset: 4
     size: 4
-    padded_size: 4
+    padded_size: 12
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -350,8 +350,8 @@ all_block_variables:
     name: "S_Sone"
     offset: 0
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 16
+    padded_size: 16
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
@@ -385,7 +385,7 @@ all_block_variables:
     offset: 4
     absolute_offset: 4
     size: 4
-    padded_size: 4
+    padded_size: 12
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 0 }
@@ -400,8 +400,8 @@ all_block_variables:
     name: "S_Uone"
     offset: 0
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 16
+    padded_size: 16
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
