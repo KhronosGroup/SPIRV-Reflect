@@ -113,8 +113,11 @@ if(SPIRV_REFLECT_STATIC_LIB)
 
     target_include_directories(spirv-reflect-static
                                PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+    set_target_properties(spirv-reflect-static PROPERTIES PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h")
+
     install(TARGETS spirv-reflect-static
             LIBRARY DESTINATION lib
-            ARCHIVE DESTINATION lib)
+            ARCHIVE DESTINATION lib
+            PUBLIC_HEADER DESTINATION include)
 endif()
-
