@@ -8,7 +8,7 @@ OPTION(SPIRV_REFLECT_STATIC_LIB     "Build a SPIRV-Reflect static library" OFF)
 OPTION(SPIRV_REFLECT_BUILD_TESTS    "Build the SPIRV-Reflect test suite" OFF)
 OPTION(SPIRV_REFLECT_ENABLE_ASSERTS "Enable asserts for debugging" OFF)
 OPTION(SPIRV_REFLECT_ENABLE_ASAN    "Use address sanitization" OFF)
-OPTION(SPIRV_REFLECT_INSTALL        "Whether to install" OFF)
+OPTION(SPIRV_REFLECT_INSTALL        "Whether to install" ON)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 14)
