@@ -8,6 +8,7 @@ OPTION(SPIRV_REFLECT_STATIC_LIB     "Build a SPIRV-Reflect static library" OFF)
 OPTION(SPIRV_REFLECT_BUILD_TESTS    "Build the SPIRV-Reflect test suite" OFF)
 OPTION(SPIRV_REFLECT_ENABLE_ASSERTS "Enable asserts for debugging" OFF)
 OPTION(SPIRV_REFLECT_ENABLE_ASAN    "Use address sanitization" OFF)
+OPTION(SPIRV_REFLECT_INSTALL        "Whether to install" OFF)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 14)
@@ -47,7 +48,9 @@ if (SPIRV_REFLECT_EXECUTABLE)
         target_compile_definitions(spirv-reflect PRIVATE _CRT_SECURE_NO_WARNINGS)
     endif()
 
-    install(TARGETS spirv-reflect RUNTIME DESTINATION bin)
+    if(SPIRV_REFLECT_INSTALL)
+        install(TARGETS spirv-reflect RUNTIME DESTINATION bin)
+    endif()
 
     # ==========================================================================
     # Compile spirv_reflect.c as C++
@@ -75,7 +78,9 @@ if (SPIRV_REFLECT_EXECUTABLE)
         target_compile_definitions(spirv-reflect-pp PRIVATE _CRT_SECURE_NO_WARNINGS)
     endif()
 
-    install(TARGETS spirv-reflect-pp RUNTIME DESTINATION bin)
+    if(SPIRV_REFLECT_INSTALL)
+        install(TARGETS spirv-reflect-pp RUNTIME DESTINATION bin)
+    endif()
 endif()
 
 if (SPIRV_REFLECT_EXAMPLES)
@@ -116,8 +121,10 @@ if(SPIRV_REFLECT_STATIC_LIB)
 
     set_target_properties(spirv-reflect-static PROPERTIES PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h")
 
-    install(TARGETS spirv-reflect-static
-            LIBRARY DESTINATION lib
-            ARCHIVE DESTINATION lib
-            PUBLIC_HEADER DESTINATION include)
+    if(SPIRV_REFLECT_INSTALL)
+        install(TARGETS spirv-reflect-static
+                LIBRARY DESTINATION lib
+                ARCHIVE DESTINATION lib
+                PUBLIC_HEADER DESTINATION include)
+    endif()
 endif()
