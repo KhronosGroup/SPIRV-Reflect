@@ -3594,9 +3594,9 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
   }
 
   // Do set intersection to find the used uniform and push constants
-  size_t used_uniform_count = 0;
-  result = IntersectSortedAccessedVariable(p_used_accesses, used_acessed_count, uniforms, uniform_count, &p_entry->used_uniforms,
-                                           &used_uniform_count);
+  size_t used_descriptor_set_count = 0;
+  result = IntersectSortedAccessedVariable(p_used_accesses, used_acessed_count, uniforms, uniform_count, &p_entry->used_descriptor_bindings,
+                                           &used_descriptor_set_count);
   if (result != SPV_REFLECT_RESULT_SUCCESS) {
     SafeFree(p_used_accesses);
     return result;
@@ -3604,7 +3604,7 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
 
   size_t used_push_constant_count = 0;
   result = IntersectSortedAccessedVariable(p_used_accesses, used_acessed_count, push_constants, push_constant_count,
-                                           &p_entry->used_push_constants, &used_push_constant_count);
+                                           &p_entry->used_push_constant_blocks, &used_push_constant_count);
   if (result != SPV_REFLECT_RESULT_SUCCESS) {
     SafeFree(p_used_accesses);
     return result;
@@ -3677,8 +3677,8 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
 
   SafeFree(p_used_accesses);
 
-  p_entry->used_uniform_count = (uint32_t)used_uniform_count;
-  p_entry->used_push_constant_count = (uint32_t)used_push_constant_count;
+  p_entry->used_descriptor_binding_count = (uint32_t)used_descriptor_set_count;
+  p_entry->used_push_constant_block_count = (uint32_t)used_push_constant_count;
 
   return SPV_REFLECT_RESULT_SUCCESS;
 }
@@ -4065,7 +4065,7 @@ static SpvReflectResult ParseEntrypointDescriptorSets(SpvReflectShaderModule* p_
     for (uint32_t j = 0; j < p_module->descriptor_set_count; ++j) {
       const SpvReflectDescriptorSet* p_set = &p_module->descriptor_sets[j];
       for (uint32_t k = 0; k < p_set->binding_count; ++k) {
-        bool found = SearchSortedUint32(p_entry->used_uniforms, p_entry->used_uniform_count, p_set->bindings[k]->spirv_id);
+        bool found = SearchSortedUint32(p_entry->used_descriptor_bindings, p_entry->used_descriptor_binding_count, p_set->bindings[k]->spirv_id);
         if (found) {
           ++p_entry->descriptor_set_count;
           break;
@@ -4085,7 +4085,7 @@ static SpvReflectResult ParseEntrypointDescriptorSets(SpvReflectShaderModule* p_
       const SpvReflectDescriptorSet* p_set = &p_module->descriptor_sets[j];
       uint32_t count = 0;
       for (uint32_t k = 0; k < p_set->binding_count; ++k) {
-        bool found = SearchSortedUint32(p_entry->used_uniforms, p_entry->used_uniform_count, p_set->bindings[k]->spirv_id);
+        bool found = SearchSortedUint32(p_entry->used_descriptor_bindings, p_entry->used_descriptor_binding_count, p_set->bindings[k]->spirv_id);
         if (found) {
           ++count;
         }
@@ -4100,7 +4100,7 @@ static SpvReflectResult ParseEntrypointDescriptorSets(SpvReflectShaderModule* p_
         return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
       }
       for (uint32_t k = 0; k < p_set->binding_count; ++k) {
-        bool found = SearchSortedUint32(p_entry->used_uniforms, p_entry->used_uniform_count, p_set->bindings[k]->spirv_id);
+        bool found = SearchSortedUint32(p_entry->used_descriptor_bindings, p_entry->used_descriptor_binding_count, p_set->bindings[k]->spirv_id);
         if (found) {
           p_entry_set->bindings[p_entry_set->binding_count++] = p_set->bindings[k];
         }
@@ -4481,8 +4481,8 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module) {
     SafeFree(p_entry->input_variables);
     SafeFree(p_entry->output_variables);
     SafeFree(p_entry->interface_variables);
-    SafeFree(p_entry->used_uniforms);
-    SafeFree(p_entry->used_push_constants);
+    SafeFree(p_entry->used_descriptor_bindings);
+    SafeFree(p_entry->used_push_constant_blocks);
     SafeFree(p_entry->execution_modes);
   }
   SafeFree(p_module->capabilities);
@@ -4583,7 +4583,7 @@ SpvReflectResult spvReflectEnumerateEntryPointDescriptorBindings(const SpvReflec
 
   uint32_t count = 0;
   for (uint32_t i = 0; i < p_module->descriptor_binding_count; ++i) {
-    bool found = SearchSortedUint32(p_entry->used_uniforms, p_entry->used_uniform_count, p_module->descriptor_bindings[i].spirv_id);
+    bool found = SearchSortedUint32(p_entry->used_descriptor_bindings, p_entry->used_descriptor_binding_count, p_module->descriptor_bindings[i].spirv_id);
     if (found) {
       if (IsNotNull(pp_bindings)) {
         if (count >= *p_count) {
@@ -4870,7 +4870,7 @@ SpvReflectResult spvReflectEnumerateEntryPointPushConstantBlocks(const SpvReflec
 
   uint32_t count = 0;
   for (uint32_t i = 0; i < p_module->push_constant_block_count; ++i) {
-    bool found = SearchSortedUint32(p_entry->used_push_constants, p_entry->used_push_constant_count,
+    bool found = SearchSortedUint32(p_entry->used_push_constant_blocks, p_entry->used_push_constant_block_count,
                                     p_module->push_constant_blocks[i].spirv_id);
     if (found) {
       if (IsNotNull(pp_blocks)) {
@@ -4952,7 +4952,7 @@ const SpvReflectDescriptorBinding* spvReflectGetEntryPointDescriptorBinding(cons
   if (IsNotNull(p_module)) {
     for (uint32_t index = 0; index < p_module->descriptor_binding_count; ++index) {
       const SpvReflectDescriptorBinding* p_potential = &p_module->descriptor_bindings[index];
-      bool found = SearchSortedUint32(p_entry->used_uniforms, p_entry->used_uniform_count, p_potential->spirv_id);
+      bool found = SearchSortedUint32(p_entry->used_descriptor_bindings, p_entry->used_descriptor_binding_count, p_potential->spirv_id);
       if ((p_potential->binding == binding_number) && (p_potential->set == set_number) && found) {
         p_descriptor = p_potential;
         break;
@@ -5310,7 +5310,7 @@ const SpvReflectBlockVariable* spvReflectGetEntryPointPushConstantBlock(const Sp
       return NULL;
     }
     for (uint32_t i = 0; i < p_module->push_constant_block_count; ++i) {
-      bool found = SearchSortedUint32(p_entry->used_push_constants, p_entry->used_push_constant_count,
+      bool found = SearchSortedUint32(p_entry->used_push_constant_blocks, p_entry->used_push_constant_block_count,
                                       p_module->push_constant_blocks[i].spirv_id);
       if (found) {
         p_push_constant = &p_module->push_constant_blocks[i];

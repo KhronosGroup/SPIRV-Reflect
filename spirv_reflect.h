@@ -546,10 +546,10 @@ typedef struct SpvReflectEntryPoint {
   uint32_t                          descriptor_set_count;
   SpvReflectDescriptorSet*          descriptor_sets;
 
-  uint32_t                          used_uniform_count;
-  uint32_t*                         used_uniforms;
-  uint32_t                          used_push_constant_count;
-  uint32_t*                         used_push_constants;
+  uint32_t                          used_descriptor_binding_count;
+  uint32_t*                         used_descriptor_bindings;
+  uint32_t                          used_push_constant_block_count;
+  uint32_t*                         used_push_constant_blocks;
 
   uint32_t                          execution_mode_count;
   SpvExecutionMode*                 execution_modes;

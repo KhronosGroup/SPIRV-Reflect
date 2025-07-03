@@ -2338,26 +2338,31 @@ void SpvReflectToYaml::Write(std::ostream& os) {
       // } SpvReflectDescriptorSet;
     }
 
-    // uint32_t                          used_uniform_count;
-    os << t3 << "used_uniform_count: " << ep.used_uniform_count << std::endl;
-    // uint32_t*                         used_uniforms;
-    os << t3 << "used_uniforms: [";
-    for (uint32_t i_uu = 0; i_uu < ep.used_uniform_count; ++i_uu) {
-      if (i_uu > 0) {
-        os << ", ";
+    // uint32_t                          used_descriptor_binding_count;
+    os << t3 << "used_descriptor_binding_count: " << ep.used_descriptor_binding_count << std::endl;
+    // uint32_t*                         used_descriptor_bindings;
+    os << t3 << "used_descriptor_bindings:" << std::endl;
+    for (uint32_t i_udb = 0; i_udb < ep.used_descriptor_binding_count; ++i_udb) {
+      const SpvReflectDescriptorBinding* found_db = nullptr;
+      for (uint32_t i_ds = 0; i_ds < sm_.descriptor_binding_count; ++i_ds) {
+        if (sm_.descriptor_bindings[i_ds].spirv_id == ep.used_descriptor_bindings[i_udb]) {
+          found_db = &sm_.descriptor_bindings[i_ds];
+          break;
+        }
       }
-      os << ep.used_uniforms[i_uu];
+      assert(found_db);
+      auto itor = descriptor_binding_to_index_.find(found_db);
+      os << t4 << "- *db" << itor->second << " # " << SafeString(found_db->name) << std::endl;
     }
-    os << "]" << std::endl;
 
-    // uint32_t                          used_push_constant_count;
-    os << t3 << "used_push_constant_count: " << ep.used_push_constant_count << std::endl;
-    // uint32_t*                         used_push_constants;
-    os << t3 << "used_push_constants:" << std::endl;
-    for (uint32_t i_pc = 0; i_pc < ep.used_push_constant_count; ++i_pc) {
-      SpvReflectBlockVariable* found_bv = nullptr;
+    // uint32_t                          used_push_constant_block_count;
+    os << t3 << "used_push_constant_block_count: " << ep.used_push_constant_block_count << std::endl;
+    // uint32_t*                         used_push_constant_blocks;
+    os << t3 << "used_push_constant_blocks:" << std::endl;
+    for (uint32_t i_pc = 0; i_pc < ep.used_push_constant_block_count; ++i_pc) {
+      const SpvReflectBlockVariable* found_bv = nullptr;
       for (uint32_t i_bv = 0; i_bv < sm_.push_constant_block_count; ++i_bv) {
-        if (sm_.push_constant_blocks[i_bv].spirv_id == ep.used_push_constants[i_pc]) {
+        if (sm_.push_constant_blocks[i_bv].spirv_id == ep.used_push_constant_blocks[i_pc]) {
           found_bv = &sm_.push_constant_blocks[i_bv];
           break;
         }
@@ -2381,14 +2386,14 @@ void SpvReflectToYaml::Write(std::ostream& os) {
     os << "]" << std::endl;
 
     // struct LocalSize {
-    os << t3 << "local_size: [ ";
+    os << t3 << "local_size: [";
     //   uint32_t                        x;
     os << ep.local_size.x << ", ";
     //   uint32_t                        y;
     os << ep.local_size.y << ", ";
     //  uint32_t                        z;
     os << ep.local_size.z;
-    os << " ]" << std::endl;
+    os << "]" << std::endl;
 
     //  uint32_t                          invocations; // valid for geometry
     os << t3 << "invocations: " << ep.invocations << std::endl;
