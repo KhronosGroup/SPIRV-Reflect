@@ -2183,6 +2183,9 @@ void SpvReflectToYaml::Write(std::ostream& os) {
   const std::string t1 = Indent(indent_level + 1);
   const std::string t2 = Indent(indent_level + 2);
   const std::string t3 = Indent(indent_level + 3);
+  const std::string t4 = Indent(indent_level + 4);
+  const std::string t5 = Indent(indent_level + 5);
+  const std::string t6 = Indent(indent_level + 6);
 
   os << "%YAML 1.1" << std::endl;
   os << "---" << std::endl;
@@ -2240,9 +2243,6 @@ void SpvReflectToYaml::Write(std::ostream& os) {
       WriteInterfaceVariable(os, *ep.output_variables[i], indent_level + 1);
     }
   }
-  for (uint32_t i = 0; i < sm_.output_variable_count; ++i) {
-    WriteInterfaceVariable(os, *sm_.output_variables[i], indent_level + 1);
-  }
 
   // struct SpvReflectShaderModule {
   os << t0 << "module:" << std::endl;
@@ -2252,6 +2252,131 @@ void SpvReflectToYaml::Write(std::ostream& os) {
   os << t1 << "entry_point_name: " << SafeString(sm_.entry_point_name) << std::endl;
   // uint32_t                          entry_point_id;
   os << t1 << "entry_point_id: " << sm_.entry_point_id << std::endl;
+  //  uint32_t                          entry_point_count;
+  os << t1 << "entry_point_count: " << sm_.entry_point_count << std::endl;
+  // SpvReflectEntryPoint*             entry_points;
+  os << t1 << "entry_points:" << std::endl;
+  for (uint32_t i = 0; i < sm_.entry_point_count; ++i) {
+    // typedef struct SpvReflectEntryPoint {
+    const auto& ep = sm_.entry_points[i];
+    //   const char*                       name;
+    os << t2 << "- name: " << SafeString(ep.name) << std::endl;
+    //  uint32_t                          id;
+    os << t3 << "id: " << ep.id << std::endl;
+
+    //  SpvExecutionModel                 spirv_execution_model;
+    os << t3 << "spirv_execution_model: " << ep.spirv_execution_model << " # "
+       << ToStringSpvExecutionModel(ep.spirv_execution_model) << std::endl;
+    // SpvReflectShaderStageFlagBits     shader_stage;
+    os << t3 << "shader_stage: " << AsHexString(ep.shader_stage) << " # " << ToStringShaderStage(ep.shader_stage) << std::endl;
+
+    //  uint32_t                          input_variable_count;
+    os << t3 << "input_variable_count: " << ep.input_variable_count << std::endl;
+    // SpvReflectInterfaceVariable**     input_variables;
+    os << t3 << "input_variables:" << std::endl;
+    for (uint32_t i_iv = 0; i_iv < ep.input_variable_count; ++i_iv) {
+      auto itor = interface_variable_to_index_.find(ep.input_variables[i_iv]);
+      assert(itor != interface_variable_to_index_.end());
+      os << t4 << "- *iv" << itor->second << " # " << SafeString(ep.input_variables[i_iv]->name) << std::endl;
+    }
+    //  uint32_t                          output_variable_count;
+    os << t3 << "output_variable_count: " << ep.output_variable_count << std::endl;
+    // SpvReflectInterfaceVariable**     output_variables;
+    os << t3 << "output_variables:" << std::endl;
+    for (uint32_t i_iv = 0; i_iv < ep.output_variable_count; ++i_iv) {
+      auto itor = interface_variable_to_index_.find(ep.output_variables[i_iv]);
+      assert(itor != interface_variable_to_index_.end());
+      os << t4 << "- *iv" << itor->second << " # " << SafeString(ep.output_variables[i_iv]->name) << std::endl;
+    }
+    //  uint32_t                          interface_variable_count;
+    os << t3 << "interface_variable_count: " << ep.interface_variable_count << std::endl;
+    // SpvReflectInterfaceVariable*      interface_variables;
+    os << t3 << "interface_variables:" << std::endl;
+    for (uint32_t i_iv = 0; i_iv < ep.interface_variable_count; ++i_iv) {
+      auto itor = interface_variable_to_index_.find(&ep.interface_variables[i_iv]);
+      assert(itor != interface_variable_to_index_.end());
+      os << t4 << "- *iv" << itor->second << " # " << SafeString(ep.interface_variables[i_iv].name) << std::endl;
+    }
+    //  uint32_t                          descriptor_set_count;
+    os << t3 << "descriptor_set_count: " << ep.descriptor_set_count << std::endl;
+    // SpvReflectDescriptorSet*          descriptor_sets;
+    os << t3 << "descriptor_sets:" << std::endl;
+    for (uint32_t i_set = 0; i_set < ep.descriptor_set_count; ++i_set) {
+      // struct SpvReflectDescriptorSet {
+      const auto& dset = ep.descriptor_sets[i_set];
+      // uint32_t                          set;
+      os << t4 << "- set: " << dset.set << std::endl;
+      // uint32_t                          binding_count;
+      os << t5 << "binding_count: " << dset.binding_count << std::endl;
+      // SpvReflectDescriptorBinding**     bindings;
+      os << t5 << "bindings:" << std::endl;
+      // for (uint32_t i_binding = 0; i_binding < dset.binding_count; ++i_binding) {
+      for (uint32_t i_binding = 0; i_binding < dset.binding_count; ++i_binding) {
+        auto itor = descriptor_binding_to_index_.find(dset.bindings[i_binding]);
+        assert(itor != descriptor_binding_to_index_.end());
+        os << t6 << "- *db" << itor->second << " # " << SafeString(dset.bindings[i_binding]->name) << std::endl;
+      }
+      // } SpvReflectDescriptorSet;
+    }
+
+    // uint32_t                          used_uniform_count;
+    os << t3 << "used_uniform_count: " << ep.used_uniform_count << std::endl;
+    // uint32_t*                         used_uniforms;
+    os << t3 << "used_uniforms: [";
+    for (uint32_t i_uu = 0; i_uu < ep.used_uniform_count; ++i_uu) {
+      if (i_uu > 0) {
+        os << ", ";
+      }
+      os << ep.used_uniforms[i_uu];
+    }
+    os << "]" << std::endl;
+
+    // uint32_t                          used_push_constant_count;
+    os << t3 << "used_push_constant_count: " << ep.used_push_constant_count << std::endl;
+    // uint32_t*                         used_push_constants;
+    os << t3 << "used_push_constants:" << std::endl;
+    for (uint32_t i_pc = 0; i_pc < ep.used_push_constant_count; ++i_pc) {
+      SpvReflectBlockVariable* found_bv = nullptr;
+      for (uint32_t i_bv = 0; i_bv < sm_.push_constant_block_count; ++i_bv) {
+        if (sm_.push_constant_blocks[i_bv].spirv_id == ep.used_push_constants[i_pc]) {
+          found_bv = &sm_.push_constant_blocks[i_bv];
+          break;
+        }
+      }
+      assert(found_bv);
+      auto itor = block_variable_to_index_.find(found_bv);
+      assert(itor != block_variable_to_index_.end());
+      os << t4 << "- *db" << itor->second << " # " << SafeString(found_bv->name) << std::endl;
+    }
+
+    // uint32_t                          execution_mode_count;
+    os << t3 << "execution_mode_count: " << ep.execution_mode_count << std::endl;
+    // SpvExecutionMode*                 execution_modes;
+    os << t3 << "execution_modes: [";
+    for (uint32_t i_em = 0; i_em < ep.execution_mode_count; ++i_em) {
+      if (i_em > 0) {
+        os << ", ";
+      }
+      os << ep.execution_modes[i_em];
+    }
+    os << "]" << std::endl;
+
+    // struct LocalSize {
+    os << t3 << "local_size: [ ";
+    //   uint32_t                        x;
+    os << ep.local_size.x << ", ";
+    //   uint32_t                        y;
+    os << ep.local_size.y << ", ";
+    //  uint32_t                        z;
+    os << ep.local_size.z;
+    os << " ]" << std::endl;
+
+    //  uint32_t                          invocations; // valid for geometry
+    os << t3 << "invocations: " << ep.invocations << std::endl;
+    // uint32_t                          output_vertices; // valid for geometry, tesselation
+    os << t3 << "output_vertices: " << ep.output_vertices << std::endl;
+    // } SpvReflectEntryPoint;
+  }
   // SpvSourceLanguage                 source_language;
   os << t1 << "source_language: " << sm_.source_language << " # " << ToStringSpvSourceLanguage(sm_.source_language) << std::endl;
   // uint32_t                          source_language_version;
