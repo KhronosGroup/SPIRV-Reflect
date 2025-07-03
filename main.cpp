@@ -62,10 +62,10 @@ void PrintUsage() {
                "working on SPIRV-Reflect"
             << std::endl
             << "                             itself, you probably don't want this." << std::endl
-            << "-e,--entrypoint           Prints the entry point found in shader "
+            << "-e,--entrypoint           Prints entry points found in shader "
                "module."
             << std::endl
-            << "-s,--stage                Prints the Vulkan shader stage found in "
+            << "-s,--stage                Prints Vulkan shader stages found in "
                "shader module."
             << std::endl
             << "-f,--file                 Prints the source file found in shader "
@@ -164,16 +164,24 @@ int main(int argn, char** argv) {
 
     if (print_entry_point || print_shader_stage || print_source_file) {
       size_t printed_count = 0;
-      if (print_entry_point) {
-        std::cout << reflection.GetEntryPointName();
-        ++printed_count;
-      }
-
-      if (print_shader_stage) {
-        if (printed_count > 0) {
-          std::cout << ";";
+      if (print_entry_point || print_shader_stage) {
+        for (uint32_t i = 0; i < reflection.GetEntryPointCount(); ++i) {
+          if (print_entry_point) {
+            if (printed_count > 0) {
+              std::cout << ";";
+            }
+            std::cout << reflection.GetEntryPointName(i);
+            ++printed_count;
+          }
+          if (print_shader_stage) {
+            if (printed_count > 0) {
+              std::cout << ";";
+            }
+            std::cout << ToStringShaderStage(reflection.GetEntryPointShaderStage(i));
+            ++printed_count;
+          }
+          ++printed_count;
         }
-        std::cout << ToStringShaderStage(reflection.GetShaderStage());
       }
 
       if (print_source_file) {
