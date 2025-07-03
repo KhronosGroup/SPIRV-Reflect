@@ -2232,6 +2232,25 @@ void SpvReflectToYaml::Write(std::ostream& os) {
     WriteDescriptorBinding(os, sm_.descriptor_bindings[i], indent_level + 1);
   }
 
+  os << t0 << "all_descriptor_sets:" << std::endl;
+  for (uint32_t i_set = 0; i_set < sm_.descriptor_set_count; ++i_set) {
+    // typedef struct SpvReflectDescriptorSet {
+    const auto& dset = sm_.descriptor_sets[i_set];
+    //   uint32_t                          set;
+    os << t1 << "- "
+       << "set: " << dset.set << std::endl;
+    //   uint32_t                          binding_count;
+    os << t2 << "binding_count: " << dset.binding_count << std::endl;
+    //   SpvReflectDescriptorBinding**     bindings;
+    os << t2 << "bindings:" << std::endl;
+    for (uint32_t i_binding = 0; i_binding < dset.binding_count; ++i_binding) {
+      auto itor = descriptor_binding_to_index_.find(dset.bindings[i_binding]);
+      assert(itor != descriptor_binding_to_index_.end());
+      os << t3 << "- *db" << itor->second << " # " << SafeString(dset.bindings[i_binding]->name) << std::endl;
+    }
+    // } SpvReflectDescriptorSet;
+  }
+
   interface_variable_to_index_.clear();
   os << t0 << "all_interface_variables:" << std::endl;
   for (uint32_t i_ep = 0; i_ep < sm_.entry_point_count; ++i_ep) {
@@ -2386,63 +2405,6 @@ void SpvReflectToYaml::Write(std::ostream& os) {
      << ToStringSpvExecutionModel(sm_.spirv_execution_model) << std::endl;
   // SpvShaderStageFlagBits             shader_stage;
   os << t1 << "shader_stage: " << AsHexString(sm_.shader_stage) << " # " << ToStringShaderStage(sm_.shader_stage) << std::endl;
-  // uint32_t                          descriptor_binding_count;
-  os << t1 << "descriptor_binding_count: " << sm_.descriptor_binding_count << std::endl;
-  // SpvReflectDescriptorBinding*      descriptor_bindings;
-  os << t1 << "descriptor_bindings:" << std::endl;
-  for (uint32_t i = 0; i < sm_.descriptor_binding_count; ++i) {
-    auto itor = descriptor_binding_to_index_.find(&sm_.descriptor_bindings[i]);
-    assert(itor != descriptor_binding_to_index_.end());
-    os << t2 << "- *db" << itor->second << " # " << SafeString(sm_.descriptor_bindings[i].name) << std::endl;
-  }
-  // uint32_t                          descriptor_set_count;
-  os << t1 << "descriptor_set_count: " << sm_.descriptor_set_count << std::endl;
-  // SpvReflectDescriptorSet descriptor_sets[SPV_REFLECT_MAX_DESCRIPTOR_SETS];
-  os << t1 << "descriptor_sets:" << std::endl;
-  for (uint32_t i_set = 0; i_set < sm_.descriptor_set_count; ++i_set) {
-    // typedef struct SpvReflectDescriptorSet {
-    const auto& dset = sm_.descriptor_sets[i_set];
-    //   uint32_t                          set;
-    os << t1 << "- "
-       << "set: " << dset.set << std::endl;
-    //   uint32_t                          binding_count;
-    os << t2 << "binding_count: " << dset.binding_count << std::endl;
-    //   SpvReflectDescriptorBinding**     bindings;
-    os << t2 << "bindings:" << std::endl;
-    for (uint32_t i_binding = 0; i_binding < dset.binding_count; ++i_binding) {
-      auto itor = descriptor_binding_to_index_.find(dset.bindings[i_binding]);
-      assert(itor != descriptor_binding_to_index_.end());
-      os << t3 << "- *db" << itor->second << " # " << SafeString(dset.bindings[i_binding]->name) << std::endl;
-    }
-    // } SpvReflectDescriptorSet;
-  }
-  // uint32_t                          input_variable_count;
-  os << t1 << "input_variable_count: " << sm_.input_variable_count << ",\n";
-  // SpvReflectInterfaceVariable*      input_variables;
-  os << t1 << "input_variables:" << std::endl;
-  for (uint32_t i = 0; i < sm_.input_variable_count; ++i) {
-    auto itor = interface_variable_to_index_.find(sm_.input_variables[i]);
-    assert(itor != interface_variable_to_index_.end());
-    os << t2 << "- *iv" << itor->second << " # " << SafeString(sm_.input_variables[i]->name) << std::endl;
-  }
-  // uint32_t                          output_variable_count;
-  os << t1 << "output_variable_count: " << sm_.output_variable_count << ",\n";
-  // SpvReflectInterfaceVariable*      output_variables;
-  os << t1 << "output_variables:" << std::endl;
-  for (uint32_t i = 0; i < sm_.output_variable_count; ++i) {
-    auto itor = interface_variable_to_index_.find(sm_.output_variables[i]);
-    assert(itor != interface_variable_to_index_.end());
-    os << t2 << "- *iv" << itor->second << " # " << SafeString(sm_.output_variables[i]->name) << std::endl;
-  }
-  // uint32_t                          push_constant_count;
-  os << t1 << "push_constant_count: " << sm_.push_constant_block_count << ",\n";
-  // SpvReflectBlockVariable*          push_constants;
-  os << t1 << "push_constants:" << std::endl;
-  for (uint32_t i = 0; i < sm_.push_constant_block_count; ++i) {
-    auto itor = block_variable_to_index_.find(&sm_.push_constant_blocks[i]);
-    assert(itor != block_variable_to_index_.end());
-    os << t2 << "- *bv" << itor->second << " # " << SafeString(sm_.push_constant_blocks[i].name) << std::endl;
-  }
 
   // uint32_t                            spec_constant_count;
   os << t1 << "specialization_constant_count: " << sm_.spec_constant_count << ",\n";
