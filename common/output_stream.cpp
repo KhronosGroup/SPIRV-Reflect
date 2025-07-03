@@ -108,6 +108,14 @@ std::string ToStringSpvSourceLanguage(SpvSourceLanguage lang) {
       return "Hero C";
     case SpvSourceLanguageNZSL:
       return "NZSL";
+    case SpvSourceLanguageWGSL:
+      return "WGSL";
+    case SpvSourceLanguageSlang:
+      return "Slang";
+    case SpvSourceLanguageZig:
+      return "Zig";
+    case SpvSourceLanguageRust:
+      return "Rust";
 
     default:
       break;
