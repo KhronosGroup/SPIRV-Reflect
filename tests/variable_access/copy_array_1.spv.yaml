@@ -233,7 +233,7 @@ module:
   generator: 0 # ???
   entry_point_name: "main"
   entry_point_id: 2
-  source_language: 11 # Unknown
+  source_language: 11 # Slang
   source_language_version: 1
   spirv_execution_model: 5 # GLCompute
   shader_stage: 0x00000020 # CS
