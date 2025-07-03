@@ -2231,8 +2231,14 @@ void SpvReflectToYaml::Write(std::ostream& os) {
 
   interface_variable_to_index_.clear();
   os << t0 << "all_interface_variables:" << std::endl;
-  for (uint32_t i = 0; i < sm_.input_variable_count; ++i) {
-    WriteInterfaceVariable(os, *sm_.input_variables[i], indent_level + 1);
+  for (uint32_t i_ep = 0; i_ep < sm_.entry_point_count; ++i_ep) {
+    const auto& ep = sm_.entry_points[i_ep];
+    for (uint32_t i = 0; i < ep.input_variable_count; ++i) {
+      WriteInterfaceVariable(os, *ep.input_variables[i], indent_level + 1);
+    }
+    for (uint32_t i = 0; i < ep.output_variable_count; ++i) {
+      WriteInterfaceVariable(os, *ep.output_variables[i], indent_level + 1);
+    }
   }
   for (uint32_t i = 0; i < sm_.output_variable_count; ++i) {
     WriteInterfaceVariable(os, *sm_.output_variables[i], indent_level + 1);

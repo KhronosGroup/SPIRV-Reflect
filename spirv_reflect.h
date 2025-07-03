@@ -586,8 +586,8 @@ typedef struct SpvReflectSpecializationConstant {
 */
 typedef struct SpvReflectShaderModule {
   SpvReflectGenerator               generator;
-  const char*                       entry_point_name;
-  uint32_t                          entry_point_id;
+  const char*                       entry_point_name;                                 // Uses value(s) from first entry point
+  uint32_t                          entry_point_id;                                 // Uses value(s) from first entry point
   uint32_t                          entry_point_count;
   SpvReflectEntryPoint*             entry_points;
   SpvSourceLanguage                 source_language;
@@ -598,20 +598,20 @@ typedef struct SpvReflectShaderModule {
   SpvReflectCapability*             capabilities;
   SpvExecutionModel                 spirv_execution_model;                            // Uses value(s) from first entry point
   SpvReflectShaderStageFlagBits     shader_stage;                                     // Uses value(s) from first entry point
-  uint32_t                          descriptor_binding_count;                         // Uses value(s) from first entry point
-  SpvReflectDescriptorBinding*      descriptor_bindings;                              // Uses value(s) from first entry point
-  uint32_t                          descriptor_set_count;                             // Uses value(s) from first entry point
-  SpvReflectDescriptorSet           descriptor_sets[SPV_REFLECT_MAX_DESCRIPTOR_SETS]; // Uses value(s) from first entry point
+  uint32_t                          descriptor_binding_count;
+  SpvReflectDescriptorBinding*      descriptor_bindings;
+  uint32_t                          descriptor_set_count;
+  SpvReflectDescriptorSet           descriptor_sets[SPV_REFLECT_MAX_DESCRIPTOR_SETS];
   uint32_t                          input_variable_count;                             // Uses value(s) from first entry point
   SpvReflectInterfaceVariable**     input_variables;                                  // Uses value(s) from first entry point
   uint32_t                          output_variable_count;                            // Uses value(s) from first entry point
   SpvReflectInterfaceVariable**     output_variables;                                 // Uses value(s) from first entry point
   uint32_t                          interface_variable_count;                         // Uses value(s) from first entry point
   SpvReflectInterfaceVariable*      interface_variables;                              // Uses value(s) from first entry point
-  uint32_t                          push_constant_block_count;                        // Uses value(s) from first entry point
-  SpvReflectBlockVariable*          push_constant_blocks;                             // Uses value(s) from first entry point
-  uint32_t                          spec_constant_count;                              // Uses value(s) from first entry point
-  SpvReflectSpecializationConstant* spec_constants;                                   // Uses value(s) from first entry point
+  uint32_t                          push_constant_block_count;
+  SpvReflectBlockVariable*          push_constant_blocks;
+  uint32_t                          spec_constant_count;
+  SpvReflectSpecializationConstant* spec_constants;
 
   struct Internal {
     SpvReflectModuleFlags           module_flags;
