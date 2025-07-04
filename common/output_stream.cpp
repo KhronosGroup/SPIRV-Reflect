@@ -2209,11 +2209,14 @@ void SpvReflectToYaml::Write(std::ostream& os) {
     for (uint32_t i = 0; i < sm_.push_constant_block_count; ++i) {
       WriteBlockVariableTypes(os, sm_.push_constant_blocks[i], indent_level + 1);
     }
-    for (uint32_t i = 0; i < sm_.input_variable_count; ++i) {
-      WriteInterfaceVariableTypes(os, *sm_.input_variables[i], indent_level + 1);
-    }
-    for (uint32_t i = 0; i < sm_.output_variable_count; ++i) {
-      WriteInterfaceVariableTypes(os, *sm_.output_variables[i], indent_level + 1);
+    for (uint32_t i_ep = 0; i_ep < sm_.entry_point_count; ++i_ep) {
+      const auto& ep = sm_.entry_points[i_ep];
+      for (uint32_t i = 0; i < ep.input_variable_count; ++i) {
+        WriteInterfaceVariableTypes(os, *ep.input_variables[i], indent_level + 1);
+      }
+      for (uint32_t i = 0; i < ep.output_variable_count; ++i) {
+        WriteInterfaceVariableTypes(os, *ep.output_variables[i], indent_level + 1);
+      }
     }
   }
 
