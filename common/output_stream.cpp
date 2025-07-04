@@ -2310,15 +2310,6 @@ void SpvReflectToYaml::Write(std::ostream& os) {
       assert(itor != interface_variable_to_index_.end());
       os << t4 << "- *iv" << itor->second << " # " << SafeString(ep.output_variables[i_iv]->name) << std::endl;
     }
-    //  uint32_t                          interface_variable_count;
-    os << t3 << "interface_variable_count: " << ep.interface_variable_count << std::endl;
-    // SpvReflectInterfaceVariable*      interface_variables;
-    os << t3 << "interface_variables:" << std::endl;
-    for (uint32_t i_iv = 0; i_iv < ep.interface_variable_count; ++i_iv) {
-      auto itor = interface_variable_to_index_.find(&ep.interface_variables[i_iv]);
-      assert(itor != interface_variable_to_index_.end());
-      os << t4 << "- *iv" << itor->second << " # " << SafeString(ep.interface_variables[i_iv].name) << std::endl;
-    }
     //  uint32_t                          descriptor_set_count;
     os << t3 << "descriptor_set_count: " << ep.descriptor_set_count << std::endl;
     // SpvReflectDescriptorSet*          descriptor_sets;
