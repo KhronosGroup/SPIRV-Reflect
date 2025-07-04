@@ -88,6 +88,7 @@ all_type_descriptions:
     members:
 all_block_variables:
 all_descriptor_bindings:
+all_descriptor_sets:
 all_interface_variables:
   - &iv0
     spirv_id: 2
@@ -219,27 +220,38 @@ module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
   entry_point_id: 1
+  entry_point_count: 1
+  entry_points:
+    - name: "main"
+      id: 1
+      spirv_execution_model: 5365 # MeshEXT
+      shader_stage: 0x00000080 # MESH
+      input_variable_count: 4
+      input_variables:
+        - *iv0 # 
+        - *iv1 # 
+        - *iv2 # 
+        - *iv3 # 
+      output_variable_count: 3
+      output_variables:
+        - *iv4 # 
+        - *iv5 # 
+        - *iv6 # "out.var.COLOR0"
+      descriptor_set_count: 0
+      descriptor_sets:
+      used_descriptor_binding_count: 0
+      used_descriptor_bindings:
+      used_push_constant_block_count: 0
+      used_push_constant_blocks:
+      execution_mode_count: 4
+      execution_modes: [17, 5298, 26, 5270]
+      local_size: [32, 1, 1]
+      invocations: 0
+      output_vertices: 64
   source_language: 5 # HLSL
   source_language_version: 670
   spirv_execution_model: 5365 # MeshEXT
   shader_stage: 0x00000080 # MESH
-  descriptor_binding_count: 0
-  descriptor_bindings:
-  descriptor_set_count: 0
-  descriptor_sets:
-  input_variable_count: 4,
-  input_variables:
-    - *iv0 # 
-    - *iv1 # 
-    - *iv2 # 
-    - *iv3 # 
-  output_variable_count: 3,
-  output_variables:
-    - *iv4 # 
-    - *iv5 # 
-    - *iv6 # "out.var.COLOR0"
-  push_constant_count: 0,
-  push_constants:
   specialization_constant_count: 0,
   specialization_constants:
 ...
