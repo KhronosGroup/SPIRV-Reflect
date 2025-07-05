@@ -3427,6 +3427,12 @@ all_descriptor_bindings:
     uav_counter_binding:
     type_description: *td95
     word_offset: { binding: 716, set: 712 }
+all_descriptor_sets:
+  - set: 0
+    binding_count: 2
+    bindings:
+      - *db0 # "MyParams"
+      - *db1 # "MyParams2"
 all_interface_variables:
   - &iv0
     spirv_id: 2
@@ -3468,29 +3474,40 @@ module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
   entry_point_id: 1
+  entry_point_count: 1
+  entry_points:
+    - name: "main"
+      id: 1
+      spirv_execution_model: 0 # Vertex
+      shader_stage: 0x00000001 # VS
+      input_variable_count: 1
+      input_variables:
+        - *iv0 # "in.var.Position"
+      output_variable_count: 1
+      output_variables:
+        - *iv1 # 
+      descriptor_set_count: 1
+      descriptor_sets:
+        - set: 0
+          binding_count: 2
+          bindings:
+            - *db0 # "MyParams"
+            - *db1 # "MyParams2"
+      used_descriptor_binding_count: 2
+      used_descriptor_bindings:
+        - *db0 # "MyParams"
+        - *db1 # "MyParams2"
+      used_push_constant_block_count: 0
+      used_push_constant_blocks:
+      execution_mode_count: 0
+      execution_modes: []
+      local_size: [0, 0, 0]
+      invocations: 0
+      output_vertices: 0
   source_language: 5 # HLSL
   source_language_version: 600
   spirv_execution_model: 0 # Vertex
   shader_stage: 0x00000001 # VS
-  descriptor_binding_count: 2
-  descriptor_bindings:
-    - *db0 # "MyParams"
-    - *db1 # "MyParams2"
-  descriptor_set_count: 1
-  descriptor_sets:
-  - set: 0
-    binding_count: 2
-    bindings:
-      - *db0 # "MyParams"
-      - *db1 # "MyParams2"
-  input_variable_count: 1,
-  input_variables:
-    - *iv0 # "in.var.Position"
-  output_variable_count: 1,
-  output_variables:
-    - *iv1 # 
-  push_constant_count: 0,
-  push_constants:
   specialization_constant_count: 0,
   specialization_constants:
 ...

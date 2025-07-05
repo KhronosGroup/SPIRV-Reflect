@@ -483,23 +483,7 @@ all_descriptor_bindings:
     uav_counter_binding:
     type_description: *td11
     word_offset: { binding: 278, set: 274 }
-all_interface_variables:
-module:
-  generator: 8 # Khronos Glslang Reference Front End
-  entry_point_name: "main"
-  entry_point_id: 4
-  source_language: 2 # GLSL
-  source_language_version: 450
-  spirv_execution_model: 5 # GLCompute
-  shader_stage: 0x00000020 # CS
-  descriptor_binding_count: 4
-  descriptor_bindings:
-    - *db0 # "U_Sone"
-    - *db1 # "U_Uone"
-    - *db2 # "S_Sone"
-    - *db3 # "S_Uone"
-  descriptor_set_count: 1
-  descriptor_sets:
+all_descriptor_sets:
   - set: 0
     binding_count: 4
     bindings:
@@ -507,12 +491,47 @@ module:
       - *db1 # "U_Uone"
       - *db2 # "S_Sone"
       - *db3 # "S_Uone"
-  input_variable_count: 0,
-  input_variables:
-  output_variable_count: 0,
-  output_variables:
-  push_constant_count: 0,
-  push_constants:
+all_interface_variables:
+module:
+  generator: 8 # Khronos Glslang Reference Front End
+  entry_point_name: "main"
+  entry_point_id: 4
+  entry_point_count: 1
+  entry_points:
+    - name: "main"
+      id: 4
+      spirv_execution_model: 5 # GLCompute
+      shader_stage: 0x00000020 # CS
+      input_variable_count: 0
+      input_variables:
+      output_variable_count: 0
+      output_variables:
+      descriptor_set_count: 1
+      descriptor_sets:
+        - set: 0
+          binding_count: 4
+          bindings:
+            - *db0 # "U_Sone"
+            - *db1 # "U_Uone"
+            - *db2 # "S_Sone"
+            - *db3 # "S_Uone"
+      used_descriptor_binding_count: 4
+      used_descriptor_bindings:
+        - *db0 # "U_Sone"
+        - *db1 # "U_Uone"
+        - *db2 # "S_Sone"
+        - *db3 # "S_Uone"
+      used_push_constant_block_count: 0
+      used_push_constant_blocks:
+      execution_mode_count: 1
+      execution_modes: [17]
+      local_size: [1, 1, 1]
+      invocations: 0
+      output_vertices: 0
+  source_language: 2 # GLSL
+  source_language_version: 450
+  spirv_execution_model: 5 # GLCompute
+  shader_stage: 0x00000020 # CS
   specialization_constant_count: 4,
   specialization_constants:
       - name: "SONE"

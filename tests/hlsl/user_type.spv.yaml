@@ -2889,68 +2889,7 @@ all_descriptor_bindings:
     type_description: *td56
     word_offset: { binding: 1224, set: 1220 }
     user_type: TextureBuffer
-all_interface_variables:
-module:
-  generator: 14 # Google spiregg
-  entry_point_name: "main"
-  entry_point_id: 1
-  source_language: 5 # HLSL
-  source_language_version: 600
-  spirv_execution_model: 4 # Fragment
-  shader_stage: 0x00000010 # PS
-  descriptor_binding_count: 49
-  descriptor_bindings:
-    - *db0 # "a"
-    - *db1 # "b"
-    - *db3 # "c"
-    - *db2 # "counter.var.c"
-    - *db5 # "d"
-    - *db4 # "counter.var.d"
-    - *db6 # "e"
-    - *db7 # "f"
-    - *db8 # "g"
-    - *db9 # "h"
-    - *db10 # "i"
-    - *db11 # "j"
-    - *db12 # "k"
-    - *db13 # "l"
-    - *db14 # "m"
-    - *db15 # "n"
-    - *db16 # "o"
-    - *db17 # "p"
-    - *db18 # "q"
-    - *db19 # "r"
-    - *db20 # "s"
-    - *db21 # "t"
-    - *db22 # "u"
-    - *db23 # "v"
-    - *db24 # "t1"
-    - *db25 # "t2"
-    - *db26 # "eArr"
-    - *db27 # "fArr"
-    - *db28 # "gArr"
-    - *db29 # "hArr"
-    - *db30 # "iArr"
-    - *db31 # "jArr"
-    - *db32 # "kArr"
-    - *db33 # "lArr"
-    - *db34 # "mArr"
-    - *db35 # "nArr"
-    - *db36 # "oArr"
-    - *db37 # "pArr"
-    - *db38 # "qArr"
-    - *db39 # "rArr"
-    - *db40 # "sArr"
-    - *db41 # "tArr"
-    - *db42 # "MyCBuffer"
-    - *db43 # "MyTBuffer"
-    - *db44 # "bab"
-    - *db45 # "rwbab"
-    - *db46 # "rs"
-    - *db47 # "cb"
-    - *db48 # "tb"
-  descriptor_set_count: 1
-  descriptor_sets:
+all_descriptor_sets:
   - set: 0
     binding_count: 49
     bindings:
@@ -3003,12 +2942,36 @@ module:
       - *db46 # "rs"
       - *db47 # "cb"
       - *db48 # "tb"
-  input_variable_count: 0,
-  input_variables:
-  output_variable_count: 0,
-  output_variables:
-  push_constant_count: 0,
-  push_constants:
+all_interface_variables:
+module:
+  generator: 14 # Google spiregg
+  entry_point_name: "main"
+  entry_point_id: 1
+  entry_point_count: 1
+  entry_points:
+    - name: "main"
+      id: 1
+      spirv_execution_model: 4 # Fragment
+      shader_stage: 0x00000010 # PS
+      input_variable_count: 0
+      input_variables:
+      output_variable_count: 0
+      output_variables:
+      descriptor_set_count: 0
+      descriptor_sets:
+      used_descriptor_binding_count: 0
+      used_descriptor_bindings:
+      used_push_constant_block_count: 0
+      used_push_constant_blocks:
+      execution_mode_count: 1
+      execution_modes: [7]
+      local_size: [0, 0, 0]
+      invocations: 0
+      output_vertices: 0
+  source_language: 5 # HLSL
+  source_language_version: 600
+  spirv_execution_model: 4 # Fragment
+  shader_stage: 0x00000010 # PS
   specialization_constant_count: 0,
   specialization_constants:
 ...

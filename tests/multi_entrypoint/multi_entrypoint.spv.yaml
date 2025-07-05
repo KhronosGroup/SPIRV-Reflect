@@ -192,6 +192,23 @@ all_type_descriptions:
     member_count: 1
     members:
       - *td9
+  - &td11
+    id: 21
+    op: 23
+    type_name: 
+    struct_member_name: 
+    storage_class: -1 # NOT APPLICABLE
+    type_flags: 0x00000108 # VECTOR FLOAT 
+    decoration_flags: 0x00000000 # NONE
+    traits:
+      numeric:
+        scalar: { width: 32, signedness: 0 }
+        vector: { component_count: 4 }
+        matrix: { column_count: 0, row_count: 0, stride: 0 }
+      image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
+      array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
 all_block_variables:
   - &bv0
     name: 
@@ -343,6 +360,12 @@ all_descriptor_bindings:
     uav_counter_binding:
     type_description: *td2
     word_offset: { binding: 163, set: 159 }
+all_descriptor_sets:
+  - set: 0
+    binding_count: 2
+    bindings:
+      - *db0 # "tex"
+      - *db1 # "ubo"
 all_interface_variables:
   - &iv0
     spirv_id: 4
@@ -435,37 +458,110 @@ all_interface_variables:
     format: 103 # VK_FORMAT_R32G32_SFLOAT
     type_description: *td7
     word_offset: { location: 167 }
+  - &iv5
+    spirv_id: 4
+    name: "iUV"
+    location: 0
+    storage_class: 1 # Input
+    semantic: 
+    decoration_flags: 0x00000000 # NONE
+    built_in: -1 # ??? (-1)
+    numeric:
+      scalar: { width: 32, signedness: 0 }
+      vector: { component_count: 2 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+    format: 103 # VK_FORMAT_R32G32_SFLOAT
+    type_description: *td7
+    word_offset: { location: 171 }
+  - &iv6
+    spirv_id: 8
+    name: "colour"
+    location: 0
+    storage_class: 3 # Output
+    semantic: 
+    decoration_flags: 0x00000000 # NONE
+    built_in: -1 # ??? (-1)
+    numeric:
+      scalar: { width: 32, signedness: 0 }
+      vector: { component_count: 4 }
+      matrix: { column_count: 0, row_count: 0, stride: 0 }
+    array: { dims_count: 0, dims: [], stride: 0 }
+    member_count: 0
+    members:
+    format: 109 # VK_FORMAT_R32G32B32A32_SFLOAT
+    type_description: *td11
+    word_offset: { location: 195 }
 module:
   generator: 7 # Khronos SPIR-V Tools Assembler
   entry_point_name: "entry_vert"
   entry_point_id: 2
+  entry_point_count: 2
+  entry_points:
+    - name: "entry_vert"
+      id: 2
+      spirv_execution_model: 0 # Vertex
+      shader_stage: 0x00000001 # VS
+      input_variable_count: 2
+      input_variables:
+        - *iv0 # "iUV"
+        - *iv1 # "pos"
+      output_variable_count: 2
+      output_variables:
+        - *iv3 # ""
+        - *iv4 # "oUV"
+      descriptor_set_count: 1
+      descriptor_sets:
+        - set: 0
+          binding_count: 1
+          bindings:
+            - *db1 # "ubo"
+      used_descriptor_binding_count: 1
+      used_descriptor_bindings:
+        - *db1 # "ubo"
+      used_push_constant_block_count: 1
+      used_push_constant_blocks:
+        - *bv4 # "push_constant_vert"
+      execution_mode_count: 0
+      execution_modes: []
+      local_size: [0, 0, 0]
+      invocations: 0
+      output_vertices: 0
+    - name: "entry_frag"
+      id: 7
+      spirv_execution_model: 4 # Fragment
+      shader_stage: 0x00000010 # PS
+      input_variable_count: 1
+      input_variables:
+        - *iv5 # "iUV"
+      output_variable_count: 1
+      output_variables:
+        - *iv6 # "colour"
+      descriptor_set_count: 1
+      descriptor_sets:
+        - set: 0
+          binding_count: 2
+          bindings:
+            - *db0 # "tex"
+            - *db1 # "ubo"
+      used_descriptor_binding_count: 2
+      used_descriptor_bindings:
+        - *db1 # "ubo"
+        - *db0 # "tex"
+      used_push_constant_block_count: 1
+      used_push_constant_blocks:
+        - *bv6 # "push_constant_frag"
+      execution_mode_count: 0
+      execution_modes: []
+      local_size: [0, 0, 0]
+      invocations: 0
+      output_vertices: 0
   source_language: 2 # GLSL
   source_language_version: 450
   spirv_execution_model: 0 # Vertex
   shader_stage: 0x00000001 # VS
-  descriptor_binding_count: 2
-  descriptor_bindings:
-    - *db0 # "tex"
-    - *db1 # "ubo"
-  descriptor_set_count: 1
-  descriptor_sets:
-  - set: 0
-    binding_count: 2
-    bindings:
-      - *db0 # "tex"
-      - *db1 # "ubo"
-  input_variable_count: 2,
-  input_variables:
-    - *iv0 # "iUV"
-    - *iv1 # "pos"
-  output_variable_count: 2,
-  output_variables:
-    - *iv3 # ""
-    - *iv4 # "oUV"
-  push_constant_count: 2,
-  push_constants:
-    - *bv4 # "push_constant_vert"
-    - *bv6 # "push_constant_frag"
   specialization_constant_count: 0,
   specialization_constants:
 ...
