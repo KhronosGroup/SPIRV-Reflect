@@ -199,7 +199,7 @@ module:
       used_descriptor_bindings:
       used_push_constant_block_count: 1
       used_push_constant_blocks:
-        - *db3 # "g_PushConstants"
+        - *bv3 # "g_PushConstants"
       execution_mode_count: 0
       execution_modes: []
       local_size: [0, 0, 0]

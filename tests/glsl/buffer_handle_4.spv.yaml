@@ -342,7 +342,7 @@ module:
       used_descriptor_bindings:
       used_push_constant_block_count: 1
       used_push_constant_blocks:
-        - *db5 # "params"
+        - *bv5 # "params"
       execution_mode_count: 1
       execution_modes: [17]
       local_size: [1, 1, 1]

@@ -640,7 +640,7 @@ module:
         - *db0 # "result"
       used_push_constant_block_count: 1
       used_push_constant_blocks:
-        - *db14 # "pc"
+        - *bv14 # "pc"
       execution_mode_count: 1
       execution_modes: [17]
       local_size: [1, 1, 1]

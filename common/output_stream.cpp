@@ -2364,7 +2364,7 @@ void SpvReflectToYaml::Write(std::ostream& os) {
       assert(found_bv);
       auto itor = block_variable_to_index_.find(found_bv);
       assert(itor != block_variable_to_index_.end());
-      os << t4 << "- *db" << itor->second << " # " << SafeString(found_bv->name) << std::endl;
+      os << t4 << "- *bv" << itor->second << " # " << SafeString(found_bv->name) << std::endl;
     }
 
     // uint32_t                          execution_mode_count;

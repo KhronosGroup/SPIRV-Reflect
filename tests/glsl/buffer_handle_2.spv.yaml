@@ -838,7 +838,7 @@ module:
         - *db0 # "image0_0"
       used_push_constant_block_count: 1
       used_push_constant_blocks:
-        - *db8 # "pc"
+        - *bv8 # "pc"
       execution_mode_count: 1
       execution_modes: [7]
       local_size: [0, 0, 0]

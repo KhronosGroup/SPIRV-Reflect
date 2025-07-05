@@ -287,7 +287,7 @@ module:
       used_descriptor_bindings:
       used_push_constant_block_count: 1
       used_push_constant_blocks:
-        - *db4 # "g_GlobalsBDAPushConstant_0"
+        - *bv4 # "g_GlobalsBDAPushConstant_0"
       execution_mode_count: 1
       execution_modes: [7]
       local_size: [0, 0, 0]

@@ -523,7 +523,7 @@ module:
         - *db1 # "ubo"
       used_push_constant_block_count: 1
       used_push_constant_blocks:
-        - *db4 # "push_constant_vert"
+        - *bv4 # "push_constant_vert"
       execution_mode_count: 0
       execution_modes: []
       local_size: [0, 0, 0]
@@ -552,7 +552,7 @@ module:
         - *db0 # "tex"
       used_push_constant_block_count: 1
       used_push_constant_blocks:
-        - *db6 # "push_constant_frag"
+        - *bv6 # "push_constant_frag"
       execution_mode_count: 0
       execution_modes: []
       local_size: [0, 0, 0]
