@@ -3569,14 +3569,22 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
     }
     used_acessed_count += p_parser->functions[j].accessed_variable_count;
   }
-  SpvReflectPrvAccessedVariable* p_used_accesses = NULL;
-  if (used_acessed_count > 0) {
-    p_used_accesses = (SpvReflectPrvAccessedVariable*)calloc(used_acessed_count, sizeof(SpvReflectPrvAccessedVariable));
-    if (IsNull(p_used_accesses)) {
-      SafeFree(p_called_functions);
-      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
-    }
+
+  // If there are no used accessed, this is something like an empty function/early return
+  // Basically there is going to be nothing to reflect, but everything after this expects |p_used_accesses| to be allocated with
+  // real memory, see https://github.com/KhronosGroup/SPIRV-Reflect/issues/319
+  if (used_acessed_count == 0) {
+    SafeFree(p_called_functions);
+    return SPV_REFLECT_RESULT_SUCCESS;
   }
+
+  SpvReflectPrvAccessedVariable* p_used_accesses =
+      (SpvReflectPrvAccessedVariable*)calloc(used_acessed_count, sizeof(SpvReflectPrvAccessedVariable));
+  if (IsNull(p_used_accesses)) {
+    SafeFree(p_called_functions);
+    return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+  }
+
   used_acessed_count = 0;
   for (size_t i = 0, j = 0; i < called_function_count; ++i) {
     while (p_parser->functions[j].id != p_called_functions[i]) {
