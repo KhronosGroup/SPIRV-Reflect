@@ -158,6 +158,7 @@ all_block_variables:
       - *bv2
     type_description: *td3
 all_descriptor_bindings:
+all_descriptor_sets:
 all_interface_variables:
   - &iv0
     spirv_id: 2
@@ -181,22 +182,33 @@ module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
   entry_point_id: 1
+  entry_point_count: 1
+  entry_points:
+    - name: "main"
+      id: 1
+      spirv_execution_model: 0 # Vertex
+      shader_stage: 0x00000001 # VS
+      input_variable_count: 0
+      input_variables:
+      output_variable_count: 1
+      output_variables:
+        - *iv0 # 
+      descriptor_set_count: 0
+      descriptor_sets:
+      used_descriptor_binding_count: 0
+      used_descriptor_bindings:
+      used_push_constant_block_count: 1
+      used_push_constant_blocks:
+        - *bv3 # "g_PushConstants"
+      execution_mode_count: 0
+      execution_modes: []
+      local_size: [0, 0, 0]
+      invocations: 0
+      output_vertices: 0
   source_language: 5 # HLSL
   source_language_version: 600
   spirv_execution_model: 0 # Vertex
   shader_stage: 0x00000001 # VS
-  descriptor_binding_count: 0
-  descriptor_bindings:
-  descriptor_set_count: 0
-  descriptor_sets:
-  input_variable_count: 0,
-  input_variables:
-  output_variable_count: 1,
-  output_variables:
-    - *iv0 # 
-  push_constant_count: 1,
-  push_constants:
-    - *bv3 # "g_PushConstants"
   specialization_constant_count: 0,
   specialization_constants:
 ...

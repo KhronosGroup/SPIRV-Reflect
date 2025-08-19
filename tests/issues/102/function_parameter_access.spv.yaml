@@ -269,6 +269,16 @@ all_descriptor_bindings:
     uav_counter_binding:
     type_description: *td2
     word_offset: { binding: 56, set: 52 }
+all_descriptor_sets:
+  - set: 0
+    binding_count: 6
+    bindings:
+      - *db0 # 
+      - *db1 # 
+      - *db2 # 
+      - *db3 # 
+      - *db4 # 
+      - *db5 # 
 all_interface_variables:
   - &iv0
     spirv_id: 113
@@ -292,36 +302,41 @@ module:
   generator: 8 # Khronos Glslang Reference Front End
   entry_point_name: "main"
   entry_point_id: 4
+  entry_point_count: 1
+  entry_points:
+    - name: "main"
+      id: 4
+      spirv_execution_model: 4 # Fragment
+      shader_stage: 0x00000010 # PS
+      input_variable_count: 0
+      input_variables:
+      output_variable_count: 1
+      output_variables:
+        - *iv0 # 
+      descriptor_set_count: 1
+      descriptor_sets:
+        - set: 0
+          binding_count: 3
+          bindings:
+            - *db0 # 
+            - *db1 # 
+            - *db2 # 
+      used_descriptor_binding_count: 3
+      used_descriptor_bindings:
+        - *db2 # 
+        - *db1 # 
+        - *db0 # 
+      used_push_constant_block_count: 0
+      used_push_constant_blocks:
+      execution_mode_count: 1
+      execution_modes: [7]
+      local_size: [0, 0, 0]
+      invocations: 0
+      output_vertices: 0
   source_language: 0 # Unknown
   source_language_version: 0
   spirv_execution_model: 4 # Fragment
   shader_stage: 0x00000010 # PS
-  descriptor_binding_count: 6
-  descriptor_bindings:
-    - *db0 # 
-    - *db1 # 
-    - *db2 # 
-    - *db3 # 
-    - *db4 # 
-    - *db5 # 
-  descriptor_set_count: 1
-  descriptor_sets:
-  - set: 0
-    binding_count: 6
-    bindings:
-      - *db0 # 
-      - *db1 # 
-      - *db2 # 
-      - *db3 # 
-      - *db4 # 
-      - *db5 # 
-  input_variable_count: 0,
-  input_variables:
-  output_variable_count: 1,
-  output_variables:
-    - *iv0 # 
-  push_constant_count: 0,
-  push_constants:
   specialization_constant_count: 0,
   specialization_constants:
 ...

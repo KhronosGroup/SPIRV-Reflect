@@ -396,6 +396,17 @@ all_descriptor_bindings:
     uav_counter_binding: *db2 # "counter.var.BufferOut"
     type_description: *td7
     word_offset: { binding: 312, set: 308 }
+all_descriptor_sets:
+  - set: 1
+    binding_count: 2
+    bindings:
+      - *db1 # "BufferIn"
+      - *db0 # "counter.var.BufferIn"
+  - set: 2
+    binding_count: 2
+    bindings:
+      - *db2 # "counter.var.BufferOut"
+      - *db3 # "BufferOut"
 all_interface_variables:
   - &iv0
     spirv_id: 26
@@ -437,36 +448,47 @@ module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
   entry_point_id: 19
+  entry_point_count: 1
+  entry_points:
+    - name: "main"
+      id: 19
+      spirv_execution_model: 4 # Fragment
+      shader_stage: 0x00000010 # PS
+      input_variable_count: 1
+      input_variables:
+        - *iv0 # 
+      output_variable_count: 1
+      output_variables:
+        - *iv1 # "out.var.SV_TARGET"
+      descriptor_set_count: 2
+      descriptor_sets:
+        - set: 1
+          binding_count: 2
+          bindings:
+            - *db1 # "BufferIn"
+            - *db0 # "counter.var.BufferIn"
+        - set: 2
+          binding_count: 2
+          bindings:
+            - *db2 # "counter.var.BufferOut"
+            - *db3 # "BufferOut"
+      used_descriptor_binding_count: 4
+      used_descriptor_bindings:
+        - *db1 # "BufferIn"
+        - *db0 # "counter.var.BufferIn"
+        - *db3 # "BufferOut"
+        - *db2 # "counter.var.BufferOut"
+      used_push_constant_block_count: 0
+      used_push_constant_blocks:
+      execution_mode_count: 1
+      execution_modes: [7]
+      local_size: [0, 0, 0]
+      invocations: 0
+      output_vertices: 0
   source_language: 5 # HLSL
   source_language_version: 600
   spirv_execution_model: 4 # Fragment
   shader_stage: 0x00000010 # PS
-  descriptor_binding_count: 4
-  descriptor_bindings:
-    - *db1 # "BufferIn"
-    - *db2 # "counter.var.BufferOut"
-    - *db0 # "counter.var.BufferIn"
-    - *db3 # "BufferOut"
-  descriptor_set_count: 2
-  descriptor_sets:
-  - set: 1
-    binding_count: 2
-    bindings:
-      - *db1 # "BufferIn"
-      - *db0 # "counter.var.BufferIn"
-  - set: 2
-    binding_count: 2
-    bindings:
-      - *db2 # "counter.var.BufferOut"
-      - *db3 # "BufferOut"
-  input_variable_count: 1,
-  input_variables:
-    - *iv0 # 
-  output_variable_count: 1,
-  output_variables:
-    - *iv1 # "out.var.SV_TARGET"
-  push_constant_count: 0,
-  push_constants:
   specialization_constant_count: 0,
   specialization_constants:
 ...

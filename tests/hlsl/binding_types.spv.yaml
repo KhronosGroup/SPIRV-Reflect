@@ -1858,6 +1858,39 @@ all_descriptor_bindings:
     uav_counter_binding:
     type_description: *td37
     word_offset: { binding: 1164, set: 1160 }
+all_descriptor_sets:
+  - set: 0
+    binding_count: 29
+    bindings:
+      - *db0 # "MyCBuffer"
+      - *db1 # "MyConstantBuffer"
+      - *db2 # "MyTexture1D"
+      - *db3 # "MyTexture2D"
+      - *db4 # "MyTexture3D"
+      - *db5 # "MyTexture1DArray"
+      - *db6 # "MyTexture2DArray"
+      - *db7 # "MyRWTexture1D"
+      - *db8 # "MyRWTexture2D"
+      - *db9 # "MyRWTexture3D"
+      - *db10 # "MyRWTexture1DArray"
+      - *db11 # "MyRWTexture2DArray"
+      - *db12 # "MyTexture2DMS"
+      - *db13 # "MyTexture2DMSArray"
+      - *db14 # "MyTextureCube"
+      - *db15 # "MyTextureCubeArray"
+      - *db16 # "MyTBuffer"
+      - *db17 # "MyTextureBuffer"
+      - *db18 # "MyBuffer"
+      - *db19 # "MyRWBuffer"
+      - *db20 # "MyStructuredBuffer"
+      - *db22 # "MyRWStructuredBuffer"
+      - *db21 # "counter.var.MyRWStructuredBuffer"
+      - *db24 # "MyAppendStructuredBuffer"
+      - *db23 # "counter.var.MyAppendStructuredBuffer"
+      - *db26 # "MyConsumeStructuredBuffer"
+      - *db25 # "counter.var.MyConsumeStructuredBuffer"
+      - *db27 # "MyByteAddressBuffer"
+      - *db28 # "MyRWByteAddressBuffer"
 all_interface_variables:
   - &iv0
     spirv_id: 99
@@ -1899,83 +1932,33 @@ module:
   generator: 14 # Google spiregg
   entry_point_name: "main"
   entry_point_id: 94
+  entry_point_count: 1
+  entry_points:
+    - name: "main"
+      id: 94
+      spirv_execution_model: 4 # Fragment
+      shader_stage: 0x00000010 # PS
+      input_variable_count: 1
+      input_variables:
+        - *iv0 # 
+      output_variable_count: 1
+      output_variables:
+        - *iv1 # "out.var.SV_TARGET"
+      descriptor_set_count: 0
+      descriptor_sets:
+      used_descriptor_binding_count: 0
+      used_descriptor_bindings:
+      used_push_constant_block_count: 0
+      used_push_constant_blocks:
+      execution_mode_count: 1
+      execution_modes: [7]
+      local_size: [0, 0, 0]
+      invocations: 0
+      output_vertices: 0
   source_language: 5 # HLSL
   source_language_version: 600
   spirv_execution_model: 4 # Fragment
   shader_stage: 0x00000010 # PS
-  descriptor_binding_count: 29
-  descriptor_bindings:
-    - *db0 # "MyCBuffer"
-    - *db1 # "MyConstantBuffer"
-    - *db2 # "MyTexture1D"
-    - *db3 # "MyTexture2D"
-    - *db4 # "MyTexture3D"
-    - *db5 # "MyTexture1DArray"
-    - *db6 # "MyTexture2DArray"
-    - *db7 # "MyRWTexture1D"
-    - *db8 # "MyRWTexture2D"
-    - *db9 # "MyRWTexture3D"
-    - *db10 # "MyRWTexture1DArray"
-    - *db11 # "MyRWTexture2DArray"
-    - *db12 # "MyTexture2DMS"
-    - *db13 # "MyTexture2DMSArray"
-    - *db14 # "MyTextureCube"
-    - *db15 # "MyTextureCubeArray"
-    - *db16 # "MyTBuffer"
-    - *db17 # "MyTextureBuffer"
-    - *db18 # "MyBuffer"
-    - *db19 # "MyRWBuffer"
-    - *db20 # "MyStructuredBuffer"
-    - *db22 # "MyRWStructuredBuffer"
-    - *db21 # "counter.var.MyRWStructuredBuffer"
-    - *db24 # "MyAppendStructuredBuffer"
-    - *db23 # "counter.var.MyAppendStructuredBuffer"
-    - *db26 # "MyConsumeStructuredBuffer"
-    - *db25 # "counter.var.MyConsumeStructuredBuffer"
-    - *db27 # "MyByteAddressBuffer"
-    - *db28 # "MyRWByteAddressBuffer"
-  descriptor_set_count: 1
-  descriptor_sets:
-  - set: 0
-    binding_count: 29
-    bindings:
-      - *db0 # "MyCBuffer"
-      - *db1 # "MyConstantBuffer"
-      - *db2 # "MyTexture1D"
-      - *db3 # "MyTexture2D"
-      - *db4 # "MyTexture3D"
-      - *db5 # "MyTexture1DArray"
-      - *db6 # "MyTexture2DArray"
-      - *db7 # "MyRWTexture1D"
-      - *db8 # "MyRWTexture2D"
-      - *db9 # "MyRWTexture3D"
-      - *db10 # "MyRWTexture1DArray"
-      - *db11 # "MyRWTexture2DArray"
-      - *db12 # "MyTexture2DMS"
-      - *db13 # "MyTexture2DMSArray"
-      - *db14 # "MyTextureCube"
-      - *db15 # "MyTextureCubeArray"
-      - *db16 # "MyTBuffer"
-      - *db17 # "MyTextureBuffer"
-      - *db18 # "MyBuffer"
-      - *db19 # "MyRWBuffer"
-      - *db20 # "MyStructuredBuffer"
-      - *db22 # "MyRWStructuredBuffer"
-      - *db21 # "counter.var.MyRWStructuredBuffer"
-      - *db24 # "MyAppendStructuredBuffer"
-      - *db23 # "counter.var.MyAppendStructuredBuffer"
-      - *db26 # "MyConsumeStructuredBuffer"
-      - *db25 # "counter.var.MyConsumeStructuredBuffer"
-      - *db27 # "MyByteAddressBuffer"
-      - *db28 # "MyRWByteAddressBuffer"
-  input_variable_count: 1,
-  input_variables:
-    - *iv0 # 
-  output_variable_count: 1,
-  output_variables:
-    - *iv1 # "out.var.SV_TARGET"
-  push_constant_count: 0,
-  push_constants:
   specialization_constant_count: 0,
   specialization_constants:
 ...
