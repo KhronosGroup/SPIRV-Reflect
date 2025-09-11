@@ -523,7 +523,7 @@ typedef struct SpvReflectDescriptorSet {
 } SpvReflectDescriptorSet;
 
 typedef enum SpvReflectExecutionModeValue {
-  SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT = 0xFFFFFFFF // specialization constant
+  SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT = (int)0xFFFFFFFF // specialization constant
 } SpvReflectExecutionModeValue;
 
 /*! @struct SpvReflectEntryPoint

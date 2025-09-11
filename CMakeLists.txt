@@ -35,9 +35,9 @@ if (SPIRV_REFLECT_EXECUTABLE)
                                  ${CMAKE_CURRENT_SOURCE_DIR}/common/output_stream.cpp)
     target_compile_options(spirv-reflect PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
-        $<$<CXX_COMPILER_ID:GNU>:-Wall -Werror>
-        $<$<CXX_COMPILER_ID:Clang>:-Wall -Werror>
-        $<$<CXX_COMPILER_ID:AppleClang>:-Wall -Werror>)
+        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Werror>
+        $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
+        $<$<CXX_COMPILER_ID:AppleClang>:-Wall -Wextra -Wpedantic -Werror>)
     if (SPIRV_REFLECT_ENABLE_ASSERTS)
         target_compile_definitions(spirv-reflect PRIVATE SPIRV_REFLECT_ENABLE_ASSERTS)
     endif()
@@ -66,9 +66,9 @@ if (SPIRV_REFLECT_EXECUTABLE)
                                     ${CMAKE_CURRENT_SOURCE_DIR}/common/output_stream.cpp)
     target_compile_options(spirv-reflect-pp PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
-        $<$<CXX_COMPILER_ID:GNU>:-Wall -Werror>
-        $<$<CXX_COMPILER_ID:Clang>:-Wall -Werror>
-        $<$<CXX_COMPILER_ID:AppleClang>:-Wall -Werror>)
+        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Werror>
+        $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
+        $<$<CXX_COMPILER_ID:AppleClang>:-Wall -Wextra -Wpedantic -Werror>)
     if (SPIRV_REFLECT_ENABLE_ASSERTS)
         target_compile_definitions(spirv-reflect-pp PRIVATE SPIRV_REFLECT_ENABLE_ASSERTS)
     endif()

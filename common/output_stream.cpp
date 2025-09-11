@@ -1521,11 +1521,11 @@ void StreamWriteEntryPoint(std::ostream& os, const SpvReflectEntryPoint& obj, co
   if (obj.shader_stage == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT) {
     os << "\n";
     os << "local size      : "
-       << "(" << (obj.local_size.x == SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT ? "Spec Constant" : std::to_string(obj.local_size.x))
+       << "(" << (obj.local_size.x == (uint32_t)SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT ? "Spec Constant" : std::to_string(obj.local_size.x))
        << ", "
-       << (obj.local_size.y == SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT ? "Spec Constant" : std::to_string(obj.local_size.y))
+       << (obj.local_size.y == (uint32_t)SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT ? "Spec Constant" : std::to_string(obj.local_size.y))
        << ", "
-       << (obj.local_size.z == SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT ? "Spec Constant" : std::to_string(obj.local_size.z))
+       << (obj.local_size.z == (uint32_t)SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT ? "Spec Constant" : std::to_string(obj.local_size.z))
        << ")";
   }
 }
