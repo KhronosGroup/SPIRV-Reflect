@@ -1779,7 +1779,7 @@ static SpvReflectResult ParseType(SpvReflectPrvParser* p_parser, SpvReflectPrvNo
         SpvReflectTypeDescription* p_member_type = &(p_type->members[i]);
         p_member_type->id = (uint32_t)INVALID_VALUE;
         p_member_type->op = (SpvOp)INVALID_VALUE;
-        p_member_type->storage_class = (SpvStorageClass)INVALID_VALUE;
+        p_member_type->storage_class = INVALID_VALUE;
       }
     } else {
       result = SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
@@ -2058,7 +2058,7 @@ static SpvReflectResult ParseTypes(SpvReflectPrvParser* p_parser, SpvReflectShad
     SpvReflectTypeDescription* p_type = &(p_module->_internal->type_descriptions[i]);
     p_type->id = (uint32_t)INVALID_VALUE;
     p_type->op = (SpvOp)INVALID_VALUE;
-    p_type->storage_class = (SpvStorageClass)INVALID_VALUE;
+    p_type->storage_class = INVALID_VALUE;
   }
 
   size_t type_index = 0;
