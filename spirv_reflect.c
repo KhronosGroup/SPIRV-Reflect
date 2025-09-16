@@ -687,7 +687,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
     if (node_word_count == 0) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
     }
-    if (op == SpvOpAccessChain) {
+    if (op == SpvOpAccessChain || op == SpvOpInBoundsAccessChain) {
       ++(p_parser->access_chain_count);
     }
     spirv_word_index += node_word_count;
@@ -935,7 +935,8 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
       } break;
 
-      case SpvOpAccessChain: {
+      case SpvOpAccessChain:
+      case SpvOpInBoundsAccessChain: {
         SpvReflectPrvAccessChain* p_access_chain = &(p_parser->access_chains[access_chain_index]);
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_access_chain->result_type_id);
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_access_chain->result_id);
@@ -3392,7 +3393,7 @@ static uint32_t GetUint32Constant(SpvReflectPrvParser* p_parser, uint32_t id) {
 }
 
 static bool HasByteAddressBufferOffset(SpvReflectPrvNode* p_node, SpvReflectDescriptorBinding* p_binding) {
-  return IsNotNull(p_node) && IsNotNull(p_binding) && p_node->op == SpvOpAccessChain && p_node->word_count == 6 &&
+  return IsNotNull(p_node) && IsNotNull(p_binding) && (p_node->op == SpvOpAccessChain || p_node->op == SpvOpInBoundsAccessChain) && p_node->word_count == 6 &&
          (p_binding->user_type == SPV_REFLECT_USER_TYPE_BYTE_ADDRESS_BUFFER ||
           p_binding->user_type == SPV_REFLECT_USER_TYPE_RW_BYTE_ADDRESS_BUFFER);
 }
