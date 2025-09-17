@@ -83,6 +83,9 @@ std::string ToStringGenerator(SpvReflectGenerator generator) {
     case SPV_REFLECT_GENERATOR_CLAY_CLAY_SHADER_COMPILER:
       return "Clay Clay Shader Compiler";
       break;
+    case SPV_REFLECT_GENERATOR_SLANG_SHADER_COMPILER:
+      return "Slang Shader Compiler";
+      break;
   }
   // unhandled SpvReflectGenerator enum value
   return "???";

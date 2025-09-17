@@ -227,10 +227,10 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td5
-    word_offset: { binding: 118, set: 122 }
+    word_offset: { binding: 122, set: 126 }
 all_interface_variables:
 module:
-  generator: 0 # ???
+  generator: 40 # Slang Shader Compiler
   entry_point_name: "main"
   entry_point_id: 2
   source_language: 11 # Slang

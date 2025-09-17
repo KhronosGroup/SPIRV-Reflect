@@ -90,7 +90,7 @@ all_type_descriptions:
   - &td5
     id: 13
     op: 30
-    type_name: "Data_std140"
+    type_name: "Data_std430"
     struct_member_name: 
     storage_class: -1 # NOT APPLICABLE
     type_flags: 0x10080000 # STRUCT EXTERNAL_BLOCK 
@@ -225,10 +225,10 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
-    word_offset: { binding: 109, set: 113 }
+    word_offset: { binding: 103, set: 107 }
 all_interface_variables:
 module:
-  generator: 0 # ???
+  generator: 40 # Slang Shader Compiler
   entry_point_name: "main"
   entry_point_id: 2
   source_language: 11 # Slang

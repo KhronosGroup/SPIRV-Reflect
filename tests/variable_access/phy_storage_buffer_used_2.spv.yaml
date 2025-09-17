@@ -264,7 +264,7 @@ all_descriptor_bindings:
     word_offset: { binding: 120, set: 124 }
 all_interface_variables:
 module:
-  generator: 0 # ???
+  generator: 40 # Slang Shader Compiler
   entry_point_name: "main"
   entry_point_id: 2
   source_language: 11 # Slang

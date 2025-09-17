@@ -2,7 +2,7 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 13
+    id: 9
     op: 23
     type_name: 
     struct_member_name: "a"
@@ -19,7 +19,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td1
-    id: 15
+    id: 11
     op: 28
     type_name: 
     struct_member_name: "data"
@@ -36,7 +36,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td2
-    id: 14
+    id: 10
     op: 30
     type_name: "_Array_std430_uint4"
     struct_member_name: "b"
@@ -54,7 +54,7 @@ all_type_descriptions:
     members:
       - *td1
   - &td3
-    id: 6
+    id: 8
     op: 21
     type_name: 
     struct_member_name: "c"
@@ -71,7 +71,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td4
-    id: 19
+    id: 16
     op: 29
     type_name: "Bar1_std430"
     struct_member_name: 
@@ -91,7 +91,7 @@ all_type_descriptions:
       - *td2
       - *td3
   - &td5
-    id: 18
+    id: 15
     op: 30
     type_name: "RWStructuredBuffer"
     struct_member_name: 
@@ -109,7 +109,7 @@ all_type_descriptions:
     members:
       - *td4
   - &td6
-    id: 13
+    id: 9
     op: 23
     type_name: 
     struct_member_name: "d"
@@ -126,7 +126,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td7
-    id: 15
+    id: 11
     op: 28
     type_name: 
     struct_member_name: "data"
@@ -143,7 +143,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td8
-    id: 14
+    id: 10
     op: 30
     type_name: "_Array_std430_uint4"
     struct_member_name: "e"
@@ -161,7 +161,7 @@ all_type_descriptions:
     members:
       - *td7
   - &td9
-    id: 6
+    id: 8
     op: 21
     type_name: 
     struct_member_name: "f"
@@ -178,7 +178,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td10
-    id: 29
+    id: 26
     op: 29
     type_name: "Bar2_std430"
     struct_member_name: 
@@ -198,7 +198,7 @@ all_type_descriptions:
       - *td8
       - *td9
   - &td11
-    id: 28
+    id: 25
     op: 30
     type_name: "RWStructuredBuffer"
     struct_member_name: 
@@ -420,7 +420,7 @@ all_block_variables:
     type_description: *td11
 all_descriptor_bindings:
   - &db0
-    spirv_id: 21
+    spirv_id: 18
     name: "foo1"
     binding: 0
     input_attachment_index: 0
@@ -435,9 +435,9 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td5
-    word_offset: { binding: 148, set: 152 }
+    word_offset: { binding: 152, set: 156 }
   - &db1
-    spirv_id: 31
+    spirv_id: 28
     name: "foo2"
     binding: 0
     input_attachment_index: 0
@@ -452,10 +452,10 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td11
-    word_offset: { binding: 183, set: 187 }
+    word_offset: { binding: 195, set: 199 }
 all_interface_variables:
 module:
-  generator: 0 # ???
+  generator: 40 # Slang Shader Compiler
   entry_point_name: "main"
   entry_point_id: 2
   source_language: 11 # Slang
