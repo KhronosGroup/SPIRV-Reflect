@@ -2,7 +2,7 @@
 ---
 all_type_descriptions:
   - &td0
-    id: 8
+    id: 11
     op: 29
     type_name: 
     struct_member_name: 
@@ -19,7 +19,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td1
-    id: 4
+    id: 10
     op: 30
     type_name: "RWStructuredBuffer"
     struct_member_name: 
@@ -37,7 +37,7 @@ all_type_descriptions:
     members:
       - *td0
   - &td2
-    id: 15
+    id: 7
     op: 21
     type_name: 
     struct_member_name: "a"
@@ -54,7 +54,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td3
-    id: 9
+    id: 16
     op: 28
     type_name: 
     struct_member_name: "data"
@@ -71,7 +71,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td4
-    id: 5
+    id: 15
     op: 30
     type_name: "_Array_std430_uint4"
     struct_member_name: "b"
@@ -89,7 +89,7 @@ all_type_descriptions:
     members:
       - *td3
   - &td5
-    id: 15
+    id: 7
     op: 21
     type_name: 
     struct_member_name: "t"
@@ -106,7 +106,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td6
-    id: 15
+    id: 7
     op: 21
     type_name: 
     struct_member_name: "s"
@@ -123,7 +123,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td7
-    id: 6
+    id: 18
     op: 30
     type_name: "Bar_std430"
     struct_member_name: "bar"
@@ -142,7 +142,7 @@ all_type_descriptions:
       - *td5
       - *td6
   - &td8
-    id: 10
+    id: 19
     op: 32
     type_name: 
     struct_member_name: "node"
@@ -159,7 +159,7 @@ all_type_descriptions:
     member_count: 0
     members:
   - &td9
-    id: 7
+    id: 14
     op: 30
     type_name: "Data_std430"
     struct_member_name: 
@@ -350,7 +350,7 @@ all_block_variables:
     type_description: *td9
 all_descriptor_bindings:
   - &db0
-    spirv_id: 2
+    spirv_id: 13
     name: "result"
     binding: 0
     input_attachment_index: 0
@@ -365,12 +365,12 @@ all_descriptor_bindings:
     uav_counter_id: 4294967295
     uav_counter_binding:
     type_description: *td1
-    word_offset: { binding: 129, set: 133 }
+    word_offset: { binding: 133, set: 137 }
 all_interface_variables:
 module:
-  generator: 7 # Khronos SPIR-V Tools Assembler
+  generator: 40 # Slang Shader Compiler
   entry_point_name: "main"
-  entry_point_id: 1
+  entry_point_id: 2
   source_language: 11 # Slang
   source_language_version: 1
   spirv_execution_model: 5 # GLCompute
