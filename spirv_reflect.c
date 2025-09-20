@@ -1607,6 +1607,8 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser, SpvRefle
       } break;
 
       case SpvDecorationSpecId: {
+        uint32_t word_offset = p_node->word_offset + member_offset + 3;
+        CHECKED_READU32(p_parser, word_offset, p_target_decorations->spec_id);
         spec_constant_count++;
       } break;
 
