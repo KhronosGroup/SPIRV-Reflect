@@ -3572,9 +3572,16 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
       ++j;
     }
 
-    memcpy(&p_used_accesses[used_acessed_count], p_parser->functions[j].accessed_variables,
-           p_parser->functions[j].accessed_variable_count * sizeof(SpvReflectPrvAccessedVariable));
-    used_acessed_count += p_parser->functions[j].accessed_variable_count;
+    SpvReflectPrvFunction* p_function = &p_parser->functions[j];
+
+    // Prevent NULL from being passed to memcpy, which is UB
+    if (p_function->accessed_variable_count == 0) {
+      continue;
+    }
+
+    memcpy(&p_used_accesses[used_acessed_count], p_function->accessed_variables,
+           p_function->accessed_variable_count * sizeof(SpvReflectPrvAccessedVariable));
+    used_acessed_count += p_function->accessed_variable_count;
   }
   SafeFree(p_called_functions);
 
