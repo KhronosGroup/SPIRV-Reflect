@@ -3994,6 +3994,7 @@ static SpvReflectResult ParsePushConstantBlocks(SpvReflectPrvParser* p_parser, S
     p_push_constant->spirv_id = p_node->result_id;
     p_parser->physical_pointer_count = 0;
     SpvReflectResult result = ParseDescriptorBlockVariable(p_parser, p_module, p_type, p_push_constant);
+	p_push_constant->name = p_node->name;
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
     }
