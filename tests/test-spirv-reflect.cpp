@@ -828,6 +828,7 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/glsl/readonly_writeonly.spv",
     "../tests/glsl/runtime_array_of_array_of_struct.spv",
     "../tests/glsl/storage_buffer.spv",
+    "../tests/glsl/storage_buffer_runtime.spv",
     "../tests/glsl/texel_buffer.spv",
     "../tests/hlsl/append_consume.spv",
     "../tests/hlsl/array_of_structured_buffer.spv",

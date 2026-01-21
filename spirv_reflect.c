@@ -2982,7 +2982,19 @@ static SpvReflectResult ParseDescriptorBlocks(SpvReflectPrvParser* p_parser, Spv
 
     p_descriptor->block.name = p_descriptor->name;
 
-    bool is_parent_rta = (p_descriptor->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    // We quick find if there is a runtime array in the top level of the struct (they can't be nested)
+    // Would be ideal to have this integrated into ParseDescriptorBlockVariableSizes() itself, but might need to re-work size logic
+    bool is_parent_rta = false;
+    if (p_descriptor->block.member_count != 0) {
+      for (uint32_t member_index = 0; member_index < p_descriptor->block.member_count; ++member_index) {
+        SpvReflectBlockVariable* p_member_var = &p_descriptor->block.members[member_index];
+        SpvReflectTypeDescription* p_member_type = p_member_var->type_description;
+        if (p_member_type && p_member_type->op == SpvOpTypeRuntimeArray) {
+          is_parent_rta = true;
+        }
+      }
+    }
+
     result = ParseDescriptorBlockVariableSizes(p_parser, p_module, true, false, is_parent_rta, &p_descriptor->block);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
       return result;
