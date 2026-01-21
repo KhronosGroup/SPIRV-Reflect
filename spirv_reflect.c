@@ -52,11 +52,11 @@ enum {
 };
 
 enum {
-  INVALID_VALUE  = 0xFFFFFFFF,
+  INVALID_VALUE = (int)0xFFFFFFFF,
 };
 
 enum {
-  MAX_NODE_NAME_LENGTH        = 1024,
+  MAX_NODE_NAME_LENGTH                 = 1024,
   // Number of unique PhysicalStorageBuffer structs tracked to detect recursion
   MAX_RECURSIVE_PHYSICAL_POINTER_CHECK = 128,
 };
@@ -1348,7 +1348,7 @@ static SpvReflectResult ParseMemberCounts(SpvReflectPrvParser* p_parser) {
         continue;
       }
 
-      if (member_index == INVALID_VALUE) {
+      if (member_index == (uint32_t)INVALID_VALUE) {
         return SPV_REFLECT_RESULT_ERROR_RANGE_EXCEEDED;
       }
 
@@ -1760,7 +1760,7 @@ static SpvReflectResult ParseType(SpvReflectPrvParser* p_parser, SpvReflectPrvNo
         SpvReflectTypeDescription* p_member_type = &(p_type->members[i]);
         p_member_type->id = (uint32_t)INVALID_VALUE;
         p_member_type->op = (SpvOp)INVALID_VALUE;
-        p_member_type->storage_class = (SpvStorageClass)INVALID_VALUE;
+        p_member_type->storage_class = INVALID_VALUE;
       }
     } else {
       result = SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
@@ -1770,7 +1770,7 @@ static SpvReflectResult ParseType(SpvReflectPrvParser* p_parser, SpvReflectPrvNo
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
     // Since the parse descends on type information, these will get overwritten
     // if not guarded against assignment. Only assign if the id is invalid.
-    if (p_type->id == INVALID_VALUE) {
+    if (p_type->id == (uint32_t)INVALID_VALUE) {
       p_type->id = p_node->result_id;
       p_type->op = p_node->op;
       p_type->decoration_flags = 0;
@@ -2039,7 +2039,7 @@ static SpvReflectResult ParseTypes(SpvReflectPrvParser* p_parser, SpvReflectShad
     SpvReflectTypeDescription* p_type = &(p_module->_internal->type_descriptions[i]);
     p_type->id = (uint32_t)INVALID_VALUE;
     p_type->op = (SpvOp)INVALID_VALUE;
-    p_type->storage_class = (SpvStorageClass)INVALID_VALUE;
+    p_type->storage_class = INVALID_VALUE;
   }
 
   size_t type_index = 0;
@@ -2125,7 +2125,7 @@ static SpvReflectResult ParseDescriptorBindings(SpvReflectPrvParser* p_parser, S
          (p_node->storage_class != SpvStorageClassUniformConstant))) {
       continue;
     }
-    if ((p_node->decorations.set.value == INVALID_VALUE) || (p_node->decorations.binding.value == INVALID_VALUE)) {
+    if ((p_node->decorations.set.value == (uint32_t)INVALID_VALUE) || (p_node->decorations.binding.value == (uint32_t)INVALID_VALUE)) {
       continue;
     }
 
@@ -2160,7 +2160,7 @@ static SpvReflectResult ParseDescriptorBindings(SpvReflectPrvParser* p_parser, S
          (p_node->storage_class != SpvStorageClassUniformConstant))) {
       continue;
     }
-    if ((p_node->decorations.set.value == INVALID_VALUE) || (p_node->decorations.binding.value == INVALID_VALUE)) {
+    if ((p_node->decorations.set.value == (uint32_t)INVALID_VALUE) || (p_node->decorations.binding.value == (uint32_t)INVALID_VALUE)) {
       continue;
     }
 
@@ -3427,7 +3427,7 @@ static SpvReflectResult ParseByteAddressBuffer(SpvReflectPrvParser* p_parser, Sp
     // All arithmetic ops takes 2 operands, assumption is the 2nd operand has the constant
     UNCHECKED_READU32(p_parser, p_next_node->word_offset + 4, base_id);
     uint32_t value = GetUint32Constant(p_parser, base_id);
-    if (value == INVALID_VALUE) {
+    if (value == (uint32_t)INVALID_VALUE) {
       return not_found;
     }
 
@@ -5064,7 +5064,7 @@ const SpvReflectDescriptorSet* spvReflectGetEntryPointDescriptorSet(const SpvRef
 
 const SpvReflectInterfaceVariable* spvReflectGetInputVariableByLocation(const SpvReflectShaderModule* p_module, uint32_t location,
                                                                         SpvReflectResult* p_result) {
-  if (location == INVALID_VALUE) {
+  if (location == (uint32_t)INVALID_VALUE) {
     if (IsNotNull(p_result)) {
       *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
     }
@@ -5094,7 +5094,7 @@ const SpvReflectInterfaceVariable* spvReflectGetInputVariable(const SpvReflectSh
 const SpvReflectInterfaceVariable* spvReflectGetEntryPointInputVariableByLocation(const SpvReflectShaderModule* p_module,
                                                                                   const char* entry_point, uint32_t location,
                                                                                   SpvReflectResult* p_result) {
-  if (location == INVALID_VALUE) {
+  if (location == (uint32_t)INVALID_VALUE) {
     if (IsNotNull(p_result)) {
       *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
     }
@@ -5197,7 +5197,7 @@ const SpvReflectInterfaceVariable* spvReflectGetEntryPointInputVariableBySemanti
 
 const SpvReflectInterfaceVariable* spvReflectGetOutputVariableByLocation(const SpvReflectShaderModule* p_module, uint32_t location,
                                                                          SpvReflectResult* p_result) {
-  if (location == INVALID_VALUE) {
+  if (location == (uint32_t)INVALID_VALUE) {
     if (IsNotNull(p_result)) {
       *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
     }
@@ -5227,7 +5227,7 @@ const SpvReflectInterfaceVariable* spvReflectGetOutputVariable(const SpvReflectS
 const SpvReflectInterfaceVariable* spvReflectGetEntryPointOutputVariableByLocation(const SpvReflectShaderModule* p_module,
                                                                                    const char* entry_point, uint32_t location,
                                                                                    SpvReflectResult* p_result) {
-  if (location == INVALID_VALUE) {
+  if (location == (uint32_t)INVALID_VALUE) {
     if (IsNotNull(p_result)) {
       *p_result = SPV_REFLECT_RESULT_ERROR_ELEMENT_NOT_FOUND;
     }
