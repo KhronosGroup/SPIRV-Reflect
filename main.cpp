@@ -90,7 +90,7 @@ int main(int argn, char** argv) {
   arg_parser.AddFlag("f", "file", "");
   arg_parser.AddFlag("fcb", "flatten_cbuffers", "");
   arg_parser.AddFlag("ci", "ci", "");  // Not advertised
-  if (!arg_parser.Parse(argn, argv, std::cerr)) {
+  if (!arg_parser.Parse(argn, argv, std::cerr) || arg_parser.GetArgs().empty()) {
     PrintUsage();
     return EXIT_FAILURE;
   }
