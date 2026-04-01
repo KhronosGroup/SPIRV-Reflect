@@ -849,7 +849,8 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
       case SpvOpTypeHitObjectEXT:
       case SpvOpTypeCooperativeVectorNV:
       case SpvOpTypeCooperativeMatrixNV:
-      case SpvOpTypeCooperativeMatrixKHR: {
+      case SpvOpTypeCooperativeMatrixKHR:
+      case SpvOpTypeUntypedPointerKHR: {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_id);
         p_node->is_type = true;
       } break;
@@ -925,7 +926,8 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
       } break;
 
-      case SpvOpVariable: {
+      case SpvOpVariable:
+      case SpvOpUntypedVariableKHR: {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->type_id);
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
         CHECKED_READU32(p_parser, p_node->word_offset + 3, p_node->storage_class);
