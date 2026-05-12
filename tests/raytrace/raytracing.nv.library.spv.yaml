@@ -430,4 +430,65 @@ module:
   push_constants:
   specialization_constant_count: 0,
   specialization_constants:
+entry_point_heap_accesses:
+  - entry: "MyRayGenMain"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
+  - entry: "MyRayGenMain2"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
+  - entry: "MyMissMain"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
+  - entry: "MyMissMain2"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
+  - entry: "MyISecMain"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
+  - entry: "MyISecMain2"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
+  - entry: "MyAHitMain"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
+  - entry: "MyAHitMain2"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
+  - entry: "MyCHitMain"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
+  - entry: "MyCHitMain2"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
+  - entry: "MyCallMain"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
+  - entry: "MyCallMain2"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
 ...

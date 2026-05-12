@@ -152,4 +152,10 @@ module:
       - name: "SIZE"
         spirv_id: 8
         constant_id: 3
+entry_point_heap_accesses:
+  - entry: "main"
+    resource_heap_access_count: 0
+    resource_heap_accesses:
+    sampler_heap_access_count: 0
+    sampler_heap_accesses:
 ...
