@@ -1666,6 +1666,72 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
       }
     }
   }
+
+  // SPV_EXT_descriptor_heap accesses (per entry point).
+  {
+    const SpvReflectShaderModule& sm = obj.GetShaderModule();
+    uint32_t total_resource_accesses = 0;
+    uint32_t total_sampler_accesses = 0;
+    for (uint32_t ep = 0; ep < sm.entry_point_count; ++ep) {
+      total_resource_accesses += sm.entry_points[ep].resource_heap_access_count;
+      total_sampler_accesses += sm.entry_points[ep].sampler_heap_access_count;
+    }
+    auto print_stride = [&](uint32_t stride) {
+      os << stride;
+      if (stride == UINT32_MAX) {
+        os << " (implicit)";
+      }
+    };
+    if (total_resource_accesses > 0) {
+      os << "\n";
+      os << "\n";
+      os << "\n";
+      os << t << "Resource heap accesses: " << total_resource_accesses << "\n\n";
+      uint32_t flat_idx = 0;
+      for (uint32_t ep = 0; ep < sm.entry_point_count; ++ep) {
+        const auto& e = sm.entry_points[ep];
+        for (uint32_t i = 0; i < e.resource_heap_access_count; ++i) {
+          const auto& a = e.resource_heap_accesses[i];
+          os << tt << flat_idx << ":\n";
+          os << ttt << "entry                 : " << (e.name ? e.name : "") << "\n";
+          os << ttt << "heap_name             : " << (a.heap_name ? a.heap_name : "") << "\n";
+          os << ttt << "descriptor_type       : " << ToStringDescriptorType(a.descriptor_type) << "\n";
+          os << ttt << "stride                : ";
+          print_stride(a.stride);
+          os << "\n";
+          os << ttt << "runtime_array_type_id : " << a.runtime_array_type_id << "\n";
+          if (flat_idx < total_resource_accesses - 1) {
+            os << "\n";
+          }
+          ++flat_idx;
+        }
+      }
+    }
+    if (total_sampler_accesses > 0) {
+      os << "\n";
+      os << "\n";
+      os << "\n";
+      os << t << "Sampler heap accesses: " << total_sampler_accesses << "\n\n";
+      uint32_t flat_idx = 0;
+      for (uint32_t ep = 0; ep < sm.entry_point_count; ++ep) {
+        const auto& e = sm.entry_points[ep];
+        for (uint32_t i = 0; i < e.sampler_heap_access_count; ++i) {
+          const auto& a = e.sampler_heap_accesses[i];
+          os << tt << flat_idx << ":\n";
+          os << ttt << "entry                 : " << (e.name ? e.name : "") << "\n";
+          os << ttt << "heap_name             : " << (a.heap_name ? a.heap_name : "") << "\n";
+          os << ttt << "stride                : ";
+          print_stride(a.stride);
+          os << "\n";
+          os << ttt << "runtime_array_type_id : " << a.runtime_array_type_id << "\n";
+          if (flat_idx < total_sampler_accesses - 1) {
+            os << "\n";
+          }
+          ++flat_idx;
+        }
+      }
+    }
+  }
 }
 
 //////////////////////////////////
@@ -2217,6 +2283,23 @@ void SpvReflectToYaml::Write(std::ostream& os) {
     for (uint32_t i = 0; i < sm_.output_variable_count; ++i) {
       WriteInterfaceVariableTypes(os, *sm_.output_variables[i], indent_level + 1);
     }
+    // SPV_EXT_descriptor_heap: register the descriptor element type for every
+    // distinct heap access so it gets an anchor in all_type_descriptions.
+    for (uint32_t ep = 0; ep < sm_.entry_point_count; ++ep) {
+      const SpvReflectEntryPoint& e = sm_.entry_points[ep];
+      for (uint32_t i = 0; i < e.resource_heap_access_count; ++i) {
+        const auto* td = e.resource_heap_accesses[i].type_description;
+        if (td && type_description_to_index_.find(td) == type_description_to_index_.end()) {
+          WriteTypeDescription(os, *td, indent_level + 1);
+        }
+      }
+      for (uint32_t i = 0; i < e.sampler_heap_access_count; ++i) {
+        const auto* td = e.sampler_heap_accesses[i].type_description;
+        if (td && type_description_to_index_.find(td) == type_description_to_index_.end()) {
+          WriteTypeDescription(os, *td, indent_level + 1);
+        }
+      }
+    }
   }
 
   block_variable_to_index_.clear();
@@ -2326,6 +2409,42 @@ void SpvReflectToYaml::Write(std::ostream& os) {
     os << t3 << "- name: " << SafeString(sm_.spec_constants[i].name) << std::endl;
     os << t3 << "  spirv_id: " << sm_.spec_constants[i].spirv_id << std::endl;
     os << t3 << "  constant_id: " << sm_.spec_constants[i].constant_id << std::endl;
+  }
+
+  // SPV_EXT_descriptor_heap: per-entry-point distinct heap access patterns.
+  os << "entry_point_heap_accesses:" << std::endl;
+  for (uint32_t ep = 0; ep < sm_.entry_point_count; ++ep) {
+    const SpvReflectEntryPoint& e = sm_.entry_points[ep];
+    os << t1 << "- entry: " << SafeString(e.name) << std::endl;
+    os << t1 << "  resource_heap_access_count: " << e.resource_heap_access_count << std::endl;
+    os << t1 << "  resource_heap_accesses:" << std::endl;
+    for (uint32_t i = 0; i < e.resource_heap_access_count; ++i) {
+      const SpvReflectEntryPointResourceHeapAccess& a = e.resource_heap_accesses[i];
+      os << t3 << "- heap_name: " << SafeString(a.heap_name) << std::endl;
+      os << t3 << "  runtime_array_type_id: " << a.runtime_array_type_id << std::endl;
+      os << t3 << "  stride: " << a.stride << std::endl;
+      os << t3 << "  descriptor_type: " << a.descriptor_type << " # " << ToStringDescriptorType(a.descriptor_type) << std::endl;
+      if (a.type_description != nullptr) {
+        auto itor = type_description_to_index_.find(a.type_description);
+        if (itor != type_description_to_index_.end()) {
+          os << t3 << "  type_description: *td" << itor->second << std::endl;
+        }
+      }
+    }
+    os << t1 << "  sampler_heap_access_count: " << e.sampler_heap_access_count << std::endl;
+    os << t1 << "  sampler_heap_accesses:" << std::endl;
+    for (uint32_t i = 0; i < e.sampler_heap_access_count; ++i) {
+      const SpvReflectEntryPointSamplerHeapAccess& a = e.sampler_heap_accesses[i];
+      os << t3 << "- heap_name: " << SafeString(a.heap_name) << std::endl;
+      os << t3 << "  runtime_array_type_id: " << a.runtime_array_type_id << std::endl;
+      os << t3 << "  stride: " << a.stride << std::endl;
+      if (a.type_description != nullptr) {
+        auto itor = type_description_to_index_.find(a.type_description);
+        if (itor != type_description_to_index_.end()) {
+          os << t3 << "  type_description: *td" << itor->second << std::endl;
+        }
+      }
+    }
   }
 
   if (verbosity_ >= 2) {

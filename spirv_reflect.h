@@ -527,6 +527,33 @@ typedef enum SpvReflectExecutionModeValue {
   SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT = (int)0xFFFFFFFF // specialization constant
 } SpvReflectExecutionModeValue;
 
+/*! @struct SpvReflectEntryPointResourceHeapAccess
+    @brief One distinct resource-heap access pattern (OpUntypedAccessChainKHR
+           element type + stride) reachable from this entry point.
+           Stride is UINT32_MAX when implicit (e.g. ArrayStride from
+           OpConstantSizeOfEXT) or could not be resolved.
+*/
+typedef struct SpvReflectEntryPointResourceHeapAccess {
+  const char*                       heap_name;
+  uint32_t                          runtime_array_type_id;
+  uint32_t                          stride;
+  SpvReflectDescriptorType          descriptor_type;
+  SpvReflectTypeDescription*        type_description;
+} SpvReflectEntryPointResourceHeapAccess;
+
+/*! @struct SpvReflectEntryPointSamplerHeapAccess
+    @brief One distinct sampler-heap access pattern reachable from this entry
+           point (usually at most one).
+           Stride is UINT32_MAX when implicit (e.g. ArrayStride from
+           OpConstantSizeOfEXT) or could not be resolved.
+*/
+typedef struct SpvReflectEntryPointSamplerHeapAccess {
+  const char*                       heap_name;
+  uint32_t                          runtime_array_type_id;
+  uint32_t                          stride;
+  SpvReflectTypeDescription*        type_description;
+} SpvReflectEntryPointSamplerHeapAccess;
+
 /*! @struct SpvReflectEntryPoint
 
  */
@@ -562,6 +589,14 @@ typedef struct SpvReflectEntryPoint {
   } local_size;
   uint32_t                          invocations; // valid for geometry
   uint32_t                          output_vertices; // valid for geometry, tesselation
+
+  // SPV_EXT_descriptor_heap: distinct heap access patterns reachable from this
+  // entry point's static call graph. Each entry corresponds to a unique
+  // (heap variable, OpUntypedAccessChainKHR Data Type) pair.
+  uint32_t                                resource_heap_access_count;
+  SpvReflectEntryPointResourceHeapAccess* resource_heap_accesses;
+  uint32_t                                sampler_heap_access_count;
+  SpvReflectEntryPointSamplerHeapAccess*  sampler_heap_accesses;
 } SpvReflectEntryPoint;
 
 /*! @struct SpvReflectCapability

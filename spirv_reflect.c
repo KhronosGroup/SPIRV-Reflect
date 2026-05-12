@@ -510,6 +510,44 @@ static bool IsSpecConstant(const SpvReflectPrvNode* p_node) {
           p_node->op == SpvOpSpecConstantFalse);
 }
 
+// Classify the SPIR-V type stored as a heap element (i.e. the element type of
+// the OpTypeRuntimeArray reached through an OpUntypedAccessChainKHR rooted at
+// a ResourceHeapEXT or SamplerHeapEXT builtin variable) into a Vulkan
+// descriptor type. Returns (SpvReflectDescriptorType)INVALID_VALUE when the
+// type is not one of the descriptor types permitted in a heap by
+// SPV_EXT_descriptor_heap.
+static SpvReflectDescriptorType ClassifyHeapDescriptorType(const SpvReflectTypeDescription* p_type) {
+  if (IsNull(p_type)) {
+    return (SpvReflectDescriptorType)INVALID_VALUE;
+  }
+  switch (p_type->op) {
+    case SpvOpTypeSampler:
+      return SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER;
+    case SpvOpTypeImage: {
+      const bool is_storage = (p_type->traits.image.sampled == IMAGE_STORAGE);
+      if (p_type->traits.image.dim == SpvDimBuffer) {
+        return is_storage ? SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER : SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+      }
+      return is_storage ? SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE : SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    }
+    case SpvOpTypeAccelerationStructureKHR:
+      return SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    case SpvOpTypeBufferEXT: {
+      // SPV_EXT_descriptor_heap opaque buffer slot. Storage Class operand
+      // distinguishes the descriptor variant.
+      if (p_type->storage_class == SpvStorageClassUniform) {
+        return SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      }
+      if (p_type->storage_class == SpvStorageClassStorageBuffer) {
+        return SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+      }
+      return (SpvReflectDescriptorType)INVALID_VALUE;
+    }
+    default:
+      return (SpvReflectDescriptorType)INVALID_VALUE;
+  }
+}
+
 static SpvReflectPrvNode* FindNode(SpvReflectPrvParser* p_parser, uint32_t result_id) {
   SpvReflectPrvNode* p_node = NULL;
   for (size_t i = 0; i < p_parser->node_count; ++i) {
@@ -907,11 +945,38 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
         p_node->is_type = true;
       } break;
 
+      case SpvOpTypeBufferEXT: {
+        // SPV_EXT_descriptor_heap opaque buffer-descriptor slot. The Type
+        // operand is a Storage Class literal (StorageBuffer or Uniform) that
+        // determines whether this slot resolves to a storage or uniform
+        // buffer descriptor.
+        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_id);
+        CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->storage_class);
+        p_node->is_type = true;
+      } break;
+
+      case SpvOpBufferPointerEXT: {
+        // Reinterprets the untyped pointer produced by OpUntypedAccessChainKHR
+        // as a typed pointer (the Result Type). Capture both ids so the heap-
+        // access pass can recover the concrete struct type used at the call
+        // site.
+        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_type_id);
+        CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
+      } break;
+
+      case SpvOpUntypedAccessChainKHR: {
+        // Result id is captured so OpBufferPointerEXT can be matched against
+        // the chain it reinterprets.
+        CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_type_id);
+        CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
+      } break;
+
       case SpvOpConstantTrue:
       case SpvOpConstantFalse:
       case SpvOpConstant:
       case SpvOpConstantComposite:
       case SpvOpConstantSampler:
+      case SpvOpConstantSizeOfEXT:
       case SpvOpConstantNull: {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_type_id);
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
@@ -1457,6 +1522,7 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
       case SpvDecorationColMajor:
       case SpvDecorationRowMajor:
       case SpvDecorationArrayStride:
+      case SpvDecorationArrayStrideIdEXT:
       case SpvDecorationMatrixStride:
       case SpvDecorationBuiltIn:
       case SpvDecorationNoPerspective:
@@ -1533,6 +1599,19 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
       case SpvDecorationArrayStride: {
         uint32_t word_offset = p_node->word_offset + member_offset + 3;
         CHECKED_READU32(p_parser, word_offset, p_target_decorations->array_stride);
+      } break;
+
+      case SpvDecorationArrayStrideIdEXT: {
+        // SPV_EXT_descriptor_heap variant of ArrayStride. The operand is a
+        // constant Id rather than a literal; resolve it to the constant's value
+        // and store in the same field consumed by the literal path.
+        uint32_t word_offset = p_node->word_offset + member_offset + 3;
+        uint32_t constant_id = 0;
+        CHECKED_READU32(p_parser, word_offset, constant_id);
+        SpvReflectPrvNode* p_constant_node = FindNode(p_parser, constant_id);
+        if (IsNotNull(p_constant_node) && (p_constant_node->op == SpvOpConstant)) {
+          CHECKED_READU32(p_parser, p_constant_node->word_offset + 3, p_target_decorations->array_stride);
+        }
       } break;
 
       case SpvDecorationMatrixStride: {
@@ -2010,6 +2089,11 @@ static SpvReflectResult ParseType(SpvReflectPrvParser* p_parser, SpvReflectPrvNo
 
       case SpvOpTypeAccelerationStructureKHR: {
         p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_ACCELERATION_STRUCTURE;
+      } break;
+
+      case SpvOpTypeBufferEXT: {
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_BLOCK;
+        IF_READU32_CAST(result, p_parser, p_node->word_offset + 2, SpvStorageClass, p_type->storage_class);
       } break;
     }
 
@@ -3675,6 +3759,273 @@ static SpvReflectResult ParseStaticallyUsedResources(SpvReflectPrvParser* p_pars
   return SPV_REFLECT_RESULT_SUCCESS;
 }
 
+// Collects per-entry-point SPV_EXT_descriptor_heap accesses. For each entry
+// point, walks the static call graph to find every OpUntypedAccessChainKHR
+// rooted at a ResourceHeapEXT or SamplerHeapEXT builtin variable. Distinct
+// access patterns (unique (heap variable, runtime array type) pairs) become
+// individual entries on the entry point's resource_heap_accesses or
+// sampler_heap_accesses arrays.
+typedef struct SpvReflectPrvHeapVar {
+  uint32_t                          result_id;
+  const char*                       name;
+  SpvBuiltIn                        built_in;
+} SpvReflectPrvHeapVar;
+
+typedef struct SpvReflectPrvHeapAccess {
+  uint32_t                          heap_var_idx;
+  uint32_t                          runtime_array_type_id;
+  uint32_t                          stride;
+  // Result id of the first OpUntypedAccessChainKHR observed for this
+  // (heap, runtime_array_type) pair. Used to recover the concrete struct
+  // when the heap slot is an opaque OpTypeBufferEXT and the access chain
+  // is reinterpreted by OpBufferPointerEXT.
+  uint32_t                          access_chain_id;
+} SpvReflectPrvHeapAccess;
+
+static SpvReflectResult ParseEntryPointHeapAccesses(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module) {
+  // First, collect every OpUntypedVariableKHR decorated with ResourceHeapEXT or
+  // SamplerHeapEXT. Realistic shaders have at most one of each, but accept up
+  // to 16 to leave headroom.
+  enum { kMaxHeapVars = 16 };
+  SpvReflectPrvHeapVar heap_vars[kMaxHeapVars];
+  uint32_t heap_var_count = 0;
+  for (size_t i = 0; i < p_parser->node_count; ++i) {
+    SpvReflectPrvNode* p_node = &p_parser->nodes[i];
+    if (p_node->op != SpvOpUntypedVariableKHR) {
+      continue;
+    }
+    if (!p_node->decorations.is_built_in) {
+      continue;
+    }
+    if (p_node->decorations.built_in != SpvBuiltInResourceHeapEXT &&
+        p_node->decorations.built_in != SpvBuiltInSamplerHeapEXT) {
+      continue;
+    }
+    if (heap_var_count >= kMaxHeapVars) {
+      break;
+    }
+    heap_vars[heap_var_count].result_id = p_node->result_id;
+    heap_vars[heap_var_count].name = p_node->name;
+    heap_vars[heap_var_count].built_in = p_node->decorations.built_in;
+    heap_var_count++;
+  }
+  if (heap_var_count == 0) {
+    return SPV_REFLECT_RESULT_SUCCESS;
+  }
+
+  // Upper bound on access chains; used to size scratch.
+  uint32_t untyped_access_chain_count = 0;
+  for (size_t i = 0; i < p_parser->node_count; ++i) {
+    if (p_parser->nodes[i].op == SpvOpUntypedAccessChainKHR) {
+      ++untyped_access_chain_count;
+    }
+  }
+  if (untyped_access_chain_count == 0) {
+    return SPV_REFLECT_RESULT_SUCCESS;
+  }
+
+  for (uint32_t ep_idx = 0; ep_idx < p_module->entry_point_count; ++ep_idx) {
+    SpvReflectEntryPoint* p_entry = &p_module->entry_points[ep_idx];
+
+    // Find the entry point's function.
+    SpvReflectPrvFunction* p_func = NULL;
+    for (size_t i = 0; i < p_parser->function_count; ++i) {
+      if (p_parser->functions[i].id == p_entry->id) {
+        p_func = &p_parser->functions[i];
+        break;
+      }
+    }
+    if (IsNull(p_func)) {
+      continue;
+    }
+
+    // Walk the call graph to get the set of reachable function ids.
+    size_t called_function_count = 0;
+    SpvReflectResult result = TraverseCallGraph(p_parser, p_func, &called_function_count, NULL, 0);
+    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+      return result;
+    }
+    uint32_t* p_called_functions = NULL;
+    if (called_function_count > 0) {
+      p_called_functions = (uint32_t*)calloc(called_function_count, sizeof(*p_called_functions));
+      if (IsNull(p_called_functions)) {
+        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      }
+    }
+    called_function_count = 0;
+    result = TraverseCallGraph(p_parser, p_func, &called_function_count, p_called_functions, 0);
+    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+      SafeFree(p_called_functions);
+      return result;
+    }
+    if (called_function_count > 0) {
+      qsort(p_called_functions, called_function_count, sizeof(*p_called_functions), SortCompareUint32);
+      called_function_count = DedupSortedUint32(p_called_functions, called_function_count);
+    }
+
+    // Scratch space for distinct (heap_var_idx, runtime_array_type_id) pairs.
+    SpvReflectPrvHeapAccess* p_scratch = (SpvReflectPrvHeapAccess*)calloc(untyped_access_chain_count, sizeof(*p_scratch));
+    if (IsNull(p_scratch)) {
+      SafeFree(p_called_functions);
+      return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+    }
+    uint32_t scratch_count = 0;
+    uint32_t resource_count = 0;
+    uint32_t sampler_count = 0;
+
+    // Single pass over the node array tracking the current function id so we
+    // can reject accesses outside the entry point's reachable functions.
+    uint32_t current_function_id = 0;
+    for (size_t i = 0; i < p_parser->node_count; ++i) {
+      SpvReflectPrvNode* p_node = &p_parser->nodes[i];
+      if (p_node->op == SpvOpFunction) {
+        current_function_id = p_node->result_id;
+        continue;
+      }
+      if (p_node->op == SpvOpFunctionEnd) {
+        current_function_id = 0;
+        continue;
+      }
+      if (p_node->op != SpvOpUntypedAccessChainKHR) {
+        continue;
+      }
+      if (current_function_id == 0 || p_node->word_count < 5) {
+        continue;
+      }
+      if (!SearchSortedUint32(p_called_functions, called_function_count, current_function_id)) {
+        continue;
+      }
+      // OpUntypedAccessChainKHR: word 3 = Data Type, word 4 = Base.
+      uint32_t data_type_id = 0;
+      uint32_t base_id = 0;
+      if (ReadU32(p_parser, p_node->word_offset + 3, &data_type_id) != SPV_REFLECT_RESULT_SUCCESS) {
+        continue;
+      }
+      if (ReadU32(p_parser, p_node->word_offset + 4, &base_id) != SPV_REFLECT_RESULT_SUCCESS) {
+        continue;
+      }
+      uint32_t heap_idx = (uint32_t)INVALID_VALUE;
+      for (uint32_t v = 0; v < heap_var_count; ++v) {
+        if (heap_vars[v].result_id == base_id) {
+          heap_idx = v;
+          break;
+        }
+      }
+      if (heap_idx == (uint32_t)INVALID_VALUE) {
+        continue;
+      }
+      // Dedup on (heap_idx, runtime_array_type_id).
+      bool duplicate = false;
+      for (uint32_t s = 0; s < scratch_count; ++s) {
+        if (p_scratch[s].heap_var_idx == heap_idx && p_scratch[s].runtime_array_type_id == data_type_id) {
+          duplicate = true;
+          break;
+        }
+      }
+      if (duplicate) {
+        continue;
+      }
+      SpvReflectPrvNode* p_arr = FindNode(p_parser, data_type_id);
+      uint32_t stride = UINT32_MAX;
+      if (IsNotNull(p_arr) && p_arr->decorations.array_stride != 0) {
+        stride = p_arr->decorations.array_stride;
+      }
+      p_scratch[scratch_count].heap_var_idx = heap_idx;
+      p_scratch[scratch_count].runtime_array_type_id = data_type_id;
+      p_scratch[scratch_count].stride = stride;
+      p_scratch[scratch_count].access_chain_id = p_node->result_id;
+      ++scratch_count;
+      if (heap_vars[heap_idx].built_in == SpvBuiltInResourceHeapEXT) {
+        ++resource_count;
+      } else {
+        ++sampler_count;
+      }
+    }
+
+    if (resource_count > 0) {
+      p_entry->resource_heap_accesses =
+          (SpvReflectEntryPointResourceHeapAccess*)calloc(resource_count, sizeof(*p_entry->resource_heap_accesses));
+      if (IsNull(p_entry->resource_heap_accesses)) {
+        SafeFree(p_scratch);
+        SafeFree(p_called_functions);
+        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      }
+    }
+    if (sampler_count > 0) {
+      p_entry->sampler_heap_accesses =
+          (SpvReflectEntryPointSamplerHeapAccess*)calloc(sampler_count, sizeof(*p_entry->sampler_heap_accesses));
+      if (IsNull(p_entry->sampler_heap_accesses)) {
+        SafeFree(p_scratch);
+        SafeFree(p_called_functions);
+        return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+      }
+    }
+
+    uint32_t r_idx = 0;
+    uint32_t s_idx = 0;
+    for (uint32_t s = 0; s < scratch_count; ++s) {
+      uint32_t v = p_scratch[s].heap_var_idx;
+      SpvReflectPrvNode* p_arr = FindNode(p_parser, p_scratch[s].runtime_array_type_id);
+      SpvReflectTypeDescription* p_type_desc = NULL;
+      SpvReflectDescriptorType desc_type = (SpvReflectDescriptorType)INVALID_VALUE;
+      if (IsNotNull(p_arr)) {
+        p_type_desc = FindType(p_module, p_arr->array_traits.element_type_id);
+        desc_type = ClassifyHeapDescriptorType(p_type_desc);
+        // When the heap slot is an opaque OpTypeBufferEXT, the concrete struct
+        // type is supplied at the access site via OpBufferPointerEXT. Find one
+        // that sources the access chain we recorded and resolve its Result
+        // Type (OpTypePointer) to the pointee struct.
+        if (IsNotNull(p_type_desc) && p_type_desc->op == SpvOpTypeBufferEXT &&
+            p_scratch[s].access_chain_id != 0) {
+          for (size_t n = 0; n < p_parser->node_count; ++n) {
+            SpvReflectPrvNode* p_bp = &p_parser->nodes[n];
+            if (p_bp->op != SpvOpBufferPointerEXT || p_bp->word_count < 4) {
+              continue;
+            }
+            uint32_t source_id = 0;
+            if (ReadU32(p_parser, p_bp->word_offset + 3, &source_id) != SPV_REFLECT_RESULT_SUCCESS) {
+              continue;
+            }
+            if (source_id != p_scratch[s].access_chain_id) {
+              continue;
+            }
+            SpvReflectPrvNode* p_ptr = FindNode(p_parser, p_bp->result_type_id);
+            if (IsNull(p_ptr) || p_ptr->op != SpvOpTypePointer) {
+              continue;
+            }
+            SpvReflectTypeDescription* p_struct = FindType(p_module, p_ptr->type_id);
+            if (IsNotNull(p_struct)) {
+              p_type_desc = p_struct;
+            }
+            break;
+          }
+        }
+      }
+      if (heap_vars[v].built_in == SpvBuiltInResourceHeapEXT) {
+        SpvReflectEntryPointResourceHeapAccess* p_acc = &p_entry->resource_heap_accesses[r_idx++];
+        p_acc->heap_name = heap_vars[v].name;
+        p_acc->runtime_array_type_id = p_scratch[s].runtime_array_type_id;
+        p_acc->stride = p_scratch[s].stride;
+        p_acc->descriptor_type = desc_type;
+        p_acc->type_description = p_type_desc;
+      } else {
+        SpvReflectEntryPointSamplerHeapAccess* p_acc = &p_entry->sampler_heap_accesses[s_idx++];
+        p_acc->heap_name = heap_vars[v].name;
+        p_acc->runtime_array_type_id = p_scratch[s].runtime_array_type_id;
+        p_acc->stride = p_scratch[s].stride;
+        p_acc->type_description = p_type_desc;
+      }
+    }
+    p_entry->resource_heap_access_count = resource_count;
+    p_entry->sampler_heap_access_count = sampler_count;
+
+    SafeFree(p_scratch);
+    SafeFree(p_called_functions);
+  }
+
+  return SPV_REFLECT_RESULT_SUCCESS;
+}
+
 static SpvReflectResult ParseEntryPoints(SpvReflectPrvParser* p_parser, SpvReflectShaderModule* p_module) {
   if (p_parser->entry_point_count == 0) {
     return SPV_REFLECT_RESULT_SUCCESS;
@@ -4394,6 +4745,10 @@ static SpvReflectResult CreateShaderModule(uint32_t flags, size_t size, const vo
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
   if (result == SPV_REFLECT_RESULT_SUCCESS) {
+    result = ParseEntryPointHeapAccesses(&parser, p_module);
+    SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+  }
+  if (result == SPV_REFLECT_RESULT_SUCCESS) {
     result = ParseCapabilities(&parser, p_module);
     SPV_REFLECT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
   }
@@ -4537,6 +4892,8 @@ void spvReflectDestroyShaderModule(SpvReflectShaderModule* p_module) {
     SafeFree(p_entry->used_uniforms);
     SafeFree(p_entry->used_push_constants);
     SafeFree(p_entry->execution_modes);
+    SafeFree(p_entry->resource_heap_accesses);
+    SafeFree(p_entry->sampler_heap_accesses);
   }
   SafeFree(p_module->capabilities);
   SafeFree(p_module->entry_points);
