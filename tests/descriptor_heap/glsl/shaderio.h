@@ -20,9 +20,10 @@
 #ifndef SHADERIO_H
 #define SHADERIO_H
 
-#include "nvshaders/slang_types.h"
-
-NAMESPACE_SHADERIO_BEGIN()
+// HLSL/Slang-style type aliases so the struct definitions below can be shared
+// verbatim with the matching slang/ fixture.
+#define float4x4 mat4
+#define float3   vec3
 
 /*
  * Push data layout (used by vkCmdPushDataEXT):
@@ -67,7 +68,5 @@ struct BindlessPushData
   uint gridSize;     // N for NxNxN grid; shader derives position from
                      // gl_InstanceIndex
 };
-
-NAMESPACE_SHADERIO_END()
 
 #endif

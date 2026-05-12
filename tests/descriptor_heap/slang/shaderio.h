@@ -20,10 +20,6 @@
 #ifndef SHADERIO_H
 #define SHADERIO_H
 
-#include "nvshaders/slang_types.h"
-
-NAMESPACE_SHADERIO_BEGIN()
-
 /*
  * Push data layout (used by vkCmdPushDataEXT):
  *   Offset 0:   FrameInfo (160 bytes) — pushed once per frame
@@ -67,7 +63,5 @@ struct BindlessPushData
   uint gridSize;     // N for NxNxN grid; shader derives position from
                      // gl_InstanceIndex
 };
-
-NAMESPACE_SHADERIO_END()
 
 #endif

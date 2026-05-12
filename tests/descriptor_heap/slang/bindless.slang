@@ -1,5 +1,5 @@
-// Compile (vertex):   slangc bindless.slang -target spirv -capability spvDescriptorHeapEXT -I C:/code/source/nvpro-samples/nvpro_core2 -I C:/code/source/nvpro-samples/vk_mini_samples/common -entry vertexMain   -stage vertex   -o bindless.vert.spv
-// Compile (fragment): slangc bindless.slang -target spirv -capability spvDescriptorHeapEXT -I C:/code/source/nvpro-samples/nvpro_core2 -I C:/code/source/nvpro-samples/vk_mini_samples/common -entry fragmentMain -stage fragment -o bindless.frag.spv
+// Compile (vertex):   slangc bindless.slang -target spirv -capability spvDescriptorHeapEXT -entry vertexMain   -stage vertex   -o bindless.vert.spv
+// Compile (fragment): slangc bindless.slang -target spirv -capability spvDescriptorHeapEXT -entry fragmentMain -stage fragment -o bindless.frag.spv
 /*
  * Copyright (c) 2024-2026, NVIDIA CORPORATION.  All rights reserved.
  *

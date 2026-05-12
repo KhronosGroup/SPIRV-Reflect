@@ -1,5 +1,5 @@
-// Compile (vertex):   slangc per_draw.slang -target spirv -I C:/code/source/nvpro-samples/nvpro_core2 -I C:/code/source/nvpro-samples/vk_mini_samples/common -entry vertexMain   -stage vertex   -o per_draw.vert.spv
-// Compile (fragment): slangc per_draw.slang -target spirv -I C:/code/source/nvpro-samples/nvpro_core2 -I C:/code/source/nvpro-samples/vk_mini_samples/common -entry fragmentMain -stage fragment -o per_draw.frag.spv
+// Compile (vertex):   slangc per_draw.slang -target spirv -entry vertexMain   -stage vertex   -o per_draw.vert.spv
+// Compile (fragment): slangc per_draw.slang -target spirv -entry fragmentMain -stage fragment -o per_draw.frag.spv
 /*
  * Copyright (c) 2024-2026, NVIDIA CORPORATION.  All rights reserved.
  *

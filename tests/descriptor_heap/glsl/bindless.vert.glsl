@@ -1,4 +1,4 @@
-// Compile: glslang -V --target-env vulkan1.3 -S vert -e main -IC:/code/source/nvpro-samples/nvpro_core2 -IC:/code/source/nvpro-samples/vk_mini_samples/common -o bindless.vert.spv bindless.vert.glsl
+// Compile: glslang -V --target-env vulkan1.3 -S vert -e main -o bindless.vert.spv bindless.vert.glsl
 /*
  * Copyright (c) 2024-2026, NVIDIA CORPORATION.  All rights reserved.
  *
