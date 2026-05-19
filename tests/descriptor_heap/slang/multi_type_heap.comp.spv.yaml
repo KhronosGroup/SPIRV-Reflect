@@ -483,33 +483,33 @@ entry_point_heap_accesses:
     resource_heap_accesses:
       - heap_name: "slang_resourceHeap"
         runtime_array_type_id: 37
-        stride: 4294967295
+        stride: 4294967295 # UNSPECIFIED
         descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
         type_description: *td9
       - heap_name: "slang_resourceHeap"
         runtime_array_type_id: 48
-        stride: 4294967295
+        stride: 4294967295 # UNSPECIFIED
         descriptor_type: 3 # VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
         type_description: *td10
       - heap_name: "slang_resourceHeap"
         runtime_array_type_id: 58
-        stride: 4294967295
+        stride: 4294967295 # UNSPECIFIED
         descriptor_type: 4 # VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
         type_description: *td11
       - heap_name: "slang_resourceHeap"
         runtime_array_type_id: 68
-        stride: 4294967295
+        stride: 4294967295 # UNSPECIFIED
         descriptor_type: 5 # VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
         type_description: *td12
       - heap_name: "slang_resourceHeap"
         runtime_array_type_id: 78
-        stride: 4294967295
+        stride: 4294967295 # UNSPECIFIED
         descriptor_type: 7 # VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
         type_description: *td15
     sampler_heap_access_count: 1
     sampler_heap_accesses:
       - heap_name: "slang_samplerHeap"
         runtime_array_type_id: 25
-        stride: 4294967295
+        stride: 4294967295 # UNSPECIFIED
         type_description: *td16
 ...

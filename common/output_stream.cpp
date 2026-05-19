@@ -1679,7 +1679,7 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
     auto print_stride = [&](uint32_t stride) {
       os << stride;
       if (stride == UINT32_MAX) {
-        os << " (implicit)";
+        os << " (unspecified)";
       }
     };
     if (total_resource_accesses > 0) {
@@ -2422,7 +2422,9 @@ void SpvReflectToYaml::Write(std::ostream& os) {
       const SpvReflectEntryPointResourceHeapAccess& a = e.resource_heap_accesses[i];
       os << t3 << "- heap_name: " << SafeString(a.heap_name) << std::endl;
       os << t3 << "  runtime_array_type_id: " << a.runtime_array_type_id << std::endl;
-      os << t3 << "  stride: " << a.stride << std::endl;
+      os << t3 << "  stride: " << a.stride;
+      if (a.stride == UINT32_MAX) os << " # UNSPECIFIED";
+      os << std::endl;
       os << t3 << "  descriptor_type: " << a.descriptor_type << " # " << ToStringDescriptorType(a.descriptor_type) << std::endl;
       if (a.type_description != nullptr) {
         auto itor = type_description_to_index_.find(a.type_description);
@@ -2437,7 +2439,9 @@ void SpvReflectToYaml::Write(std::ostream& os) {
       const SpvReflectEntryPointSamplerHeapAccess& a = e.sampler_heap_accesses[i];
       os << t3 << "- heap_name: " << SafeString(a.heap_name) << std::endl;
       os << t3 << "  runtime_array_type_id: " << a.runtime_array_type_id << std::endl;
-      os << t3 << "  stride: " << a.stride << std::endl;
+      os << t3 << "  stride: " << a.stride;
+      if (a.stride == UINT32_MAX) os << " # UNSPECIFIED";
+      os << std::endl;
       if (a.type_description != nullptr) {
         auto itor = type_description_to_index_.find(a.type_description);
         if (itor != type_description_to_index_.end()) {

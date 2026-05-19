@@ -18,6 +18,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 
 #if defined(WIN32)
@@ -591,7 +592,7 @@ static uint32_t FindAccessChainBaseVariable(SpvReflectPrvParser* p_parser, SpvRe
   if (IsNull(base_node)) {
     return 0;
   }
-  while (base_node->op != SpvOpVariable) {
+  while ((base_node->op != SpvOpVariable) && (base_node->op != SpvOpUntypedVariableKHR)) {
     switch (base_node->op) {
       case SpvOpLoad: {
         UNCHECKED_READU32(p_parser, base_node->word_offset + 3, base_id);
@@ -604,6 +605,7 @@ static uint32_t FindAccessChainBaseVariable(SpvReflectPrvParser* p_parser, SpvRe
         // We currently call from a push constant, so no way to have a reference loop back into the PC block
         return 0;
       default: {
+        fprintf(stderr, "FindAccessChainBaseVariable: unhandled op = %u (0x%x)\n", base_node->op, base_node->op);
         assert(false);
       } break;
     }

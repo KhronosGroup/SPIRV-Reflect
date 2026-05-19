@@ -698,13 +698,13 @@ entry_point_heap_accesses:
     resource_heap_accesses:
       - heap_name: "resource_heap"
         runtime_array_type_id: 55
-        stride: 4294967295
+        stride: 4294967295 # UNSPECIFIED
         descriptor_type: 2 # VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
         type_description: *td18
     sampler_heap_access_count: 1
     sampler_heap_accesses:
       - heap_name: "sampler_heap"
         runtime_array_type_id: 62
-        stride: 4294967295
+        stride: 4294967295 # UNSPECIFIED
         type_description: *td19
 ...
