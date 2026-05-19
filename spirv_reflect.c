@@ -18,7 +18,6 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
 #if defined(WIN32)
@@ -600,12 +599,14 @@ static uint32_t FindAccessChainBaseVariable(SpvReflectPrvParser* p_parser, SpvRe
       case SpvOpFunctionParameter: {
         UNCHECKED_READU32(p_parser, base_node->word_offset + 2, base_id);
       } break;
+      case SpvOpBufferPointerEXT: {
+        UNCHECKED_READU32(p_parser, base_node->word_offset + 3, base_id);
+      } break;
       case SpvOpBitcast:
         // This can be caused by something like GL_EXT_buffer_reference_uvec2 trying to load a pointer.
         // We currently call from a push constant, so no way to have a reference loop back into the PC block
         return 0;
       default: {
-        fprintf(stderr, "FindAccessChainBaseVariable: unhandled op = %u (0x%x)\n", base_node->op, base_node->op);
         assert(false);
       } break;
     }
@@ -726,7 +727,9 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
     if (node_word_count == 0) {
       return SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_INSTRUCTION;
     }
-    if (op == SpvOpAccessChain || op == SpvOpInBoundsAccessChain) {
+    if (op == SpvOpAccessChain || op == SpvOpInBoundsAccessChain ||
+        op == SpvOpUntypedAccessChainKHR || op == SpvOpUntypedInBoundsAccessChainKHR ||
+        op == SpvOpUntypedPtrAccessChainKHR || op == SpvOpUntypedInBoundsPtrAccessChainKHR) {
       ++(p_parser->access_chain_count);
     }
     spirv_word_index += node_word_count;
@@ -960,11 +963,41 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
       } break;
 
-      case SpvOpUntypedAccessChainKHR: {
-        // Result id is captured so OpBufferPointerEXT can be matched against
-        // the chain it reinterprets.
+      case SpvOpUntypedAccessChainKHR:
+      case SpvOpUntypedInBoundsAccessChainKHR:
+      case SpvOpUntypedPtrAccessChainKHR:
+      case SpvOpUntypedInBoundsPtrAccessChainKHR: {
+        // Untyped access chain layout: Result Type, Result Id, Base Type, Base, [Element,] Indexes.
+        // PtrAccessChain variants have an extra Element operand at word 5; indexes follow.
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_type_id);
         CHECKED_READU32(p_parser, p_node->word_offset + 2, p_node->result_id);
+        SpvReflectPrvAccessChain* p_access_chain = &(p_parser->access_chains[access_chain_index]);
+        p_access_chain->result_type_id = p_node->result_type_id;
+        p_access_chain->result_id = p_node->result_id;
+        CHECKED_READU32(p_parser, p_node->word_offset + 4, p_access_chain->base_id);
+        const bool has_element = (p_node->op == SpvOpUntypedPtrAccessChainKHR ||
+                                  p_node->op == SpvOpUntypedInBoundsPtrAccessChainKHR);
+        const uint32_t index_first_word = has_element ? 6 : 5;
+        p_access_chain->index_count = (node_word_count > index_first_word) ? (node_word_count - index_first_word) : 0;
+        if (p_access_chain->index_count > 0) {
+          p_access_chain->indexes = (uint32_t*)calloc(p_access_chain->index_count, sizeof(*(p_access_chain->indexes)));
+          if (IsNull(p_access_chain->indexes)) {
+            return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+          }
+          for (uint32_t index_index = 0; index_index < p_access_chain->index_count; ++index_index) {
+            uint32_t index_id = 0;
+            CHECKED_READU32(p_parser, p_node->word_offset + index_first_word + index_index, index_id);
+            SpvReflectPrvNode* p_index_value_node = FindNode(p_parser, index_id);
+            if ((p_index_value_node != NULL) &&
+                (p_index_value_node->op == SpvOpConstant || p_index_value_node->op == SpvOpSpecConstant)) {
+              uint32_t index_value = UINT32_MAX;
+              CHECKED_READU32(p_parser, p_index_value_node->word_offset + 3, index_value);
+              assert(index_value != UINT32_MAX);
+              p_access_chain->indexes[index_index] = index_value;
+            }
+          }
+        }
+        ++access_chain_index;
       } break;
 
       case SpvOpConstantTrue:
@@ -1191,10 +1224,12 @@ static SpvReflectResult ParseFunction(SpvReflectPrvParser* p_parser, SpvReflectP
       case SpvOpInBoundsAccessChain:
       case SpvOpPtrAccessChain:
       case SpvOpArrayLength:
+      case SpvOpUntypedArrayLengthKHR:
       case SpvOpGenericPtrMemSemantics:
       case SpvOpInBoundsPtrAccessChain:
       case SpvOpStore:
-      case SpvOpImageTexelPointer: {
+      case SpvOpImageTexelPointer:
+      case SpvOpUntypedImageTexelPointerEXT: {
         ++(p_func->accessed_variable_count);
       } break;
       case SpvOpCopyMemory:
@@ -1264,9 +1299,11 @@ static SpvReflectResult ParseFunction(SpvReflectPrvParser* p_parser, SpvReflectP
       case SpvOpInBoundsAccessChain:
       case SpvOpPtrAccessChain:
       case SpvOpArrayLength:
+      case SpvOpUntypedArrayLengthKHR:
       case SpvOpGenericPtrMemSemantics:
       case SpvOpInBoundsPtrAccessChain:
-      case SpvOpImageTexelPointer: {
+      case SpvOpImageTexelPointer:
+      case SpvOpUntypedImageTexelPointerEXT: {
         const uint32_t result_index = p_node->word_offset + 2;
         const uint32_t ptr_index = p_node->word_offset + 3;
         SpvReflectPrvAccessedVariable* access_ptr = &p_func->accessed_variables[p_func->accessed_variable_count];
@@ -1491,13 +1528,14 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
     SpvReflectPrvNode* p_node = &(p_parser->nodes[i]);
 
     if ((p_node->op != SpvOpDecorate) && (p_node->op != SpvOpMemberDecorate) && (p_node->op != SpvOpDecorateId) &&
-        (p_node->op != SpvOpDecorateString) && (p_node->op != SpvOpMemberDecorateString)) {
+        (p_node->op != SpvOpMemberDecorateIdEXT) && (p_node->op != SpvOpDecorateString) &&
+        (p_node->op != SpvOpMemberDecorateString)) {
       continue;
     }
 
     // Need to adjust the read offset if this is a member decoration
     uint32_t member_offset = 0;
-    if (p_node->op == SpvOpMemberDecorate) {
+    if (p_node->op == SpvOpMemberDecorate || p_node->op == SpvOpMemberDecorateIdEXT) {
       member_offset = 1;
     }
 
@@ -1533,6 +1571,7 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
       case SpvDecorationBinding:
       case SpvDecorationDescriptorSet:
       case SpvDecorationOffset:
+      case SpvDecorationOffsetIdEXT:
       case SpvDecorationInputAttachmentIndex:
       case SpvDecorationSpecId:
       case SpvDecorationWeightTextureQCOM:
@@ -1675,6 +1714,18 @@ static SpvReflectResult ParseDecorations(SpvReflectPrvParser* p_parser) {
         uint32_t word_offset = p_node->word_offset + member_offset + 3;
         CHECKED_READU32(p_parser, word_offset, p_target_decorations->offset.value);
         p_target_decorations->offset.word_offset = word_offset;
+      } break;
+
+      case SpvDecorationOffsetIdEXT: {
+        // Offset but with constant ID instead of literal (mainly used for spec constants)
+        uint32_t word_offset = p_node->word_offset + member_offset + 3;
+        uint32_t constant_id = 0;
+        CHECKED_READU32(p_parser, word_offset, constant_id);
+        SpvReflectPrvNode* p_constant_node = FindNode(p_parser, constant_id);
+        if (IsNotNull(p_constant_node) && (p_constant_node->op == SpvOpConstant)) {
+          CHECKED_READU32(p_parser, p_constant_node->word_offset + 3, p_target_decorations->offset.value);
+          p_target_decorations->offset.word_offset = word_offset;
+        }
       } break;
 
       case SpvDecorationInputAttachmentIndex: {
@@ -3798,7 +3849,10 @@ static SpvReflectResult ParseEntryPointHeapAccesses(SpvReflectPrvParser* p_parse
   uint32_t untyped_access_chain_count = 0;
   for (size_t i = 0; i < p_parser->node_count; ++i) {
     SpvReflectPrvNode* p_node = &p_parser->nodes[i];
-    if (p_node->op == SpvOpUntypedAccessChainKHR) {
+    if (p_node->op == SpvOpUntypedAccessChainKHR ||
+        p_node->op == SpvOpUntypedInBoundsAccessChainKHR ||
+        p_node->op == SpvOpUntypedPtrAccessChainKHR ||
+        p_node->op == SpvOpUntypedInBoundsPtrAccessChainKHR) {
       ++untyped_access_chain_count;
       continue;
     }
@@ -3885,7 +3939,10 @@ static SpvReflectResult ParseEntryPointHeapAccesses(SpvReflectPrvParser* p_parse
         current_function_id = 0;
         continue;
       }
-      if (p_node->op != SpvOpUntypedAccessChainKHR) {
+      if (p_node->op != SpvOpUntypedAccessChainKHR &&
+          p_node->op != SpvOpUntypedInBoundsAccessChainKHR &&
+          p_node->op != SpvOpUntypedPtrAccessChainKHR &&
+          p_node->op != SpvOpUntypedInBoundsPtrAccessChainKHR) {
         continue;
       }
       if (current_function_id == 0 || p_node->word_count < 5) {
