@@ -20,6 +20,8 @@
 #ifndef SHADERIO_H
 #define SHADERIO_H
 
+// clang-format off
+
 /*
  * Push data layout (used by vkCmdPushDataEXT):
  *   Offset 0:   FrameInfo (160 bytes) — pushed once per frame
@@ -33,8 +35,7 @@
  */
 
 // Pushed once per frame at offset 0
-struct FrameInfo
-{
+struct FrameInfo {
   float4x4 proj;
   float4x4 view;
   float3   lightDir;
@@ -46,8 +47,7 @@ struct FrameInfo
 };
 
 // Per-draw mode: pushed per cube at offset 160
-struct DrawData
-{
+struct DrawData {
   float4x4 transform;
   uint     baseFaceTexIdx;  // heap index of first of 6 face textures (consumed by
                             // mapping, not shader)
@@ -57,11 +57,12 @@ struct DrawData
 };
 
 // Bindless mode: pushed once at offset 160
-struct BindlessPushData
-{
+struct BindlessPushData {
   uint borderColor;  // packed RGBA8 border color for the single draw call
   uint gridSize;     // N for NxNxN grid; shader derives position from
                      // gl_InstanceIndex
 };
+
+// clang-format on
 
 #endif
