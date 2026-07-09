@@ -63,6 +63,8 @@ typedef enum SpvSourceLanguage_ {
   SpvSourceLanguageSlang = 11,
   SpvSourceLanguageZig = 12,
   SpvSourceLanguageRust = 13,
+  SpvSourceLanguagePred = 14,
+  SpvSourceLanguageApilaJai = 15,
   SpvSourceLanguageMax = 0x7fffffff,
 } SpvSourceLanguage;
 
@@ -209,6 +211,7 @@ typedef enum SpvExecutionMode_ {
   SpvExecutionModeSchedulerTargetFmaxMhzINTEL = 5903,
   SpvExecutionModeMaximallyReconvergesKHR = 6023,
   SpvExecutionModeFPFastMathDefault = 6028,
+  SpvExecutionModeOpacityMicromapIdKHR = 6031,
   SpvExecutionModeStreamingInterfaceINTEL = 6154,
   SpvExecutionModeRegisterMapInterfaceINTEL = 6160,
   SpvExecutionModeNamedBarrierCountINTEL = 6417,
@@ -475,6 +478,7 @@ typedef enum SpvLinkageType_ {
   SpvLinkageTypeExport = 0,
   SpvLinkageTypeImport = 1,
   SpvLinkageTypeLinkOnceODR = 2,
+  SpvLinkageTypeWeakAMD = 3,
   SpvLinkageTypeMax = 0x7fffffff,
 } SpvLinkageType;
 
@@ -698,6 +702,7 @@ typedef enum SpvDecoration_ {
   SpvDecorationConditionalINTEL = 6247,
   SpvDecorationCacheControlLoadINTEL = 6442,
   SpvDecorationCacheControlStoreINTEL = 6443,
+  SpvDecorationIntrinsicSAMSUNG = 7040,
   SpvDecorationMax = 0x7fffffff,
 } SpvDecoration;
 
@@ -897,6 +902,7 @@ typedef enum SpvLoopControlShift_ {
   SpvLoopControlLoopCountINTELShift = 24,
   SpvLoopControlMaxReinvocationDelayALTERAShift = 25,
   SpvLoopControlMaxReinvocationDelayINTELShift = 25,
+  SpvLoopControlMultipleWaitQueuesQCOMShift = 28,
   SpvLoopControlMax = 0x7fffffff,
 } SpvLoopControlShift;
 
@@ -931,6 +937,7 @@ typedef enum SpvLoopControlMask_ {
   SpvLoopControlLoopCountINTELMask = 0x01000000,
   SpvLoopControlMaxReinvocationDelayALTERAMask = 0x02000000,
   SpvLoopControlMaxReinvocationDelayINTELMask = 0x02000000,
+  SpvLoopControlMultipleWaitQueuesQCOMMask = 0x10000000,
 } SpvLoopControlMask;
 
 typedef enum SpvFunctionControlShift_ {
@@ -1150,6 +1157,11 @@ typedef enum SpvCapability_ {
   SpvCapabilityCooperativeMatrixLayoutsARM = 4201,
   SpvCapabilityFloat8EXT = 4212,
   SpvCapabilityFloat8CooperativeMatrixEXT = 4213,
+  SpvCapabilityFloat6EXT = 4228,
+  SpvCapabilityFloat4EXT = 4229,
+  SpvCapabilityFloat8UnsignedE8M0EXT = 4230,
+  SpvCapabilityMXInt8EXT = 4231,
+  SpvCapabilityBitcastExtractEXT = 4232,
   SpvCapabilityFragmentShadingRateKHR = 4422,
   SpvCapabilitySubgroupBallotKHR = 4423,
   SpvCapabilityDrawParameters = 4427,
@@ -1188,6 +1200,9 @@ typedef enum SpvCapability_ {
   SpvCapabilityTileShadingQCOM = 4495,
   SpvCapabilityCooperativeMatrixConversionQCOM = 4496,
   SpvCapabilityTextureBlockMatch2QCOM = 4498,
+  SpvCapabilityMultipleWaitQueuesQCOM = 4539,
+  SpvCapabilityImageGatherLinearQCOM = 4543,
+  SpvCapabilityImageGatherExtendedModesQCOM = 4544,
   SpvCapabilityFloat16ImageAMD = 5008,
   SpvCapabilityImageGatherBiasLodAMD = 5009,
   SpvCapabilityFragmentMaskAMD = 5010,
@@ -1206,6 +1221,7 @@ typedef enum SpvCapability_ {
   SpvCapabilityDescriptorHeapEXT = 5128,
   SpvCapabilityConstantDataKHR = 5146,
   SpvCapabilityPoisonFreezeKHR = 5156,
+  SpvCapabilityWeakLinkageAMD = 5181,
   SpvCapabilitySampleMaskOverrideCoverageNV = 5249,
   SpvCapabilityGeometryShaderPassthroughNV = 5251,
   SpvCapabilityShaderViewportIndexLayerEXT = 5254,
@@ -1270,6 +1286,7 @@ typedef enum SpvCapability_ {
   SpvCapabilityDemoteToHelperInvocationEXT = 5379,
   SpvCapabilityDisplacementMicromapNV = 5380,
   SpvCapabilityRayTracingOpacityMicromapEXT = 5381,
+  SpvCapabilityRayTracingOpacityMicromapKHR = 5381,
   SpvCapabilityShaderInvocationReorderNV = 5383,
   SpvCapabilityShaderInvocationReorderEXT = 5388,
   SpvCapabilityBindlessTextureNV = 5390,
@@ -1291,6 +1308,7 @@ typedef enum SpvCapability_ {
   SpvCapabilityCooperativeVectorTrainingNV = 5435,
   SpvCapabilityRayTracingClusterAccelerationStructureNV = 5437,
   SpvCapabilityTensorAddressingNV = 5439,
+  SpvCapabilityCooperativeMatrixDecodeVectorNV = 5447,
   SpvCapabilitySubgroupShuffleINTEL = 5568,
   SpvCapabilitySubgroupBufferBlockIOINTEL = 5569,
   SpvCapabilitySubgroupImageBlockIOINTEL = 5570,
@@ -1364,6 +1382,7 @@ typedef enum SpvCapability_ {
   SpvCapabilityGroupNonUniformRotateKHR = 6026,
   SpvCapabilityFloatControls2 = 6029,
   SpvCapabilityFMAKHR = 6030,
+  SpvCapabilityRayTracingOpacityMicromapExecutionModeKHR = 6032,
   SpvCapabilityAtomicFloat32AddEXT = 6033,
   SpvCapabilityAtomicFloat64AddEXT = 6034,
   SpvCapabilityLongCompositesINTEL = 6089,
@@ -1372,6 +1391,7 @@ typedef enum SpvCapability_ {
   SpvCapabilityAtomicFloat16AddEXT = 6095,
   SpvCapabilityDebugInfoModuleINTEL = 6114,
   SpvCapabilityBFloat16ConversionINTEL = 6115,
+  SpvCapabilitySplitBarrierEXT = 6141,
   SpvCapabilitySplitBarrierINTEL = 6141,
   SpvCapabilityArithmeticFenceEXT = 6144,
   SpvCapabilityFPGAClusterAttributesV2ALTERA = 6150,
@@ -1396,6 +1416,8 @@ typedef enum SpvCapability_ {
   SpvCapabilityUntypedVariableLengthArrayINTEL = 6243,
   SpvCapabilitySpecConditionalINTEL = 6245,
   SpvCapabilityFunctionVariantsINTEL = 6246,
+  SpvCapabilityPredicatedIOINTEL = 6257,
+  SpvCapabilityRoundedDivideSqrtINTEL = 6265,
   SpvCapabilityGroupUniformArithmeticKHR = 6400,
   SpvCapabilityTensorFloat32RoundingINTEL = 6425,
   SpvCapabilityMaskedGatherScatterINTEL = 6427,
@@ -1406,6 +1428,7 @@ typedef enum SpvCapability_ {
   SpvCapabilityDotProductFloat16AccFloat16VALVE = 6913,
   SpvCapabilityDotProductBFloat16AccVALVE = 6914,
   SpvCapabilityDotProductFloat8AccFloat32VALVE = 6915,
+  SpvCapabilityIntrinsicSAMSUNG = 7041,
   SpvCapabilityMax = 0x7fffffff,
 } SpvCapability;
 
@@ -1422,6 +1445,7 @@ typedef enum SpvRayFlagsShift_ {
   SpvRayFlagsSkipTrianglesKHRShift = 8,
   SpvRayFlagsSkipAABBsKHRShift = 9,
   SpvRayFlagsForceOpacityMicromap2StateEXTShift = 10,
+  SpvRayFlagsForceOpacityMicromap2StateKHRShift = 10,
   SpvRayFlagsMax = 0x7fffffff,
 } SpvRayFlagsShift;
 
@@ -1439,6 +1463,7 @@ typedef enum SpvRayFlagsMask_ {
   SpvRayFlagsSkipTrianglesKHRMask = 0x00000100,
   SpvRayFlagsSkipAABBsKHRMask = 0x00000200,
   SpvRayFlagsForceOpacityMicromap2StateEXTMask = 0x00000400,
+  SpvRayFlagsForceOpacityMicromap2StateKHRMask = 0x00000400,
 } SpvRayFlagsMask;
 
 typedef enum SpvRayQueryIntersection_ {
@@ -1573,6 +1598,7 @@ typedef enum SpvTensorClampMode_ {
 typedef enum SpvTensorAddressingOperandsShift_ {
   SpvTensorAddressingOperandsTensorViewShift = 0,
   SpvTensorAddressingOperandsDecodeFuncShift = 1,
+  SpvTensorAddressingOperandsDecodeVectorFuncShift = 2,
   SpvTensorAddressingOperandsMax = 0x7fffffff,
 } SpvTensorAddressingOperandsShift;
 
@@ -1580,6 +1606,7 @@ typedef enum SpvTensorAddressingOperandsMask_ {
   SpvTensorAddressingOperandsMaskNone = 0,
   SpvTensorAddressingOperandsTensorViewMask = 0x00000001,
   SpvTensorAddressingOperandsDecodeFuncMask = 0x00000002,
+  SpvTensorAddressingOperandsDecodeVectorFuncMask = 0x00000004,
 } SpvTensorAddressingOperandsMask;
 
 typedef enum SpvTensorOperandsShift_ {
@@ -1690,6 +1717,11 @@ typedef enum SpvFPEncoding_ {
   SpvFPEncodingBFloat16KHR = 0,
   SpvFPEncodingFloat8E4M3EXT = 4214,
   SpvFPEncodingFloat8E5M2EXT = 4215,
+  SpvFPEncodingFloat6E2M3EXT = 4223,
+  SpvFPEncodingFloat6E3M2EXT = 4224,
+  SpvFPEncodingFloat4E2M1EXT = 4225,
+  SpvFPEncodingFloat8UnsignedE8M0EXT = 4226,
+  SpvFPEncodingMXInt8EXT = 4227,
   SpvFPEncodingMax = 0x7fffffff,
 } SpvFPEncoding;
 
@@ -1719,6 +1751,14 @@ typedef enum SpvComponentType_ {
   SpvComponentTypeFloatE5M2NV = 1000491003,
   SpvComponentTypeMax = 0x7fffffff,
 } SpvComponentType;
+
+typedef enum SpvGatherModes_ {
+  SpvGatherModesGather4x1QCOM = 0,
+  SpvGatherModesGatherDQCOM = 1,
+  SpvGatherModesGatherH2QCOM = 2,
+  SpvGatherModesGatherV2QCOM = 3,
+  SpvGatherModesMax = 0x7fffffff,
+} SpvGatherModes;
 
 typedef enum SpvOp_ {
   SpvOpNop = 0,
@@ -2079,6 +2119,7 @@ typedef enum SpvOp_ {
   SpvOpGraphSetOutputARM = 4185,
   SpvOpGraphEndARM = 4186,
   SpvOpTypeGraphARM = 4190,
+  SpvOpBitcastExtractEXT = 4195,
   SpvOpTerminateInvocation = 4416,
   SpvOpTypeUntypedPointerKHR = 4417,
   SpvOpUntypedVariableKHR = 4418,
@@ -2142,6 +2183,7 @@ typedef enum SpvOp_ {
   SpvOpCompositeConstructCoopMatQCOM = 4540,
   SpvOpCompositeExtractCoopMatQCOM = 4541,
   SpvOpExtractSubArrayQCOM = 4542,
+  SpvOpImageGatherQCOM = 4545,
   SpvOpGroupIAddNonUniformAMD = 5000,
   SpvOpGroupFAddNonUniformAMD = 5001,
   SpvOpGroupFMinNonUniformAMD = 5002,
@@ -2599,7 +2641,9 @@ typedef enum SpvOp_ {
   SpvOpCompositeConstructContinuedINTEL = 6096,
   SpvOpConvertFToBF16INTEL = 6116,
   SpvOpConvertBF16ToFINTEL = 6117,
+  SpvOpControlBarrierArriveEXT = 6142,
   SpvOpControlBarrierArriveINTEL = 6142,
+  SpvOpControlBarrierWaitEXT = 6143,
   SpvOpControlBarrierWaitINTEL = 6143,
   SpvOpArithmeticFenceEXT = 6145,
   SpvOpTaskSequenceCreateALTERA = 6163,
@@ -2628,6 +2672,8 @@ typedef enum SpvOp_ {
   SpvOpSpecConstantArchitectureINTEL = 6252,
   SpvOpSpecConstantCapabilitiesINTEL = 6253,
   SpvOpConditionalCopyObjectINTEL = 6254,
+  SpvOpPredicatedLoadINTEL = 6258,
+  SpvOpPredicatedStoreINTEL = 6259,
   SpvOpGroupIMulKHR = 6401,
   SpvOpGroupFMulKHR = 6402,
   SpvOpGroupBitwiseAndKHR = 6403,
@@ -4089,6 +4135,10 @@ inline void SpvHasResultAndType(SpvOp opcode, bool* hasResult, bool* hasResultTy
       *hasResult = true;
       *hasResultType = false;
       break;
+    case SpvOpBitcastExtractEXT:
+      *hasResult = true;
+      *hasResultType = true;
+      break;
     case SpvOpTerminateInvocation:
       *hasResult = false;
       *hasResultType = false;
@@ -4314,6 +4364,10 @@ inline void SpvHasResultAndType(SpvOp opcode, bool* hasResult, bool* hasResultTy
       *hasResultType = true;
       break;
     case SpvOpExtractSubArrayQCOM:
+      *hasResult = true;
+      *hasResultType = true;
+      break;
+    case SpvOpImageGatherQCOM:
       *hasResult = true;
       *hasResultType = true;
       break;
@@ -5866,12 +5920,12 @@ inline void SpvHasResultAndType(SpvOp opcode, bool* hasResult, bool* hasResultTy
       *hasResultType = true;
       break;
     case SpvOpReadPipeBlockingALTERA:
-      *hasResult = true;
-      *hasResultType = true;
+      *hasResult = false;
+      *hasResultType = false;
       break;
     case SpvOpWritePipeBlockingALTERA:
-      *hasResult = true;
-      *hasResultType = true;
+      *hasResult = false;
+      *hasResultType = false;
       break;
     case SpvOpFPGARegALTERA:
       *hasResult = true;
@@ -5966,8 +6020,8 @@ inline void SpvHasResultAndType(SpvOp opcode, bool* hasResult, bool* hasResultTy
       *hasResultType = false;
       break;
     case SpvOpCompositeConstructContinuedINTEL:
-      *hasResult = true;
-      *hasResultType = true;
+      *hasResult = false;
+      *hasResultType = false;
       break;
     case SpvOpConvertFToBF16INTEL:
       *hasResult = true;
@@ -5977,11 +6031,11 @@ inline void SpvHasResultAndType(SpvOp opcode, bool* hasResult, bool* hasResultTy
       *hasResult = true;
       *hasResultType = true;
       break;
-    case SpvOpControlBarrierArriveINTEL:
+    case SpvOpControlBarrierArriveEXT:
       *hasResult = false;
       *hasResultType = false;
       break;
-    case SpvOpControlBarrierWaitINTEL:
+    case SpvOpControlBarrierWaitEXT:
       *hasResult = false;
       *hasResultType = false;
       break;
@@ -6072,6 +6126,14 @@ inline void SpvHasResultAndType(SpvOp opcode, bool* hasResult, bool* hasResultTy
     case SpvOpConditionalCopyObjectINTEL:
       *hasResult = true;
       *hasResultType = true;
+      break;
+    case SpvOpPredicatedLoadINTEL:
+      *hasResult = true;
+      *hasResultType = true;
+      break;
+    case SpvOpPredicatedStoreINTEL:
+      *hasResult = false;
+      *hasResultType = false;
       break;
     case SpvOpGroupIMulKHR:
       *hasResult = true;
@@ -6173,6 +6235,10 @@ inline const char* SpvSourceLanguageToString(SpvSourceLanguage value) {
       return "Zig";
     case SpvSourceLanguageRust:
       return "Rust";
+    case SpvSourceLanguagePred:
+      return "Pred";
+    case SpvSourceLanguageApilaJai:
+      return "ApilaJai";
     default:
       return "Unknown";
   }
@@ -6435,6 +6501,8 @@ inline const char* SpvExecutionModeToString(SpvExecutionMode value) {
       return "MaximallyReconvergesKHR";
     case SpvExecutionModeFPFastMathDefault:
       return "FPFastMathDefault";
+    case SpvExecutionModeOpacityMicromapIdKHR:
+      return "OpacityMicromapIdKHR";
     case SpvExecutionModeStreamingInterfaceINTEL:
       return "StreamingInterfaceINTEL";
     case SpvExecutionModeRegisterMapInterfaceINTEL:
@@ -6788,6 +6856,8 @@ inline const char* SpvLinkageTypeToString(SpvLinkageType value) {
       return "Import";
     case SpvLinkageTypeLinkOnceODR:
       return "LinkOnceODR";
+    case SpvLinkageTypeWeakAMD:
+      return "WeakAMD";
     default:
       return "Unknown";
   }
@@ -7133,6 +7203,8 @@ inline const char* SpvDecorationToString(SpvDecoration value) {
       return "CacheControlLoadINTEL";
     case SpvDecorationCacheControlStoreINTEL:
       return "CacheControlStoreINTEL";
+    case SpvDecorationIntrinsicSAMSUNG:
+      return "IntrinsicSAMSUNG";
     default:
       return "Unknown";
   }
@@ -7620,6 +7692,16 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
       return "Float8EXT";
     case SpvCapabilityFloat8CooperativeMatrixEXT:
       return "Float8CooperativeMatrixEXT";
+    case SpvCapabilityFloat6EXT:
+      return "Float6EXT";
+    case SpvCapabilityFloat4EXT:
+      return "Float4EXT";
+    case SpvCapabilityFloat8UnsignedE8M0EXT:
+      return "Float8UnsignedE8M0EXT";
+    case SpvCapabilityMXInt8EXT:
+      return "MXInt8EXT";
+    case SpvCapabilityBitcastExtractEXT:
+      return "BitcastExtractEXT";
     case SpvCapabilityFragmentShadingRateKHR:
       return "FragmentShadingRateKHR";
     case SpvCapabilitySubgroupBallotKHR:
@@ -7692,6 +7774,12 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
       return "CooperativeMatrixConversionQCOM";
     case SpvCapabilityTextureBlockMatch2QCOM:
       return "TextureBlockMatch2QCOM";
+    case SpvCapabilityMultipleWaitQueuesQCOM:
+      return "MultipleWaitQueuesQCOM";
+    case SpvCapabilityImageGatherLinearQCOM:
+      return "ImageGatherLinearQCOM";
+    case SpvCapabilityImageGatherExtendedModesQCOM:
+      return "ImageGatherExtendedModesQCOM";
     case SpvCapabilityFloat16ImageAMD:
       return "Float16ImageAMD";
     case SpvCapabilityImageGatherBiasLodAMD:
@@ -7728,6 +7816,8 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
       return "ConstantDataKHR";
     case SpvCapabilityPoisonFreezeKHR:
       return "PoisonFreezeKHR";
+    case SpvCapabilityWeakLinkageAMD:
+      return "WeakLinkageAMD";
     case SpvCapabilitySampleMaskOverrideCoverageNV:
       return "SampleMaskOverrideCoverageNV";
     case SpvCapabilityGeometryShaderPassthroughNV:
@@ -7854,6 +7944,8 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
       return "RayTracingClusterAccelerationStructureNV";
     case SpvCapabilityTensorAddressingNV:
       return "TensorAddressingNV";
+    case SpvCapabilityCooperativeMatrixDecodeVectorNV:
+      return "CooperativeMatrixDecodeVectorNV";
     case SpvCapabilitySubgroupShuffleINTEL:
       return "SubgroupShuffleINTEL";
     case SpvCapabilitySubgroupBufferBlockIOINTEL:
@@ -7960,6 +8052,8 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
       return "FloatControls2";
     case SpvCapabilityFMAKHR:
       return "FMAKHR";
+    case SpvCapabilityRayTracingOpacityMicromapExecutionModeKHR:
+      return "RayTracingOpacityMicromapExecutionModeKHR";
     case SpvCapabilityAtomicFloat32AddEXT:
       return "AtomicFloat32AddEXT";
     case SpvCapabilityAtomicFloat64AddEXT:
@@ -7974,8 +8068,8 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
       return "DebugInfoModuleINTEL";
     case SpvCapabilityBFloat16ConversionINTEL:
       return "BFloat16ConversionINTEL";
-    case SpvCapabilitySplitBarrierINTEL:
-      return "SplitBarrierINTEL";
+    case SpvCapabilitySplitBarrierEXT:
+      return "SplitBarrierEXT";
     case SpvCapabilityArithmeticFenceEXT:
       return "ArithmeticFenceEXT";
     case SpvCapabilityFPGAClusterAttributesV2ALTERA:
@@ -8012,6 +8106,10 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
       return "SpecConditionalINTEL";
     case SpvCapabilityFunctionVariantsINTEL:
       return "FunctionVariantsINTEL";
+    case SpvCapabilityPredicatedIOINTEL:
+      return "PredicatedIOINTEL";
+    case SpvCapabilityRoundedDivideSqrtINTEL:
+      return "RoundedDivideSqrtINTEL";
     case SpvCapabilityGroupUniformArithmeticKHR:
       return "GroupUniformArithmeticKHR";
     case SpvCapabilityTensorFloat32RoundingINTEL:
@@ -8032,6 +8130,8 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
       return "DotProductBFloat16AccVALVE";
     case SpvCapabilityDotProductFloat8AccFloat32VALVE:
       return "DotProductFloat8AccFloat32VALVE";
+    case SpvCapabilityIntrinsicSAMSUNG:
+      return "IntrinsicSAMSUNG";
     default:
       return "Unknown";
   }
@@ -8261,6 +8361,16 @@ inline const char* SpvFPEncodingToString(SpvFPEncoding value) {
       return "Float8E4M3EXT";
     case SpvFPEncodingFloat8E5M2EXT:
       return "Float8E5M2EXT";
+    case SpvFPEncodingFloat6E2M3EXT:
+      return "Float6E2M3EXT";
+    case SpvFPEncodingFloat6E3M2EXT:
+      return "Float6E3M2EXT";
+    case SpvFPEncodingFloat4E2M1EXT:
+      return "Float4E2M1EXT";
+    case SpvFPEncodingFloat8UnsignedE8M0EXT:
+      return "Float8UnsignedE8M0EXT";
+    case SpvFPEncodingMXInt8EXT:
+      return "MXInt8EXT";
     default:
       return "Unknown";
   }
@@ -8313,6 +8423,21 @@ inline const char* SpvComponentTypeToString(SpvComponentType value) {
       return "FloatE4M3NV";
     case SpvComponentTypeFloatE5M2NV:
       return "FloatE5M2NV";
+    default:
+      return "Unknown";
+  }
+}
+
+inline const char* SpvGatherModesToString(SpvGatherModes value) {
+  switch (value) {
+    case SpvGatherModesGather4x1QCOM:
+      return "Gather4x1QCOM";
+    case SpvGatherModesGatherDQCOM:
+      return "GatherDQCOM";
+    case SpvGatherModesGatherH2QCOM:
+      return "GatherH2QCOM";
+    case SpvGatherModesGatherV2QCOM:
+      return "GatherV2QCOM";
     default:
       return "Unknown";
   }
@@ -9036,6 +9161,8 @@ inline const char* SpvOpToString(SpvOp value) {
       return "OpGraphEndARM";
     case SpvOpTypeGraphARM:
       return "OpTypeGraphARM";
+    case SpvOpBitcastExtractEXT:
+      return "OpBitcastExtractEXT";
     case SpvOpTerminateInvocation:
       return "OpTerminateInvocation";
     case SpvOpTypeUntypedPointerKHR:
@@ -9150,6 +9277,8 @@ inline const char* SpvOpToString(SpvOp value) {
       return "OpCompositeExtractCoopMatQCOM";
     case SpvOpExtractSubArrayQCOM:
       return "OpExtractSubArrayQCOM";
+    case SpvOpImageGatherQCOM:
+      return "OpImageGatherQCOM";
     case SpvOpGroupIAddNonUniformAMD:
       return "OpGroupIAddNonUniformAMD";
     case SpvOpGroupFAddNonUniformAMD:
@@ -9980,10 +10109,10 @@ inline const char* SpvOpToString(SpvOp value) {
       return "OpConvertFToBF16INTEL";
     case SpvOpConvertBF16ToFINTEL:
       return "OpConvertBF16ToFINTEL";
-    case SpvOpControlBarrierArriveINTEL:
-      return "OpControlBarrierArriveINTEL";
-    case SpvOpControlBarrierWaitINTEL:
-      return "OpControlBarrierWaitINTEL";
+    case SpvOpControlBarrierArriveEXT:
+      return "OpControlBarrierArriveEXT";
+    case SpvOpControlBarrierWaitEXT:
+      return "OpControlBarrierWaitEXT";
     case SpvOpArithmeticFenceEXT:
       return "OpArithmeticFenceEXT";
     case SpvOpTaskSequenceCreateALTERA:
@@ -10028,6 +10157,10 @@ inline const char* SpvOpToString(SpvOp value) {
       return "OpSpecConstantCapabilitiesINTEL";
     case SpvOpConditionalCopyObjectINTEL:
       return "OpConditionalCopyObjectINTEL";
+    case SpvOpPredicatedLoadINTEL:
+      return "OpPredicatedLoadINTEL";
+    case SpvOpPredicatedStoreINTEL:
+      return "OpPredicatedStoreINTEL";
     case SpvOpGroupIMulKHR:
       return "OpGroupIMulKHR";
     case SpvOpGroupFMulKHR:
