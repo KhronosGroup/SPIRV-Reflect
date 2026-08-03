@@ -5,6 +5,7 @@ project(spirv-reflect)
 OPTION(SPIRV_REFLECT_EXECUTABLE     "Build spirv-reflect executable" ON)
 
 OPTION(SPIRV_REFLECT_STATIC_LIB     "Build a SPIRV-Reflect static library" OFF)
+OPTION(SPIRV_REFLECT_SHARED_LIB     "Build a SPIRV-Reflect shared library" OFF)
 OPTION(SPIRV_REFLECT_BUILD_TESTS    "Build the SPIRV-Reflect test suite" OFF)
 OPTION(SPIRV_REFLECT_ENABLE_ASSERTS "Enable asserts for debugging" OFF)
 OPTION(SPIRV_REFLECT_ENABLE_ASAN    "Use address sanitization" OFF)
@@ -123,6 +124,27 @@ if(SPIRV_REFLECT_STATIC_LIB)
 
     if(SPIRV_REFLECT_INSTALL)
         install(TARGETS spirv-reflect-static
+                LIBRARY DESTINATION lib
+                ARCHIVE DESTINATION lib
+                PUBLIC_HEADER DESTINATION include)
+    endif()
+endif()
+
+if(SPIRV_REFLECT_SHARED_LIB)
+    add_library(spirv-reflect-shared SHARED ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.c)
+
+    target_include_directories(spirv-reflect-shared
+                               PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+    set_target_properties(spirv-reflect-shared PROPERTIES
+                          OUTPUT_NAME spirv-reflect
+                          PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h"
+                          WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+    if(SPIRV_REFLECT_INSTALL)
+        install(TARGETS spirv-reflect-shared
+                RUNTIME DESTINATION bin
                 LIBRARY DESTINATION lib
                 ARCHIVE DESTINATION lib
                 PUBLIC_HEADER DESTINATION include)
