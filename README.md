@@ -33,6 +33,11 @@ SPIRV-Reflect has been tested on Linux and Windows.
   accordingly.
 - Log all reflection data as human-readable text.
 
+## Non-Features
+
+SPIRV-Reflect is not a validator and assumes valid SPIR-V is being passed in.
+Please ensure with `spirv-val` prior to using this tool.
+
 ## Integration
 
 SPIRV-Reflect is designed to make integration as easy as possible. The only
