@@ -2554,8 +2554,9 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module) {
 }
 
 static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module) {
-  char name[MAX_NODE_NAME_LENGTH];
+  char local_name[MAX_NODE_NAME_LENGTH];
   const char* k_count_tag = "@count";
+  const size_t k_count_tag_len = strlen(k_count_tag);
 
   for (uint32_t descriptor_index = 0; descriptor_index < p_module->descriptor_binding_count; ++descriptor_index) {
     SpvReflectDescriptorBinding* p_descriptor = &(p_module->descriptor_bindings[descriptor_index]);
@@ -2582,11 +2583,29 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
     // ...otherwise use old @count convention.
     else {
       const size_t descriptor_name_length = p_descriptor->name ? strlen(p_descriptor->name) : 0;
+      const size_t total_length = descriptor_name_length + k_count_tag_len + 1;
 
-      memset(name, 0, MAX_NODE_NAME_LENGTH);
-      memcpy(name, p_descriptor->name, descriptor_name_length);
+      char* name = local_name;
+      bool allocated = false;
+
+      if (total_length > MAX_NODE_NAME_LENGTH) {
+        name = (char*)malloc(total_length);
+        if (IsNull(name)) {
+          return SPV_REFLECT_RESULT_ERROR_ALLOC_FAILED;
+        }
+        allocated = true;
+      }
+
+      memset(name, 0, total_length);
+      if (p_descriptor->name != NULL && descriptor_name_length > 0) {
+        memcpy(name, p_descriptor->name, descriptor_name_length);
+      }
 #if defined(_WIN32)
-      strcat_s(name, MAX_NODE_NAME_LENGTH, k_count_tag);
+      if (allocated) {
+        strcat_s(name, total_length, k_count_tag);
+      } else {
+        strcat_s(name, MAX_NODE_NAME_LENGTH, k_count_tag);
+      }
 #else
       strcat(name, k_count_tag);
 #endif
@@ -2601,6 +2620,10 @@ static SpvReflectResult ParseUAVCounterBindings(SpvReflectShaderModule* p_module
           p_counter_descriptor = p_test_counter_descriptor;
           break;
         }
+      }
+
+      if (allocated) {
+        free(name);
       }
     }
 
