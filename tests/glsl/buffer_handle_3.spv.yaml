@@ -258,7 +258,7 @@ all_block_variables:
     offset: 0
     absolute_offset: 0
     size: 4
-    padded_size: 4
+    padded_size: 8
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 1 }
@@ -291,7 +291,7 @@ all_block_variables:
     offset: 0
     absolute_offset: 0
     size: 8
-    padded_size: 8
+    padded_size: 16
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
@@ -308,8 +308,8 @@ all_block_variables:
     name: "s5"
     offset: 0
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 16
+    padded_size: 16
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
@@ -326,7 +326,7 @@ all_block_variables:
     offset: 0
     absolute_offset: 0
     size: 4
-    padded_size: 4
+    padded_size: 8
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 32, signedness: 1 }
@@ -358,8 +358,8 @@ all_block_variables:
     name: "x"
     offset: 0
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 16
+    padded_size: 16
     decorations: 0x00000000 # NONE
     numeric:
       scalar: { width: 0, signedness: 0 }
