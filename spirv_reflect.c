@@ -902,6 +902,7 @@ static SpvReflectResult ParseNodes(SpvReflectPrvParser* p_parser) {
       case SpvOpTypeCooperativeVectorNV:
       case SpvOpTypeCooperativeMatrixNV:
       case SpvOpTypeCooperativeMatrixKHR:
+      case SpvOpTypeTensorARM:
       case SpvOpTypeUntypedPointerKHR: {
         CHECKED_READU32(p_parser, p_node->word_offset + 1, p_node->result_id);
         p_node->is_type = true;
@@ -2154,6 +2155,10 @@ static SpvReflectResult ParseType(SpvReflectPrvParser* p_parser, SpvReflectPrvNo
         p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_ACCELERATION_STRUCTURE;
       } break;
 
+      case SpvOpTypeTensorARM: {
+        p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_TENSOR_ARM;
+      } break;
+
       case SpvOpTypeBufferEXT: {
         p_type->type_flags |= SPV_REFLECT_TYPE_FLAG_EXTERNAL_BLOCK;
         IF_READU32_CAST(result, p_parser, p_node->word_offset + 2, SpvStorageClass, p_type->storage_class);
@@ -2508,6 +2513,10 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module) {
         case SPV_REFLECT_TYPE_FLAG_EXTERNAL_ACCELERATION_STRUCTURE: {
           p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         } break;
+
+        case SPV_REFLECT_TYPE_FLAG_EXTERNAL_TENSOR_ARM: {
+          p_descriptor->descriptor_type = SPV_REFLECT_DESCRIPTOR_TYPE_TENSOR_ARM;
+        } break;
       }
     }
 
@@ -2546,6 +2555,9 @@ static SpvReflectResult ParseDescriptorType(SpvReflectShaderModule* p_module) {
         break;
       case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
         p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_SRV;
+        break;
+      case SPV_REFLECT_DESCRIPTOR_TYPE_TENSOR_ARM:
+        p_descriptor->resource_type = SPV_REFLECT_RESOURCE_FLAG_UAV;
         break;
     }
   }

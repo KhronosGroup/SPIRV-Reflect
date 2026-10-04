@@ -349,6 +349,8 @@ std::string ToStringDescriptorType(SpvReflectDescriptorType value) {
       return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT";
     case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
       return "VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR";
+    case SPV_REFLECT_DESCRIPTOR_TYPE_TENSOR_ARM:
+      return "VK_DESCRIPTOR_TYPE_TENSOR_ARM";
   }
   // unhandled SpvReflectDescriptorType enum value
   return "VK_DESCRIPTOR_TYPE_???";
