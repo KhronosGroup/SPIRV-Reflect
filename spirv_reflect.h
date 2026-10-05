@@ -387,6 +387,13 @@ typedef struct SpvReflectBindingArrayTraits {
   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
 } SpvReflectBindingArrayTraits;
 
+typedef struct SpvReflectTensorTraits {
+  // 0 if the tensor is unranked, ~0 if the rank is not an OpConstant
+  uint32_t                          rank;
+  // All 0 if the tensor is not shaped, ~0 for a dimension that is not an OpConstant
+  uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
+} SpvReflectTensorTraits;
+
 /*! @struct SpvReflectTypeDescription
     @brief Information about an OpType* instruction
 */
@@ -406,6 +413,7 @@ typedef struct SpvReflectTypeDescription {
     SpvReflectNumericTraits         numeric;
     SpvReflectImageTraits           image;
     SpvReflectArrayTraits           array;
+    SpvReflectTensorTraits          tensor;
   } traits;
 
   // If underlying type is a struct (ex. array of structs)
@@ -597,6 +605,19 @@ typedef struct SpvReflectEntryPoint {
   SpvReflectEntryPointSamplerHeapAccess*  sampler_heap_accesses;
 } SpvReflectEntryPoint;
 
+/*! @struct SpvReflectGraphEntryPoint
+    @brief An OpGraphEntryPointARM (SPV_ARM_graph)
+*/
+typedef struct SpvReflectGraphEntryPoint {
+  const char*                       name;
+  uint32_t                          id; // OpGraphARM
+
+  uint32_t                          input_count;
+  SpvReflectDescriptorBinding**     inputs;
+  uint32_t                          output_count;
+  SpvReflectDescriptorBinding**     outputs;
+} SpvReflectGraphEntryPoint;
+
 /*! @struct SpvReflectCapability
 
 */
@@ -661,6 +682,8 @@ typedef struct SpvReflectShaderModule {
   SpvReflectBlockVariable*          push_constant_blocks;                             // Uses value(s) from first entry point
   uint32_t                          spec_constant_count;                              // Uses value(s) from first entry point
   SpvReflectSpecializationConstant* spec_constants;                                   // Uses value(s) from first entry point
+  uint32_t                          graph_entry_point_count;
+  SpvReflectGraphEntryPoint*        graph_entry_points;
 
   struct Internal {
     SpvReflectModuleFlags           module_flags;
@@ -749,6 +772,18 @@ const uint32_t* spvReflectGetCode(const SpvReflectShaderModule* p_module);
                       or NULL if it's not found.
 */
 const SpvReflectEntryPoint* spvReflectGetEntryPoint(
+  const SpvReflectShaderModule* p_module,
+  const char*                   entry_point
+);
+
+/*! @fn spvReflectGetGraphEntryPoint
+
+ @param  p_module     Pointer to an instance of SpvReflectShaderModule.
+ @param  entry_point  Name of the requested graph entry point.
+ @return              Returns a const pointer to the requested graph entry point,
+                      or NULL if it's not found.
+*/
+const SpvReflectGraphEntryPoint* spvReflectGetGraphEntryPoint(
   const SpvReflectShaderModule* p_module,
   const char*                   entry_point
 );
