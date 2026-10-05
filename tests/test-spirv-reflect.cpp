@@ -834,6 +834,7 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/glsl/runtime_array_of_array_of_struct.spv",
     "../tests/glsl/storage_buffer.spv",
     "../tests/glsl/texel_buffer.spv",
+    "../tests/graph/simple_graph.spv",
     "../tests/hlsl/append_consume.spv",
     "../tests/hlsl/array_of_structured_buffer.spv",
     "../tests/hlsl/binding_array.spv",
@@ -944,6 +945,55 @@ TEST(SpirvReflectTestCase, TestComputeLocalSize) {
   ASSERT_EQ(module_.entry_points[0].local_size.x, 1);
   ASSERT_EQ(module_.entry_points[0].local_size.y, 1);
   ASSERT_EQ(module_.entry_points[0].local_size.z, 1);
+
+  spvReflectDestroyShaderModule(&module_);
+}
+
+TEST(SpirvReflectTestCase, TestGraphARM) {
+  std::vector<uint8_t> spirv_;
+  SpvReflectShaderModule module_;
+  const std::string spirv_path = "../tests/graph/simple_graph.spv";
+  std::ifstream spirv_file(spirv_path, std::ios::binary | std::ios::ate);
+  std::streampos spirv_file_nbytes = spirv_file.tellg();
+  spirv_file.seekg(0);
+  spirv_.resize(spirv_file_nbytes);
+  spirv_file.read(reinterpret_cast<char*>(spirv_.data()), spirv_.size());
+
+  SpvReflectResult result = spvReflectCreateShaderModule(spirv_.size(), spirv_.data(), &module_);
+  ASSERT_EQ(SPV_REFLECT_RESULT_SUCCESS, result) << "spvReflectCreateShaderModule() failed";
+
+  ASSERT_EQ(module_.entry_point_count, 0);
+  ASSERT_EQ(module_.graph_entry_point_count, 1);
+  const SpvReflectGraphEntryPoint* graph = spvReflectGetGraphEntryPoint(&module_, "main");
+  ASSERT_EQ(graph, &module_.graph_entry_points[0]);
+  ASSERT_EQ(NULL, spvReflectGetGraphEntryPoint(&module_, "other"));
+
+  ASSERT_EQ(graph->input_count, 2);
+  ASSERT_EQ(graph->output_count, 1);
+  EXPECT_STREQ(graph->inputs[0]->name, "input");
+  EXPECT_STREQ(graph->inputs[1]->name, "indices");
+  EXPECT_STREQ(graph->outputs[0]->name, "output");
+  EXPECT_EQ(graph->inputs[1]->binding, 1);
+  EXPECT_EQ(graph->outputs[0]->set, 1);
+  EXPECT_EQ(graph->outputs[0]->binding, 2);
+
+  const SpvReflectTypeDescription* input = graph->inputs[0]->type_description;
+  EXPECT_EQ(graph->inputs[0]->descriptor_type, SPV_REFLECT_DESCRIPTOR_TYPE_TENSOR_ARM);
+  EXPECT_EQ(input->op, SpvOpTypeTensorARM);
+  EXPECT_TRUE(input->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT);
+  EXPECT_EQ(input->traits.numeric.scalar.width, 32);
+  EXPECT_EQ(input->traits.tensor.rank, 4);
+  EXPECT_EQ(input->traits.tensor.dims[0], 1);
+  EXPECT_EQ(input->traits.tensor.dims[1], 8);
+  EXPECT_EQ(input->traits.tensor.dims[2], 16);
+  EXPECT_EQ(input->traits.tensor.dims[3], 4);
+
+  const SpvReflectTypeDescription* indices = graph->inputs[1]->type_description;
+  EXPECT_TRUE(indices->type_flags & SPV_REFLECT_TYPE_FLAG_INT);
+  EXPECT_EQ(indices->traits.numeric.scalar.width, 8);
+  EXPECT_EQ(indices->traits.numeric.scalar.signedness, 1);
+  EXPECT_EQ(indices->traits.tensor.rank, 2);
+  EXPECT_EQ(indices->traits.tensor.dims[0], 0);
 
   spvReflectDestroyShaderModule(&module_);
 }

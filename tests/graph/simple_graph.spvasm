@@ -1,0 +1,44 @@
+; Two inputs, one output: the first input is passed through unchanged.
+; spirv-as --target-env vulkan1.3 simple_graph.spvasm -o simple_graph.spv
+               OpCapability GraphARM
+               OpCapability TensorsARM
+               OpCapability Shader
+               OpCapability Int8
+               OpCapability VulkanMemoryModel
+               OpExtension "SPV_ARM_graph"
+               OpExtension "SPV_ARM_tensors"
+               OpMemoryModel Logical Vulkan
+               OpName %input "input"
+               OpName %indices "indices"
+               OpName %output "output"
+               OpDecorate %input DescriptorSet 0
+               OpDecorate %input Binding 0
+               OpDecorate %indices DescriptorSet 0
+               OpDecorate %indices Binding 1
+               OpDecorate %output DescriptorSet 1
+               OpDecorate %output Binding 2
+       %uint = OpTypeInt 32 0
+      %float = OpTypeFloat 32
+      %char = OpTypeInt 8 1
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+     %uint_2 = OpConstant %uint 2
+     %uint_4 = OpConstant %uint 4
+     %uint_8 = OpConstant %uint 8
+    %uint_16 = OpConstant %uint 16
+ %arr_uint_4 = OpTypeArray %uint %uint_4
+      %shape = OpConstantComposite %arr_uint_4 %uint_1 %uint_8 %uint_16 %uint_4
+     %tensor = OpTypeTensorARM %float %uint_4 %shape
+%tensor_char = OpTypeTensorARM %char %uint_2
+ %ptr_tensor = OpTypePointer UniformConstant %tensor
+%ptr_tensor_char = OpTypePointer UniformConstant %tensor_char
+      %input = OpVariable %ptr_tensor UniformConstant
+    %indices = OpVariable %ptr_tensor_char UniformConstant
+     %output = OpVariable %ptr_tensor UniformConstant
+ %graph_type = OpTypeGraphARM 2 %tensor %tensor_char %tensor
+               OpGraphEntryPointARM %graph "main" %input %indices %output
+      %graph = OpGraphARM %graph_type
+          %x = OpGraphInputARM %tensor %uint_0
+          %y = OpGraphInputARM %tensor_char %uint_1
+               OpGraphSetOutputARM %x %uint_0
+               OpGraphEndARM

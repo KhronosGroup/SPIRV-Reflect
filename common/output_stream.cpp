@@ -748,6 +748,7 @@ std::string ToStringTypeFlags(SpvReflectTypeFlags type_flags) {
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_SAMPLED_IMAGE);
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_SAMPLER);
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_IMAGE);
+  PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, EXTERNAL_TENSOR_ARM);
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, MATRIX);
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, VECTOR);
   PRINT_AND_CLEAR_TYPE_FLAG(sstream, type_flags, FLOAT);
@@ -1454,6 +1455,32 @@ void StreamWriteDescriptorBinding(std::ostream& os, const SpvReflectDescriptorBi
     os << "\n";
   }
 
+  // tensor
+  const SpvReflectTypeDescription* p_td = obj.type_description;
+  if (p_td != nullptr && (p_td->type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_TENSOR_ARM)) {
+    os << t << "tensor   : ";
+    if (p_td->type_flags & SPV_REFLECT_TYPE_FLAG_BOOL) {
+      os << "bool";
+    } else {
+      os << ((p_td->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT) ? "float" : (p_td->traits.numeric.scalar.signedness ? "int" : "uint"))
+         << p_td->traits.numeric.scalar.width;
+    }
+    const uint32_t rank = p_td->traits.tensor.rank;
+    if (rank == (uint32_t)~0) {
+      os << ", rank ?";
+    } else if (rank > 0) {
+      os << ", rank " << rank;
+      if (p_td->traits.tensor.dims[0] != 0) {
+        os << ", shape ";
+        for (uint32_t i = 0; i < rank && i < SPV_REFLECT_MAX_ARRAY_DIMS; ++i) {
+          const uint32_t dim = p_td->traits.tensor.dims[i];
+          os << "[" << (dim == (uint32_t)~0 ? std::string("?") : std::to_string(dim)) << "]";
+        }
+      }
+    }
+    os << "\n";
+  }
+
   // counter
   if (obj.uav_counter_binding != nullptr) {
     os << t << "counter  : ";
@@ -1551,6 +1578,14 @@ void StreamWriteShaderModule(std::ostream& os, const SpvReflectShaderModule& obj
     if (i < (obj.entry_point_count - 1)) {
       os << "\n";
     }
+  }
+
+  for (uint32_t i = 0; i < obj.graph_entry_point_count; ++i) {
+    if (obj.entry_point_count > 0 || i > 0) {
+      os << "\n";
+    }
+    const SpvReflectGraphEntryPoint& g = obj.graph_entry_points[i];
+    os << "graph entry point : " << g.name << " (inputs=" << g.input_count << ", outputs=" << g.output_count << ")";
   }
 }
 
@@ -1665,6 +1700,36 @@ void WriteReflection(const spv_reflect::ShaderModule& obj, bool flatten_cbuffers
       StreamWriteDescriptorBinding(os, *p_binding, true, flatten_cbuffers, ttt);
       if (i < (count - 1)) {
         os << "\n\n";
+      }
+    }
+  }
+
+  // SPV_ARM_graph entry points: the descriptor bindings of their input/output tensors.
+  {
+    const SpvReflectShaderModule& sm = obj.GetShaderModule();
+    if (sm.graph_entry_point_count > 0) {
+      os << "\n";
+      os << "\n";
+      os << "\n";
+      os << t << "Graph entry points: " << sm.graph_entry_point_count << "\n\n";
+    }
+    auto print_tensors = [&](uint32_t count, SpvReflectDescriptorBinding* const* tensors) {
+      for (uint32_t i = 0; i < count; ++i) {
+        os << (i > 0 ? ", " : "") << tensors[i]->set << "." << tensors[i]->binding;
+        os << " (" << ((tensors[i]->name != nullptr && tensors[i]->name[0] != '\0') ? tensors[i]->name : "<unnamed>") << ")";
+      }
+      os << "\n";
+    };
+    for (uint32_t i = 0; i < sm.graph_entry_point_count; ++i) {
+      const SpvReflectGraphEntryPoint& g = sm.graph_entry_points[i];
+      os << tt << i << ":\n";
+      os << ttt << "name    : " << g.name << "\n";
+      os << ttt << "inputs  : ";
+      print_tensors(g.input_count, g.inputs);
+      os << ttt << "outputs : ";
+      print_tensors(g.output_count, g.outputs);
+      if (i < sm.graph_entry_point_count - 1) {
+        os << "\n";
       }
     }
   }
@@ -1843,6 +1908,22 @@ void SpvReflectToYaml::WriteTypeDescription(std::ostream& os, const SpvReflectTy
   os << "stride: " << td.traits.array.stride;
   // } SpvReflectArrayTraits;
   os << " }" << std::endl;
+
+  //     SpvReflectTensorTraits          tensor;
+  if (td.type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_TENSOR_ARM) {
+    os << t2 << "tensor: { ";
+    // typedef struct SpvReflectTensorTraits {
+    //   uint32_t                          rank;
+    os << "rank: " << td.traits.tensor.rank << ", ";
+    //   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
+    os << "dims: [";
+    for (uint32_t i_dim = 0; i_dim < td.traits.tensor.rank && i_dim < SPV_REFLECT_MAX_ARRAY_DIMS; ++i_dim) {
+      os << td.traits.tensor.dims[i_dim] << ",";
+    }
+    os << "]";
+    // } SpvReflectTensorTraits;
+    os << " }" << std::endl;
+  }
   //   } traits;
 
   //   uint32_t                          member_count;
@@ -2450,6 +2531,30 @@ void SpvReflectToYaml::Write(std::ostream& os) {
           os << t3 << "  type_description: *td" << itor->second << std::endl;
         }
       }
+    }
+  }
+
+  // SPV_ARM_graph: graph entry points and their input/output tensors.
+  if (sm_.graph_entry_point_count > 0) {
+    os << "graph_entry_points:" << std::endl;
+  }
+  for (uint32_t ep = 0; ep < sm_.graph_entry_point_count; ++ep) {
+    const SpvReflectGraphEntryPoint& g = sm_.graph_entry_points[ep];
+    os << t1 << "- name: " << SafeString(g.name) << std::endl;
+    os << t1 << "  id: " << g.id << std::endl;
+    os << t1 << "  input_count: " << g.input_count << std::endl;
+    os << t1 << "  inputs:" << std::endl;
+    for (uint32_t i = 0; i < g.input_count; ++i) {
+      auto itor = descriptor_binding_to_index_.find(g.inputs[i]);
+      assert(itor != descriptor_binding_to_index_.end());
+      os << t3 << "- *db" << itor->second << " # " << SafeString(g.inputs[i]->name) << std::endl;
+    }
+    os << t1 << "  output_count: " << g.output_count << std::endl;
+    os << t1 << "  outputs:" << std::endl;
+    for (uint32_t i = 0; i < g.output_count; ++i) {
+      auto itor = descriptor_binding_to_index_.find(g.outputs[i]);
+      assert(itor != descriptor_binding_to_index_.end());
+      os << t3 << "- *db" << itor->second << " # " << SafeString(g.outputs[i]->name) << std::endl;
     }
   }
 
