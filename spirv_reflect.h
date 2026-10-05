@@ -46,7 +46,9 @@ VERSION HISTORY
 #elif defined(__clang__)
   #define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
 #elif defined(__GNUC__)
-  #if GCC_VERSION >= 40500
+  /* GCC does not predefine GCC_VERSION, so spelling the comparison out keeps this
+     from evaluating to 0 >= 40500 and always dropping the message. */
+  #if (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= 40500
     #define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated(msg_str)))
   #else
     #define SPV_REFLECT_DEPRECATED(msg_str) __attribute__((deprecated))
