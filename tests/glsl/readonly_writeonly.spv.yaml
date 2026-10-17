@@ -142,8 +142,8 @@ all_block_variables:
     name: "foo"
     offset: 0
     absolute_offset: 0
-    size: 0
-    padded_size: 0
+    size: 768
+    padded_size: 768
     decorations: 0x00000080 # NON_WRITABLE 
     numeric:
       scalar: { width: 0, signedness: 0 }
