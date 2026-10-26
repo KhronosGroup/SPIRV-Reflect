@@ -13,7 +13,7 @@ all_type_descriptions:
       numeric:
         scalar: { width: 32, signedness: 0 }
         vector: { component_count: 4 }
-        matrix: { column_count: 4, row_count: 4, stride: 0 }
+        matrix: { column_count: 4, row_count: 4, stride: 16 }
       image: { dim: 0, depth: 0, arrayed: 0, ms: 0, sampled: 0, image_format: 0 } # dim=1D image_format=Unknown
       array: { dims_count: 1, dims: [0,], stride: 64 }
     member_count: 0
@@ -82,7 +82,7 @@ all_block_variables:
     numeric:
       scalar: { width: 32, signedness: 0 }
       vector: { component_count: 4 }
-      matrix: { column_count: 4, row_count: 4, stride: 0 }
+      matrix: { column_count: 4, row_count: 4, stride: 16 }
     array: { dims_count: 0, dims: [], stride: 0 }
     flags: 0x00000000 # NONE
     member_count: 0
