@@ -823,6 +823,7 @@ const std::vector<const char*> all_spirv_paths = {
     "../tests/glsl/buffer_handle_uvec2_ssbo.spv",
     "../tests/glsl/buffer_pointer.spv",
     "../tests/glsl/built_in_format.spv",
+    "../tests/glsl/cooperative_matrix2.spv",
     "../tests/glsl/fn_struct_param.spv",
     "../tests/glsl/frag_array_input.spv",
     "../tests/glsl/frag_barycentric.spv",
